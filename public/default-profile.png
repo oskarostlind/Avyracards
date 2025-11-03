@@ -1,0 +1,38 @@
+printf '%s' 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YlRZLIAAAAASUVORK5CYII=' | base64 -d > public/default-profile.png
+cat <<'EOF' > src/components/profile-preview.tsx
+import Link from "next/link";
+
+import { LinkItem } from "@/components/links-list";
+import { ProfileCard } from "@/components/profile-card";
+import { getTheme } from "@/utils/theme";
+
+interface ProfilePreviewProps {
+  username: string;
+  bio?: string | null;
+  profileImage?: string | null;
+  theme?: string | null;
+  links: LinkItem[];
+}
+
+export function ProfilePreview({ username, bio, profileImage, theme, links }: ProfilePreviewProps) {
+  const tokens = getTheme(theme);
+
+  return (
+    <div className={tokens.container}>
+      <ProfileCard className={tokens.card} username={username} bio={bio} profileImage={profileImage} />
+      <div className="mt-6 space-y-3">
+        {links.map((link) => (
+          <Link
+            key={link.id}
+            href={link.url}
+            className={tokens.link}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {link.label}
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}

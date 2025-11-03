@@ -1,0 +1,18 @@
+"use client";
+
+import { usePathname } from "next/navigation";
+import { signIn } from "next-auth/react";
+
+export function SignInButton() {
+  const pathname = usePathname();
+
+  return (
+    <button
+      onClick={() => signIn(undefined, { callbackUrl: pathname === "/" ? "/dashboard" : pathname })}
+      className="rounded-full bg-slate-900 px-4 py-2 text-white hover:bg-slate-700"
+      type="button"
+    >
+      Logga in
+    </button>
+  );
+}
