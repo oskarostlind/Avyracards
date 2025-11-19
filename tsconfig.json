@@ -1,27 +1,29 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": false,
     "skipLibCheck": true,
     "strict": true,
     "noImplicitAny": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "ESNext",
+    "noEmit": true,
+    "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "esModuleInterop": true,
     "jsx": "preserve",
     "incremental": true,
-    "types": ["node", "next", "next/types", "next/image-types"],
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "types": [
+      "next",
+      "next/image-types/global",
+      "next/types/global",
+      "node"
+    ]
   },
-  "include": ["next-env.d.ts", "src/**/*", "next.config.mjs"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
   "exclude": ["node_modules"]
 }
