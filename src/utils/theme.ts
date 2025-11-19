@@ -1,6 +1,14 @@
-import { clsx } from "clsx";
+// src/utils/theme.ts
+import clsx from "clsx";
 
-export type ThemeName = "default" | "elegant" | "dark" | "neon" | "sun" | "graffiti" | "rainbow";
+export type ThemeName =
+  | "default"
+  | "elegant"
+  | "dark"
+  | "neon"
+  | "sun"
+  | "graffiti"
+  | "rainbow";
 
 export interface ThemeTokens {
   container: string;
@@ -11,72 +19,105 @@ export interface ThemeTokens {
 }
 
 const base = {
-  container: "p-6", card: "rounded-3xl p-6 shadow-xl", link: "", accent: "", text: ""
+  container: "p-6",
+  card: "rounded-3xl p-6 shadow-xl",
+  link: "",
+  accent: "",
+  text: "",
 };
 
 export const themes: Record<ThemeName, ThemeTokens> = {
   default: {
-    ...base,
-    container: clsx(base.container, "bg-theme-default-background text-theme-default-text"),
-    card: clsx(base.card, "bg-theme-default-card"),
-    link: "rounded-full bg-theme-default-accent px-4 py-3 text-center font-semibold text-white shadow-md hover:opacity-90",
-    accent: "text-theme-default-accent",
-    text: "text-theme-default-text",
+    container: clsx(base.container, "bg-slate-950"),
+    card: clsx(
+      base.card,
+      "bg-slate-900/80 border border-slate-800 backdrop-blur"
+    ),
+    link:
+      "rounded-full bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-900 hover:bg-slate-200 transition",
+    accent: "text-violet-400",
+    text: "text-slate-50",
   },
   elegant: {
-    ...base,
-    container: clsx(base.container, "bg-theme-elegant-background text-theme-elegant-text"),
-    card: clsx(base.card, "bg-theme-elegant-card"),
-    link: "rounded-full bg-theme-elegant-accent px-4 py-3 text-center font-semibold text-white shadow-md hover:opacity-90",
-    accent: "text-theme-elegant-accent",
-    text: "text-theme-elegant-text",
+    container: clsx(base.container, "bg-slate-950"),
+    card: clsx(
+      base.card,
+      "bg-gradient-to-b from-slate-900 to-black border border-slate-700/80"
+    ),
+    link:
+      "rounded-full bg-slate-50/90 px-4 py-3 text-center text-sm font-medium text-slate-900 hover:bg-white transition",
+    accent: "text-amber-300",
+    text: "text-slate-50",
   },
   dark: {
-    ...base,
-    container: clsx(base.container, "bg-theme-dark-background text-theme-dark-text"),
-    card: clsx(base.card, "bg-theme-dark-card"),
-    link: "rounded-full bg-theme-dark-accent px-4 py-3 text-center font-semibold text-theme-dark-text shadow-md hover:opacity-90",
-    accent: "text-theme-dark-accent",
-    text: "text-theme-dark-text",
+    container: clsx(base.container, "bg-black"),
+    card: clsx(
+      base.card,
+      "bg-slate-950 border border-slate-800/80 backdrop-blur"
+    ),
+    link:
+      "rounded-full bg-slate-800 px-4 py-3 text-center text-sm font-medium text-slate-100 hover:bg-slate-700 transition",
+    accent: "text-slate-300",
+    text: "text-slate-100",
   },
   neon: {
-    ...base,
-    container: clsx(base.container, "bg-theme-neon-background text-theme-neon-text"),
-    card: clsx(base.card, "bg-theme-neon-card"),
-    link: "rounded-full bg-theme-neon-accent px-4 py-3 text-center font-semibold text-slate-900 shadow-[0_0_30px_rgba(34,211,238,0.6)]",
-    accent: "text-theme-neon-accent",
-    text: "text-theme-neon-text",
+    container: clsx(base.container, "bg-slate-950"),
+    card: clsx(
+      base.card,
+      "bg-slate-950 border border-violet-500/40 shadow-[0_0_40px_rgba(139,92,246,0.45)]"
+    ),
+    link:
+      "rounded-full bg-violet-500 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg hover:bg-violet-400 transition",
+    accent: "text-violet-400",
+    text: "text-slate-50",
   },
   sun: {
-    ...base,
-    container: clsx(base.container, "bg-theme-sun-background text-theme-sun-text"),
-    card: clsx(base.card, "bg-theme-sun-card"),
-    link: "rounded-full bg-theme-sun-accent px-4 py-3 text-center font-semibold text-white shadow-md hover:opacity-90",
-    accent: "text-theme-sun-accent",
-    text: "text-theme-sun-text",
+    container: clsx(
+      base.container,
+      "bg-gradient-to-b from-amber-100 to-amber-300"
+    ),
+    card: clsx(
+      base.card,
+      "bg-white/90 border border-amber-200 shadow-lg shadow-amber-200/40"
+    ),
+    link:
+      "rounded-full bg-amber-500 px-4 py-3 text-center text-sm font-semibold text-white shadow hover:bg-amber-400 transition",
+    accent: "text-amber-600",
+    text: "text-slate-900",
   },
   graffiti: {
-    ...base,
-    container: clsx(base.container, "bg-theme-graffiti-background text-theme-graffiti-text"),
-    card: clsx(base.card, "bg-theme-graffiti-card"),
-    link: "rounded-full bg-theme-graffiti-accent px-4 py-3 text-center font-semibold text-white shadow-lg hover:opacity-90",
-    accent: "text-theme-graffiti-accent",
-    text: "text-theme-graffiti-text",
+    container: clsx(
+      base.container,
+      "bg-slate-950"
+    ),
+    card: clsx(
+      base.card,
+      "bg-[radial-gradient(circle_at_top,_#22c55e_0,_#0f172a_45%,_#020617_100%)] border border-slate-800"
+    ),
+    link:
+      "rounded-full bg-lime-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 shadow hover:bg-lime-300 transition",
+    accent: "text-lime-300",
+    text: "text-slate-50",
   },
   rainbow: {
-    ...base,
-    container: clsx(base.container, "bg-gradient-to-br from-orange-400 via-pink-500 to-indigo-500 text-theme-rainbow-text"),
-    card: clsx(base.card, "bg-theme-rainbow-card backdrop-blur"),
-    link: "rounded-full bg-theme-rainbow-accent px-4 py-3 text-center font-semibold text-white shadow-lg hover:opacity-90",
-    accent: "text-theme-rainbow-accent",
-    text: "text-theme-rainbow-text",
+    container: clsx(base.container, "bg-slate-950"),
+    card: clsx(
+      base.card,
+      "bg-[conic-gradient(at_top,_#f97316,_#e11d48,_#6366f1,_#22c55e,_#f97316)] text-white"
+    ),
+    link:
+      "rounded-full bg-white/90 px-4 py-3 text-center text-sm font-semibold text-slate-900 shadow hover:bg-white transition",
+    accent: "text-white",
+    text: "text-white",
   },
 };
 
 export function getTheme(themeName?: string | null): ThemeTokens {
-  if (!themeName) {
-    return themes.default;
+  if (!themeName) return themes.default;
+
+  if (themeName in themes) {
+    return themes[themeName as ThemeName];
   }
 
-  return themes[(themeName as ThemeName) in themes ? (themeName as ThemeName) : "default"];
+  return themes.default;
 }
