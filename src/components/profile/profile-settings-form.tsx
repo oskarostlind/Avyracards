@@ -1,217 +1,198 @@
 "use client";
 
-import { useActionState, useEffect, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import Image from "next/image";
+import type React from "react";
+import { useMemo, useState } from "react";
+import type { ThemeName } from "@/utils/theme";
+import { ProfilePreview } from "@/components/profile-preview";
 
-import { updateProfile } from "@/lib/actions/profile";
-import { Profile } from "@/lib/validations/profile";
-
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { ProfileCard } from "@/components/profile-card";
-
-type ProfileSettingsFormProps = {
-  initialProfile: Profile;
+type ProfileLink = {
+  id: string;
+  title: string;
+  url: string;
+  icon?: string | null;
 };
 
-export function ProfileSettingsForm({ initialProfile }: ProfileSettingsFormProps) {
-  const router = useRouter();
-  const [profile, setProfile] = useState<Profile>(initialProfile);
-  const [state, formAction, isPending] = useActionState(updateProfile, {
-    status: "idle",
-  });
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-  const [isPendingTransition, startTransition] = useTransition();
+interface ProfileSettingsFormProps {
+  username: string;
+  bio?: string | null;
+  template?: ThemeName | null;
+  fontFamily?: string | null;
+  profileImage?: string | null;
+  links?: ProfileLink[];
+}
 
-  useEffect(() => {
-    if (state.status === "success") {
-      startTransition(() => {
-        router.refresh();
-      });
+export function ProfileSettingsForm({
+  username,
+  bio: initialBio,
+  template: initialTemplate,
+  fontFamily: initialFontFamily,
+  profileImage: initialProfileImage,
+  links: initialLinks,
+}: ProfileSettingsFormProps) {
+  const [bio, setBio] = useState(initialBio ?? "");
+  const [template, setTemplate] = useState<ThemeName>(initialTemplate ?? "default");
+  const [fontFamily, setFontFamily] = useState(initialFontFamily ?? "system");
+  const [profileImage, setProfileImage] = useState(initialProfileImage ?? "");
+  const [links] = useState<ProfileLink[]>(initialLinks ?? []);
+  const [isSaving, setIsSaving] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  const fontStyle = useMemo<React.CSSProperties>(() => {
+    switch (fontFamily) {
+      case "serif":
+        return { fontFamily: "Georgia, 'Times New Roman', serif" };
+      case "mono":
+        return { fontFamily: "'JetBrains Mono', Menlo, monospace" };
+      default:
+        return {};
     }
-  }, [state, router, startTransition]);
+  }, [fontFamily]);
 
-  function handleProfileChange<K extends keyof Profile>(
-    key: K,
-    value: Profile[K]
-  ) {
-    setProfile((prev) => ({ ...prev, [key]: value }));
-  }
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSaving(true);
+    setStatus(null);
+
+    try {
+      // TODO: koppla mot riktig backend/server action när vi sätter upp API:et
+      // T.ex. via en route i /app/api/profile eller en server action.
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      setStatus("Inställningar sparade (demo – ingen backend kopplad ännu).");
+    } catch (error) {
+      console.error(error);
+      setStatus("Något gick fel när inställningarna skulle sparas.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-      {/* Form */}
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      {/* Vänster sida – formulär */}
       <form
-        action={formAction}
-        className="space-y-8 rounded-2xl border bg-card p-6 shadow-sm"
+        onSubmit={handleSubmit}
+        className="space-y-6 rounded-3xl border border-slate-800 bg-slate-950/60 p-6 shadow-lg"
       >
-        <input type="hidden" name="id" value={profile.id} />
-
-        {/* Basic info */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold">Profilinformation</h2>
-          <p className="text-sm text-muted-foreground">
-            Uppdatera namn, användarnamn, titel och bio som visas på ditt
-            SocialCard.
+        <div>
+          <h1 className="text-xl font-semibold text-white">
+            Profilinställningar
+          </h1>
+          <p className="mt-1 text-sm text-slate-400">
+            Uppdatera din bio, välj tema och font. Förhandsgranskning visas till höger.
           </p>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Namn</Label>
-              <Input
-                id="name"
-                name="name"
-                value={profile.name ?? ""}
-                onChange={(e) => handleProfileChange("name", e.target.value)}
-                placeholder="Ditt namn"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="username">Användarnamn</Label>
-              <Input
-                id="username"
-                name="username"
-                value={profile.username ?? ""}
-                onChange={(e) =>
-                  handleProfileChange("username", e.target.value)
-                }
-                placeholder="oskar"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="title">Titel / roll</Label>
-            <Input
-              id="title"
-              name="title"
-              value={profile.title ?? ""}
-              onChange={(e) => handleProfileChange("title", e.target.value)}
-              placeholder="Säljare, Telia Company"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="bio">Kort bio</Label>
-            <Textarea
-              id="bio"
-              name="bio"
-              value={profile.bio ?? ""}
-              onChange={(e) => handleProfileChange("bio", e.target.value)}
-              placeholder="Berätta kort om dig själv..."
-              rows={4}
-            />
-          </div>
         </div>
 
-        {/* Profile image */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium">Profilbild</h3>
-          <p className="text-sm text-muted-foreground">
-            Ladda upp en profilbild som visas på ditt kort.
+        {/* Bio */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-200">
+            Kort presentation
+          </label>
+          <textarea
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={4}
+            className="w-full rounded-2xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+            placeholder="Skriv en kort text om dig själv..."
+          />
+          <p className="text-xs text-slate-500">
+            Detta visas överst på din offentliga SocialCard-sida.
           </p>
-
-          <div className="flex items-center gap-4">
-            <div className="relative h-16 w-16 overflow-hidden rounded-full bg-muted">
-              {profile.profileImageUrl ? (
-                <Image
-                  src={profile.profileImageUrl}
-                  alt="Profilbild"
-                  fill
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
-                  Ingen bild
-                </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Input
-                type="url"
-                name="profileImageUrl"
-                placeholder="https://..."
-                value={profile.profileImageUrl ?? ""}
-                onChange={(e) =>
-                  handleProfileChange("profileImageUrl", e.target.value)
-                }
-              />
-              <p className="text-xs text-muted-foreground">
-                Stöd för direktlänkar till bilder (t.ex. CDN, Imgur, Cloudinary
-                m.m.). Filuppladdning kan läggas till senare.
-              </p>
-            </div>
-          </div>
         </div>
 
-        {/* Visibility */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-medium">Synlighet</h3>
-          <div className="flex items-center justify-between rounded-xl bg-muted/50 p-4">
-            <div className="space-y-1">
-              <Label htmlFor="isPublic">Offentlig profil</Label>
-              <p className="text-xs text-muted-foreground">
-                När detta är aktiverat kan vem som helst besöka din publika
-                profil via din unika länk.
-              </p>
-            </div>
-            <Switch
-              id="isPublic"
-              name="isPublic"
-              checked={profile.isPublic ?? false}
-              onCheckedChange={(checked) =>
-                handleProfileChange("isPublic", checked)
-              }
-            />
-          </div>
+        {/* Tema */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-200">
+            Tema
+          </label>
+          <select
+            value={template}
+            onChange={(e) => setTemplate(e.target.value as ThemeName)}
+            className="w-full rounded-2xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+          >
+            <option value="default">Default</option>
+            <option value="elegant">Elegant</option>
+            <option value="dark">Dark</option>
+            <option value="neon">Neon</option>
+            <option value="sun">Sun</option>
+            <option value="graffiti">Graffiti</option>
+            <option value="rainbow">Rainbow</option>
+          </select>
+          <p className="text-xs text-slate-500">
+            Byt utseende på din offentliga sida med olika teman.
+          </p>
         </div>
 
-        {/* Submit */}
-        <div className="flex items-center justify-between gap-4 border-t pt-4">
-          <div className="text-sm text-muted-foreground">
-            {state.status === "error" && (
-              <span className="text-destructive">
-                Något gick fel, försök igen.
-              </span>
-            )}
-            {state.status === "success" && (
-              <span className="text-emerald-600">
-                Profilen uppdaterades – förhandsvisningen uppdateras strax.
-              </span>
-            )}
-          </div>
-          <Button type="submit" disabled={isPending || isPendingTransition}>
-            {isPending || isPendingTransition ? "Sparar..." : "Spara profil"}
-          </Button>
+        {/* Font */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-200">
+            Font
+          </label>
+          <select
+            value={fontFamily}
+            onChange={(e) => setFontFamily(e.target.value)}
+            className="w-full rounded-2xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+          >
+            <option value="system">System (standard)</option>
+            <option value="serif">Serif</option>
+            <option value="mono">Monospace</option>
+          </select>
+          <p className="text-xs text-slate-500">
+            Påverkar typsnittet på din offentliga profil.
+          </p>
+        </div>
+
+        {/* Profilbild – enkel URL för nu */}
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-200">
+            Profilbild (URL)
+          </label>
+          <input
+            type="url"
+            value={profileImage}
+            onChange={(e) => setProfileImage(e.target.value)}
+            className="w-full rounded-2xl border border-slate-700 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+            placeholder="https://exempel.se/min-bild.jpg"
+          />
+          <p className="text-xs text-slate-500">
+            Senare kan vi koppla detta till riktig filuppladdning (Vercel Blob).
+          </p>
+        </div>
+
+        {/* Spara-knapp + status */}
+        <div className="flex items-center justify-between gap-4">
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="inline-flex items-center justify-center rounded-2xl bg-purple-500 px-4 py-2 text-sm font-medium text-white shadow-md transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {isSaving ? "Sparar..." : "Spara ändringar"}
+          </button>
+          {status && (
+            <p className="text-xs text-slate-400">
+              {status}
+            </p>
+          )}
         </div>
       </form>
 
-      {/* Live preview */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Förhandsvisning</h2>
-          <p className="text-xs text-muted-foreground">
-            Så här ser ditt SocialCard ut just nu.
-          </p>
-        </div>
-
-        <div className="overflow-hidden rounded-3xl border bg-muted/40 p-4 shadow-sm">
-          <div className="mx-auto max-w-sm">
-            <ProfileCard
-              username={profile.username || "ditt användarnamn"}
-              bio={profile.bio || ""}
-              profileImage={profile.profileImageUrl || undefined}
-              className="bg-background"
-            />
-          </div>
-        </div>
+      {/* Höger sida – mobilpreview */}
+      <div
+        className="rounded-3xl border border-slate-800 bg-slate-950/70 p-4"
+        style={fontStyle}
+      >
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">
+          Förhandsgranskning
+        </p>
+        <ProfilePreview
+          username={username}
+          bio={bio}
+          profileImage={profileImage}
+          theme={template}
+          links={links}
+        />
       </div>
     </div>
   );
 }
+
+export default ProfileSettingsForm;
