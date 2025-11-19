@@ -1,25 +1,32 @@
-import Link from "next/link";
+declare namespace JSX {
+  interface IntrinsicElements {
+    [elemName: string]: any;
+  }
+}
 
-export default function HomePage() {
+export default function LandingPage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-6 text-center">
-      <h1 className="text-4xl font-bold text-slate-900">Välkommen till SocialCard</h1>
-      <p className="text-lg text-slate-600">
-        Samla dina viktigaste länkar, välj ett tema och dela din profil med världen.
+    <div className="max-w-5xl mx-auto px-4 py-16">
+      <h1 className="text-4xl font-semibold mb-4">
+        Din digitala visitkortslösning – SocialCard
+      </h1>
+      <p className="text-slate-300 mb-8 max-w-xl">
+        Skapa en personlig profil, lägg till länkar till dina sociala medier och koppla
+        dina NFC-kort för att dela allt med en enkel tapp.
       </p>
-      <div className="flex items-center justify-center gap-4">
-        <Link
+      <div className="flex gap-4">
+        <a
           href="/register"
-          className="rounded-full bg-slate-900 px-6 py-3 text-base font-semibold text-white hover:bg-slate-700"
+          className="px-4 py-2 rounded-md bg-slate-50 text-slate-900 text-sm font-medium"
         >
           Skapa konto
-        </Link>
-        <Link
-          href="/u/demo"
-          className="rounded-full border border-slate-300 px-6 py-3 text-base font-semibold text-slate-700 hover:bg-slate-100"
+        </a>
+        <a
+          href="/login"
+          className="px-4 py-2 rounded-md border border-slate-600 text-sm"
         >
-          Se demo-profil
-        </Link>
+          Logga in
+        </a>
       </div>
     </div>
   );

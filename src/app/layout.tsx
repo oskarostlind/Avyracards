@@ -1,29 +1,33 @@
-import type { Metadata } from "next";
-import { cookies } from "next/headers";
-import { ReactNode } from "react";
-
 import "./globals.css";
+import type { ReactNode } from "react";
 
-import { AuthSessionProvider } from "@/components/providers/session-provider";
-import { Navbar } from "@/components/navbar";
-import { auth } from "./api/auth/[...nextauth]/auth";
-
-export const metadata: Metadata = {
-  title: "SocialCard TS",
-  description: "Hantera sociala länkar med Next.js",
+export const metadata = {
+  title: "SocialCard",
+  description: "Digital NFC-baserad visitkortslösning"
 };
 
-export default async function RootLayout({ children }: { children: ReactNode }) {
-  await cookies();
-  const session = await auth();
-
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="sv">
-      <body className="min-h-screen bg-slate-50">
-        <AuthSessionProvider session={session}>
-          <Navbar />
-          <main className="mx-auto w-full max-w-6xl px-4 py-10">{children}</main>
-        </AuthSessionProvider>
+      <body className="min-h-screen bg-slate-950 text-slate-50">
+        <div className="min-h-screen flex flex-col">
+          <header className="border-b border-slate-800">
+            <div className="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+              <div className="font-semibold tracking-tight">SocialCard</div>
+              <nav className="flex gap-4 text-sm">
+                <a href="/login" className="hover:underline">
+                  Logga in
+                </a>
+                <a href="/register" className="hover:underline">
+                  Skapa konto
+                </a>
+              </nav>
+            </div>
+          </header>
+          <main className="flex-1">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

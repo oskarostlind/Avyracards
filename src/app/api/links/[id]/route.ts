@@ -1,50 +1,79 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { auth } from "../../auth/[...nextauth]/auth";
 
 const updateSchema = z.object({
-  label: z.string().min(1).max(60).optional(),
+  title: z.string().min(1).max(100).optional(),
   url: z.string().url().optional(),
-  isVisible: z.boolean().optional(),
+  icon: z.string().max(50).optional(),
+  order: z.number().int().optional(),
+  isActive: z.boolean().optional()
 });
 
-export async function PATCH(request: Request, { params }: { params: { id: string } }) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Ej behörig" }, { status: 401 });
-  }
-
-  const body = await request.json();
-  const parsed = updateSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Ogiltiga data" }, { status: 400 });
-  }
-
-  const updated = await prisma.link.updateMany({
-    where: { id: params.id, userId: session.user.id },
-    data: parsed.data,
-  });
-
-  if (updated.count === 0) {
-    return NextResponse.json({ error: "Länk saknas" }, { status: 404 });
-  }
-
-  const link = await prisma.link.findUnique({ where: { id: params.id } });
-  return NextResponse.json({ link });
+interface Params {
+  params: { id: string };
 }
 
-export async function DELETE(_request: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: Params) {
   const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Ej behörig" }, { status: 401 });
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  await prisma.link.deleteMany({ where: { id: params.id, userId: session.user.id } });
+  const json = await req.json();
+  const parsed = updateSchema.safeParse(json);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Ogiltiga fält." }, { status: 400 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email }
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const link = await prisma.link.findUnique({
+    where: { id: params.id }
+  });
+
+  if (!link || link.userId !== user.id) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const updated = await prisma.link.update({
+    where: { id: params.id },
+    data: parsed.data
+  });
+
+  return NextResponse.json(updated);
+}
+
+export async function DELETE(_req: Request, { params }: Params) {
+  const session = await auth();
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email }
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  const link = await prisma.link.findUnique({
+    where: { id: params.id }
+  });
+
+  if (!link || link.userId !== user.id) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  await prisma.link.delete({ where: { id: params.id } });
 
   return NextResponse.json({ ok: true });
 }

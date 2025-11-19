@@ -3,10 +3,13 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-const linkSchema = z.object({
-  title: z.string().min(1).max(100),
-  url: z.string().url(),
-  icon: z.string().max(50).optional()
+const updateSchema = z.object({
+  name: z.string().max(100).optional(),
+  bio: z.string().max(1000).optional(),
+  theme: z.string().max(50).optional(),
+  font: z.string().max(50).optional(),
+  avatarUrl: z.string().url().optional().nullable(),
+  backgroundUrl: z.string().url().optional().nullable()
 });
 
 export async function GET() {
@@ -24,43 +27,27 @@ export async function GET() {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
-  return NextResponse.json(user.links);
+  return NextResponse.json(user);
 }
 
-export async function POST(req: Request) {
+export async function PUT(req: Request) {
   const session = await auth();
   if (!session?.user?.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const json = await req.json();
-  const parsed = linkSchema.safeParse(json);
+  const parsed = updateSchema.safeParse(json);
   if (!parsed.success) {
     return NextResponse.json({ error: "Ogiltiga fält." }, { status: 400 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email }
+  const data = parsed.data;
+
+  const updated = await prisma.user.update({
+    where: { email: session.user.email },
+    data
   });
 
-  if (!user) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
-  const maxOrder = await prisma.link.aggregate({
-    where: { userId: user.id },
-    _max: { order: true }
-  });
-
-  const order = (maxOrder._max.order ?? 0) + 1;
-
-  const created = await prisma.link.create({
-    data: {
-      userId: user.id,
-      order,
-      ...parsed.data
-    }
-  });
-
-  return NextResponse.json(created, { status: 201 });
+  return NextResponse.json(updated);
 }

@@ -3,20 +3,26 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
 }
 
 model User {
   id           String   @id @default(cuid())
-  username     String   @unique
+  email        String   @unique
   passwordHash String
+  name         String?
+  username     String   @unique
   bio          String?  @db.Text
-  themeColor   String?
-  fontFamily   String?
-  template     String?
-  profileImage String?
+  theme        String   @default("default")
+  font         String   @default("inter")
+  avatarUrl    String?
+  backgroundUrl String?
+  isPremium    Boolean  @default(false)
+
   links        Link[]
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -24,13 +30,16 @@ model User {
 model Link {
   id        String   @id @default(cuid())
   userId    String
-  label     String
+  title     String
   url       String
-  position  Int       @default(0)
-  isVisible Boolean   @default(true)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  icon      String?
+  order     Int       @default(0)
+  isActive  Boolean   @default(true)
 
-  @@index([userId, position])
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, order])
 }

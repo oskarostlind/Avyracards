@@ -1,37 +1,34 @@
-import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
-
+import { put } from "@vercel/blob";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { auth } from "../../auth/[...nextauth]/auth";
 
-export const runtime = "nodejs";
+export const runtime = "edge";
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Ej behörig" }, { status: 401 });
+  if (!session?.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const formData = await request.formData();
+  const formData = await req.formData();
   const file = formData.get("file");
 
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Ingen fil" }, { status: 400 });
+    return NextResponse.json({ error: "Ingen fil skickades." }, { status: 400 });
   }
 
-  const blob = await put(`profiles/${session.user.id}-${Date.now()}.png`, file, {
+  const filename = `avatars/${session.user.email}/${Date.now()}-${file.name}`;
+
+  const { url } = await put(filename, file, {
     access: "public",
+    token: process.env.BLOB_READ_WRITE_TOKEN
   });
 
-  const user = await prisma.user.update({
-    where: { id: session.user.id },
-    data: { profileImage: blob.url },
-    select: {
-      id: true,
-      profileImage: true,
-    },
+  await prisma.user.update({
+    where: { email: session.user.email },
+    data: { avatarUrl: url }
   });
 
-  return NextResponse.json({ user, blob });
+  return NextResponse.json({ url }, { status: 200 });
 }
