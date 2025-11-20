@@ -2,10 +2,10 @@ import Link from "next/link";
 
 import { SignInButton } from "@/components/sign-in-button";
 import { SignOutButton } from "@/components/sign-out-button";
-import { getCurrentSession } from "@/lib/session";
+import { auth } from "@/auth";
 
 export async function Navbar() {
-  const session = await getCurrentSession();
+  const session = await auth();
   const isAuthenticated = Boolean(session?.user);
 
   return (
@@ -14,7 +14,12 @@ export async function Navbar() {
         <Link href="/" className="text-lg font-semibold text-slate-900">
           SocialCard
         </Link>
-        <nav className="flex items-center gap-4 text-sm font-medium text-slate-600">
+
+        <nav className="flex items-center gap-4 text-sm text-slate-600">
+          <Link href="/about" className="hover:text-slate-900">
+            Om
+          </Link>
+
           {isAuthenticated ? (
             <>
               <Link href="/dashboard" className="hover:text-slate-900">
