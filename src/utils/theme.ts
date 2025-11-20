@@ -1,6 +1,7 @@
 // src/utils/theme.ts
 import clsx from "clsx";
 
+
 export type ThemeName =
   | "default"
   | "elegant"
