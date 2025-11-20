@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
 
 const updateSchema = z.object({
   title: z.string().min(1).max(100).optional(),
@@ -15,31 +18,25 @@ interface Params {
   params: { id: string };
 }
 
-export async function PUT(req: Request, { params }: Params) {
+export async function PATCH(req: Request, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.email) {
+
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const json = await req.json();
   const parsed = updateSchema.safeParse(json);
+
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ogiltiga fält." }, { status: 400 });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email }
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: "Ogiltiga fält" }, { status: 400 });
   }
 
   const link = await prisma.link.findUnique({
     where: { id: params.id }
   });
 
-  if (!link || link.userId !== user.id) {
+  if (!link || link.userId !== session.user.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -53,23 +50,16 @@ export async function PUT(req: Request, { params }: Params) {
 
 export async function DELETE(_req: Request, { params }: Params) {
   const session = await auth();
-  if (!session?.user?.email) {
+
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email }
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
   const link = await prisma.link.findUnique({
     where: { id: params.id }
   });
 
-  if (!link || link.userId !== user.id) {
+  if (!link || link.userId !== session.user.id) {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 

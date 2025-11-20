@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
 
+export const runtime = "nodejs";
+
 const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
   username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/i),
+  password: z.string().min(6),
+  email: z.string().email().optional(),
   name: z.string().optional()
 });
 
@@ -15,20 +18,36 @@ export async function POST(req: Request) {
   const parsed = schema.safeParse(json);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ogiltiga fält." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Ogiltiga uppgifter. Kontrollera användarnamn och lösenord." },
+      { status: 400 }
+    );
   }
 
-  const { email, password, username, name } = parsed.data;
+  const { username, password, email, name } = parsed.data;
 
-  const existing = await prisma.user.findFirst({
-    where: {
-      OR: [{ email }, { username }]
-    }
+  const normalizedUsername = username.toLowerCase();
+
+  const existingByUsername = await prisma.user.findUnique({
+    where: { username: normalizedUsername }
   });
 
-  if (existing) {
+  if (existingByUsername) {
     return NextResponse.json(
-      { error: "E-post eller användarnamn används redan." },
+      { error: "Användarnamnet är redan upptaget." },
+      { status: 400 }
+    );
+  }
+
+  const emailToUse = email ?? `${normalizedUsername}@placeholder.local`;
+
+  const existingByEmail = await prisma.user.findUnique({
+    where: { email: emailToUse }
+  });
+
+  if (existingByEmail) {
+    return NextResponse.json(
+      { error: "Kunde inte skapa konto. Försök med ett annat användarnamn." },
       { status: 400 }
     );
   }
@@ -37,9 +56,9 @@ export async function POST(req: Request) {
 
   await prisma.user.create({
     data: {
-      email,
+      email: emailToUse,
       passwordHash,
-      username: username.toLowerCase(),
+      username: normalizedUsername,
       name: name || username
     }
   });

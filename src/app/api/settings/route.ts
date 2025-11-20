@@ -4,12 +4,14 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { auth } from "../auth/[...nextauth]/auth";
 
+export const runtime = "nodejs";
+
 const settingsSchema = z.object({
-  themeColor: z.string().min(2).max(20).optional(),
-  fontFamily: z.string().min(2).max(30).optional(),
-  template: z.string().min(2).max(30).optional(),
+  theme: z.string().min(2).max(20).optional(),
+  font: z.string().min(2).max(30).optional(),
   bio: z.string().max(280).optional(),
-  profileImage: z.string().url().nullable().optional(),
+  avatarUrl: z.string().url().nullable().optional(),
+  backgroundUrl: z.string().url().nullable().optional()
 });
 
 export async function PATCH(request: Request) {
@@ -23,12 +25,15 @@ export async function PATCH(request: Request) {
   const parsed = settingsSchema.safeParse(body);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ogiltiga inställningar" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Ogiltiga inställningar" },
+      { status: 400 }
+    );
   }
 
   const user = await prisma.user.update({
     where: { id: session.user.id },
-    data: parsed.data,
+    data: parsed.data
   });
 
   return NextResponse.json({ user });

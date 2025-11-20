@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "../../auth/[...nextauth]/auth";
+import { auth } from "@/auth";
+
+export const runtime = "nodejs";
 
 const reorderSchema = z.object({
-  order: z.array(z.string().cuid()),
+  order: z.array(z.string().cuid())
 });
 
 export async function POST(request: Request) {
@@ -22,9 +24,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ogiltig ordning" }, { status: 400 });
   }
 
+  const userId = session.user.id;
+
   await prisma.$transaction(
     parsed.data.order.map((id, index) =>
-      prisma.link.updateMany({ where: { id, userId: session.user.id }, data: { position: index } })
+      prisma.link.updateMany({
+        where: { id, userId },
+        data: { order: index }
+      })
     )
   );
 

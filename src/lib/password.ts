@@ -1,4 +1,6 @@
 import bcrypt from "bcryptjs";
+export const runtime = "nodejs";
+
 
 const DEFAULT_ROUNDS = 12;
 

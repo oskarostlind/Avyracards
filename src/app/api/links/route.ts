@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+
+export const runtime = "nodejs";
 
 const linkSchema = z.object({
   title: z.string().min(1).max(100),
@@ -11,44 +14,35 @@ const linkSchema = z.object({
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.email) {
+
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    include: { links: { orderBy: { order: "asc" } } }
+  const links = await prisma.link.findMany({
+    where: { userId: session.user.id },
+    orderBy: { order: "asc" }
   });
 
-  if (!user) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
-  }
-
-  return NextResponse.json(user.links);
+  return NextResponse.json(links);
 }
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user?.email) {
+
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const json = await req.json();
   const parsed = linkSchema.safeParse(json);
+
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ogiltiga fält." }, { status: 400 });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email }
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: "Ogiltig länkdata" }, { status: 400 });
   }
 
   const maxOrder = await prisma.link.aggregate({
-    where: { userId: user.id },
+    where: { userId: session.user.id },
     _max: { order: true }
   });
 
@@ -56,7 +50,7 @@ export async function POST(req: Request) {
 
   const created = await prisma.link.create({
     data: {
-      userId: user.id,
+      userId: session.user.id,
       order,
       ...parsed.data
     }

@@ -8,23 +8,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       id: "credentials",
-      name: "Email & password",
+      name: "Användarnamn & lösenord",
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Lösenord", type: "password" },
+        username: { label: "Användarnamn", type: "text" },
+        password: { label: "Lösenord", type: "password" }
       },
       async authorize(credentials) {
-        const email = credentials?.email as string | undefined;
+        const username = credentials?.username as string | undefined;
         const password = credentials?.password as string | undefined;
 
-        if (!email || !password) {
-          throw new Error("Email och lösenord krävs");
+        if (!username || !password) {
+          throw new Error("Användarnamn och lösenord krävs");
         }
 
         const user = await prisma.user.findUnique({
           where: {
-            email,
-          },
+            username: username.toLowerCase()
+          }
         });
 
         if (!user) {
@@ -41,10 +41,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           id: user.id,
           name: user.name ?? undefined,
           email: user.email,
-          username: user.username,
+          username: user.username
         };
-      },
-    }),
+      }
+    })
   ],
   callbacks: {
     async jwt({ token, user }) {
@@ -52,7 +52,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return {
           ...token,
           id: (user as any).id,
-          username: (user as any).username,
+          username: (user as any).username
         };
       }
       return token;
@@ -63,9 +63,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         (session.user as any).username = token.username;
       }
       return session;
-    },
+    }
   },
   pages: {
-    signIn: "/login",
-  },
+    signIn: "/login"
+  }
 });

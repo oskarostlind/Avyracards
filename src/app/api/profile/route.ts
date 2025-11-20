@@ -1,52 +1,56 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+export const runtime = "nodejs";
+
 const updateSchema = z.object({
   name: z.string().max(100).optional(),
-  bio: z.string().max(1000).optional(),
-  theme: z.string().max(50).optional(),
-  font: z.string().max(50).optional(),
-  avatarUrl: z.string().url().optional().nullable(),
-  backgroundUrl: z.string().url().optional().nullable()
+  bio: z.string().max(1000).optional()
 });
 
 export async function GET() {
   const session = await auth();
-  if (!session?.user?.email) {
+
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    include: { links: { orderBy: { order: "asc" } } }
+    where: { id: session.user.id },
+    select: {
+      name: true,
+      bio: true,
+      username: true
+    }
   });
 
   if (!user) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
   return NextResponse.json(user);
 }
 
-export async function PUT(req: Request) {
+export async function PATCH(req: Request) {
   const session = await auth();
-  if (!session?.user?.email) {
+
+  if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const json = await req.json();
   const parsed = updateSchema.safeParse(json);
+
   if (!parsed.success) {
     return NextResponse.json({ error: "Ogiltiga fält." }, { status: 400 });
   }
 
-  const data = parsed.data;
-
   const updated = await prisma.user.update({
-    where: { email: session.user.email },
-    data
+    where: { id: session.user.id },
+    data: parsed.data
   });
 
   return NextResponse.json(updated);
