@@ -16,20 +16,20 @@ export default async function ProfileSettingsPage() {
     select: {
       username: true,
       bio: true,
-      template: true,
-      fontFamily: true,
-      profileImage: true,
+      theme: true,
+      font: true,
+      avatarUrl: true,
       links: {
-        where: { isVisible: true },
-        orderBy: { position: "asc" },
+        where: { isActive: true },
+        orderBy: { order: "asc" },
         select: {
           id: true,
-          label: true,
+          title: true,
           url: true,
-          isVisible: true,
-        },
-      },
-    },
+          icon: true
+        }
+      }
+    }
   });
 
   if (!user) {
@@ -40,9 +40,9 @@ export default async function ProfileSettingsPage() {
     <ProfileSettingsForm
       username={user.username}
       bio={user.bio}
-      template={(user.template as ThemeName | null) ?? "default"}
-      fontFamily={user.fontFamily}
-      profileImage={user.profileImage}
+      template={(user.theme as ThemeName | null) ?? "default"}
+      fontFamily={user.font}
+      profileImage={user.avatarUrl}
       links={user.links}
     />
   );
