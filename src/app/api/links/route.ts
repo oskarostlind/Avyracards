@@ -1,21 +1,22 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-const createLinkSchema = z.object({
-  label: z.string().min(1).max(60),
-  url: z.string().url(),
-});
-
+/**
+ * GET /api/links
+ * Hämtar alla länkar för inloggad användare.
+ */
 export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Du måste vara inloggad." },
+      { status: 401 }
+    );
   }
 
   const links = await prisma.link.findMany({
@@ -23,53 +24,101 @@ export async function GET() {
     orderBy: { order: "asc" },
   });
 
-  const mapped = links.map((l) => ({
-    id: l.id,
-    label: l.title,
-    url: l.url,
-    isVisible: l.isActive,
-  }));
-
-  return NextResponse.json({ links: mapped });
+  return NextResponse.json(
+    links.map((link) => ({
+      id: link.id,
+      label: link.title,
+      url: link.url,
+      isVisible: link.isActive,
+    }))
+  );
 }
 
+/**
+ * POST /api/links
+ * Skapar en ny länk för inloggad användare.
+ */
 export async function POST(req: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json(
+      { error: "Du måste vara inloggad." },
+      { status: 401 }
+    );
   }
 
-  const data = await req.json();
-  const parsed = createLinkSchema.safeParse(data);
-  if (!parsed.success) {
-    return NextResponse.json({ error: "Ogiltiga fält." }, { status: 400 });
+  let body: any;
+  try {
+    body = await req.json();
+  } catch (err) {
+    console.error("[links] Ogiltig JSON:", err);
+    return NextResponse.json(
+      { error: "Ogiltig JSON i förfrågan." },
+      { status: 400 }
+    );
   }
 
-  const { label, url } = parsed.data;
+  console.log("[links] Inkommande body:", body);
 
-  const maxOrder = await prisma.link.aggregate({
-    where: { userId: session.user.id },
-    _max: { order: true },
-  });
+  // Stöd både { label } och { title } från klienten
+  const rawLabel = body.label ?? body.title;
+  const rawUrl = body.url;
 
-  const created = await prisma.link.create({
-    data: {
-      userId: session.user.id,
-      title: label,
-      url,
-      order: (maxOrder._max.order ?? 0) + 1,
-      isActive: true,
-    },
-  });
+  const label = typeof rawLabel === "string" ? rawLabel.trim() : "";
+  const url = typeof rawUrl === "string" ? rawUrl.trim() : "";
 
-  return NextResponse.json(
-    {
-      id: created.id,
-      label,
-      url,
-      isVisible: created.isActive,
-    },
-    { status: 201 }
-  );
+  if (!label) {
+    return NextResponse.json(
+      { error: "Länktitel saknas eller är tom." },
+      { status: 400 }
+    );
+  }
+
+  if (!url) {
+    return NextResponse.json(
+      { error: "URL saknas eller är tom." },
+      { status: 400 }
+    );
+  }
+
+  // Superenkel URL-koll – vi struntar i strikt zod-url här
+  if (!/^https?:\/\//i.test(url)) {
+    return NextResponse.json(
+      { error: "URL måste börja med http:// eller https://." },
+      { status: 400 }
+    );
+  }
+
+  try {
+    const count = await prisma.link.count({
+      where: { userId: session.user.id },
+    });
+
+    const created = await prisma.link.create({
+      data: {
+        userId: session.user.id,
+        title: label,
+        url,
+        order: count,
+        isActive: true,
+      },
+    });
+
+    return NextResponse.json(
+      {
+        id: created.id,
+        label,
+        url,
+        isVisible: created.isActive,
+      },
+      { status: 201 }
+    );
+  } catch (err) {
+    console.error("[links] Fel vid skapande:", err);
+    return NextResponse.json(
+      { error: "Kunde inte skapa länk." },
+      { status: 500 }
+    );
+  }
 }

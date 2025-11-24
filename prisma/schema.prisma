@@ -24,6 +24,9 @@ model User {
   emailVerified     DateTime?
   verificationToken String?
 
+  phoneNumber   String?
+  contactEmail  String?
+
   links         Link[]
 
 }
