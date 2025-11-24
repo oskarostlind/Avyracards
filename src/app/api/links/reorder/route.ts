@@ -1,36 +1,37 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
 const reorderSchema = z.object({
-  order: z.array(z.string().cuid())
+  order: z.array(z.string().cuid()),
 });
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Ej behörig" }, { status: 401 });
   }
 
-  const body = await request.json();
+  // ✔ TS-SAFE: session.user.id kan inte längre vara undefined
+  const userId = session.user.id;
+
+  const body = await req.json();
   const parsed = reorderSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Ogiltig ordning" }, { status: 400 });
   }
 
-  const userId = session.user.id;
-
   await prisma.$transaction(
     parsed.data.order.map((id, index) =>
       prisma.link.updateMany({
         where: { id, userId },
-        data: { order: index }
+        data: { order: index },
       })
     )
   );

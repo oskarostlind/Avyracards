@@ -37,6 +37,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Felaktiga uppgifter");
         }
 
+        if (!user.emailVerified) {
+          throw new Error("Kontot är inte verifierat");
+        }
+
+
         return {
           id: user.id,
           name: user.name ?? undefined,

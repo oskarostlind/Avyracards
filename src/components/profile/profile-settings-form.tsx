@@ -48,23 +48,43 @@ export function ProfileSettingsForm({
     }
   }, [fontFamily]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setStatus(null);
+// ... allt du redan har är oförändrat ovanför
 
-    try {
-      // TODO: koppla mot riktig backend/server action när vi sätter upp API:et
-      // T.ex. via en route i /app/api/profile eller en server action.
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      setStatus("Inställningar sparade (demo – ingen backend kopplad ännu).");
-    } catch (error) {
-      console.error(error);
-      setStatus("Något gick fel när inställningarna skulle sparas.");
-    } finally {
-      setIsSaving(false);
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setIsSaving(true);
+  setStatus(null);
+
+  try {
+    const response = await fetch("/api/profile", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        bio,
+        theme: template,
+        font: fontFamily,
+        avatarUrl: profileImage || null,
+      }),
+    });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      setStatus(
+        (data && data.error) ||
+          "Något gick fel när inställningarna skulle sparas."
+      );
+      return;
     }
-  };
+
+    setStatus("Inställningar sparade.");
+  } catch (error) {
+    console.error(error);
+    setStatus("Något gick fel när inställningarna skulle sparas.");
+  } finally {
+    setIsSaving(false);
+  }
+};
+
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">

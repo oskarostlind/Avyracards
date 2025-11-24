@@ -1,67 +1,61 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
-
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/password";
+import { randomUUID } from "crypto";
+// @ts-ignore: no types available for 'resend'
+import { Resend } from "resend";
 
 export const runtime = "nodejs";
 
-const schema = z.object({
-  username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/i),
-  password: z.string().min(6),
-  email: z.string().email().optional(),
-  name: z.string().optional()
-});
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: Request) {
-  const json = await req.json();
-  const parsed = schema.safeParse(json);
+  const body = await req.json();
+  const { username, email, password } = body;
 
-  if (!parsed.success) {
+  if (!username || !email || !password) {
     return NextResponse.json(
-      { error: "Ogiltiga uppgifter. Kontrollera användarnamn och lösenord." },
+      { error: "Kontrollera användarnamn, e-post och lösenord" },
       { status: 400 }
     );
   }
 
-  const { username, password, email, name } = parsed.data;
-
-  const normalizedUsername = username.toLowerCase();
-
-  const existingByUsername = await prisma.user.findUnique({
-    where: { username: normalizedUsername }
+  const exists = await prisma.user.findFirst({
+    where: { OR: [{ username: username.toLowerCase() }, { email }] },
   });
 
-  if (existingByUsername) {
+  if (exists) {
     return NextResponse.json(
-      { error: "Användarnamnet är redan upptaget." },
+      { error: "Användarnamnet eller e-post används redan" },
       { status: 400 }
     );
   }
 
-  const emailToUse = email ?? `${normalizedUsername}@placeholder.local`;
-
-  const existingByEmail = await prisma.user.findUnique({
-    where: { email: emailToUse }
-  });
-
-  if (existingByEmail) {
-    return NextResponse.json(
-      { error: "Kunde inte skapa konto. Försök med ett annat användarnamn." },
-      { status: 400 }
-    );
-  }
-
-  const passwordHash = await hashPassword(password);
+  const verificationToken = randomUUID();
 
   await prisma.user.create({
     data: {
-      email: emailToUse,
-      passwordHash,
-      username: normalizedUsername,
-      name: name || username
-    }
+      username: username.toLowerCase(),
+      email: email.toLowerCase(),
+      passwordHash: await hashPassword(password),
+      verificationToken,
+      emailVerified: null,
+    },
   });
 
-  return NextResponse.json({ ok: true }, { status: 201 });
+  // Skicka verifieringsmail via Resend
+  await resend.emails.send({
+    from: "SocialCard <noreply@socialcard.app>",
+    to: email,
+    subject: "Verifiera ditt konto",
+    html: `
+      <h2>Verifiera din e-post</h2>
+      <p>Klicka på länken nedan för att verifiera ditt konto:</p>
+      <a href="${process.env.NEXT_PUBLIC_BASE_URL}/verify?token=${verificationToken}">
+        Klicka här för att verifiera ditt konto
+      </a>
+    `,
+  });
+
+  return NextResponse.json({ ok: true });
 }
