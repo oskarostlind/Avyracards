@@ -1,7 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
 // src/components/dashboard/forms.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 
 type ProfileFormProps = {
   user: {
@@ -24,6 +25,30 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const [contactEmail, setContactEmail] = useState(user.contactEmail ?? "");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+
+  function handleAvatarChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setStatus("Välj en giltig bildfil.");
+      return;
+    }
+
+    // ca 2 MB-limit – justera om du vill
+    if (file.size > 2 * 1024 * 1024) {
+      setStatus("Bilden får max vara 2 MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const result = reader.result?.toString() ?? "";
+      setProfileImageUrl(result); // data:image/...;base64,xxxx
+      setStatus(null);
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -81,21 +106,34 @@ export function ProfileForm({ user }: ProfileFormProps) {
         />
       </div>
 
-      {/* Profilbild (URL) */}
+      {/* Profilbild – filuppladdning */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-slate-200">
-          Profilbild (URL)
+          Profilbild
         </label>
+
+        {profileImageUrl && (
+          <div className="mb-2 flex items-center gap-3">
+            <img
+              src={profileImageUrl}
+              alt="Nuvarande profilbild"
+              className="h-12 w-12 rounded-full object-cover border border-slate-700"
+            />
+            <span className="text-[11px] text-slate-400">
+              Nuvarande bild (sparas som data-URL i profilen).
+            </span>
+          </div>
+        )}
+
         <input
-          type="url"
-          className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-400"
-          value={profileImageUrl}
-          onChange={(e) => setProfileImageUrl(e.target.value)}
-          placeholder="https://exempel.se/min-bild.jpg"
+          type="file"
+          accept="image/*"
+          onChange={handleAvatarChange}
+          className="w-full text-xs text-slate-200 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-900 hover:file:bg-white"
         />
         <p className="text-[11px] text-slate-400">
-          Den här bilden kan visas både i förhandsvisningen och på din publika
-          SocialCard-sida.
+          Bilden konverteras till en data-URL och sparas i din profil. Funkar i
+          både dashboard & publik vy utan extra filserver.
         </p>
       </div>
 
