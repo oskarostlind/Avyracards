@@ -8,12 +8,20 @@ type ProfileFormProps = {
     name?: string | null;
     bio?: string | null;
     username?: string | null;
+    profileImageUrl?: string | null;
+    phoneNumber?: string | null;
+    contactEmail?: string | null;
   };
 };
 
 export function ProfileForm({ user }: ProfileFormProps) {
   const [name, setName] = useState(user.name ?? "");
   const [bio, setBio] = useState(user.bio ?? "");
+  const [profileImageUrl, setProfileImageUrl] = useState(
+    user.profileImageUrl ?? ""
+  );
+  const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber ?? "");
+  const [contactEmail, setContactEmail] = useState(user.contactEmail ?? "");
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -25,7 +33,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
       const res = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, bio }),
+        body: JSON.stringify({
+          name,
+          bio,
+          profileImageUrl: profileImageUrl || null,
+          phoneNumber: phoneNumber || null,
+          contactEmail: contactEmail || null,
+        }),
       });
 
       if (!res.ok) throw new Error("Failed to save profile");
@@ -41,6 +55,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
   return (
     <form className="space-y-4" onSubmit={handleSubmit}>
+      {/* Namn */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-slate-200">
           Namn
@@ -53,6 +68,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         />
       </div>
 
+      {/* Bio */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-slate-200">
           Bio
@@ -63,6 +79,60 @@ export function ProfileForm({ user }: ProfileFormProps) {
           onChange={(e) => setBio(e.target.value)}
           placeholder="Kort text om dig"
         />
+      </div>
+
+      {/* Profilbild (URL) */}
+      <div className="space-y-2">
+        <label className="block text-xs font-medium text-slate-200">
+          Profilbild (URL)
+        </label>
+        <input
+          type="url"
+          className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-400"
+          value={profileImageUrl}
+          onChange={(e) => setProfileImageUrl(e.target.value)}
+          placeholder="https://exempel.se/min-bild.jpg"
+        />
+        <p className="text-[11px] text-slate-400">
+          Den här bilden kan visas både i förhandsvisningen och på din publika
+          SocialCard-sida.
+        </p>
+      </div>
+
+      {/* Telefonnummer */}
+      <div className="space-y-2">
+        <label className="block text-xs font-medium text-slate-200">
+          Telefonnummer
+        </label>
+        <input
+          type="tel"
+          className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-400"
+          value={phoneNumber}
+          onChange={(e) => setPhoneNumber(e.target.value)}
+          placeholder="+46 70 123 45 67"
+        />
+        <p className="text-[11px] text-slate-400">
+          Visas som kontaktuppgift på din publika profil (om du väljer att
+          använda det där).
+        </p>
+      </div>
+
+      {/* Kontakt-mail för profil */}
+      <div className="space-y-2">
+        <label className="block text-xs font-medium text-slate-200">
+          Kontakt-e-post
+        </label>
+        <input
+          type="email"
+          className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-400"
+          value={contactEmail}
+          onChange={(e) => setContactEmail(e.target.value)}
+          placeholder="namn@företag.se"
+        />
+        <p className="text-[11px] text-slate-400">
+          Den här adressen är tänkt som den publika mailen som syns på din
+          SocialCard-sida (inte inloggningsmejlet).
+        </p>
       </div>
 
       <button
@@ -81,6 +151,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
     </form>
   );
 }
+
+/* ---------------- Länkar (befintlig del, oförändrad) ---------------- */
 
 type Link = {
   id: string;
