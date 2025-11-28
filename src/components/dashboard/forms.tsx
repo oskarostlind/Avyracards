@@ -9,7 +9,7 @@ type ProfileFormProps = {
     name?: string | null;
     bio?: string | null;
     username?: string | null;
-    profileImageUrl?: string | null;
+    avatarUrl?: string | null;
     phoneNumber?: string | null;
     contactEmail?: string | null;
   };
@@ -18,9 +18,7 @@ type ProfileFormProps = {
 export function ProfileForm({ user }: ProfileFormProps) {
   const [name, setName] = useState(user.name ?? "");
   const [bio, setBio] = useState(user.bio ?? "");
-  const [profileImageUrl, setProfileImageUrl] = useState(
-    user.profileImageUrl ?? ""
-  );
+  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? "");
   const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber ?? "");
   const [contactEmail, setContactEmail] = useState(user.contactEmail ?? "");
   const [saving, setSaving] = useState(false);
@@ -35,7 +33,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
       return;
     }
 
-    // ca 2 MB-limit – justera om du vill
+    // ~2 MB-limit
     if (file.size > 2 * 1024 * 1024) {
       setStatus("Bilden får max vara 2 MB.");
       return;
@@ -44,7 +42,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result?.toString() ?? "";
-      setProfileImageUrl(result); // data:image/...;base64,xxxx
+      setAvatarUrl(result); // data:image/...;base64,xxxx
       setStatus(null);
     };
     reader.readAsDataURL(file);
@@ -61,7 +59,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         body: JSON.stringify({
           name,
           bio,
-          profileImageUrl: profileImageUrl || null,
+          avatarUrl: avatarUrl || null,
           phoneNumber: phoneNumber || null,
           contactEmail: contactEmail || null,
         }),
@@ -112,10 +110,10 @@ export function ProfileForm({ user }: ProfileFormProps) {
           Profilbild
         </label>
 
-        {profileImageUrl && (
+        {avatarUrl && (
           <div className="mb-2 flex items-center gap-3">
             <img
-              src={profileImageUrl}
+              src={avatarUrl}
               alt="Nuvarande profilbild"
               className="h-12 w-12 rounded-full object-cover border border-slate-700"
             />
@@ -333,7 +331,7 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
           disabled={saving}
           className="px-4 py-2 rounded-md bg-slate-50 text-slate-900 text-xs font-medium disabled:opacity-60"
         >
-          {saving ? "Lägger till..." : "Lägg till länk"}
+          {saving ? "Lägger till." : "Lägg till länk"}
         </button>
       </form>
 

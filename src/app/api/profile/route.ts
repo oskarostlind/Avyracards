@@ -6,12 +6,25 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+const avatarSchema = z
+  .string()
+  .min(1)
+  .refine(
+    (value) =>
+      value.startsWith("data:image/") ||
+      value.startsWith("http://") ||
+      value.startsWith("https://"),
+    {
+      message: "avatarUrl måste vara en giltig URL eller data-URL.",
+    }
+  );
+
 const updateSchema = z.object({
   name: z.string().max(100).optional(),
   bio: z.string().max(1000).optional(),
   phoneNumber: z.string().max(30).optional(),
   contactEmail: z.string().email().optional(),
-  avatarUrl: z.string().url().optional(),
+  avatarUrl: avatarSchema.optional(),
 });
 
 async function updateProfile(req: Request) {

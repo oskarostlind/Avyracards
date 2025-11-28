@@ -12,7 +12,7 @@ export default async function PublicProfilePage({ params }: Props) {
     where: { username },
     include: {
       links: {
-        where: { isActive: true }, // Visa bara aktiva länkar
+        where: { isActive: true },
         orderBy: { order: "asc" },
       },
     },
@@ -20,83 +20,84 @@ export default async function PublicProfilePage({ params }: Props) {
 
   if (!user) {
     return (
-      <main className="min-h-screen bg-slate-950 text-slate-50">
-        <div className="mx-auto flex min-h-screen max-w-md items-center justify-center px-4">
-          <p className="text-sm text-slate-400">Ingen profil hittades.</p>
+      <main className="mx-auto max-w-md p-6">
+        <div className="rounded-2xl bg-slate-900/60 p-6 text-center text-slate-300">
+          Ingen profil hittades.
         </div>
       </main>
     );
   }
 
+  // Dessa fält finns i din Prisma-modell och fylls från /dashboard
+  const profileImageUrl = (user as any).profileImageUrl ?? user.avatarUrl ?? null;
+  const contactEmail = (user as any).contactEmail as string | null;
+  const phoneNumber = (user as any).phoneNumber as string | null;
+
   const displayName = user.name || user.username;
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto flex min-h-screen max-w-md flex-col px-4 py-10">
-        {/* Header / profilinfo */}
-        <header className="flex flex-col items-center gap-4">
-          {user.avatarUrl && (
-            <img
-              src={user.avatarUrl}
-              alt={`${user.username}'s avatar`}
-              className="h-24 w-24 rounded-full object-cover ring-2 ring-slate-800"
-            />
+    <main className="mx-auto max-w-md p-6">
+      <div className="rounded-2xl bg-slate-900/80 px-6 py-8 shadow-lg shadow-slate-900/40">
+        <header className="mb-6 text-center">
+          {profileImageUrl && (
+            <div className="mb-4 flex justify-center">
+              <img
+                src={profileImageUrl}
+                alt={`${displayName}'s avatar`}
+                className="h-24 w-24 rounded-full object-cover ring-2 ring-slate-700"
+              />
+            </div>
           )}
 
-          <div className="text-center space-y-1">
-            <h1 className="text-2xl font-semibold text-slate-50">
-              {displayName}
-            </h1>
-            <p className="text-xs text-slate-400">@{user.username}</p>
-          </div>
+          <h1 className="text-2xl font-semibold text-slate-50">{displayName}</h1>
+          <p className="text-sm text-slate-400">@{user.username}</p>
 
           {user.bio && (
-            <p className="max-w-sm text-center text-sm text-slate-300">
+            <p className="mt-3 text-sm leading-relaxed text-slate-300">
               {user.bio}
             </p>
           )}
 
-          {(user.contactEmail || user.phoneNumber) && (
-            <div className="mt-1 flex flex-col items-center gap-1 text-sm text-slate-300">
-              {user.contactEmail && (
+          {(contactEmail || phoneNumber) && (
+            <div className="mt-4 space-y-1 text-sm text-slate-300">
+              {contactEmail && (
                 <a
-                  href={`mailto:${user.contactEmail}`}
-                  className="hover:text-violet-300"
+                  href={`mailto:${contactEmail}`}
+                  className="block break-all text-slate-200 hover:text-white"
                 >
-                  {user.contactEmail}
+                  {contactEmail}
                 </a>
               )}
-              {user.phoneNumber && (
+              {phoneNumber && (
                 <a
-                  href={`tel:${user.phoneNumber.replace(/[^0-9+]/g, "")}`}
-                  className="hover:text-violet-300"
+                  href={`tel:${phoneNumber}`}
+                  className="block text-slate-200 hover:text-white"
                 >
-                  {user.phoneNumber}
+                  {phoneNumber}
                 </a>
               )}
             </div>
           )}
         </header>
 
-        {/* Länkar */}
-        <section className="mt-8 flex flex-1 flex-col gap-3">
-          {user.links.length === 0 && (
-            <p className="text-center text-sm text-slate-500">
-              Inga aktiva länkar ännu.
-            </p>
-          )}
-
+        <section className="mt-6 flex flex-col gap-3">
           {user.links.map((link) => (
             <a
               key={link.id}
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full rounded-xl bg-slate-800 px-4 py-3 text-center text-sm font-medium text-slate-50 transition hover:bg-slate-700"
+              className="block w-full rounded-full bg-slate-800 px-4 py-2 text-center text-sm font-medium text-slate-50 hover:bg-slate-700 transition"
             >
               {link.title}
             </a>
           ))}
+
+          {user.links.length === 0 && (
+            <p className="text-center text-xs text-slate-400">
+              Den här profilen har inga publika länkar ännu.
+            </p>
+          )}
         </section>
       </div>
     </main>
