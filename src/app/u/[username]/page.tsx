@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 
 interface Props {
@@ -28,8 +29,16 @@ export default async function PublicProfilePage({ params }: Props) {
     );
   }
 
-  // Dessa fält finns i din Prisma-modell och fylls från /dashboard
-  const profileImageUrl = (user as any).profileImageUrl ?? user.avatarUrl ?? null;
+  // === NYTT: redirecta till "offentlig" länk ===
+  // Vi tolkar första aktiva länken (lägst order) som din Offentliga länk.
+  const primaryLink = user.links[0];
+  if (primaryLink) {
+    redirect(primaryLink.url);
+  }
+
+  // Om inga aktiva länkar finns visas istället profilen som tidigare.
+  const profileImageUrl =
+    (user as any).profileImageUrl ?? (user as any).avatarUrl ?? null;
   const contactEmail = (user as any).contactEmail as string | null;
   const phoneNumber = (user as any).phoneNumber as string | null;
 
@@ -49,7 +58,9 @@ export default async function PublicProfilePage({ params }: Props) {
             </div>
           )}
 
-          <h1 className="text-2xl font-semibold text-slate-50">{displayName}</h1>
+          <h1 className="text-2xl font-semibold text-slate-50">
+            {displayName}
+          </h1>
           <p className="text-sm text-slate-400">@{user.username}</p>
 
           {user.bio && (
@@ -80,25 +91,26 @@ export default async function PublicProfilePage({ params }: Props) {
           )}
         </header>
 
-        <section className="mt-6 flex flex-col gap-3">
+        {/* Om du skulle vilja ha kvar knapparna även utan redirect kan de ligga kvar här */}
+        <div className="mt-6 flex w-full flex-col gap-3">
           {user.links.map((link) => (
             <a
               key={link.id}
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full rounded-full bg-slate-800 px-4 py-2 text-center text-sm font-medium text-slate-50 hover:bg-slate-700 transition"
+              className="block w-full rounded-lg bg-slate-800 px-4 py-3 text-center text-sm font-medium text-slate-50 hover:bg-slate-700"
             >
               {link.title}
             </a>
           ))}
 
           {user.links.length === 0 && (
-            <p className="text-center text-xs text-slate-400">
-              Den här profilen har inga publika länkar ännu.
+            <p className="text-center text-sm text-slate-400">
+              Du har inga aktiva länkar ännu.
             </p>
           )}
-        </section>
+        </div>
       </div>
     </main>
   );
