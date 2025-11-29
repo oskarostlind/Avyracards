@@ -24,12 +24,15 @@ model User {
   emailVerified     DateTime?
   verificationToken String?
 
-  phoneNumber   String?
-  contactEmail  String?
+  phoneNumber      String?
+  contactEmail     String?
+
+  /// NYTT
+  redirectEnabled  Boolean @default(true)
 
   links         Link[]
-
 }
+
 
 model Link {
   id        String   @id @default(cuid())

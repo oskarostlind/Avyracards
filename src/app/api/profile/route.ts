@@ -25,6 +25,7 @@ const updateSchema = z.object({
   phoneNumber: z.string().max(30).optional(),
   contactEmail: z.string().email().optional(),
   avatarUrl: avatarSchema.optional(),
+  redirectEnabled: z.boolean().optional(),
 });
 
 async function updateProfile(req: Request) {
@@ -64,6 +65,7 @@ async function updateProfile(req: Request) {
       phoneNumber: true,
       contactEmail: true,
       avatarUrl: true,
+      redirectEnabled: true,
     },
   });
 
@@ -90,6 +92,7 @@ export async function GET() {
       phoneNumber: true,
       contactEmail: true,
       avatarUrl: true,
+      redirectEnabled: true,
     },
   });
 

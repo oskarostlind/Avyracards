@@ -29,16 +29,14 @@ export default async function PublicProfilePage({ params }: Props) {
     );
   }
 
-  // === NYTT: redirecta till "offentlig" länk ===
-  // Vi tolkar första aktiva länken (lägst order) som din Offentliga länk.
-  const primaryLink = user.links[0];
-  if (primaryLink) {
+  // 👉 Redirect bara om redirectEnabled är true och det finns minst en aktiv länk
+  if (user.redirectEnabled && user.links.length > 0) {
+    const primaryLink = user.links[0];
     redirect(primaryLink.url);
   }
 
-  // Om inga aktiva länkar finns visas istället profilen som tidigare.
   const profileImageUrl =
-    (user as any).profileImageUrl ?? (user as any).avatarUrl ?? null;
+    (user as any).avatarUrl ?? (user as any).profileImageUrl ?? null;
   const contactEmail = (user as any).contactEmail as string | null;
   const phoneNumber = (user as any).phoneNumber as string | null;
 
@@ -91,15 +89,15 @@ export default async function PublicProfilePage({ params }: Props) {
           )}
         </header>
 
-        {/* Om du skulle vilja ha kvar knapparna även utan redirect kan de ligga kvar här */}
-        <div className="mt-6 flex w-full flex-col gap-3">
+        {/* Knappar visas alltid när redirect är av – och även när redirect är på men inga aktiva länkar finns */}
+        <section className="mt-6 flex flex-col gap-3">
           {user.links.map((link) => (
             <a
               key={link.id}
               href={link.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full rounded-lg bg-slate-800 px-4 py-3 text-center text-sm font-medium text-slate-50 hover:bg-slate-700"
+              className="block w-full rounded-lg bg-slate-800 px-4 py-3 text-center text-sm font-medium text-slate-50 transition hover:bg-slate-700"
             >
               {link.title}
             </a>
@@ -107,10 +105,10 @@ export default async function PublicProfilePage({ params }: Props) {
 
           {user.links.length === 0 && (
             <p className="text-center text-sm text-slate-400">
-              Du har inga aktiva länkar ännu.
+              Inga aktiva länkar ännu.
             </p>
           )}
-        </div>
+        </section>
       </div>
     </main>
   );

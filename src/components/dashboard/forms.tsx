@@ -1,26 +1,34 @@
 /* eslint-disable @next/next/no-img-element */
-// src/components/dashboard/forms.tsx
 "use client";
 
 import { ChangeEvent, useEffect, useState } from "react";
 
+/* ---------------- Profilformulär ---------------- */
+
 type ProfileFormProps = {
   user: {
+    id?: string;
     name?: string | null;
     bio?: string | null;
     username?: string | null;
-    avatarUrl?: string | null;
     phoneNumber?: string | null;
     contactEmail?: string | null;
+    avatarUrl?: string | null;
+    redirectEnabled?: boolean | null;
   };
 };
 
 export function ProfileForm({ user }: ProfileFormProps) {
   const [name, setName] = useState(user.name ?? "");
   const [bio, setBio] = useState(user.bio ?? "");
-  const [avatarUrl, setAvatarUrl] = useState(user.avatarUrl ?? "");
   const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber ?? "");
   const [contactEmail, setContactEmail] = useState(user.contactEmail ?? "");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    user.avatarUrl ?? null
+  );
+  const [redirectEnabled, setRedirectEnabled] = useState<boolean>(
+    user.redirectEnabled ?? true
+  );
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -33,7 +41,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
       return;
     }
 
-    // ~2 MB-limit
     if (file.size > 2 * 1024 * 1024) {
       setStatus("Bilden får max vara 2 MB.");
       return;
@@ -42,7 +49,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
     const reader = new FileReader();
     reader.onloadend = () => {
       const result = reader.result?.toString() ?? "";
-      setAvatarUrl(result); // data:image/...;base64,xxxx
+      setAvatarUrl(result);
       setStatus(null);
     };
     reader.readAsDataURL(file);
@@ -52,17 +59,24 @@ export function ProfileForm({ user }: ProfileFormProps) {
     e.preventDefault();
     setSaving(true);
     setStatus(null);
+
     try {
+      const body: Record<string, unknown> = {
+        name,
+        bio,
+        phoneNumber,
+        contactEmail,
+        redirectEnabled,
+      };
+
+      if (avatarUrl) {
+        body.avatarUrl = avatarUrl;
+      }
+
       const res = await fetch("/api/profile", {
-        method: "POST",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name,
-          bio,
-          avatarUrl: avatarUrl || null,
-          phoneNumber: phoneNumber || null,
-          contactEmail: contactEmail || null,
-        }),
+        body: JSON.stringify(body),
       });
 
       if (!res.ok) throw new Error("Failed to save profile");
@@ -104,31 +118,36 @@ export function ProfileForm({ user }: ProfileFormProps) {
         />
       </div>
 
-      {/* Profilbild – filuppladdning */}
+      {/* Profilbild */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-slate-200">
           Profilbild
         </label>
 
-        {avatarUrl && (
-          <div className="mb-2 flex items-center gap-3">
-            <img
-              src={avatarUrl}
-              alt="Nuvarande profilbild"
-              className="h-12 w-12 rounded-full object-cover border border-slate-700"
-            />
-            <span className="text-[11px] text-slate-400">
-              Nuvarande bild (sparas som data-URL i profilen).
-            </span>
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-slate-700 bg-slate-800 text-[11px] text-slate-400">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Profilbild"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span>Ingen bild</span>
+            )}
           </div>
-        )}
 
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleAvatarChange}
-          className="w-full text-xs text-slate-200 file:mr-3 file:rounded-md file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-slate-900 hover:file:bg-white"
-        />
+          <label className="inline-flex cursor-pointer items-center rounded-md border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-100 hover:border-violet-400">
+            Välj fil
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleAvatarChange}
+            />
+          </label>
+        </div>
+
         <p className="text-[11px] text-slate-400">
           Bilden konverteras till en data-URL och sparas i din profil. Funkar i
           både dashboard & publik vy utan extra filserver.
@@ -153,7 +172,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </p>
       </div>
 
-      {/* Kontakt-mail för profil */}
+      {/* Kontakt-mail */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-slate-200">
           Kontakt-e-post
@@ -171,6 +190,29 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </p>
       </div>
 
+      {/* Redirect-toggle */}
+      <div className="flex items-start gap-2 rounded-md border border-slate-800 bg-slate-900/60 px-3 py-2">
+        <input
+          id="redirectEnabled"
+          type="checkbox"
+          className="mt-[2px] h-3.5 w-3.5 rounded border-slate-600 bg-slate-900 text-violet-500"
+          checked={redirectEnabled}
+          onChange={(e) => setRedirectEnabled(e.target.checked)}
+        />
+        <label
+          htmlFor="redirectEnabled"
+          className="text-[11px] leading-snug text-slate-300"
+        >
+          <span className="font-semibold">
+            Aktivera automatisk redirect till offentlig länk
+          </span>{" "}
+          <br />
+          När detta är på kommer <code>/u/username</code> att redirecta direkt
+          till din valda Offentliga länk (första aktiva i listan). När det är av
+          visas istället din profilsida med alla knappar.
+        </label>
+      </div>
+
       <button
         type="submit"
         disabled={saving}
@@ -180,7 +222,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
       </button>
 
       {status && (
-        <p className="text-xs text-slate-400 mt-2" aria-live="polite">
+        <p className="mt-2 text-xs text-slate-400" aria-live="polite">
           {status}
         </p>
       )}
@@ -188,7 +230,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
   );
 }
 
-/* ---------------- Länkar (befintlig del, oförändrad) ---------------- */
+/* ---------------- Länkar-delen (oförändrad från din senaste version) ---------------- */
 
 type Link = {
   id: string;
@@ -200,6 +242,13 @@ type Link = {
 
 type LinksFormProps = {
   publicUrl: string;
+};
+
+type ApiLink = {
+  id: string;
+  label: string;
+  url: string;
+  isVisible: boolean;
 };
 
 export function LinksForm({ publicUrl }: LinksFormProps) {
@@ -215,8 +264,18 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
       try {
         const res = await fetch("/api/links");
         if (!res.ok) throw new Error("Failed to load links");
-        const data: Link[] = await res.json();
-        setLinks(data.sort((a, b) => a.order - b.order));
+
+        const data = (await res.json()) as ApiLink[];
+
+        const mapped: Link[] = data.map((l, index) => ({
+          id: l.id,
+          title: l.label,
+          url: l.url,
+          order: index,
+          isActive: l.isVisible,
+        }));
+
+        setLinks(mapped);
       } catch (err) {
         console.error(err);
         setStatus("⚠ Kunde inte ladda länkar.");
@@ -244,10 +303,17 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
 
       if (!res.ok) throw new Error("Failed to create link");
 
-      const created: Link = await res.json();
-      setLinks((prev) =>
-        [...prev, created].sort((a, b) => a.order - b.order)
-      );
+      const createdApi = (await res.json()) as ApiLink;
+
+      const created: Link = {
+        id: createdApi.id,
+        title: createdApi.label,
+        url: createdApi.url,
+        order: links.length,
+        isActive: createdApi.isVisible,
+      };
+
+      setLinks((prev) => [...prev, created]);
       setTitle("");
       setUrl("");
       setStatus("✔ Länk tillagd.");
@@ -279,9 +345,9 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
   async function toggleActive(id: string, isActive: boolean) {
     try {
       const res = await fetch(`/api/links/${id}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !isActive }),
+        body: JSON.stringify({ isVisible: !isActive }),
       });
 
       if (!res.ok) throw new Error("Failed to update link");
@@ -295,12 +361,47 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
     }
   }
 
+  async function makePrimary(id: string) {
+    setSaving(true);
+    setStatus(null);
+
+    try {
+      const current = [...links];
+      const index = current.findIndex((l) => l.id === id);
+      if (index === -1) return;
+
+      const [selected] = current.splice(index, 1);
+      current.unshift(selected);
+
+      const reordered = current.map((l, idx) => ({ ...l, order: idx }));
+      setLinks(reordered);
+
+      await fetch("/api/links/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ order: reordered.map((l) => l.id) }),
+      });
+
+      setStatus(
+        "✔ Offentlig länk uppdaterad. Första aktiva länken används på /u/username."
+      );
+    } catch (err) {
+      console.error(err);
+      setStatus("⚠ Kunde inte uppdatera offentlig länk.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) {
     return <p className="text-xs text-slate-400">Laddar länkar...</p>;
   }
 
+  const primaryId = links[0]?.id;
+
   return (
     <div className="space-y-4">
+      {/* formulär för ny länk */}
       <form onSubmit={handleAddLink} className="space-y-3">
         <div className="space-y-2">
           <label className="block text-xs font-medium text-slate-200">
@@ -331,7 +432,7 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
           disabled={saving}
           className="px-4 py-2 rounded-md bg-slate-50 text-slate-900 text-xs font-medium disabled:opacity-60"
         >
-          {saving ? "Lägger till." : "Lägg till länk"}
+          {saving ? "Lägger till..." : "Lägg till länk"}
         </button>
       </form>
 
@@ -346,6 +447,13 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
           Din publika profil:{" "}
           <span className="font-mono text-slate-200">{publicUrl}</span>
         </p>
+        <p className="text-[11px] text-slate-500">
+          Den <span className="font-semibold">första aktiva</span> länken i
+          listan används som offentlig redirect för{" "}
+          <code>/u/username</code>. Använd knappen{" "}
+          <span className="font-semibold">Offentlig</span> nedan för att flytta
+          upp rätt länk.
+        </p>
       </div>
 
       <ul className="space-y-2">
@@ -357,23 +465,35 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
             <div>
               <p className="text-xs font-medium text-slate-50">
                 {link.title}
+                {link.id === primaryId && (
+                  <span className="ml-2 rounded-full bg-violet-600/20 px-2 py-[1px] text-[10px] font-semibold text-violet-300">
+                    Offentlig
+                  </span>
+                )}
               </p>
-              <p className="text-[11px] text-slate-400 truncate max-w-[220px]">
+              <p className="max-w-[220px] truncate text-[11px] text-slate-400">
                 {link.url}
               </p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => toggleActive(link.id, link.isActive)}
-                className="text-[11px] px-2 py-1 rounded-md border border-slate-700"
+                onClick={() => makePrimary(link.id)}
+                className="rounded-md border border-violet-500 px-2 py-1 text-[11px] text-violet-300"
+              >
+                Offentlig
+              </button>
+              <button
+                type="button"
+                onClick={() => toggleActive(link.id, !!link.isActive)}
+                className="rounded-md border border-slate-700 px-2 py-1 text-[11px]"
               >
                 {link.isActive ? "Aktiv" : "Inaktiv"}
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(link.id)}
-                className="text-[11px] px-2 py-1 rounded-md border border-red-500 text-red-400"
+                className="rounded-md border border-red-500 px-2 py-1 text-[11px] text-red-400"
               >
                 Ta bort
               </button>
