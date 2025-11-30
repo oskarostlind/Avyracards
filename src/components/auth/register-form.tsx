@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { z } from "zod";
 
@@ -8,11 +8,26 @@ const formSchema = z.object({
   username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
   email: z.string().email(),
   password: z.string().min(6).max(128),
+  profileMode: z.enum(["social", "business"]),
 });
+
+type FormState = z.infer<typeof formSchema>;
 
 export function RegisterForm() {
   const router = useRouter();
-  const [form, setForm] = useState({ username: "", email: "", password: "" });
+  const searchParams = useSearchParams();
+
+  const modeParam = searchParams.get("mode");
+  const initialProfileMode: FormState["profileMode"] =
+    modeParam === "business" ? "business" : "social";
+
+  const [form, setForm] = useState<FormState>({
+    username: "",
+    email: "",
+    password: "",
+    profileMode: initialProfileMode,
+  });
+
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +37,7 @@ export function RegisterForm() {
 
     const parsed = formSchema.safeParse(form);
     if (!parsed.success) {
-      setError("Kontrollera användarnamn, e-post och lösenord.");
+      setError("Kontrollera användarnamn, e-post, lösenord och profiltyp.");
       return;
     }
 
@@ -64,7 +79,83 @@ export function RegisterForm() {
         </p>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5">
+        {/* Profiltyp / Social vs Business */}
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-slate-200">Profiltyp</p>
+          <p className="text-xs text-slate-400">
+            Välj hur din offentliga profil ska se ut. Du kan ändra detta senare
+            i din dashboard.
+          </p>
+
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {/* Social */}
+            <button
+              type="button"
+              onClick={() =>
+                setForm((prev) => ({ ...prev, profileMode: "social" }))
+              }
+              className={`flex h-full flex-col justify-between rounded-2xl border p-3 text-left text-xs transition ${
+                form.profileMode === "social"
+                  ? "border-sky-500 bg-sky-500/10 ring-1 ring-sky-500/60"
+                  : "border-slate-700 bg-slate-900 hover:border-sky-500/60"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-sky-400" />
+                  <span className="font-semibold text-slate-100">Social</span>
+                </span>
+                <span
+                  className={`h-3 w-3 rounded-full border ${
+                    form.profileMode === "social"
+                      ? "border-sky-400 bg-sky-400"
+                      : "border-slate-500"
+                  }`}
+                />
+              </div>
+              <p className="mt-2 text-[11px] text-slate-300">
+                För kreatörer, influencers och profiler som vill samla sociala
+                medier och länkar på ett ställe.
+              </p>
+            </button>
+
+            {/* Business */}
+            <button
+              type="button"
+              onClick={() =>
+                setForm((prev) => ({ ...prev, profileMode: "business" }))
+              }
+              className={`flex h-full flex-col justify-between rounded-2xl border p-3 text-left text-xs transition ${
+                form.profileMode === "business"
+                  ? "border-emerald-500 bg-emerald-500/10 ring-1 ring-emerald-500/60"
+                  : "border-slate-700 bg-slate-900 hover:border-emerald-500/60"
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                  <span className="font-semibold text-slate-100">
+                    Business
+                  </span>
+                </span>
+                <span
+                  className={`h-3 w-3 rounded-full border ${
+                    form.profileMode === "business"
+                      ? "border-emerald-400 bg-emerald-400"
+                      : "border-slate-500"
+                  }`}
+                />
+              </div>
+              <p className="mt-2 text-[11px] text-slate-300">
+                För yrkespersoner, säljare och företag som vill ha ett modernt
+                digitalt visitkort med tydlig kontaktvy.
+              </p>
+            </button>
+          </div>
+        </div>
+
+        {/* Användarnamn */}
         <div className="space-y-1">
           <label
             className="block text-sm font-medium text-slate-200"
@@ -86,6 +177,7 @@ export function RegisterForm() {
           />
         </div>
 
+        {/* E-post */}
         <div className="space-y-1">
           <label
             className="block text-sm font-medium text-slate-200"
@@ -107,6 +199,7 @@ export function RegisterForm() {
           />
         </div>
 
+        {/* Lösenord */}
         <div className="space-y-1">
           <label
             className="block text-sm font-medium text-slate-200"
@@ -129,9 +222,7 @@ export function RegisterForm() {
         </div>
       </div>
 
-      {error && (
-        <p className="mt-4 text-sm text-rose-400">{error}</p>
-      )}
+      {error && <p className="mt-4 text-sm text-rose-400">{error}</p>}
 
       <button
         type="submit"
