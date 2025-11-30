@@ -79,10 +79,7 @@ export default function HomePage() {
             {/* Fallback / overlay-text om video ej laddas */}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
             <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-200">
-              <span>Exempel på SocialCard-profil</span>
-              <span className="rounded-full bg-slate-950/70 px-3 py-1 text-[11px] text-slate-300">
-                Byt till egen demo: <code>/public/media/socialcard-demo.mp4</code>
-              </span>
+              
             </div>
           </div>
         </section>
