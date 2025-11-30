@@ -39,13 +39,13 @@ export async function Navbar() {
                 </div>
                 <nav className="space-y-1">
                   <Link
-                    href="/#socialt"
+                    href="/social"
                     className="block rounded-lg px-3 py-1.5 text-slate-100 hover:bg-slate-800/80"
                   >
                     Socialt
                   </Link>
                   <Link
-                    href="/#business"
+                    href="/business"
                     className="block rounded-lg px-3 py-1.5 text-slate-100 hover:bg-slate-800/80"
                   >
                     Business
@@ -120,7 +120,7 @@ export async function Navbar() {
               <ul className="flex items-center gap-1">
                 <li>
                   <Link
-                    href="/#socialt"
+                    href="/social"
                     className="rounded-full bg-slate-800 px-3 py-1 text-[11px] font-medium text-slate-50 shadow-sm hover:bg-slate-700"
                   >
                     Socialt
@@ -128,7 +128,7 @@ export async function Navbar() {
                 </li>
                 <li>
                   <Link
-                    href="/#business"
+                    href="/business"
                     className="rounded-full px-3 py-1 text-[11px] font-medium text-slate-200 hover:bg-slate-800/80 hover:text-slate-50"
                   >
                     Business
