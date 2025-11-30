@@ -148,7 +148,7 @@ export default function HomePage() {
             </div>
             <h2 className="text-lg font-semibold">För kreatörer & sociala medier</h2>
             <p className="text-sm text-slate-300">
-              Samla TikTok, Instagram, YouTube, Twitch, OnlyFans, merch och
+              Samla TikTok, Instagram, YouTube, Twitch, merch och
               övriga länkar på ett ställe. Perfekt när du träffar folk IRL och
               vill att de ska hitta rätt direkt.
             </p>

@@ -25,7 +25,7 @@ export default function SocialLandingPage() {
               </h1>
               <p className="max-w-xl text-sm text-slate-300 sm:text-base">
                 En länk för alla dina kanaler – TikTok, Instagram, YouTube,
-                Twitch, OnlyFans, merch, bokningar och mer. Koppla den till ett
+                Twitch, merch, bokningar och mer. Koppla den till ett
                 NFC-kort för en riktig “wow”-känsla IRL.
               </p>
             </div>
