@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-
 export default function HomePage() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
@@ -40,7 +39,7 @@ export default function HomePage() {
                 Skapa konto gratis
               </Link>
               <Link
-                href="#demo"
+                href="#how-it-works"
                 className="text-sm text-slate-300 underline-offset-4 hover:underline"
               >
                 Se hur det funkar
@@ -79,7 +78,7 @@ export default function HomePage() {
             {/* Fallback / overlay-text om video ej laddas */}
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
             <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-200">
-              
+              {/* Tom overlay just nu – kan fyllas med “Demo”/“Byt video i /public/media” om du vill */}
             </div>
           </div>
         </section>
@@ -158,6 +157,12 @@ export default function HomePage() {
               <li>• Byt ordning på länkar när du vill</li>
               <li>• Olika teman för att matcha din stil</li>
             </ul>
+            <Link
+              href="/social"
+              className="mt-4 inline-flex text-xs font-medium text-sky-300 underline-offset-4 hover:underline"
+            >
+              Läs mer om SocialCard Social →
+            </Link>
           </div>
 
           <div className="space-y-3 rounded-3xl border border-slate-800 bg-slate-900/40 p-6">
@@ -176,6 +181,12 @@ export default function HomePage() {
               <li>• Uppdatera info utan att trycka nya kort</li>
               <li>• Enhetligt utseende för hela teamet</li>
             </ul>
+            <Link
+              href="/business"
+              className="mt-4 inline-flex text-xs font-medium text-amber-300 underline-offset-4 hover:underline"
+            >
+              Läs mer om SocialCard Business →
+            </Link>
           </div>
         </section>
 
@@ -251,9 +262,10 @@ export default function HomePage() {
                 </span>
               </summary>
               <p className="mt-2 text-xs text-slate-300">
-                Ja, du kan anpassa din länkprofil efter dina behov. I nästa steg
-                kommer vi även ha tydligare vyer för “Socialt” och “Business”
-                så att du kan rikta mot rätt målgrupp.
+                Ja, du kan anpassa din länkprofil efter dina behov. Du kan när
+                som helst växla mellan lägena “Socialt” och “Business” i din
+                dashboard, och din publika profil på <code>/u/&lt;ditt-namn&gt;</code>{" "}
+                uppdateras automatiskt.
               </p>
             </details>
           </div>
