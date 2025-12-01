@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+// Tillåter en riktig bild-URL ELLER data-URL, men vi hanterar null separat
 const avatarSchema = z
   .string()
   .min(1)
@@ -15,19 +16,29 @@ const avatarSchema = z
       value.startsWith("http://") ||
       value.startsWith("https://"),
     {
-      message: "Ogiltig bild-URL eller data-URL.",
+      message: "avatarUrl måste vara en giltig URL eller data-URL.",
     }
   );
 
 const updateSchema = z.object({
-  name: z.string().min(1).max(100).optional(),
+  name: z.string().max(100).optional(),
   bio: z.string().max(1000).optional(),
   username: z.string().min(3).max(50).optional(),
-  phoneNumber: z.string().max(50).optional(),
-  contactEmail: z.string().email().optional(),
-  avatarUrl: avatarSchema.optional(),
+
+  // 👇 Viktigt: vi tillåter null
+  phoneNumber: z.string().max(30).nullable().optional(),
+  contactEmail: z.string().email().nullable().optional(),
+
+  // 👇 avatarUrl kan vara sträng eller null
+  avatarUrl: avatarSchema.or(z.literal(null)).optional(),
+
   redirectEnabled: z.boolean().optional(),
-  // 👇 Viktigt: matchar din Prisma-enum med VERSALER
+
+  // 👇 lägg tillbaka theme/font så de kan sparas
+  theme: z.string().max(50).optional(),
+  font: z.string().max(50).optional(),
+
+  // 👇 profileMode matchar din Prisma-enum (VERSALER)
   profileMode: z.enum(["SOCIAL", "BUSINESS"]).optional(),
 });
 
@@ -54,15 +65,28 @@ async function updateProfile(req: Request) {
   const parsed = updateSchema.safeParse(json);
 
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: "Ogiltiga fält." },
-      { status: 400 }
-    );
+    // console.log(parsed.error.format()); // bra att ha om du vill debugga mer
+    return NextResponse.json({ error: "Ogiltiga fält." }, { status: 400 });
   }
+
+  const data = parsed.data;
 
   const updated = await prisma.user.update({
     where: { id: session.user.id },
-    data: parsed.data,
+    data: {
+      name: data.name,
+      bio: data.bio,
+      username: data.username,
+      phoneNumber: data.phoneNumber ?? null,
+      contactEmail: data.contactEmail ?? null,
+      avatarUrl: data.avatarUrl ?? null,
+      redirectEnabled: data.redirectEnabled,
+
+      theme: data.theme,
+      font: data.font,
+
+      profileMode: data.profileMode,
+    },
     select: {
       id: true,
       name: true,
@@ -72,7 +96,9 @@ async function updateProfile(req: Request) {
       contactEmail: true,
       avatarUrl: true,
       redirectEnabled: true,
-      profileMode: true, // 👈 NYTT
+      theme: true,
+      font: true,
+      profileMode: true,
     },
   });
 
@@ -100,7 +126,9 @@ export async function GET() {
       contactEmail: true,
       avatarUrl: true,
       redirectEnabled: true,
-      profileMode: true, // 👈 NYTT
+      theme: true,
+      font: true,
+      profileMode: true,
     },
   });
 

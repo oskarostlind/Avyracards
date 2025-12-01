@@ -12,6 +12,8 @@ type ProfileLink = {
   icon?: string | null;
 };
 
+type ProfileMode = "SOCIAL" | "BUSINESS";
+
 interface ProfileSettingsFormProps {
   username: string;
   bio?: string | null;
@@ -20,6 +22,7 @@ interface ProfileSettingsFormProps {
   profileImage?: string | null;
   phoneNumber?: string | null;
   contactEmail?: string | null;
+  profileMode?: ProfileMode | null;
   links?: ProfileLink[];
 }
 
@@ -31,6 +34,7 @@ export function ProfileSettingsForm({
   profileImage: initialProfileImage,
   phoneNumber: initialPhoneNumber,
   contactEmail: initialContactEmail,
+  profileMode: initialProfileMode,
   links: initialLinks,
 }: ProfileSettingsFormProps) {
   const [bio, setBio] = useState(initialBio ?? "");
@@ -40,6 +44,9 @@ export function ProfileSettingsForm({
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber ?? "");
   const [contactEmail, setContactEmail] = useState(initialContactEmail ?? "");
   const [links] = useState<ProfileLink[]>(initialLinks ?? []);
+  const [profileMode, setProfileMode] = useState<ProfileMode>(
+    initialProfileMode ?? "SOCIAL"
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -70,6 +77,7 @@ export function ProfileSettingsForm({
           avatarUrl: profileImage || null,
           phoneNumber: phoneNumber || null,
           contactEmail: contactEmail || null,
+          profileMode, // 👈 skickas till API:t
         }),
       });
 
@@ -103,6 +111,46 @@ export function ProfileSettingsForm({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5" style={fontStyle}>
+          {/* Profil-läge */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-slate-200">
+              Profil-läge
+            </label>
+            <p className="text-xs text-slate-500 mb-1">
+              Välj om din offentliga profil ska fokusera på sociala medier eller
+              professionell närvaro.
+            </p>
+            <div className="inline-flex rounded-2xl border border-slate-700 bg-slate-950/80 p-1 text-xs">
+              <button
+                type="button"
+                onClick={() => setProfileMode("SOCIAL")}
+                className={`flex-1 rounded-2xl px-3 py-1.5 font-medium transition ${
+                  profileMode === "SOCIAL"
+                    ? "bg-purple-500 text-white shadow-md shadow-purple-500/40"
+                    : "text-slate-300 hover:bg-slate-900/80"
+                }`}
+              >
+                Social profil
+              </button>
+              <button
+                type="button"
+                onClick={() => setProfileMode("BUSINESS")}
+                className={`flex-1 rounded-2xl px-3 py-1.5 font-medium transition ${
+                  profileMode === "BUSINESS"
+                    ? "bg-purple-500 text-white shadow-md shadow-purple-500/40"
+                    : "text-slate-300 hover:bg-slate-900/80"
+                }`}
+              >
+                Business profil
+              </button>
+            </div>
+            <p className="text-xs text-slate-500">
+              {profileMode === "SOCIAL"
+                ? "Fokus på länkar, sociala medier och kreatörsprofil."
+                : "Fokus på titel, kontaktuppgifter och ett mer professionellt visitkorts-upplägg."}
+            </p>
+          </div>
+
           {/* Kort presentation */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-slate-200">
@@ -242,6 +290,7 @@ export function ProfileSettingsForm({
           profileImage={profileImage}
           theme={template}
           links={links}
+          profileMode={profileMode}
         />
       </div>
     </div>

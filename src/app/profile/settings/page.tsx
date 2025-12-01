@@ -19,6 +19,9 @@ export default async function ProfileSettingsPage() {
       theme: true,
       font: true,
       avatarUrl: true,
+      phoneNumber: true,
+      contactEmail: true,
+      profileMode: true,
       links: {
         where: { isActive: true },
         orderBy: { order: "asc" },
@@ -26,10 +29,10 @@ export default async function ProfileSettingsPage() {
           id: true,
           title: true,
           url: true,
-          icon: true
-        }
-      }
-    }
+          icon: true,
+        },
+      },
+    },
   });
 
   if (!user) {
@@ -43,6 +46,9 @@ export default async function ProfileSettingsPage() {
       template={(user.theme as ThemeName | null) ?? "default"}
       fontFamily={user.font}
       profileImage={user.avatarUrl}
+      phoneNumber={user.phoneNumber}
+      contactEmail={user.contactEmail}
+      profileMode={user.profileMode}
       links={user.links}
     />
   );

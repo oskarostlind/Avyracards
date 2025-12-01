@@ -16,6 +16,7 @@ interface ProfilePreviewProps {
   profileImage?: string;
   theme: ThemeName;
   links: ProfilePreviewLink[];
+  profileMode?: "SOCIAL" | "BUSINESS";
 }
 
 export function ProfilePreview({
@@ -24,8 +25,14 @@ export function ProfilePreview({
   profileImage,
   theme,
   links,
+  profileMode,
 }: ProfilePreviewProps) {
   const tokens = getTheme(theme);
+
+  const bioPlaceholder =
+    profileMode === "BUSINESS"
+      ? "Berätta kort om din roll och hur du hjälper kunder och kontakter."
+      : "Skriv en kort presentation om dig själv i formuläret till vänster.";
 
   return (
     <div
@@ -54,7 +61,7 @@ export function ProfilePreview({
             {username || "Ditt namn"}
           </h2>
           <p className="mt-1 max-w-xs text-xs text-slate-300">
-            {bio || "Skriv en kort presentation om dig själv i formuläret till vänster."}
+            {bio || bioPlaceholder}
           </p>
         </div>
       </div>
