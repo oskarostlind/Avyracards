@@ -1,8 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import type { User, Link as LinkModel } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { getTheme } from "@/utils/theme";
 
 type PageProps = {
   params: { username: string };
@@ -14,10 +16,8 @@ export const runtime = "nodejs";
 export const revalidate = 0;
 
 export default async function PublicProfilePage({ params }: PageProps) {
-  const username = params.username.toLowerCase();
-
   const user = await prisma.user.findUnique({
-    where: { username },
+    where: { username: params.username },
     include: {
       links: {
         where: { isActive: true },
@@ -30,231 +30,210 @@ export default async function PublicProfilePage({ params }: PageProps) {
     notFound();
   }
 
-  // 👉 Redirect endast om redirectEnabled är PÅ OCH det finns minst en aktiv länk
+  // Behåll befintligt beteende: om redirect är på och det finns aktiv länk
   if (user.redirectEnabled && user.links.length > 0) {
     const primary = user.links[0];
     const target = normalizeUrl(primary.url);
     redirect(target);
   }
 
-  const profileMode = user.profileMode ?? "SOCIAL";
+  // Välj layout baserat på profileMode
+  if (user.profileMode === "BUSINESS") {
+    return <BusinessProfile user={user} />;
+  }
+
+  // Default: social layout
+  return <SocialProfile user={user} />;
+}
+
+// ---------- SOCIAL LAYOUT ----------
+
+function SocialProfile({ user }: { user: UserWithLinks }) {
+  const tokens = getTheme(user.theme);
+  const displayName = user.name || user.username;
+  const bio =
+    user.bio ||
+    "Skriv en kort presentation av dig själv i dina profilinställningar.";
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto flex max-w-xl flex-col items-center px-4 pb-16 pt-10">
-        {profileMode === "BUSINESS" ? (
-          <BusinessProfile user={user} />
-        ) : (
-          <SocialProfile user={user} />
-        )}
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-4 py-8">
+        <section
+          className={`w-full max-w-md rounded-[32px] border border-white/10 p-6 shadow-2xl ${tokens.card}`}
+        >
+          <div className="flex flex-col items-center gap-4">
+            {/* Avatar */}
+            <div className="relative h-24 w-24 overflow-hidden rounded-full border border-white/20 bg-black/40">
+              {user.avatarUrl ? (
+                <Image
+                  src={user.avatarUrl}
+                  alt={`${displayName}'s avatar`}
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-3xl font-semibold">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </div>
 
-        <div className="mt-10 text-center text-[11px] text-slate-500">
-          Skapat med{" "}
-            <Link
-              href="/"
-              className="font-medium text-emerald-300 underline-offset-4 hover:underline"
-            >
-              SocialCard
-            </Link>
-        </div>
+            {/* Namn + bio */}
+            <div className="text-center">
+              <h1 className="text-xl font-semibold">{displayName}</h1>
+              <p className="mt-1 text-sm text-slate-200">{bio}</p>
+            </div>
+          </div>
+
+          {/* Länkar */}
+          <div className="mt-6 flex flex-col gap-3">
+            {user.links.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-white/20 px-4 py-3 text-center text-xs text-slate-300">
+                Inga länkar är aktiva ännu. Lägg till dem i din dashboard.
+              </div>
+            ) : (
+              user.links.map((link) => (
+                <Link
+                  key={link.id}
+                  href={normalizeUrl(link.url)}
+                  className={`flex items-center justify-between rounded-full px-4 py-2 text-sm font-medium shadow-md transition hover:scale-[1.01] ${tokens.card}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <span className="flex items-center gap-2">
+                    <span>{getSocialIcon(link.url || link.title)}</span>
+                    <span>{link.title || link.url}</span>
+                  </span>
+                  <span className="text-xs text-slate-200/80">Öppna</span>
+                </Link>
+              ))
+            )}
+          </div>
+        </section>
       </div>
     </main>
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                  SOCIAL                                    */
-/* -------------------------------------------------------------------------- */
-
-function SocialProfile({ user }: { user: UserWithLinks }) {
-  return (
-    <div className="w-full max-w-md">
-      {/* Header */}
-      <div className="flex flex-col items-center gap-4 rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 px-6 py-8 shadow-xl shadow-slate-950/80">
-        {user.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={user.avatarUrl}
-            alt={user.name ?? user.username}
-            className="h-20 w-20 rounded-full border border-slate-700 object-cover shadow-lg"
-          />
-        ) : (
-          <div className="flex h-20 w-20 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-2xl font-semibold text-slate-200">
-            {user.username.charAt(0).toUpperCase()}
-          </div>
-        )}
-
-        <div className="space-y-1 text-center">
-          <h1 className="text-xl font-semibold text-slate-50">
-            {user.name ?? user.username}
-          </h1>
-          <p className="text-xs text-slate-400">@{user.username}</p>
-          {user.bio && (
-            <p className="mt-2 max-w-sm text-xs text-slate-300">{user.bio}</p>
-          )}
-        </div>
-
-        <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-3 py-1 text-[11px] text-sky-300">
-          <span className="h-2 w-2 rounded-full bg-sky-400" />
-          Social profil
-        </div>
-      </div>
-
-      {/* Länkar – visas när redirect är AV, dvs vi är här */}
-      <div className="mt-6 space-y-3">
-        {user.links.length === 0 && (
-          <p className="text-center text-xs text-slate-500">
-            Ägaren till den här profilen har ännu inte lagt till några offentliga
-            länkar.
-          </p>
-        )}
-
-        {user.links.map((link) => (
-          <a
-            key={link.id}
-            href={normalizeUrl(link.url)}
-            target="_blank"
-            rel="noreferrer"
-            className="group flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-50 transition hover:border-sky-500/70 hover:bg-slate-900/80"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-xs text-slate-200 group-hover:bg-sky-500 group-hover:text-slate-950">
-              {getSocialIcon(link.icon ?? link.url)}
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">{link.title}</p>
-              <p className="truncate text-[11px] text-slate-400">
-                {shortenUrl(link.url)}
-              </p>
-            </div>
-          </a>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* -------------------------------------------------------------------------- */
-/*                                 BUSINESS                                   */
-/* -------------------------------------------------------------------------- */
+// ---------- BUSINESS LAYOUT ----------
 
 function BusinessProfile({ user }: { user: UserWithLinks }) {
-  const hasContactBlock = user.phoneNumber || user.contactEmail;
+  const tokens = getTheme(user.theme);
+  const displayName = user.name || user.username;
+  const headline =
+    user.bio ||
+    "Skriv en kort beskrivning av din roll och hur du hjälper kunder, kollegor eller samarbetspartners.";
+
+  const phone = user.phoneNumber;
+  const email = user.contactEmail || user.email;
+
+  // Försök hitta en LinkedIn-länk
+  const linkedInLink = user.links.find((link) =>
+    (link.url || "").toLowerCase().includes("linkedin")
+  );
 
   return (
-    <div className="w-full max-w-md">
-      {/* Header */}
-      <div className="rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 px-6 py-7 shadow-xl shadow-slate-950/80">
-        <div className="flex items-start gap-4">
-          {user.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={user.avatarUrl}
-              alt={user.name ?? user.username}
-              className="h-16 w-16 rounded-full border border-slate-700 object-cover shadow-lg"
-            />
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-xl font-semibold text-slate-200">
-              {user.username.charAt(0).toUpperCase()}
+    <main className="min-h-screen bg-slate-950 text-slate-50">
+      <div className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-4 py-8">
+        <section
+          className={`w-full max-w-xl rounded-[32px] border border-white/10 p-6 shadow-2xl ${tokens.card}`}
+        >
+          {/* Övre del: avatar + namn + headline */}
+          <div className="flex flex-col items-center gap-4 border-b border-white/10 pb-5 text-center sm:flex-row sm:items-center sm:text-left">
+            <div className="flex w-full justify-center sm:w-auto">
+              <div className="relative h-24 w-24 overflow-hidden rounded-full border border-purple-400/60 bg-black/40">
+                {user.avatarUrl ? (
+                  <Image
+                    src={user.avatarUrl}
+                    alt={`${displayName}'s avatar`}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-3xl font-semibold">
+                    {displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <h1 className="text-2xl font-semibold">{displayName}</h1>
+              <p className="text-sm text-slate-200">{headline}</p>
+            </div>
+          </div>
+
+          {/* Kontaktblock */}
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            {phone && (
+              <Link
+                href={`tel:${phone.replace(/\s+/g, "")}`}
+                className="flex items-center justify-center gap-2 rounded-2xl border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-sm font-medium text-purple-100 shadow-sm hover:bg-purple-500/20"
+              >
+                <span>📞</span>
+                <span>Ring</span>
+              </Link>
+            )}
+            {email && (
+              <Link
+                href={`mailto:${email}`}
+                className="flex items-center justify-center gap-2 rounded-2xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-100 shadow-sm hover:bg-sky-500/20"
+              >
+                <span>✉️</span>
+                <span>Maila</span>
+              </Link>
+            )}
+            {linkedInLink && (
+              <Link
+                href={normalizeUrl(linkedInLink.url)}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-500/40 bg-slate-500/10 px-3 py-2 text-sm font-medium text-slate-100 shadow-sm hover:bg-slate-500/20 sm:col-span-2"
+              >
+                <span>in</span>
+                <span>Visa LinkedIn-profil</span>
+              </Link>
+            )}
+          </div>
+
+          {/* Länkar-sektion */}
+          {user.links.length > 0 && (
+            <div className="mt-6 space-y-2">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
+                Länkar
+              </h2>
+              <div className="flex flex-col gap-2">
+                {user.links.map((link) => (
+                  <Link
+                    key={link.id}
+                    href={normalizeUrl(link.url)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-900/70"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>{getBusinessIcon(link.url || link.title)}</span>
+                      <span>{link.title || link.url}</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400">Öppna</span>
+                  </Link>
+                ))}
+              </div>
             </div>
           )}
-
-          <div className="flex-1 space-y-1">
-            <h1 className="text-lg font-semibold text-slate-50">
-              {user.name ?? user.username}
-            </h1>
-            <p className="text-xs text-slate-300">
-              {user.bio ?? "Digitalt visitkort via SocialCard"}
-            </p>
-            <p className="text-[11px] text-slate-500">@{user.username}</p>
-          </div>
-        </div>
-
-        {hasContactBlock && (
-          <div className="mt-5 grid gap-3 sm:grid-cols-2">
-            {user.phoneNumber && (
-              <a
-                href={`tel:${user.phoneNumber}`}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500/15 px-3 py-2 text-xs font-medium text-emerald-200 ring-1 ring-emerald-500/40 transition hover:bg-emerald-500/25"
-              >
-                <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Ring
-              </a>
-            )}
-            {user.contactEmail && (
-              <a
-                href={`mailto:${user.contactEmail}`}
-                className="inline-flex items-center justify-center gap-2 rounded-2xl bg-slate-900 px-3 py-2 text-xs font-medium text-slate-100 ring-1 ring-slate-700 transition hover:bg-slate-800"
-              >
-                ✉️ Maila
-              </a>
-            )}
-          </div>
-        )}
-
-        <div className="mt-4 inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-3 py-1 text-[11px] text-emerald-300">
-          <span className="h-2 w-2 rounded-full bg-emerald-400" />
-          Business-profil
-        </div>
+        </section>
       </div>
-
-      {/* Länkar & resurser */}
-      <div className="mt-6 space-y-3">
-        {user.links.length > 0 && (
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Länkar & resurser
-          </p>
-        )}
-
-        {user.links.length === 0 && (
-          <p className="text-xs text-slate-500">
-            Inga publika länkar ännu. Ägaren av profilen kan lägga till relevanta
-            länkar via sin dashboard (LinkedIn, hemsida, bokningslänk osv).
-          </p>
-        )}
-
-        {user.links.map((link) => (
-          <a
-            key={link.id}
-            href={normalizeUrl(link.url)}
-            target="_blank"
-            rel="noreferrer"
-            className="group flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-50 transition hover:border-emerald-500/70 hover:bg-slate-900/80"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-xs text-slate-200 group-hover:bg-emerald-500 group-hover:text-slate-950">
-                {getBusinessIcon(link.icon ?? link.url)}
-              </div>
-              <div>
-                <p className="text-sm font-medium">{link.title}</p>
-                <p className="truncate text-[11px] text-slate-400">
-                  {shortenUrl(link.url)}
-                </p>
-              </div>
-            </div>
-          </a>
-        ))}
-      </div>
-    </div>
+    </main>
   );
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                HELPERS                                     */
-/* -------------------------------------------------------------------------- */
+// ---------- HELPERS ----------
 
 function normalizeUrl(url: string): string {
-  if (!url) return "#";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  return `https://${url}`;
-}
-
-function shortenUrl(url: string): string {
-  try {
-    const u = new URL(normalizeUrl(url));
-    return u.host.replace("www.", "") + u.pathname.replace(/\/$/, "");
-  } catch {
-    return url;
-  }
+  if (!url) return "/";
+  const trimmed = url.trim();
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
 }
 
 function getSocialIcon(source: string): string {
@@ -267,7 +246,8 @@ function getSocialIcon(source: string): string {
   if (s.includes("spotify")) return "🎧";
   if (s.includes("twitter") || s.includes("x.com")) return "🐦";
   if (s.includes("snapchat")) return "👻";
-  if (s.includes("onlyfans")) return "⭐";
+  if (s.includes("facebook")) return "📘";
+  if (s.includes("linkedin")) return "in";
 
   return "🔗";
 }
