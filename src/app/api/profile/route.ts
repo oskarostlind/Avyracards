@@ -15,17 +15,20 @@ const avatarSchema = z
       value.startsWith("http://") ||
       value.startsWith("https://"),
     {
-      message: "avatarUrl måste vara en giltig URL eller data-URL.",
+      message: "Ogiltig bild-URL eller data-URL.",
     }
   );
 
 const updateSchema = z.object({
-  name: z.string().max(100).optional(),
+  name: z.string().min(1).max(100).optional(),
   bio: z.string().max(1000).optional(),
-  phoneNumber: z.string().max(30).optional(),
+  username: z.string().min(3).max(50).optional(),
+  phoneNumber: z.string().max(50).optional(),
   contactEmail: z.string().email().optional(),
   avatarUrl: avatarSchema.optional(),
-  redirectEnabled: z.boolean().optional(), // 👈 NYTT
+  redirectEnabled: z.boolean().optional(),
+  // 👇 Viktigt: matchar din Prisma-enum med VERSALER
+  profileMode: z.enum(["SOCIAL", "BUSINESS"]).optional(),
 });
 
 async function updateProfile(req: Request) {
@@ -51,7 +54,10 @@ async function updateProfile(req: Request) {
   const parsed = updateSchema.safeParse(json);
 
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ogiltiga fält." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Ogiltiga fält." },
+      { status: 400 }
+    );
   }
 
   const updated = await prisma.user.update({
@@ -66,6 +72,7 @@ async function updateProfile(req: Request) {
       contactEmail: true,
       avatarUrl: true,
       redirectEnabled: true,
+      profileMode: true, // 👈 NYTT
     },
   });
 
@@ -93,6 +100,7 @@ export async function GET() {
       contactEmail: true,
       avatarUrl: true,
       redirectEnabled: true,
+      profileMode: true, // 👈 NYTT
     },
   });
 
