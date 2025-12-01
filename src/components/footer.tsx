@@ -83,10 +83,10 @@ export function Footer() {
           <div>
             Frågor?{" "}
             <a
-              href="mailto:kontakt@socialcards.se"
+              href="mailto:kontakt@socialcard.se"
               className="text-emerald-300 hover:text-emerald-200"
             >
-              kontakt@socialcards.se
+              kontakt@socialcard.se
             </a>
           </div>
         </div>

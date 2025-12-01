@@ -59,10 +59,10 @@ export default function PrivacyPage() {
             Du har rätt att begära utdrag, rättelse, radering och begränsning av
             dina personuppgifter. Kontakta oss via{" "}
             <a
-              href="mailto:kontakt@socialcards.se"
+              href="mailto:kontakt@socialcard.se"
               className="text-emerald-300 hover:text-emerald-200"
             >
-              kontakt@socialcards.se
+              kontakt@socialcard.se
             </a>{" "}
             för att utöva dina rättigheter.
           </p>
