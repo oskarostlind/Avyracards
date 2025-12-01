@@ -14,7 +14,7 @@ type ProfileFormProps = {
     phoneNumber?: string | null;
     contactEmail?: string | null;
     avatarUrl?: string | null;
-    redirectEnabled?: boolean | null;
+    redirectEnabled?: boolean | null; // finns kvar i typen men styrs automatiskt
   };
 };
 
@@ -25,9 +25,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const [contactEmail, setContactEmail] = useState(user.contactEmail ?? "");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(
     user.avatarUrl ?? null
-  );
-  const [redirectEnabled, setRedirectEnabled] = useState<boolean>(
-    user.redirectEnabled ?? true
   );
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
@@ -66,7 +63,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
         bio,
         phoneNumber,
         contactEmail,
-        redirectEnabled,
       };
 
       if (avatarUrl) {
@@ -190,27 +186,16 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </p>
       </div>
 
-      {/* Redirect-toggle */}
-      <div className="flex items-start gap-2 rounded-md border border-slate-800 bg-slate-900/60 px-3 py-2">
-        <input
-          id="redirectEnabled"
-          type="checkbox"
-          className="mt-[2px] h-3.5 w-3.5 rounded border-slate-600 bg-slate-900 text-violet-500"
-          checked={redirectEnabled}
-          onChange={(e) => setRedirectEnabled(e.target.checked)}
-        />
-        <label
-          htmlFor="redirectEnabled"
-          className="text-[11px] leading-snug text-slate-300"
-        >
-          <span className="font-semibold">
-            Aktivera automatisk redirect till offentlig länk
-          </span>{" "}
-          <br />
-          När detta är på kommer <code>/u/username</code> att redirecta direkt
-          till din valda Offentliga länk (första aktiva i listan). När det är av
-          visas istället din profilsida med alla knappar.
-        </label>
+      {/* Info om redirect-logik (nu automatisk) */}
+      <div className="rounded-md border border-slate-800 bg-slate-900/60 px-3 py-2 text-[11px] leading-snug text-slate-300">
+        <span className="font-semibold">Offentlig länk & redirect</span>
+        <br />
+        Så länge du har minst en{" "}
+        <span className="font-semibold">aktiv</span> länk används den länk som
+        är markerad som <span className="font-semibold">Offentlig</span>{" "}
+        (första aktiva i listan) som automatisk redirect för{" "}
+        <code>/u/username</code>. Om alla länkar är inaktiva visas istället din
+        profilsida med alla knappar.
       </div>
 
       <button
@@ -230,7 +215,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
   );
 }
 
-/* ---------------- Länkar-delen (oförändrad från din senaste version) ---------------- */
+/* ---------------- Länkar-delen ---------------- */
 
 type Link = {
   id: string;
@@ -355,6 +340,7 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
       setLinks((prev) =>
         prev.map((l) => (l.id === id ? { ...l, isActive: !isActive } : l))
       );
+      setStatus(null);
     } catch (err) {
       console.error(err);
       setStatus("⚠ Kunde inte uppdatera länken.");
@@ -448,11 +434,12 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
           <span className="font-mono text-slate-200">{publicUrl}</span>
         </p>
         <p className="text-[11px] text-slate-500">
-          Den <span className="font-semibold">första aktiva</span> länken i
-          listan används som offentlig redirect för{" "}
-          <code>/u/username</code>. Använd knappen{" "}
-          <span className="font-semibold">Offentlig</span> nedan för att flytta
-          upp rätt länk.
+          Så länge du har minst en{" "}
+          <span className="font-semibold">aktiv</span> länk kommer{" "}
+          <code>/u/username</code> automatiskt att redirecta till den som är
+          markerad som <span className="font-semibold">Offentlig</span>{" "}
+          (första aktiva i listan). Om alla länkar är inaktiva visas istället
+          din profilsida.
         </p>
       </div>
 
@@ -460,9 +447,9 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
         {links.map((link) => (
           <li
             key={link.id}
-            className="flex items-center justify-between rounded-md border border-slate-800 px-3 py-2"
+            className="space-y-2 rounded-md border border-slate-800 px-3 py-2 sm:flex sm:items-center sm:justify-between sm:space-y-0"
           >
-            <div>
+            <div className="min-w-0">
               <p className="text-xs font-medium text-slate-50">
                 {link.title}
                 {link.id === primaryId && (
@@ -471,11 +458,11 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
                   </span>
                 )}
               </p>
-              <p className="max-w-[220px] truncate text-[11px] text-slate-400">
+              <p className="mt-1 text-[11px] text-slate-400 break-all sm:max-w-[260px] sm:truncate">
                 {link.url}
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end">
               <button
                 type="button"
                 onClick={() => makePrimary(link.id)}

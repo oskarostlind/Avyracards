@@ -10,6 +10,17 @@ const reorderSchema = z.object({
   order: z.array(z.string().cuid()),
 });
 
+async function syncRedirectFlag(userId: string) {
+  const activeCount = await prisma.link.count({
+    where: { userId, isActive: true },
+  });
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { redirectEnabled: activeCount > 0 },
+  });
+}
+
 export async function POST(req: Request) {
   const session = await auth();
 
@@ -17,7 +28,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Ej behörig" }, { status: 401 });
   }
 
-  // ✔ TS-SAFE: session.user.id kan inte längre vara undefined
   const userId = session.user.id;
 
   const body = await req.json();
@@ -35,6 +45,8 @@ export async function POST(req: Request) {
       })
     )
   );
+
+  await syncRedirectFlag(userId);
 
   return NextResponse.json({ ok: true });
 }

@@ -5,6 +5,17 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+async function syncRedirectFlag(userId: string) {
+  const activeCount = await prisma.link.count({
+    where: { userId, isActive: true },
+  });
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { redirectEnabled: activeCount > 0 },
+  });
+}
+
 /**
  * GET /api/links
  * Hämtar alla länkar för inloggad användare.
@@ -104,6 +115,8 @@ export async function POST(req: Request) {
         isActive: true,
       },
     });
+
+    await syncRedirectFlag(session.user.id);
 
     return NextResponse.json(
       {
