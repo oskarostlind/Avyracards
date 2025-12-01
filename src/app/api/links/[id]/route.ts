@@ -16,17 +16,6 @@ interface Params {
   params: { id: string };
 }
 
-async function syncRedirectFlag(userId: string) {
-  const activeCount = await prisma.link.count({
-    where: { userId, isActive: true },
-  });
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { redirectEnabled: activeCount > 0 },
-  });
-}
-
 export async function PATCH(req: Request, { params }: Params) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -56,8 +45,6 @@ export async function PATCH(req: Request, { params }: Params) {
     data: updateData,
   });
 
-  await syncRedirectFlag(session.user.id);
-
   return NextResponse.json({
     id: updated.id,
     label: updated.title,
@@ -78,7 +65,6 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 
   await prisma.link.delete({ where: { id: params.id } });
-  await syncRedirectFlag(session.user.id);
 
   return NextResponse.json({ ok: true });
 }

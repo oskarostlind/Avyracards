@@ -10,17 +10,6 @@ const reorderSchema = z.object({
   order: z.array(z.string().cuid()),
 });
 
-async function syncRedirectFlag(userId: string) {
-  const activeCount = await prisma.link.count({
-    where: { userId, isActive: true },
-  });
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { redirectEnabled: activeCount > 0 },
-  });
-}
-
 export async function POST(req: Request) {
   const session = await auth();
 
@@ -45,8 +34,6 @@ export async function POST(req: Request) {
       })
     )
   );
-
-  await syncRedirectFlag(userId);
 
   return NextResponse.json({ ok: true });
 }

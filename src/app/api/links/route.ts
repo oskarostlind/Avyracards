@@ -5,20 +5,8 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
-async function syncRedirectFlag(userId: string) {
-  const activeCount = await prisma.link.count({
-    where: { userId, isActive: true },
-  });
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: { redirectEnabled: activeCount > 0 },
-  });
-}
-
 /**
  * GET /api/links
- * Hämtar alla länkar för inloggad användare.
  */
 export async function GET() {
   const session = await auth();
@@ -47,7 +35,6 @@ export async function GET() {
 
 /**
  * POST /api/links
- * Skapar en ny länk för inloggad användare.
  */
 export async function POST(req: Request) {
   const session = await auth();
@@ -70,9 +57,6 @@ export async function POST(req: Request) {
     );
   }
 
-  console.log("[links] Inkommande body:", body);
-
-  // Stöd både { label } och { title } från klienten
   const rawLabel = body.label ?? body.title;
   const rawUrl = body.url;
 
@@ -93,7 +77,6 @@ export async function POST(req: Request) {
     );
   }
 
-  // Superenkel URL-koll – vi struntar i strikt zod-url här
   if (!/^https?:\/\//i.test(url)) {
     return NextResponse.json(
       { error: "URL måste börja med http:// eller https://." },
@@ -115,8 +98,6 @@ export async function POST(req: Request) {
         isActive: true,
       },
     });
-
-    await syncRedirectFlag(session.user.id);
 
     return NextResponse.json(
       {

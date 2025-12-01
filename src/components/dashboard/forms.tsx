@@ -14,7 +14,7 @@ type ProfileFormProps = {
     phoneNumber?: string | null;
     contactEmail?: string | null;
     avatarUrl?: string | null;
-    redirectEnabled?: boolean | null; // finns kvar i typen men styrs automatiskt
+    redirectEnabled?: boolean | null;
   };
 };
 
@@ -145,8 +145,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </div>
 
         <p className="text-[11px] text-slate-400">
-          Bilden konverteras till en data-URL och sparas i din profil. Funkar i
-          både dashboard & publik vy utan extra filserver.
+          Bilden sparas som data-URL direkt i din profil och används i både
+          dashboard och publik vy.
         </p>
       </div>
 
@@ -186,16 +186,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </p>
       </div>
 
-      {/* Info om redirect-logik (nu automatisk) */}
       <div className="rounded-md border border-slate-800 bg-slate-900/60 px-3 py-2 text-[11px] leading-snug text-slate-300">
         <span className="font-semibold">Offentlig länk & redirect</span>
         <br />
-        Så länge du har minst en{" "}
-        <span className="font-semibold">aktiv</span> länk används den länk som
-        är markerad som <span className="font-semibold">Offentlig</span>{" "}
-        (första aktiva i listan) som automatisk redirect för{" "}
-        <code>/u/username</code>. Om alla länkar är inaktiva visas istället din
-        profilsida med alla knappar.
+        Den länk som är markerad som{" "}
+        <span className="font-semibold">Offentlig</span> används som automatisk
+        redirect för <code>/u/username</code>. Klickar du på Offentlig på samma
+        länk igen stänger du av redirect och din profilsida visas istället.
       </div>
 
       <button
@@ -236,6 +233,10 @@ type ApiLink = {
   isVisible: boolean;
 };
 
+type ProfileResponse = {
+  redirectEnabled?: boolean;
+};
+
 export function LinksForm({ publicUrl }: LinksFormProps) {
   const [links, setLinks] = useState<Link[]>([]);
   const [loading, setLoading] = useState(true);
@@ -243,16 +244,23 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<string | null>(null);
+  const [redirectEnabled, setRedirectEnabled] = useState(false);
 
   useEffect(() => {
     async function load() {
       try {
-        const res = await fetch("/api/links");
-        if (!res.ok) throw new Error("Failed to load links");
+        const [linksRes, profileRes] = await Promise.all([
+          fetch("/api/links"),
+          fetch("/api/profile"),
+        ]);
 
-        const data = (await res.json()) as ApiLink[];
+        if (!linksRes.ok) throw new Error("Failed to load links");
+        if (!profileRes.ok) throw new Error("Failed to load profile");
 
-        const mapped: Link[] = data.map((l, index) => ({
+        const linksData = (await linksRes.json()) as ApiLink[];
+        const profileData = (await profileRes.json()) as ProfileResponse;
+
+        const mapped: Link[] = linksData.map((l, index) => ({
           id: l.id,
           title: l.label,
           url: l.url,
@@ -261,6 +269,7 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
         }));
 
         setLinks(mapped);
+        setRedirectEnabled(!!profileData.redirectEnabled);
       } catch (err) {
         console.error(err);
         setStatus("⚠ Kunde inte ladda länkar.");
@@ -352,6 +361,26 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
     setStatus(null);
 
     try {
+      const currentPrimaryId = links[0]?.id;
+
+      // 1) Om redirect är PÅ och vi klickar på nuvarande offentlig → stäng av redirect
+      if (redirectEnabled && currentPrimaryId === id) {
+        const res = await fetch("/api/profile", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ redirectEnabled: false }),
+        });
+
+        if (!res.ok) throw new Error("Failed to disable redirect");
+
+        setRedirectEnabled(false);
+        setStatus(
+          "✔ Redirect avstängd. /u/username visar nu din profilsida istället."
+        );
+        return;
+      }
+
+      // 2) Annars: sätt denna länk som ny första + slå PÅ redirect
       const current = [...links];
       const index = current.findIndex((l) => l.id === id);
       if (index === -1) return;
@@ -368,8 +397,17 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
         body: JSON.stringify({ order: reordered.map((l) => l.id) }),
       });
 
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ redirectEnabled: true }),
+      });
+
+      if (!res.ok) throw new Error("Failed to enable redirect");
+
+      setRedirectEnabled(true);
       setStatus(
-        "✔ Offentlig länk uppdaterad. Första aktiva länken används på /u/username."
+        "✔ Offentlig länk uppdaterad. /u/username redirectar nu till vald länk."
       );
     } catch (err) {
       console.error(err);
@@ -434,12 +472,9 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
           <span className="font-mono text-slate-200">{publicUrl}</span>
         </p>
         <p className="text-[11px] text-slate-500">
-          Så länge du har minst en{" "}
-          <span className="font-semibold">aktiv</span> länk kommer{" "}
-          <code>/u/username</code> automatiskt att redirecta till den som är
-          markerad som <span className="font-semibold">Offentlig</span>{" "}
-          (första aktiva i listan). Om alla länkar är inaktiva visas istället
-          din profilsida.
+          Klicka på <span className="font-semibold">Offentlig</span> på en länk
+          för att använda den som redirect för <code>/u/username</code>. Klickar
+          du på samma igen stängs redirect av och din profilsida visas istället.
         </p>
       </div>
 
@@ -449,10 +484,11 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
             key={link.id}
             className="space-y-2 rounded-md border border-slate-800 px-3 py-2 sm:flex sm:items-center sm:justify-between sm:space-y-0"
           >
+            {/* Text-del */}
             <div className="min-w-0">
               <p className="text-xs font-medium text-slate-50">
                 {link.title}
-                {link.id === primaryId && (
+                {redirectEnabled && link.id === primaryId && (
                   <span className="ml-2 rounded-full bg-violet-600/20 px-2 py-[1px] text-[10px] font-semibold text-violet-300">
                     Offentlig
                   </span>
@@ -462,6 +498,8 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
                 {link.url}
               </p>
             </div>
+
+            {/* Knapp-del – stackad på mobil, tight på desktop */}
             <div className="flex flex-wrap gap-2 sm:flex-nowrap sm:justify-end">
               <button
                 type="button"

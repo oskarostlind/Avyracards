@@ -25,6 +25,7 @@ const updateSchema = z.object({
   phoneNumber: z.string().max(30).optional(),
   contactEmail: z.string().email().optional(),
   avatarUrl: avatarSchema.optional(),
+  redirectEnabled: z.boolean().optional(), // 👈 NYTT
 });
 
 async function updateProfile(req: Request) {

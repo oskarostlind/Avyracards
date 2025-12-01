@@ -1,7 +1,8 @@
-import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import type { User, Link as LinkModel } from "@prisma/client";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
+import type { User, Link as LinkModel } from "@prisma/client";
+
+import { prisma } from "@/lib/prisma";
 
 type PageProps = {
   params: { username: string };
@@ -9,10 +10,11 @@ type PageProps = {
 
 type UserWithLinks = User & { links: LinkModel[] };
 
+export const runtime = "nodejs";
 export const revalidate = 0;
 
 export default async function PublicProfilePage({ params }: PageProps) {
-  const username = params.username;
+  const username = params.username.toLowerCase();
 
   const user = await prisma.user.findUnique({
     where: { username },
@@ -28,6 +30,13 @@ export default async function PublicProfilePage({ params }: PageProps) {
     notFound();
   }
 
+  // 👉 Redirect bara om redirectEnabled ÄR PÅ och det finns aktiv länk
+  if (user.redirectEnabled && user.links.length > 0) {
+    const primary = user.links[0];
+    const target = normalizeUrl(primary.url);
+    redirect(target);
+  }
+
   const profileMode = user.profileMode ?? "SOCIAL";
 
   return (
@@ -39,7 +48,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
           <SocialProfile user={user} />
         )}
 
-        {/* Liten brand-footer */}
         <div className="mt-10 text-center text-[11px] text-slate-500">
           Skapat med{" "}
           <Link
@@ -61,7 +69,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
 function SocialProfile({ user }: { user: UserWithLinks }) {
   return (
     <div className="w-full max-w-md">
-      {/* Header */}
       <div className="flex flex-col items-center gap-4 rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 px-6 py-8 shadow-xl shadow-slate-950/80">
         {user.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -76,54 +83,27 @@ function SocialProfile({ user }: { user: UserWithLinks }) {
           </div>
         )}
 
-        <div className="text-center space-y-1">
+        <div className="space-y-1 text-center">
           <h1 className="text-xl font-semibold text-slate-50">
             {user.name ?? user.username}
           </h1>
           <p className="text-xs text-slate-400">@{user.username}</p>
           {user.bio && (
-            <p className="mt-2 max-w-sm text-xs text-slate-300">
-              {user.bio}
-            </p>
+            <p className="mt-2 max-w-sm text-xs text-slate-300">{user.bio}</p>
           )}
         </div>
 
-        {/* Chips för social/business typ – här alltid socialt */}
         <div className="mt-3 inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-3 py-1 text-[11px] text-sky-300">
           <span className="h-2 w-2 rounded-full bg-sky-400" />
           Social profil
         </div>
       </div>
 
-      {/* Länkar */}
-      <div className="mt-6 space-y-3">
-        {user.links.length === 0 && (
-          <p className="text-center text-xs text-slate-500">
-            Inga länkar ännu. Ägaren av profilen kan lägga till länkar via sin
-            dashboard.
-          </p>
-        )}
-
-        {user.links.map((link) => (
-          <a
-            key={link.id}
-            href={normalizeUrl(link.url)}
-            target="_blank"
-            rel="noreferrer"
-            className="group flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-50 transition hover:border-sky-500/70 hover:bg-slate-900/80"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-xs text-slate-200 group-hover:bg-sky-500 group-hover:text-slate-950">
-              {getSocialIcon(link.icon ?? link.url)}
-            </div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">{link.title}</p>
-              <p className="truncate text-[11px] text-slate-400">
-                {shortenUrl(link.url)}
-              </p>
-            </div>
-          </a>
-        ))}
-      </div>
+      <p className="mt-6 text-center text-xs text-slate-500">
+        Ägaren till den här profilen kan lägga till länkar i sin dashboard. Om
+        de väljer att aktivera en offentlig länk redirectar /u/{user.username}{" "}
+        direkt dit.
+      </p>
     </div>
   );
 }
@@ -137,7 +117,6 @@ function BusinessProfile({ user }: { user: UserWithLinks }) {
 
   return (
     <div className="w-full max-w-md">
-      {/* Header */}
       <div className="rounded-3xl border border-slate-800 bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 px-6 py-7 shadow-xl shadow-slate-950/80">
         <div className="flex items-start gap-4">
           {user.avatarUrl ? (
@@ -164,7 +143,6 @@ function BusinessProfile({ user }: { user: UserWithLinks }) {
           </div>
         </div>
 
-        {/* Kontaktblock */}
         {hasContactBlock && (
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             {user.phoneNumber && (
@@ -193,43 +171,10 @@ function BusinessProfile({ user }: { user: UserWithLinks }) {
         </div>
       </div>
 
-      {/* Länkar (mer “resurs”-stil) */}
-      <div className="mt-6 space-y-3">
-        {user.links.length > 0 && (
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-            Länkar & resurser
-          </p>
-        )}
-
-        {user.links.length === 0 && (
-          <p className="text-xs text-slate-500">
-            Inga publika länkar ännu. Ägaren av profilen kan lägga till relevanta
-            länkar via sin dashboard (LinkedIn, hemsida, bokningslänk osv).
-          </p>
-        )}
-
-        {user.links.map((link) => (
-          <a
-            key={link.id}
-            href={normalizeUrl(link.url)}
-            target="_blank"
-            rel="noreferrer"
-            className="group flex items-center justify-between gap-3 rounded-2xl border border-slate-800 bg-slate-900 px-4 py-3 text-sm text-slate-50 transition hover:border-emerald-500/70 hover:bg-slate-900/80"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-800 text-xs text-slate-200 group-hover:bg-emerald-500 group-hover:text-slate-950">
-                {getBusinessIcon(link.icon ?? link.url)}
-              </div>
-              <div>
-                <p className="text-sm font-medium">{link.title}</p>
-                <p className="truncate text-[11px] text-slate-400">
-                  {shortenUrl(link.url)}
-                </p>
-              </div>
-            </div>
-          </a>
-        ))}
-      </div>
+      <p className="mt-6 text-xs text-slate-500">
+        Inga länkar är satta som offentlig redirect just nu. När ägaren väljer
+        en Offentlig länk kommer /u/{user.username} öppna den direkt.
+      </p>
     </div>
   );
 }
@@ -242,40 +187,4 @@ function normalizeUrl(url: string): string {
   if (!url) return "#";
   if (url.startsWith("http://") || url.startsWith("https://")) return url;
   return `https://${url}`;
-}
-
-function shortenUrl(url: string): string {
-  try {
-    const u = new URL(normalizeUrl(url));
-    return u.host.replace("www.", "") + u.pathname.replace(/\/$/, "");
-  } catch {
-    return url;
-  }
-}
-
-function getSocialIcon(source: string): string {
-  const s = source.toLowerCase();
-
-  if (s.includes("instagram")) return "📸";
-  if (s.includes("tiktok")) return "🎵";
-  if (s.includes("youtube")) return "▶️";
-  if (s.includes("twitch")) return "🎮";
-  if (s.includes("spotify")) return "🎧";
-  if (s.includes("twitter") || s.includes("x.com")) return "🐦";
-  if (s.includes("snapchat")) return "👻";
-  if (s.includes("onlyfans")) return "⭐";
-
-  return "🔗";
-}
-
-function getBusinessIcon(source: string): string {
-  const s = source.toLowerCase();
-
-  if (s.includes("linkedin")) return "in";
-  if (s.includes("calendar") || s.includes("calendly")) return "📅";
-  if (s.includes("mailto:") || s.includes("@")) return "✉️";
-  if (s.includes("tel:")) return "📞";
-  if (s.includes("pdf")) return "📄";
-
-  return "↗";
 }
