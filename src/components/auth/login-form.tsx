@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-
 import { z } from "zod";
 
 const formSchema = z.object({
@@ -21,7 +20,7 @@ export function LoginForm() {
     event.preventDefault();
     const parsed = formSchema.safeParse(form);
     if (!parsed.success) {
-      setError("Kontrollera användarnamn och lösenord");
+      setError("Kontrollera användarnamn och lösenord.");
       return;
     }
 
@@ -37,7 +36,7 @@ export function LoginForm() {
     setLoading(false);
 
     if (result?.error) {
-      setError("Felaktiga inloggningsuppgifter");
+      setError("Felaktiga inloggningsuppgifter.");
       return;
     }
 
@@ -45,47 +44,95 @@ export function LoginForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold text-slate-900">Logga in</h1>
-        <p className="text-sm text-slate-500">Fyll i dina uppgifter för att komma åt din dashboard.</p>
-      </div>
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-700" htmlFor="username">
-          Användarnamn
-        </label>
-        <input
-          id="username"
-          name="username"
-          type="text"
-          required
-          value={form.username}
-          onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))}
-          className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
-        />
-      </div>
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-700" htmlFor="password">
-          Lösenord
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          value={form.password}
-          onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-          className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
-        />
-      </div>
-      {error && <p className="text-sm text-rose-500">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-full bg-slate-900 px-4 py-2 text-white hover:bg-slate-700 disabled:opacity-60"
+    <div className="flex min-h-[calc(100vh-200px)] items-center justify-center px-4 py-10">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-xl rounded-3xl border border-slate-800 bg-slate-950/70 p-6 sm:p-8 shadow-xl shadow-black/40 backdrop-blur"
       >
-        {loading ? "Loggar in..." : "Logga in"}
-      </button>
-    </form>
+        {/* Header */}
+        <div className="mb-6 space-y-2 text-center">
+          <p className="text-xs font-semibold tracking-[0.25em] text-slate-400">
+            SOCIALCARD
+          </p>
+          <h1 className="text-2xl font-semibold text-slate-50">Logga in</h1>
+          <p className="text-sm text-slate-400">
+            Fyll i dina uppgifter för att komma åt din dashboard.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {/* Användarnamn */}
+          <div className="space-y-2">
+            <label
+              className="block text-sm font-medium text-slate-200"
+              htmlFor="username"
+            >
+              Användarnamn
+            </label>
+            <input
+              id="username"
+              name="username"
+              type="text"
+              autoComplete="username"
+              required
+              value={form.username}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, username: event.target.value }))
+              }
+              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              placeholder="Ditt användarnamn"
+            />
+          </div>
+
+          {/* Lösenord */}
+          <div className="space-y-2">
+            <label
+              className="block text-sm font-medium text-slate-200"
+              htmlFor="password"
+            >
+              Lösenord
+            </label>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={form.password}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, password: event.target.value }))
+              }
+              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              placeholder="••••••••"
+            />
+          </div>
+
+          {/* Error-meddelande */}
+          {error && (
+            <p className="text-sm text-rose-400">
+              {error}
+            </p>
+          )}
+
+          {/* CTA */}
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full items-center justify-center rounded-2xl bg-purple-500 px-4 py-2 text-sm font-medium text-white shadow-md shadow-purple-500/30 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? "Loggar in..." : "Logga in"}
+            </button>
+          </div>
+
+          {/* Liten hjälptext */}
+          <p className="pt-1 text-center text-xs text-slate-500">
+            Har du inget konto ännu? Skapa ett via
+            {" "}
+            <span className="font-medium text-slate-200">Bli medlem</span>-knappen i menyn.
+          </p>
+        </div>
+      </form>
+    </div>
   );
 }
