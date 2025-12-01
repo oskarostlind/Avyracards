@@ -186,14 +186,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </p>
       </div>
 
-      <div className="rounded-md border border-slate-800 bg-slate-900/60 px-3 py-2 text-[11px] leading-snug text-slate-300">
-        <span className="font-semibold">Offentlig länk & redirect</span>
-        <br />
-        Den länk som är markerad som{" "}
-        <span className="font-semibold">Offentlig</span> används som automatisk
-        redirect för <code>/u/username</code>. Klickar du på Offentlig på samma
-        länk igen stänger du av redirect och din profilsida visas istället.
-      </div>
+      
 
       <button
         type="submit"
