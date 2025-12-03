@@ -34,6 +34,29 @@ model User {
 
   profileMode  ProfileMode @default(SOCIAL)
 
+    // Hero
+  jobTitle          String?   // Titel, ex "Kundansvarig"
+  companyName       String?   // Företagsnamn
+  location          String?   // Ort / stad / region
+  businessHeadline  String?   // Kort 1-rads pitch för business-läget
+
+  // Kontaktblock
+  businessPhone     String?   // Telefon för business-kontakt (om du vill skilja på private vs business)
+  businessEmail     String?   // E-post för business-kontakt
+  vcardUrl          String?   // Länk till genererad vCard-fil (senare)
+  bookingUrl        String?   // Länk till Calendly/BookMe/Teams/Outlook
+
+  // Nyckelinfo / chips
+  expertiseTags     String?   // T.ex "Telekom,B2B-försäljning,CRM" (comma-separerad till att börja med)
+  languages         String?   // T.ex "Svenska,Engelska"
+  businessRegion    String?   // T.ex "Norra Sverige"
+
+  // Företagssektion
+  companyLogoUrl     String?  // Logotyp för företag
+  companyDescription String?  // Kort text om bolaget
+  companyWebsite     String?  // Hemsida
+  careerPageUrl      String?  // Karriärsida / jobb-sida
+
 }
 
 enum ProfileMode {

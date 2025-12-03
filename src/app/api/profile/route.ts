@@ -21,6 +21,7 @@ const avatarSchema = z
   );
 
 const updateSchema = z.object({
+  // Basprofil
   name: z.string().max(100).optional(),
   bio: z.string().max(1000).optional(),
   username: z.string().min(3).max(50).optional(),
@@ -34,12 +35,37 @@ const updateSchema = z.object({
 
   redirectEnabled: z.boolean().optional(),
 
-  // 👇 lägg tillbaka theme/font så de kan sparas
+  // Tema / font
   theme: z.string().max(50).optional(),
   font: z.string().max(50).optional(),
 
-  // 👇 profileMode matchar din Prisma-enum (VERSALER)
+  // Profil-läge
   profileMode: z.enum(["SOCIAL", "BUSINESS"]).optional(),
+
+  // --- Business-specifika fält ---
+
+  // Hero
+  jobTitle: z.string().max(120).nullable().optional(),
+  companyName: z.string().max(160).nullable().optional(),
+  location: z.string().max(160).nullable().optional(),
+  businessHeadline: z.string().max(200).nullable().optional(),
+
+  // Kontaktblock
+  businessPhone: z.string().max(50).nullable().optional(),
+  businessEmail: z.string().email().nullable().optional(),
+  vcardUrl: z.string().url().max(500).nullable().optional(),
+  bookingUrl: z.string().url().max(500).nullable().optional(),
+
+  // Nyckelinfo / chips
+  expertiseTags: z.string().max(500).nullable().optional(),
+  languages: z.string().max(200).nullable().optional(),
+  businessRegion: z.string().max(160).nullable().optional(),
+
+  // Företagssektion
+  companyLogoUrl: z.string().url().max(500).nullable().optional(),
+  companyDescription: z.string().max(1000).nullable().optional(),
+  companyWebsite: z.string().url().max(500).nullable().optional(),
+  careerPageUrl: z.string().url().max(500).nullable().optional(),
 });
 
 async function updateProfile(req: Request) {
@@ -74,6 +100,7 @@ async function updateProfile(req: Request) {
   const updated = await prisma.user.update({
     where: { id: session.user.id },
     data: {
+      // Basprofil
       name: data.name,
       bio: data.bio,
       username: data.username,
@@ -86,9 +113,30 @@ async function updateProfile(req: Request) {
       font: data.font,
 
       profileMode: data.profileMode,
+
+      // Business-fält
+      jobTitle: data.jobTitle ?? null,
+      companyName: data.companyName ?? null,
+      location: data.location ?? null,
+      businessHeadline: data.businessHeadline ?? null,
+
+      businessPhone: data.businessPhone ?? null,
+      businessEmail: data.businessEmail ?? null,
+      vcardUrl: data.vcardUrl ?? null,
+      bookingUrl: data.bookingUrl ?? null,
+
+      expertiseTags: data.expertiseTags ?? null,
+      languages: data.languages ?? null,
+      businessRegion: data.businessRegion ?? null,
+
+      companyLogoUrl: data.companyLogoUrl ?? null,
+      companyDescription: data.companyDescription ?? null,
+      companyWebsite: data.companyWebsite ?? null,
+      careerPageUrl: data.careerPageUrl ?? null,
     },
     select: {
       id: true,
+      email: true,
       name: true,
       bio: true,
       username: true,
@@ -99,6 +147,25 @@ async function updateProfile(req: Request) {
       theme: true,
       font: true,
       profileMode: true,
+
+      jobTitle: true,
+      companyName: true,
+      location: true,
+      businessHeadline: true,
+
+      businessPhone: true,
+      businessEmail: true,
+      vcardUrl: true,
+      bookingUrl: true,
+
+      expertiseTags: true,
+      languages: true,
+      businessRegion: true,
+
+      companyLogoUrl: true,
+      companyDescription: true,
+      companyWebsite: true,
+      careerPageUrl: true,
     },
   });
 
@@ -119,6 +186,7 @@ export async function GET() {
     where: { id: session.user.id },
     select: {
       id: true,
+      email: true,
       name: true,
       bio: true,
       username: true,
@@ -129,6 +197,25 @@ export async function GET() {
       theme: true,
       font: true,
       profileMode: true,
+
+      jobTitle: true,
+      companyName: true,
+      location: true,
+      businessHeadline: true,
+
+      businessPhone: true,
+      businessEmail: true,
+      vcardUrl: true,
+      bookingUrl: true,
+
+      expertiseTags: true,
+      languages: true,
+      businessRegion: true,
+
+      companyLogoUrl: true,
+      companyDescription: true,
+      companyWebsite: true,
+      careerPageUrl: true,
     },
   });
 
