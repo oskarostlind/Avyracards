@@ -34,7 +34,21 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     
-    // Hämta ALL metadata
+    // --- IDEMPOTENCY CHECK (NYTT) ---
+    // Kolla om vi redan har skapat en order för denna session
+    const existingOrder = await prisma.order.findUnique({
+      where: {
+        stripeSessionId: session.id,
+      },
+    });
+
+    if (existingOrder) {
+      console.log(`⚠️ Order already processed for session ${session.id}. Skipping.`);
+      return new NextResponse(null, { status: 200 });
+    }
+    // --------------------------------
+
+    // Hämta metadata
     const quantity = parseInt(session.metadata?.quantity || "1");
     const material = session.metadata?.material || "plastic";
     const color = session.metadata?.color || "black";
@@ -55,7 +69,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // 2. Generera Card Slots med rätt design
+    // 2. Generera Card Slots
     const cardsToCreate = [];
     
     for (let i = 0; i < quantity; i++) {
@@ -68,7 +82,6 @@ export async function POST(req: Request) {
         claimToken: claimToken,
         status: "UNCLAIMED" as const,
         
-        // Här sparar vi designvalen!
         material: material,
         colorOption: color,
         designTemplate: design,
@@ -79,7 +92,7 @@ export async function POST(req: Request) {
       data: cardsToCreate,
     });
 
-    console.log(`✅ ${quantity} cards (${material}/${color}) generated.`);
+    console.log(`✅ ${quantity} cards (${material}/${color}) generated for Order ${order.id}.`);
   }
 
   return new NextResponse(null, { status: 200 });
