@@ -40,8 +40,11 @@ export async function POST(req: Request) {
       profileMode: profileModeRaw = "social",
     } = parsed.data;
 
+    // --- NORMALISERING (NYTT) ---
+    // Tvinga alltid lowercase och trimma mellanslag
     const normalizedEmail = email.toLowerCase().trim();
-    const normalizedUsername = username.trim();
+    const normalizedUsername = username.toLowerCase().trim();
+    // ----------------------------
 
     // Kolla om användare redan finns
     const existingUser = await prisma.user.findFirst({
@@ -60,10 +63,7 @@ export async function POST(req: Request) {
     // Hasha lösenordet
     const passwordHash = await hashPassword(password);
 
-    // Skapa verifieringstoken
     const verificationToken = randomUUID();
-
-    // Mappa profileMode till Prisma-enum
     const prismaProfileMode =
       profileModeRaw === "business" ? "BUSINESS" : "SOCIAL";
 
@@ -72,18 +72,18 @@ export async function POST(req: Request) {
       data: {
         email: normalizedEmail,
         username: normalizedUsername,
-        passwordHash,               // ✅ rätt fältnamn
+        passwordHash,
         verificationToken,
-        profileMode: prismaProfileMode, // ✅ sparar SOCIAL/BUSINESS
+        profileMode: prismaProfileMode,
       },
     });
 
-    // Skicka verifieringsmail via Strato (nodemailer)
+    // Skicka verifieringsmail
     await sendVerificationEmail(user.email, verificationToken);
 
     return NextResponse.json({ ok: true }, { status: 201 });
   } catch (err) {
-    console.error("[register] Fel vid registrering/verifieringsmail:", err);
+    console.error("[register] Fel vid registrering:", err);
     return NextResponse.json(
       { error: "Något gick fel vid registrering. Försök igen senare." },
       { status: 500 }

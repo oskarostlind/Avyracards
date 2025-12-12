@@ -21,12 +21,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Användarnamn och lösenord krävs");
         }
 
+        // --- NORMALISERING (NYTT) ---
+        // Konvertera input till lowercase innan sökning
         const user = await prisma.user.findUnique({
           where: {
-            // FIX: Matchar exakt användarnamn (case sensitive) som det sparades vid registrering
-            username: username 
+            username: username.toLowerCase().trim() 
           }
         });
+        // ----------------------------
 
         if (!user) {
           throw new Error("Felaktiga uppgifter");
@@ -37,12 +39,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!isValid) {
           throw new Error("Felaktiga uppgifter");
         }
-
-        // FIX: Tillfälligt inaktiverad verifieringskrav för enklare inloggning
-        /* if (!user.emailVerified) {
-          throw new Error("Kontot är inte verifierat");
-        }
-        */
+        
+        // Vi behåller verifierings-checken utkommenterad tills vidare
+        // if (!user.emailVerified) throw new Error("Kontot är inte verifierat");
 
         return {
           id: user.id,
@@ -53,14 +52,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
     })
   ],
+  // ... callbacks och pages är oförändrade ...
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        return {
-          ...token,
-          id: (user as any).id,
-          username: (user as any).username
-        };
+        return { ...token, id: (user as any).id, username: (user as any).username };
       }
       return token;
     },
