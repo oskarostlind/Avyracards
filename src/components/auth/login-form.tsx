@@ -1,167 +1,154 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
-
-// 1. Definiera validerings-schema
-const LoginSchema = z.object({
-  username: z.string().min(1, "Användarnamn krävs"), // Vi använder username nu
-  password: z.string().min(1, "Lösenord krävs"),
-});
-
-type LoginFormData = z.infer<typeof LoginSchema>;
 
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // Om användaren försökte nå en skyddad sida skickas de tillbaka dit efter login
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const registered = searchParams.get("registered");
   
-  const [globalError, setGlobalError] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // 2. Koppla React Hook Form
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(LoginSchema),
-  });
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
 
-  const onSubmit = async (data: LoginFormData) => {
-    setGlobalError(""); // Rensa gamla fel
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+
+    if (!email || !password) {
+      setError("Fyll i alla fält");
+      setLoading(false);
+      return;
+    }
 
     try {
-      // 3. Anropa NextAuth signIn
       const result = await signIn("credentials", {
-        username: data.username, // Matchar fältet i auth.ts
-        password: data.password,
-        redirect: false, // Vi hanterar redirect manuellt för bättre UX (slipper blinkande sidor)
+        email,
+        password,
+        redirect: false,
       });
 
       if (result?.error) {
-        // Fånga upp fel från authorize() (t.ex. "Felaktiga uppgifter")
-        setGlobalError("Felaktigt användarnamn eller lösenord.");
+        setError("Felaktig e-post eller lösenord");
+        setLoading(false);
       } else {
-        // Succé! Skicka användaren vidare
         router.push(callbackUrl);
-        router.refresh(); // Uppdatera sessionen direkt
+        router.refresh();
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      setGlobalError("Något gick fel. Försök igen senare.");
+    } catch (err) {
+      setError("Något gick fel. Försök igen.");
+      setLoading(false);
     }
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 space-y-8 bg-white rounded-2xl shadow-sm border border-gray-100">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">
-          Välkommen tillbaka
+    <div className="w-full max-w-md p-8 space-y-8 bg-[#030712] border border-gray-800 rounded-2xl shadow-2xl">
+      {/* Header Section - Matchar Register */}
+      <div className="text-center space-y-2">
+        <h3 className="text-xs font-bold tracking-widest text-gray-500 uppercase">
+          SocialCard
+        </h3>
+        <h1 className="text-3xl font-bold text-white tracking-tight">
+          Logga in
         </h1>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="text-gray-400 text-sm">
           Logga in för att hantera din profil
         </p>
       </div>
 
-      {/* Globalt felmeddelande (t.ex. vid fel lösenord) */}
-      {globalError && (
-        <div className="p-3 rounded-lg bg-red-50 border border-red-200 flex items-center gap-3 text-red-800 text-sm animate-in fade-in slide-in-from-top-2">
-          <AlertCircle size={18} />
-          <span>{globalError}</span>
+      {/* Feedback Messages */}
+      {registered && (
+        <div className="p-3 text-sm text-green-500 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
+          Ditt konto har skapats! Du kan nu logga in.
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* Användarnamn */}
-        <div className="space-y-2">
-          <label 
-            htmlFor="username" 
-            className="block text-sm font-medium text-gray-700"
-          >
-            Användarnamn
-          </label>
-          <input
-            {...register("username")}
-            id="username"
-            type="text"
-            placeholder="Ditt användarnamn"
-            autoCapitalize="none"
-            autoCorrect="off"
-            disabled={isSubmitting}
-            className={`w-full px-4 py-3 rounded-xl border bg-gray-50 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-100 ${
-              errors.username 
-                ? "border-red-300 focus:border-red-500" 
-                : "border-gray-200 focus:border-blue-500"
-            }`}
-          />
-          {errors.username && (
-            <p className="text-xs text-red-500 font-medium ml-1">
-              {errors.username.message}
-            </p>
-          )}
+      {error && (
+        <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
+          {error}
         </div>
+      )}
 
-        {/* Lösenord */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
+      {/* Form */}
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          
+          {/* Email Field */}
+          <div className="space-y-2">
             <label 
-              htmlFor="password" 
-              className="block text-sm font-medium text-gray-700"
+              htmlFor="email" 
+              className="text-sm font-medium text-gray-200 block"
             >
-              Lösenord
+              E-post
             </label>
-            <Link 
-              href="/forgot-password" 
-              className="text-xs font-medium text-blue-600 hover:text-blue-500"
-            >
-              Glömt lösenord?
-            </Link>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              disabled={loading}
+              placeholder="namn@exempel.se"
+              className="w-full px-4 py-3 bg-blue-50/50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+            />
           </div>
-          <input
-            {...register("password")}
-            id="password"
-            type="password"
-            placeholder="••••••••"
-            disabled={isSubmitting}
-            className={`w-full px-4 py-3 rounded-xl border bg-gray-50 focus:bg-white transition-all outline-none focus:ring-2 focus:ring-blue-100 ${
-              errors.password 
-                ? "border-red-300 focus:border-red-500" 
-                : "border-gray-200 focus:border-blue-500"
-            }`}
-          />
-          {errors.password && (
-            <p className="text-xs text-red-500 font-medium ml-1">
-              {errors.password.message}
-            </p>
-          )}
+
+          {/* Password Field */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label 
+                htmlFor="password" 
+                className="text-sm font-medium text-gray-200 block"
+              >
+                Lösenord
+              </label>
+            </div>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              disabled={loading}
+              placeholder="••••••••"
+              className="w-full px-4 py-3 bg-blue-50/50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+            />
+          </div>
         </div>
 
+        {/* Submit Button */}
         <button
           type="submit"
-          disabled={isSubmitting}
-          className="w-full flex items-center justify-center py-3 px-4 bg-black text-white rounded-xl font-bold text-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          disabled={loading}
+          className="w-full py-3.5 px-4 bg-white hover:bg-gray-100 text-black font-bold rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/5"
         >
-          {isSubmitting ? (
-            <Loader2 className="w-5 h-5 animate-spin" />
-          ) : (
-            "Logga in"
-          )}
+          {loading ? "Loggar in..." : "Logga in"}
         </button>
-      </form>
 
-      <p className="text-center text-sm text-gray-500">
-        Har du inget konto?{" "}
-        <Link href="/register" className="font-semibold text-black hover:underline">
-          Skapa konto
-        </Link>
-      </p>
+        {/* Footer Link */}
+        <div className="text-center space-y-4">
+          <Link
+            href="/register"
+            className="text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            Har du inget konto? <span className="font-semibold text-white">Skapa konto</span>
+          </Link>
+          
+          {/* Optional: Glömt lösenord länk om du vill ha den här nere istället */}
+          {/* <div>
+             <Link href="/forgot-password" class="text-xs text-gray-500 hover:text-gray-300">Glömt lösenord?</Link>
+          </div> 
+          */}
+        </div>
+      </form>
     </div>
   );
 }
