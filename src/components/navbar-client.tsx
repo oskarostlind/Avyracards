@@ -194,7 +194,7 @@ export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
             ) : (
               <>
                 <Link
-                  href="/order"
+                  href="/get-started"
                   className="rounded-full border border-slate-500/70 px-4 py-1.5 text-sm font-medium text-slate-100 hover:border-emerald-400 hover:text-emerald-300"
                 >
                   Kom igång
