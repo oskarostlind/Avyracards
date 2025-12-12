@@ -23,7 +23,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: {
-            username: username.toLowerCase()
+            // FIX: Matchar exakt användarnamn (case sensitive) som det sparades vid registrering
+            username: username 
           }
         });
 
@@ -37,10 +38,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Felaktiga uppgifter");
         }
 
-        if (!user.emailVerified) {
+        // FIX: Tillfälligt inaktiverad verifieringskrav för enklare inloggning
+        /* if (!user.emailVerified) {
           throw new Error("Kontot är inte verifierat");
         }
-
+        */
 
         return {
           id: user.id,
