@@ -1,13 +1,36 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, CreditCard, Layers, Minus, Plus } from "lucide-react";
+import { Loader2, CreditCard, Layers, Minus, Plus, Check, QrCode, Smartphone } from "lucide-react";
+
+type MaterialType = "plastic" | "metal";
+type DesignType = "minimal" | "qr";
+type ColorType = "black" | "white" | "gold" | "silver";
 
 export default function OrderPage() {
   const [loading, setLoading] = useState(false);
-  const [material, setMaterial] = useState<"plastic" | "metal">("plastic");
+  
+  // State för konfiguratorn
+  const [material, setMaterial] = useState<MaterialType>("plastic");
+  const [design, setDesign] = useState<DesignType>("minimal");
+  const [color, setColor] = useState<ColorType>("black");
   const [quantity, setQuantity] = useState(1);
-  const [color] = useState("black"); 
+
+  // Prislista
+  const pricePerCard = material === "metal" ? 499 : 149;
+  const total = pricePerCard * quantity;
+
+  // Tillgängliga färger baserat på material
+  const availableColors = material === "metal" 
+    ? [
+        { id: "black", name: "Matte Black", bg: "bg-gray-900" },
+        { id: "gold", name: "Luxury Gold", bg: "bg-yellow-600" },
+        { id: "silver", name: "Sterling Silver", bg: "bg-gray-300" }
+      ]
+    : [
+        { id: "black", name: "Midnight Black", bg: "bg-gray-900" },
+        { id: "white", name: "Clean White", bg: "bg-gray-100 border border-gray-300" }
+      ];
 
   const handleCheckout = async () => {
     try {
@@ -15,131 +38,199 @@ export default function OrderPage() {
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ material, quantity, color }),
+        body: JSON.stringify({ 
+          material, 
+          quantity, 
+          color,
+          design 
+        }),
       });
 
       const data = await response.json();
       if (data.url) window.location.href = data.url; 
     } catch (error) {
-      console.error("Fel:", error);
+      console.error("Fel vid checkout:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const pricePerCard = material === "metal" ? 499 : 149;
-  const total = pricePerCard * quantity;
-
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-      <div className="max-w-5xl w-full grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12">
         
         {/* VÄNSTER: Konfigurator */}
-        <div className="bg-white p-8 rounded-3xl shadow-sm border border-gray-100 h-fit">
-          <h1 className="text-3xl font-bold mb-8 text-gray-900">Beställ ditt kort</h1>
+        <div className="space-y-8">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Designa ditt kort</h1>
+            <p className="text-gray-500">Välj material och utseende som passar ditt varumärke.</p>
+          </div>
 
-          {/* Materialval */}
-          <div className="mb-8">
-            <label className="block text-sm font-semibold text-gray-900 mb-4">Välj material</label>
+          {/* 1. Materialval */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+            <label className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 block">1. Välj Material</label>
             <div className="grid grid-cols-2 gap-4">
               <button
-                onClick={() => setMaterial("plastic")}
-                className={`p-6 rounded-2xl flex flex-col items-center gap-3 transition-all border-2 ${
+                onClick={() => { setMaterial("plastic"); setColor("black"); }}
+                className={`p-4 rounded-2xl flex items-center gap-4 border-2 transition-all ${
                   material === "plastic" 
-                    ? "border-blue-600 bg-blue-50/50 text-blue-700 shadow-sm" 
-                    : "border-gray-200 hover:border-gray-300 text-gray-600 hover:bg-gray-50"
+                    ? "border-blue-600 bg-blue-50/50" 
+                    : "border-gray-100 hover:border-gray-200"
                 }`}
               >
-                <Layers className={`w-8 h-8 ${material === "plastic" ? "text-blue-600" : "text-gray-400"}`} />
-                <div className="text-center">
-                  <span className="block font-bold text-lg">Standard</span>
-                  <span className="text-sm opacity-80">Plast</span>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${material === "plastic" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-400"}`}>
+                  <Layers size={20} />
                 </div>
-                <span className="text-sm font-medium bg-white px-2 py-1 rounded-md border border-gray-200 mt-1">149 kr</span>
+                <div className="text-left">
+                  <span className="block font-bold text-gray-900">Standard</span>
+                  <span className="text-xs text-gray-500">Hållbar PVC-plast</span>
+                </div>
+                <span className="ml-auto text-sm font-bold">149 kr</span>
               </button>
               
               <button
-                onClick={() => setMaterial("metal")}
-                className={`p-6 rounded-2xl flex flex-col items-center gap-3 transition-all border-2 ${
+                onClick={() => { setMaterial("metal"); setColor("black"); }}
+                className={`p-4 rounded-2xl flex items-center gap-4 border-2 transition-all ${
                   material === "metal" 
-                    ? "border-blue-600 bg-blue-50/50 text-blue-700 shadow-sm" 
-                    : "border-gray-200 hover:border-gray-300 text-gray-600 hover:bg-gray-50"
+                    ? "border-blue-600 bg-blue-50/50" 
+                    : "border-gray-100 hover:border-gray-200"
                 }`}
               >
-                <CreditCard className={`w-8 h-8 ${material === "metal" ? "text-blue-600" : "text-gray-400"}`} />
-                <div className="text-center">
-                  <span className="block font-bold text-lg">Premium</span>
-                  <span className="text-sm opacity-80">Metall</span>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center ${material === "metal" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-400"}`}>
+                  <CreditCard size={20} />
                 </div>
-                <span className="text-sm font-medium bg-white px-2 py-1 rounded-md border border-gray-200 mt-1">499 kr</span>
+                <div className="text-left">
+                  <span className="block font-bold text-gray-900">Metal Hybrid</span>
+                  <span className="text-xs text-gray-500">Premium rostfritt stål</span>
+                </div>
+                <span className="ml-auto text-sm font-bold">499 kr</span>
               </button>
             </div>
           </div>
 
-          {/* Antal */}
-          <div className="mb-8">
-             <label className="block text-sm font-semibold text-gray-900 mb-4">Antal kort</label>
-             <div className="flex items-center gap-6 bg-gray-50 w-fit p-2 rounded-xl border border-gray-200">
-                <button 
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
-                ><Minus size={18} /></button>
-                <span className="text-xl font-bold w-8 text-center tabular-nums text-gray-900">{quantity}</span>
-                <button 
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 rounded-lg bg-white shadow-sm border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
-                ><Plus size={18} /></button>
+          {/* 2. Designval */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+            <label className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 block">2. Välj Layout</label>
+            <div className="grid grid-cols-2 gap-4">
+              <button
+                onClick={() => setDesign("minimal")}
+                className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all ${
+                  design === "minimal" ? "border-black bg-gray-50" : "border-gray-100"
+                }`}
+              >
+                <Smartphone className="mb-2" />
+                <span className="text-sm font-semibold">Minimal</span>
+              </button>
+              <button
+                onClick={() => setDesign("qr")}
+                className={`p-4 rounded-2xl flex flex-col items-center gap-2 border-2 transition-all ${
+                  design === "qr" ? "border-black bg-gray-50" : "border-gray-100"
+                }`}
+              >
+                <QrCode className="mb-2" />
+                <span className="text-sm font-semibold">QR Kod</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 3. Färgval */}
+          <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100">
+            <label className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 block">3. Välj Finish</label>
+            <div className="flex gap-4">
+              {availableColors.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => setColor(c.id as ColorType)}
+                  className={`group relative w-16 h-16 rounded-full ${c.bg} shadow-sm transition-transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600`}
+                >
+                  {color === c.id && (
+                    <span className={`absolute inset-0 flex items-center justify-center ${c.id === "white" || c.id === "silver" ? "text-black" : "text-white"}`}>
+                      <Check size={24} strokeWidth={3} />
+                    </span>
+                  )}
+                  <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs font-medium text-gray-500 w-max opacity-0 group-hover:opacity-100 transition-opacity">
+                    {c.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Antal & Köp */}
+          <div className="flex items-center justify-between pt-4">
+             <div className="flex items-center gap-4 bg-white px-4 py-2 rounded-xl border border-gray-200">
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="p-2 hover:bg-gray-100 rounded-lg"><Minus size={16}/></button>
+                <span className="font-bold w-4 text-center">{quantity}</span>
+                <button onClick={() => setQuantity(quantity + 1)} className="p-2 hover:bg-gray-100 rounded-lg"><Plus size={16}/></button>
+             </div>
+             <div className="text-right">
+               <p className="text-sm text-gray-500">Totalt</p>
+               <p className="text-3xl font-bold">{total} kr</p>
              </div>
           </div>
-
-          {/* Summering & Knapp */}
-          <div className="border-t border-gray-100 pt-8 mt-auto">
-            <div className="flex justify-between items-end mb-6">
-              <span className="text-gray-500 font-medium">Totalt att betala</span>
-              <span className="text-4xl font-bold text-gray-900 tracking-tight">{total} kr</span>
-            </div>
             
-            <button
-              onClick={handleCheckout}
-              disabled={loading}
-              className="w-full bg-black text-white py-4 rounded-xl font-bold text-lg hover:bg-gray-800 transition-all transform active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-lg"
-            >
-              {loading && <Loader2 className="w-5 h-5 animate-spin" />}
-              {loading ? "Laddar..." : "Gå till kassan"}
-            </button>
-          </div>
+          <button
+            onClick={handleCheckout}
+            disabled={loading}
+            className="w-full bg-black text-white py-5 rounded-2xl font-bold text-lg hover:bg-gray-800 transition-all shadow-lg flex items-center justify-center gap-2"
+          >
+            {loading ? <Loader2 className="animate-spin" /> : "Gå till kassan"}
+          </button>
         </div>
 
-        {/* HÖGER: Preview */}
-        <div className="hidden md:flex items-center justify-center bg-gray-100 rounded-3xl relative overflow-hidden">
-           {/* Bakgrundseffekt */}
-           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-gray-400 via-gray-100 to-transparent"></div>
-           
-           <div className={`
-              w-[340px] h-[214px] rounded-2xl shadow-2xl relative transition-all duration-500 transform hover:scale-105 hover:rotate-1
-              ${material === "metal" 
-                ? "bg-gradient-to-br from-gray-800 via-gray-900 to-black text-gray-100 border border-gray-700" 
-                : "bg-white text-gray-900 border border-gray-200"}
-           `}>
-              {/* Kortinnehåll */}
-              <div className="absolute inset-0 p-8 flex flex-col justify-between z-10">
-                 <div className="flex justify-between items-start">
-                    <div className={`w-10 h-10 rounded-lg ${material === 'metal' ? 'bg-white/10' : 'bg-black/5'}`}></div>
-                    <div className="opacity-40 text-xs font-mono tracking-widest">NFC</div>
-                 </div>
-                 <div>
-                    <div className="text-xl font-bold tracking-wide mb-1">Ditt Namn</div>
-                    <div className="text-xs opacity-60 uppercase tracking-wider">SocialCard {material}</div>
-                 </div>
-              </div>
-              
-              {/* Metall-glans */}
-              {material === "metal" && (
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 rounded-2xl pointer-events-none z-20"></div>
-              )}
+        {/* HÖGER: Live Preview */}
+        <div className="sticky top-12 h-fit">
+           <div className="relative aspect-[1.586/1] w-full max-w-lg mx-auto rounded-3xl shadow-2xl transition-all duration-500 perspective-1000">
+             
+             {/* Kortets bakgrund & Materialeffekt */}
+             <div className={`
+                absolute inset-0 rounded-3xl overflow-hidden transition-colors duration-500
+                ${material === "metal" && color === "black" ? "bg-zinc-900" : ""}
+                ${material === "metal" && color === "gold" ? "bg-gradient-to-br from-yellow-600 via-yellow-500 to-yellow-700" : ""}
+                ${material === "metal" && color === "silver" ? "bg-gradient-to-br from-gray-300 via-gray-100 to-gray-400" : ""}
+                ${material === "plastic" && color === "black" ? "bg-gray-900" : ""}
+                ${material === "plastic" && color === "white" ? "bg-white border border-gray-200" : ""}
+             `}>
+                
+                {/* Metall-glans overlay */}
+                {material === "metal" && (
+                   <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/20 to-transparent opacity-50 pointer-events-none" />
+                )}
+
+                {/* Innehåll */}
+                <div className={`relative h-full p-10 flex flex-col justify-between ${
+                   color === "white" || color === "silver" ? "text-black" : "text-white"
+                }`}>
+                   <div className="flex justify-between items-start">
+                      {/* Logo / Ikon */}
+                      <div className="w-12 h-12 rounded-xl bg-current opacity-10 flex items-center justify-center">
+                        <Layers size={24} className="opacity-50"/>
+                      </div>
+                      <div className="opacity-50 text-xs font-mono tracking-[0.2em] uppercase">
+                        {material}
+                      </div>
+                   </div>
+
+                   <div className="flex items-end justify-between">
+                      <div>
+                         <div className="text-2xl font-bold tracking-wide">Ditt Namn</div>
+                         <div className="text-sm opacity-60 mt-1">SocialCard</div>
+                      </div>
+
+                      {/* QR Kod om vald */}
+                      {design === "qr" && (
+                        <div className="bg-white p-2 rounded-lg">
+                           <div className="w-12 h-12 bg-black opacity-10"></div>
+                        </div>
+                      )}
+                   </div>
+                </div>
+             </div>
            </div>
            
-           <p className="absolute bottom-12 text-gray-400 text-sm font-medium">Live Preview</p>
+           <p className="text-center mt-8 text-sm text-gray-400 font-medium">
+             Förhandsgranskning. Du kopplar din profil efter leverans.
+           </p>
         </div>
 
       </div>

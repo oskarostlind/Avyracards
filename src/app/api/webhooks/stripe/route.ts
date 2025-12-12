@@ -5,9 +5,8 @@ import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 import crypto from "crypto";
 
-// Funktion för att skapa en kort (6 tecken, versaler + siffror)
 function generateShortCode(length = 6) {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exkluderar I, 1, O, 0 för läsbarhet
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; 
   let result = "";
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -35,12 +34,14 @@ export async function POST(req: Request) {
 
   if (event.type === "checkout.session.completed") {
     
-    // Hämta metadata vi skickade med vid köpet (kommer i nästa steg)
+    // Hämta ALL metadata
     const quantity = parseInt(session.metadata?.quantity || "1");
     const material = session.metadata?.material || "plastic";
+    const color = session.metadata?.color || "black";
+    const design = session.metadata?.design || "minimal";
     const customerType = session.metadata?.customerType === "company" ? "COMPANY" : "PRIVATE";
     
-    // 1. Skapa Ordern i DB
+    // 1. Skapa Order
     const order = await prisma.order.create({
       data: {
         stripeSessionId: session.id,
@@ -54,37 +55,31 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log(`✅ Order ${order.id} created.`);
-
-    // 2. Generera Card Slots (loopa antalet kort)
+    // 2. Generera Card Slots med rätt design
     const cardsToCreate = [];
     
     for (let i = 0; i < quantity; i++) {
       const cardCode = generateShortCode(); 
-      // OBS: I produktion bör du kolla i DB så koden inte redan finns, 
-      // men med 6 tecken och slump är krockrisken liten vid låga volymer.
-      
       const claimToken = crypto.randomBytes(32).toString("hex");
 
       cardsToCreate.push({
         orderId: order.id,
         cardCode: cardCode,
         claimToken: claimToken,
-        status: "UNCLAIMED" as const, // Måste casta enum om TS klagar
+        status: "UNCLAIMED" as const,
+        
+        // Här sparar vi designvalen!
         material: material,
-        // Designvalen kan också hämtas från metadata här om vi sparat dem
+        colorOption: color,
+        designTemplate: design,
       });
     }
 
-    // Batch insert för prestanda
     await prisma.card.createMany({
       data: cardsToCreate,
     });
 
-    console.log(`✅ ${quantity} card slots generated for Order ${order.id}.`);
-    
-    // Här skulle du kunna trigga ett email via Resend som skickar bekräftelse
-    // await sendOrderConfirmation(order.customerEmail, cardsToCreate);
+    console.log(`✅ ${quantity} cards (${material}/${color}) generated.`);
   }
 
   return new NextResponse(null, { status: 200 });

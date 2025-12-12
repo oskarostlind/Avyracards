@@ -4,13 +4,10 @@ import { stripe } from "@/lib/stripe";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { quantity, material, color } = body;
+    const { quantity, material, color, design } = body; // Lade till 'design'
 
-    // SÄKERHET: Om env-variabeln saknas, använd localhost som fallback
-    // Detta löser "Invalid URL" felet hos Stripe om .env inte laddats korrekt
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    // Prislogik (öre)
     const unitPrice = material === "metal" ? 49900 : 14900; 
     const productName = material === "metal" ? "SocialCard Metal" : "SocialCard Standard";
 
@@ -21,7 +18,8 @@ export async function POST(req: Request) {
             currency: "sek",
             product_data: {
               name: productName,
-              description: `${quantity}x ${material} kort (${color})`,
+              // Vi lägger in valen i beskrivningen så kunden ser vad de köper
+              description: `${material.toUpperCase()} | ${color.toUpperCase()} | ${design.toUpperCase()}`,
             },
             unit_amount: unitPrice,
           },
@@ -29,15 +27,15 @@ export async function POST(req: Request) {
         },
       ],
       mode: "payment",
-      
-      // Här använder vi baseUrl för att garantera en giltig URL (ex: http://localhost:3000/verify-sent)
       success_url: `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/order`,
       
+      // VIKTIGT: Vi skickar med allt i metadata för att Webhooken ska kunna läsa det
       metadata: {
         quantity: quantity.toString(),
         material: material,
         color: color,
+        design: design,
         customerType: "private",
       },
       
