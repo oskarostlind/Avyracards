@@ -1,240 +1,201 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useRouter } from "next/navigation";
+import { Loader2, AlertCircle } from "lucide-react"; // Tog bort oanvända ikoner
 
-const formSchema = z.object({
-  username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_]+$/),
-  email: z.string().email(),
-  password: z.string().min(6).max(128),
+// 1. Definiera validerings-schema
+const RegisterSchema = z.object({
   profileMode: z.enum(["social", "business"]),
+  username: z
+    .string()
+    .min(3, "Användarnamnet måste vara minst 3 tecken")
+    .max(30, "Max 30 tecken")
+    .regex(/^[a-zA-Z0-9_]+$/, "Endast bokstäver, siffror och understreck"),
+  email: z.string().email("Ogiltig e-postadress"),
+  password: z.string().min(6, "Lösenordet måste vara minst 6 tecken"),
 });
 
-type FormState = z.infer<typeof formSchema>;
+type RegisterFormData = z.infer<typeof RegisterSchema>;
 
-export function RegisterForm() {
+export default function RegisterForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [globalError, setGlobalError] = useState<string>("");
 
-  const modeParam = searchParams.get("mode");
-  const initialProfileMode: FormState["profileMode"] =
-    modeParam === "business" ? "business" : "social";
-
-  const [form, setForm] = useState<FormState>({
-    username: "",
-    email: "",
-    password: "",
-    profileMode: initialProfileMode,
+  // 2. Koppla React Hook Form
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(RegisterSchema),
+    defaultValues: {
+      profileMode: "social", // Standardval
+    },
   });
 
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const selectedMode = watch("profileMode");
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
+  const onSubmit = async (data: RegisterFormData) => {
+    setGlobalError("");
 
-    const parsed = formSchema.safeParse(form);
-    if (!parsed.success) {
-      setError("Kontrollera användarnamn, e-post, lösenord och profiltyp.");
-      return;
-    }
-
-    setLoading(true);
     try {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data),
+        body: JSON.stringify(data),
       });
 
-      const data = await res.json().catch(() => null);
+      const result = await res.json();
 
       if (!res.ok) {
-        setError(data?.error ?? "Något gick fel vid skapande av konto.");
+        setGlobalError(result.error || "Registreringen misslyckades.");
         return;
       }
 
-      router.push("/verify-sent");
-    } finally {
-      setLoading(false);
+      // Succé! Skicka till inloggning med flagga
+      router.push("/login?registered=true");
+      
+    } catch (error) {
+      setGlobalError("Kunde inte nå servern. Kontrollera din anslutning.");
     }
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="w-full max-w-md rounded-3xl border border-slate-800 bg-slate-900/60 px-8 py-10 shadow-xl backdrop-blur"
-    >
-      <div className="mb-8 text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
-          SocialCard
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold text-slate-50">
-          Skapa konto
-        </h1>
-        <p className="mt-1 text-sm text-slate-400">
+    <div className="w-full max-w-md mx-auto p-6 space-y-8 bg-gray-950 text-white rounded-3xl border border-gray-800 shadow-2xl">
+      <div className="text-center space-y-2">
+        <h6 className="text-xs font-bold tracking-widest text-gray-500 uppercase">SOCIALCARD</h6>
+        <h1 className="text-3xl font-bold tracking-tight">Skapa konto</h1>
+        <p className="text-sm text-gray-400">
           Registrera dig för att skapa din digitala kortprofil.
         </p>
       </div>
 
-      <div className="space-y-5">
-        {/* Profiltyp / Social vs Business */}
-        <div className="space-y-2">
-          <p className="text-sm font-medium text-slate-200">Profiltyp</p>
-          <p className="text-xs text-slate-400">
-            Välj hur din offentliga profil ska se ut. Du kan ändra detta senare
-            i din dashboard.
-          </p>
+      {globalError && (
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center gap-3 text-red-400 text-sm animate-in fade-in slide-in-from-top-2">
+          <AlertCircle size={18} />
+          <span>{globalError}</span>
+        </div>
+      )}
 
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
-            {/* Social */}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        
+        {/* Profiltyp Väljare */}
+        <div className="space-y-3">
+          <label className="text-sm font-medium text-gray-300">Profiltyp</label>
+          <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
-              onClick={() =>
-                setForm((prev) => ({ ...prev, profileMode: "social" }))
-              }
-              className={`flex h-full flex-col justify-between rounded-2xl border p-3 text-left text-xs transition ${
-                form.profileMode === "social"
-                  ? "border-sky-500 bg-sky-500/10 ring-1 ring-sky-500/60"
-                  : "border-slate-700 bg-slate-900 hover:border-sky-500/60"
+              onClick={() => setValue("profileMode", "social")}
+              className={`p-4 rounded-xl border flex flex-col items-start gap-2 transition-all ${
+                selectedMode === "social"
+                  ? "bg-blue-600 border-blue-500 text-white"
+                  : "bg-gray-900 border-gray-800 text-gray-400 hover:border-gray-700"
               }`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-sky-400" />
-                  <span className="font-semibold text-slate-100">Social</span>
-                </span>
-                <span
-                  className={`h-3 w-3 rounded-full border ${
-                    form.profileMode === "social"
-                      ? "border-sky-400 bg-sky-400"
-                      : "border-slate-500"
-                  }`}
-                />
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${selectedMode === "social" ? "bg-white" : "bg-gray-600"}`} />
+                <span className="font-bold text-sm">Social</span>
               </div>
-              <p className="mt-2 text-[11px] text-slate-300">
-                För kreatörer, influencers och profiler som vill samla sociala
-                medier och länkar på ett ställe.
+              <p className="text-[10px] opacity-80 text-left leading-tight">
+                För kreatörer, influencers och profiler som vill samla sociala medier.
               </p>
             </button>
 
-            {/* Business */}
             <button
               type="button"
-              onClick={() =>
-                setForm((prev) => ({ ...prev, profileMode: "business" }))
-              }
-              className={`flex h-full flex-col justify-between rounded-2xl border p-3 text-left text-xs transition ${
-                form.profileMode === "business"
-                  ? "border-emerald-500 bg-emerald-500/10 ring-1 ring-emerald-500/60"
-                  : "border-slate-700 bg-slate-900 hover:border-emerald-500/60"
+              onClick={() => setValue("profileMode", "business")}
+              className={`p-4 rounded-xl border flex flex-col items-start gap-2 transition-all ${
+                selectedMode === "business"
+                  ? "bg-emerald-600 border-emerald-500 text-white"
+                  : "bg-gray-900 border-gray-800 text-gray-400 hover:border-gray-700"
               }`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                  <span className="font-semibold text-slate-100">
-                    Business
-                  </span>
-                </span>
-                <span
-                  className={`h-3 w-3 rounded-full border ${
-                    form.profileMode === "business"
-                      ? "border-emerald-400 bg-emerald-400"
-                      : "border-slate-500"
-                  }`}
-                />
+               <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${selectedMode === "business" ? "bg-white" : "bg-gray-600"}`} />
+                <span className="font-bold text-sm">Business</span>
               </div>
-              <p className="mt-2 text-[11px] text-slate-300">
-                För yrkespersoner, säljare och företag som vill ha ett modernt
-                digitalt visitkort med tydlig kontaktvy.
+              <p className="text-[10px] opacity-80 text-left leading-tight">
+                För yrkespersoner, säljare och företag som vill ha ett modernt visitkort.
               </p>
             </button>
           </div>
         </div>
 
         {/* Användarnamn */}
-        <div className="space-y-1">
-          <label
-            className="block text-sm font-medium text-slate-200"
-            htmlFor="username"
-          >
+        <div className="space-y-2">
+          <label htmlFor="username" className="block text-sm font-medium text-gray-300">
             Användarnamn
           </label>
           <input
+            {...register("username")}
             id="username"
-            name="username"
             type="text"
-            autoComplete="username"
-            required
-            value={form.username}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, username: event.target.value }))
-            }
-            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-50 placeholder:text-slate-500 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
+            className={`w-full px-4 py-3 rounded-xl bg-gray-900 border text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all ${
+              errors.username ? "border-red-500/50 focus:border-red-500" : "border-gray-800 focus:border-blue-500"
+            }`}
+            placeholder="t.ex. elonmusk"
           />
+          {errors.username && (
+            <p className="text-xs text-red-400 ml-1">{errors.username.message}</p>
+          )}
         </div>
 
         {/* E-post */}
-        <div className="space-y-1">
-          <label
-            className="block text-sm font-medium text-slate-200"
-            htmlFor="email"
-          >
+        <div className="space-y-2">
+          <label htmlFor="email" className="block text-sm font-medium text-gray-300">
             E-post
           </label>
           <input
+            {...register("email")}
             id="email"
-            name="email"
             type="email"
-            autoComplete="email"
-            required
-            value={form.email}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, email: event.target.value }))
-            }
-            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-50 placeholder:text-slate-500 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
+            className={`w-full px-4 py-3 rounded-xl bg-gray-900 border text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all ${
+              errors.email ? "border-red-500/50 focus:border-red-500" : "border-gray-800 focus:border-blue-500"
+            }`}
+            placeholder="namn@exempel.se"
           />
+          {errors.email && (
+            <p className="text-xs text-red-400 ml-1">{errors.email.message}</p>
+          )}
         </div>
 
         {/* Lösenord */}
-        <div className="space-y-1">
-          <label
-            className="block text-sm font-medium text-slate-200"
-            htmlFor="password"
-          >
+        <div className="space-y-2">
+          <label htmlFor="password" className="block text-sm font-medium text-gray-300">
             Lösenord
           </label>
           <input
+            {...register("password")}
             id="password"
-            name="password"
             type="password"
-            autoComplete="new-password"
-            required
-            value={form.password}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, password: event.target.value }))
-            }
-            className="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-slate-50 placeholder:text-slate-500 focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-500/40"
+            className={`w-full px-4 py-3 rounded-xl bg-gray-900 border text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all ${
+              errors.password ? "border-red-500/50 focus:border-red-500" : "border-gray-800 focus:border-blue-500"
+            }`}
+            placeholder="••••••••"
           />
+          {errors.password && (
+            <p className="text-xs text-red-400 ml-1">{errors.password.message}</p>
+          )}
         </div>
-      </div>
 
-      {error && <p className="mt-4 text-sm text-rose-400">{error}</p>}
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? <Loader2 className="animate-spin" /> : "Skapa konto"}
+        </button>
+      </form>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="mt-6 w-full rounded-full bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-slate-200 disabled:opacity-60"
-      >
-        {loading ? "Skapar konto..." : "Skapa konto"}
-      </button>
-
-      <p className="mt-3 text-center text-xs text-slate-500">
+      <p className="text-center text-xs text-gray-500">
         Genom att skapa konto godkänner du våra användarvillkor.
       </p>
-    </form>
+    </div>
   );
 }

@@ -9,9 +9,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 
-// 1. Definiera schemat för validering
+// 1. Definiera validerings-schema
 const LoginSchema = z.object({
-  username: z.string().min(1, "Användarnamn krävs"), // Vi använder username nu, inte email
+  username: z.string().min(1, "Användarnamn krävs"), // Vi använder username nu
   password: z.string().min(1, "Lösenord krävs"),
 });
 
@@ -20,6 +20,7 @@ type LoginFormData = z.infer<typeof LoginSchema>;
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // Om användaren försökte nå en skyddad sida skickas de tillbaka dit efter login
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   
   const [globalError, setGlobalError] = useState<string>("");
@@ -39,20 +40,21 @@ export default function LoginForm() {
     try {
       // 3. Anropa NextAuth signIn
       const result = await signIn("credentials", {
-        username: data.username, // Viktigt: Vi skickar 'username' till vår authorize-funktion
+        username: data.username, // Matchar fältet i auth.ts
         password: data.password,
-        redirect: false, // Vi hanterar redirect manuellt för bättre UX
+        redirect: false, // Vi hanterar redirect manuellt för bättre UX (slipper blinkande sidor)
       });
 
       if (result?.error) {
-        // Om inloggningen misslyckades
+        // Fånga upp fel från authorize() (t.ex. "Felaktiga uppgifter")
         setGlobalError("Felaktigt användarnamn eller lösenord.");
       } else {
         // Succé! Skicka användaren vidare
         router.push(callbackUrl);
-        router.refresh();
+        router.refresh(); // Uppdatera sessionen direkt
       }
     } catch (error) {
+      console.error("Login error:", error);
       setGlobalError("Något gick fel. Försök igen senare.");
     }
   };
@@ -68,7 +70,7 @@ export default function LoginForm() {
         </p>
       </div>
 
-      {/* Globalt felmeddelande (t.ex. "Fel lösenord") */}
+      {/* Globalt felmeddelande (t.ex. vid fel lösenord) */}
       {globalError && (
         <div className="p-3 rounded-lg bg-red-50 border border-red-200 flex items-center gap-3 text-red-800 text-sm animate-in fade-in slide-in-from-top-2">
           <AlertCircle size={18} />
