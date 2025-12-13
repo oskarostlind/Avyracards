@@ -136,7 +136,7 @@ export default function LoginForm() {
         {/* Footer Link */}
         <div className="text-center space-y-4">
           <Link
-            href="/register"
+            href="/get-started"
             className="text-sm text-gray-400 hover:text-white transition-colors"
           >
             Har du inget konto? <span className="font-semibold text-white">Skapa konto</span>

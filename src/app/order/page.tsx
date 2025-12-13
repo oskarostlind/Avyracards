@@ -8,12 +8,11 @@ import { CardPreview3D } from "@/components/card-preview-3d";
 type MaterialType = "plastic" | "metal";
 type DesignType = "minimal" | "qr";
 
-// Definiera en typ för färgerna för att lösa TypeScript-felet
 interface ColorOption {
   id: string;
   name: string;
   hex: string;
-  border?: boolean; // Valfri egenskap
+  border?: boolean;
 }
 
 const PLASTIC_COLORS: ColorOption[] = [
@@ -37,8 +36,6 @@ export default function OrderPage() {
   const [loading, setLoading] = useState(false);
   
   const [material, setMaterial] = useState<MaterialType>("plastic");
-  
-  // Vi tar bort setDesign för att slippa varningen, då vi just nu inte har knappar för att byta den
   const [design] = useState<DesignType>("minimal"); 
   
   const [color, setColor] = useState("black");
@@ -101,44 +98,47 @@ export default function OrderPage() {
   const activeColors = material === "plastic" ? PLASTIC_COLORS : METAL_COLORS;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+    <div className="min-h-screen bg-[#050505] text-white py-6 lg:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
       <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16">
         
-        {/* VÄNSTER: Preview */}
-        <div className="lg:col-span-7 order-1 lg:order-2 flex flex-col items-center justify-center min-h-[500px] lg:sticky lg:top-12 bg-[#0a0a0a] rounded-3xl border border-white/5 relative overflow-hidden group">
-           
-           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-           <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent"></div>
+        {/* VÄNSTER: Preview (Sticky endast på desktop) */}
+        <div className="lg:col-span-7 order-1 lg:order-2">
+            <div className="flex flex-col items-center justify-center min-h-[320px] lg:min-h-[500px] lg:sticky lg:top-24 bg-[#0a0a0a] rounded-3xl border border-white/5 relative overflow-hidden group">
+                {/* Background effects */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-transparent to-transparent"></div>
 
-           <div className="relative z-10 w-full max-w-lg px-6">
-              <CardPreview3D 
-                material={material}
-                color={color}
-                design={design}
-                customImage={customImage}
-              />
-              
-              <div className="text-center mt-8 space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                <p className="text-sm font-medium text-gray-400">Dra för att rotera • 3D Preview</p>
-              </div>
-           </div>
+                <div className="relative z-10 w-full px-6 flex flex-col items-center">
+                    <CardPreview3D 
+                        material={material}
+                        color={color}
+                        design={design}
+                        customImage={customImage}
+                    />
+                    
+                    <div className="text-center mt-4 lg:mt-8 space-y-1 animate-in fade-in duration-700">
+                        <p className="text-sm font-medium text-gray-400">Dra för att rotera</p>
+                        <p className="text-xs text-gray-600 block lg:hidden">Touch aktiverat</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
         {/* HÖGER: Konfigurator */}
-        <div className="lg:col-span-5 order-2 lg:order-1 space-y-10 py-4">
+        <div className="lg:col-span-5 order-2 lg:order-1 space-y-8 lg:space-y-10 py-2">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-white mb-3">Designa ditt kort</h1>
-            <p className="text-gray-400">Skräddarsy ditt NFC-kort för professionellt nätverkande.</p>
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-2">Designa ditt kort</h1>
+            <p className="text-gray-400 text-sm lg:text-base">Skräddarsy ditt NFC-kort för professionellt nätverkande.</p>
           </div>
 
           <div className="space-y-4">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-widest">1. Material</label>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
                 onClick={() => selectMaterial("plastic")}
                 className={`p-4 rounded-xl flex items-center gap-3 border transition-all ${
                   material === "plastic" 
-                    ? "border-blue-500 bg-blue-500/10 text-white" 
+                    ? "border-blue-500 bg-blue-500/10 text-white shadow-[0_0_20px_rgba(37,99,235,0.15)]" 
                     : "border-white/10 hover:border-white/20 text-gray-400"
                 }`}
               >
@@ -156,7 +156,7 @@ export default function OrderPage() {
                 onClick={() => selectMaterial("metal")}
                 className={`p-4 rounded-xl flex items-center gap-3 border transition-all ${
                   material === "metal" 
-                    ? "border-blue-500 bg-blue-500/10 text-white" 
+                    ? "border-blue-500 bg-blue-500/10 text-white shadow-[0_0_20px_rgba(37,99,235,0.15)]" 
                     : "border-white/10 hover:border-white/20 text-gray-400"
                 }`}
               >
@@ -220,7 +220,7 @@ export default function OrderPage() {
                           alt="Upload" 
                           fill
                           className="object-cover opacity-50"
-                          unoptimized // Nödvändigt för blob-urls om du inte konfat hostname
+                          unoptimized 
                         />
                         <div className="absolute inset-0 flex items-center justify-center gap-4 z-10">
                              <button 
@@ -248,7 +248,7 @@ export default function OrderPage() {
              </div>
           )}
 
-          <div className="h-px bg-white/10 my-8"></div>
+          <div className="h-px bg-white/10 my-6 lg:my-8"></div>
 
           <div className="space-y-6">
              <div className="flex items-center justify-between">
