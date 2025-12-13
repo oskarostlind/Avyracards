@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { Check, CreditCard, Sparkles, User, ArrowRight } from "lucide-react";
 
 export default function GetStartedPage() {
