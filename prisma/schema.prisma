@@ -32,10 +32,13 @@ model User {
 
   redirectEnabled Boolean @default(true)
 
-  links       Link[]
+  links        Link[]
   
-  // NYTT: Kort som användaren har claimat/äger
-  cards       Card[]
+  // Kort som användaren har claimat/äger
+  cards        Card[]
+
+  // RELATION TILL STATISTIK (LÖSER FELET)
+  analyticsEvents AnalyticsEvent[]
 
   profileMode ProfileMode @default(SOCIAL)
 
@@ -57,10 +60,10 @@ model User {
   businessRegion String?
 
   // Företagssektion
-  companyLogoUrl     String?
+  companyLogoUrl       String?
   companyDescription String?
-  companyWebsite     String?
-  careerPageUrl      String?
+  companyWebsite       String?
+  careerPageUrl        String?
 }
 
 enum ProfileMode {
@@ -79,6 +82,9 @@ model Link {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // RELATION TILL STATISTIK (LÖSER FELET)
+  analyticsEvents AnalyticsEvent[]
 
   @@index([userId, order])
 }
@@ -107,33 +113,33 @@ model Order {
 }
 
 model Card {
-  id             String     @id @default(cuid())
-  createdAt      DateTime   @default(now())
+  id              String      @id @default(cuid())
+  createdAt       DateTime    @default(now())
   
   // Unik kod som trycks på kortet (t.ex. "X9F2P1")
-  cardCode       String     @unique
+  cardCode        String      @unique
   
   // Hemlig token för att claima kortet (används i URL vid första scan)
-  claimToken     String     @unique
+  claimToken      String      @unique
   
   // Status på kortet
-  status         CardStatus @default(UNCLAIMED)
+  status          CardStatus @default(UNCLAIMED)
   
-  claimedAt      DateTime?
+  claimedAt       DateTime?
   
   // Koppling till Order (ursprunget)
-  orderId        String
-  order          Order      @relation(fields: [orderId], references: [id])
+  orderId         String
+  order           Order       @relation(fields: [orderId], references: [id])
   
   // Koppling till User (när det är claimat)
   assignedUserId String?
-  user           User?      @relation(fields: [assignedUserId], references: [id])
+  user           User?       @relation(fields: [assignedUserId], references: [id])
   
   // Metadata om själva kortet (från produktbyggaren)
-  material       String?    // plast, metall
-  designTemplate String?    // minimal, full-logo
-  colorOption    String?    // black, white, gold
-  printFileUrl   String?    // URL till uppladdad logga
+  material        String?     // plast, metall
+  designTemplate String?     // minimal, full-logo
+  colorOption     String?     // black, white, gold
+  printFileUrl    String?     // URL till uppladdad logga
 }
 
 enum OrderStatus {
@@ -153,4 +159,36 @@ enum CardStatus {
   CLAIMED
   DISABLED
   LOST
+}
+
+
+// --- NY TABELL FÖR STATISTIK ---
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  // Vem äger profilen som besöktes?
+  profileOwnerId String
+  profileOwner   User   @relation(fields: [profileOwnerId], references: [id], onDelete: Cascade)
+
+  // Typ av händelse
+  type EventType // VIEW eller CLICK
+
+  // Om det var ett klick, vilken länk?
+  linkId String?
+  link   Link?   @relation(fields: [linkId], references: [id], onDelete: SetNull)
+
+  // Data om besökaren
+  referrer String? // Vart kom de ifrån? (t.ex. instagram.com)
+  country  String? // (Kan läggas till senare via IP-uppslag)
+  device   String? // mobile/desktop
+  
+  @@index([profileOwnerId])
+  @@index([createdAt])
+}
+
+enum EventType {
+  VIEW
+  CLICK
 }

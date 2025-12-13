@@ -1,10 +1,12 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
+import { MapPin, Globe, Mail, Phone, Briefcase } from "lucide-react";
 import type { User, Link as LinkModel } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { getTheme } from "@/utils/theme";
+import { GoogleAdSenseScript, AdBanner } from "@/components/ads/google-adsense";
+import { ProfileViewTracker, TrackedLink } from "@/components/analytics/trackers";
 
 type PageProps = {
   params: { username: string };
@@ -30,198 +32,219 @@ export default async function PublicProfilePage({ params }: PageProps) {
     notFound();
   }
 
-  // Behåll befintligt beteende: om redirect är på och det finns aktiv länk
+  // Redirect logic
   if (user.redirectEnabled && user.links.length > 0) {
     const primary = user.links[0];
     const target = normalizeUrl(primary.url);
     redirect(target);
   }
 
-  // Välj layout baserat på profileMode
-  if (user.profileMode === "BUSINESS") {
-    return <BusinessProfile user={user} />;
-  }
-
-  // Default: social layout
-  return <SocialProfile user={user} />;
-}
-
-// ---------- SOCIAL LAYOUT ----------
-
-function SocialProfile({ user }: { user: UserWithLinks }) {
-  const tokens = getTheme(user.theme);
-  const displayName = user.name || user.username;
-  const bio =
-    user.bio ||
-    "Skriv en kort presentation av dig själv i dina profilinställningar.";
+  const showAds = !user.isPremium;
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-4 py-8">
-        <section
-          className={`w-full max-w-md rounded-[32px] border border-white/10 p-6 shadow-2xl ${tokens.card}`}
-        >
-          <div className="flex flex-col items-center gap-4">
+    <>
+      {/* Ladda AdSense script om ej premium */}
+      {showAds && <GoogleAdSenseScript />}
+      
+      {/* Spåra visning */}
+      <ProfileViewTracker userId={user.id} />
+
+      {user.profileMode === "BUSINESS" ? (
+        <BusinessProfile user={user} showAds={showAds} />
+      ) : (
+        <SocialProfile user={user} showAds={showAds} />
+      )}
+    </>
+  );
+}
+
+// ---------- SOCIAL LAYOUT (Oförändrad) ----------
+
+function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
+  const tokens = getTheme(user.theme);
+  const displayName = user.name || user.username;
+  const bio = user.bio;
+
+  return (
+    <main className={`min-h-screen ${tokens.bg || 'bg-slate-950'} ${tokens.text || 'text-slate-50'}`}>
+      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center px-4 py-12">
+        
+        {/* Profile Card */}
+        <section className={`w-full rounded-[32px] border p-8 shadow-2xl backdrop-blur-md ${tokens.card}`}>
+          <div className="flex flex-col items-center gap-5">
             {/* Avatar */}
-            <div className="relative h-24 w-24 overflow-hidden rounded-full border border-white/20 bg-black/40">
+            <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-white/10 shadow-xl">
               {user.avatarUrl ? (
-                <Image
-                  src={user.avatarUrl}
-                  alt={`${displayName}'s avatar`}
-                  fill
-                  className="object-cover"
-                />
+                <Image src={user.avatarUrl} alt={displayName} fill className="object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-3xl font-semibold">
+                <div className="flex h-full w-full items-center justify-center bg-gray-800 text-4xl font-bold">
                   {displayName.charAt(0).toUpperCase()}
                 </div>
               )}
             </div>
 
-            {/* Namn + bio */}
-            <div className="text-center">
-              <h1 className="text-xl font-semibold">{displayName}</h1>
-              <p className="mt-1 text-sm text-slate-200">{bio}</p>
+            {/* Info */}
+            <div className="text-center space-y-2">
+              <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+              {bio && <p className={`text-sm leading-relaxed max-w-[280px] mx-auto ${tokens.textMuted}`}>{bio}</p>}
             </div>
           </div>
 
-          {/* Länkar */}
-          <div className="mt-6 flex flex-col gap-3">
-            {user.links.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/20 px-4 py-3 text-center text-xs text-slate-300">
-                Inga länkar är aktiva ännu. Lägg till dem i din dashboard.
-              </div>
-            ) : (
-              user.links.map((link) => (
-                <Link
-                  key={link.id}
-                  href={normalizeUrl(link.url)}
-                  className={`flex items-center justify-between rounded-full px-4 py-2 text-sm font-medium shadow-md transition hover:scale-[1.01] ${tokens.card}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <span className="flex items-center gap-2">
-                    <span>{getSocialIcon(link.url || link.title)}</span>
-                    <span>{link.title || link.url}</span>
-                  </span>
-                  <span className="text-xs text-slate-200/80">Öppna</span>
-                </Link>
-              ))
-            )}
+          {/* Links */}
+          <div className="mt-8 flex flex-col gap-4">
+            {user.links.map((link) => (
+              <TrackedLink
+                key={link.id}
+                linkId={link.id}
+                ownerId={user.id}
+                href={normalizeUrl(link.url)}
+                className={`flex items-center justify-between rounded-xl px-5 py-4 text-sm font-medium shadow-md transition-all hover:scale-[1.02] hover:shadow-lg ${tokens.link}`}
+              >
+                <span className="flex items-center gap-3">
+                  <span className="text-lg">{getSocialIcon(link.url || link.title)}</span>
+                  <span>{link.title || link.url}</span>
+                </span>
+              </TrackedLink>
+            ))}
           </div>
+
+          {/* Ads */}
+          {showAds && <AdBanner />}
         </section>
+
+        {/* Branding Footer */}
+        {!user.isPremium && (
+          <div className="mt-8 text-xs text-slate-500 font-medium">
+            Powered by <span className="text-slate-300">SocialCard</span>
+          </div>
+        )}
       </div>
     </main>
   );
 }
 
-// ---------- BUSINESS LAYOUT ----------
+// ---------- BUSINESS LAYOUT (Uppdaterad till mörkt tema) ----------
 
-function BusinessProfile({ user }: { user: UserWithLinks }) {
-  const tokens = getTheme(user.theme);
+function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
+  const tokens = getTheme(user.theme); // Hämta temat (Default = Mörkt)
+  
   const displayName = user.name || user.username;
-  const headline =
-    user.bio ||
-    "Skriv en kort beskrivning av din roll och hur du hjälper kunder, kollegor eller samarbetspartners.";
-
-  const phone = user.phoneNumber;
-  const email = user.contactEmail || user.email;
-
-  // Försök hitta en LinkedIn-länk
-  const linkedInLink = user.links.find((link) =>
-    (link.url || "").toLowerCase().includes("linkedin")
-  );
+  const headline = user.businessHeadline || user.jobTitle || "Business Profile";
+  const company = user.companyName;
 
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center px-4 py-8">
-        <section
-          className={`w-full max-w-xl rounded-[32px] border border-white/10 p-6 shadow-2xl ${tokens.card}`}
-        >
-          {/* Övre del: avatar + namn + headline */}
-          <div className="flex flex-col items-center gap-4 border-b border-white/10 pb-5 text-center sm:flex-row sm:items-center sm:text-left">
-            <div className="flex w-full justify-center sm:w-auto">
-              <div className="relative h-24 w-24 overflow-hidden rounded-full border border-purple-400/60 bg-black/40">
-                {user.avatarUrl ? (
-                  <Image
-                    src={user.avatarUrl}
-                    alt={`${displayName}'s avatar`}
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-3xl font-semibold">
-                    {displayName.charAt(0).toUpperCase()}
-                  </div>
-                )}
-              </div>
+    <main className={`min-h-screen font-sans ${tokens.bg} ${tokens.text}`}>
+      {/* Hero Header */}
+      <div className="relative h-48 w-full overflow-hidden bg-gray-900">
+        {user.backgroundUrl ? (
+           <Image src={user.backgroundUrl} alt="Cover" fill className="object-cover opacity-60" />
+        ) : (
+           // Fallback gradient om ingen bild finns
+           <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-purple-900/40" />
+        )}
+        <div className={`absolute inset-0 bg-gradient-to-t ${tokens.bg ? tokens.bg.replace('bg-', 'from-') : 'from-slate-950'} to-transparent`} />
+      </div>
+
+      <div className="mx-auto max-w-2xl px-4 sm:px-6 -mt-20 relative pb-12">
+        {/* Business Card Container - Använder tokens.card för styling */}
+        <div className={`rounded-2xl shadow-2xl border overflow-hidden backdrop-blur-md ${tokens.card}`}>
+          
+          {/* Header Content */}
+          <div className="p-6 sm:p-8 border-b border-white/5">
+            <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+                <div className="relative h-24 w-24 rounded-2xl overflow-hidden border-4 border-white/10 shadow-lg bg-gray-800 flex-shrink-0">
+                  {user.avatarUrl ? (
+                    <Image src={user.avatarUrl} alt={displayName} fill className="object-cover" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-gray-400">
+                      {displayName.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="space-y-1">
+                   <h1 className="text-2xl sm:text-3xl font-bold">{displayName}</h1>
+                   <div className={`flex flex-wrap gap-2 text-sm font-medium ${tokens.textMuted}`}>
+                      {user.jobTitle && <span className="flex items-center gap-1"><Briefcase size={14}/> {user.jobTitle}</span>}
+                      {company && <span>@ {company}</span>}
+                   </div>
+                   {user.location && (
+                      <div className="text-xs text-gray-500 flex items-center gap-1 pt-1">
+                         <MapPin size={12}/> {user.location}
+                      </div>
+                   )}
+                </div>
             </div>
 
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold">{displayName}</h1>
-              <p className="text-sm text-slate-200">{headline}</p>
-            </div>
-          </div>
-
-          {/* Kontaktblock */}
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            {phone && (
-              <Link
-                href={`tel:${phone.replace(/\s+/g, "")}`}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-purple-500/40 bg-purple-500/10 px-3 py-2 text-sm font-medium text-purple-100 shadow-sm hover:bg-purple-500/20"
-              >
-                <span>📞</span>
-                <span>Ring</span>
-              </Link>
-            )}
-            {email && (
-              <Link
-                href={`mailto:${email}`}
-                className="flex items-center justify-center gap-2 rounded-2xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-medium text-sky-100 shadow-sm hover:bg-sky-500/20"
-              >
-                <span>✉️</span>
-                <span>Maila</span>
-              </Link>
-            )}
-            {linkedInLink && (
-              <Link
-                href={normalizeUrl(linkedInLink.url)}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-center gap-2 rounded-2xl border border-slate-500/40 bg-slate-500/10 px-3 py-2 text-sm font-medium text-slate-100 shadow-sm hover:bg-slate-500/20 sm:col-span-2"
-              >
-                <span>in</span>
-                <span>Visa LinkedIn-profil</span>
-              </Link>
+            {headline && (
+               <p className={`mt-6 text-sm leading-relaxed border-l-4 border-blue-500/50 pl-4 py-2 italic bg-white/5 rounded-r-lg ${tokens.textMuted}`}>
+                  &quot;{headline}&quot;
+               </p>
             )}
           </div>
 
-          {/* Länkar-sektion */}
+          {/* Quick Actions (Contact) - Mörka knappar */}
+          <div className="grid grid-cols-2 gap-px bg-white/5 border-b border-white/5">
+             {user.businessPhone && (
+                <a href={`tel:${user.businessPhone}`} className={`p-4 flex items-center justify-center gap-2 transition font-medium text-sm hover:bg-white/5 ${tokens.text}`}>
+                   <Phone size={16} className="text-blue-400"/> Ring
+                </a>
+             )}
+             {user.businessEmail && (
+                <a href={`mailto:${user.businessEmail}`} className={`p-4 flex items-center justify-center gap-2 transition font-medium text-sm hover:bg-white/5 ${tokens.text}`}>
+                   <Mail size={16} className="text-blue-400"/> Maila
+                </a>
+             )}
+             {user.companyWebsite && (
+                <a href={normalizeUrl(user.companyWebsite)} target="_blank" className={`p-4 flex items-center justify-center gap-2 transition font-medium text-sm col-span-2 border-t border-white/5 hover:bg-white/5 ${tokens.text}`}>
+                   <Globe size={16} className="text-blue-400"/> Besök hemsida
+                </a>
+             )}
+          </div>
+
+          {/* Links List */}
           {user.links.length > 0 && (
-            <div className="mt-6 space-y-2">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-300">
-                Länkar
-              </h2>
-              <div className="flex flex-col gap-2">
-                {user.links.map((link) => (
-                  <Link
-                    key={link.id}
-                    href={normalizeUrl(link.url)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/40 px-3 py-2 text-xs font-medium text-slate-100 hover:bg-slate-900/70"
-                  >
-                    <span className="flex items-center gap-2">
-                      <span>{getBusinessIcon(link.url || link.title)}</span>
-                      <span>{link.title || link.url}</span>
-                    </span>
-                    <span className="text-[10px] text-slate-400">Öppna</span>
-                  </Link>
-                ))}
-              </div>
-            </div>
+             <div className="p-6 bg-black/20">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Resurser & Länkar</h3>
+                <div className="space-y-3">
+                   {user.links.map((link) => (
+                      <TrackedLink
+                         key={link.id}
+                         linkId={link.id}
+                         ownerId={user.id}
+                         href={normalizeUrl(link.url)}
+                         className={`flex items-center justify-between p-4 rounded-xl border border-white/5 shadow-sm transition-all group hover:border-white/20 hover:bg-white/5 ${tokens.card}`}
+                      >
+                         <div className="flex items-center gap-3">
+                            <span className="text-xl group-hover:scale-110 transition-transform">{getBusinessIcon(link.url || link.title)}</span>
+                            <span className={`font-medium ${tokens.text}`}>{link.title || link.url}</span>
+                         </div>
+                         <span className="text-gray-500 group-hover:text-white">→</span>
+                      </TrackedLink>
+                   ))}
+                </div>
+             </div>
           )}
-        </section>
+
+          {/* Ads */}
+          {showAds && (
+             <div className="p-4 border-t border-white/5 text-center bg-black/20">
+                <p className="text-[10px] text-gray-600 uppercase mb-2">Annons</p>
+                <div className="mx-auto max-w-[300px] overflow-hidden rounded-lg">
+                   <AdBanner />
+                </div>
+             </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {!user.isPremium && (
+           <div className="text-center mt-8">
+              <a href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-xs font-bold shadow-lg hover:bg-white/20 transition border border-white/10">
+                 <span className="text-blue-400">⚡</span> Skapa ditt eget SocialCard
+              </a>
+           </div>
+        )}
       </div>
     </main>
   );
@@ -233,33 +256,28 @@ function normalizeUrl(url: string): string {
   if (!url) return "/";
   const trimmed = url.trim();
   if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^mailto:/i.test(trimmed)) return trimmed;
+  if (/^tel:/i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
 }
 
 function getSocialIcon(source: string): string {
   const s = source.toLowerCase();
-
   if (s.includes("instagram")) return "📸";
   if (s.includes("tiktok")) return "🎵";
   if (s.includes("youtube")) return "▶️";
-  if (s.includes("twitch")) return "🎮";
-  if (s.includes("spotify")) return "🎧";
+  if (s.includes("linkedin")) return "💼";
   if (s.includes("twitter") || s.includes("x.com")) return "🐦";
-  if (s.includes("snapchat")) return "👻";
-  if (s.includes("facebook")) return "📘";
-  if (s.includes("linkedin")) return "in";
-
+  if (s.includes("spotify")) return "🎧";
+  if (s.includes("github")) return "💻";
   return "🔗";
 }
 
 function getBusinessIcon(source: string): string {
   const s = source.toLowerCase();
-
-  if (s.includes("linkedin")) return "in";
+  if (s.includes("linkedin")) return "👔";
   if (s.includes("calendar") || s.includes("calendly")) return "📅";
-  if (s.includes("mailto:") || s.includes("@")) return "✉️";
-  if (s.includes("tel:")) return "📞";
-  if (s.includes("pdf")) return "📄";
-
-  return "↗";
+  if (s.includes("pdf") || s.includes("drive")) return "📄";
+  if (s.includes("zoom") || s.includes("teams")) return "📹";
+  return "📌";
 }
