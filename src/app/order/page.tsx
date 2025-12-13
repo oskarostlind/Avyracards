@@ -2,11 +2,11 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { Loader2, Layers, CreditCard, Minus, Plus, Upload, X, Check, Sparkles } from "lucide-react";
+// Tog bort Minus och Plus från imports
+import { Loader2, Layers, CreditCard, Upload, X, Check, Sparkles } from "lucide-react";
 import { CardPreview3D } from "@/components/card-preview-3d";
-import { LiveProfileDemo } from "@/components/live-profile-demo"; // Importera demon
+import { LiveProfileDemo } from "@/components/live-profile-demo";
 
-// Behåll dina Color-types och konstanter som förut...
 type MaterialType = "plastic" | "metal";
 type DesignType = "minimal" | "qr";
 
@@ -40,7 +40,8 @@ export default function OrderPage() {
   const [material, setMaterial] = useState<MaterialType>("plastic");
   const [design] = useState<DesignType>("minimal"); 
   const [color, setColor] = useState("black");
-  const [quantity, setQuantity] = useState(1);
+  // Tog bort setQuantity och satte quantity till 1
+  const quantity = 1; 
   const [customImage, setCustomImage] = useState<string | null>(null);
   
   // Bundling state
@@ -74,19 +75,29 @@ export default function OrderPage() {
   const handleCheckout = async () => {
     try {
       setLoading(true);
-      await new Promise(r => setTimeout(r, 1500));
       
-      // Omdirigera till rätt checkout beroende på om Premium valdes
-      if (addPremium) {
-         window.location.href = "/checkout/premium?bundled=true";
-      } else {
-         // Har du en gäst-checkout för bara kort? Annars kanske till samma
-         // men utan premium-flaggan? Jag sätter en placeholder här:
-         window.location.href = "/checkout/guest"; 
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            quantity,
+            material,
+            color,
+            design,
+            customImage,
+            bundled: addPremium
+        })
+      });
+
+      if(!response.ok) throw new Error("Checkout failed");
+      const data = await response.json();
+
+      if (data.url) {
+         window.location.href = data.url;
       }
+      
     } catch (error) {
       console.error(error);
-    } finally {
       setLoading(false);
     }
   };
@@ -121,7 +132,7 @@ export default function OrderPage() {
                 </div>
             </div>
 
-            {/* Live Profile Demo (Visas vid Bundling) */}
+            {/* Live Profile Demo */}
             {addPremium && (
                <div className="animate-in slide-in-from-bottom-4 duration-500 bg-[#0A0F1C] border border-blue-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl shadow-blue-900/10">
                   <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
@@ -131,8 +142,6 @@ export default function OrderPage() {
                         <p className="text-xs text-gray-400">Detta ser folk när de blippar ditt kort</p>
                      </div>
                   </div>
-                  
-                  {/* Här används din befintliga preview */}
                   <LiveProfileDemo />
                </div>
             )}

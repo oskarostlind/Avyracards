@@ -1,19 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2, User, Mail, Lock } from "lucide-react";
 import { signIn } from "next-auth/react";
 
 export default function ActivateAccountPage() {
-  const router = useRouter();
+  // Tog bort const router = useRouter();
   const searchParams = useSearchParams();
-  const sessionId = searchParams.get("session_id"); // Vi får denna från Stripe!
+  const sessionId = searchParams.get("session_id");
 
   const [loading, setLoading] = useState(false);
-  
-  // Vi låter användaren skriva in mailen manuellt för nu, 
-  // (I nästa steg kan vi hämta den auto från session_id via ett API om du vill)
   const [email, setEmail] = useState(""); 
 
   const handleActivation = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -25,7 +22,6 @@ export default function ActivateAccountPage() {
     const username = formData.get("username") as string;
     
     try {
-      // 1. Skapa kontot
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -34,7 +30,7 @@ export default function ActivateAccountPage() {
           password,
           username,
           isPremium: true,
-          stripeSessionId: sessionId // Spara sessions-ID på användaren för framtida referens
+          stripeSessionId: sessionId 
         }),
       });
 
@@ -43,7 +39,6 @@ export default function ActivateAccountPage() {
          throw new Error(data.error || "Kunde inte skapa konto");
       }
 
-      // 2. Logga in
       await signIn("credentials", {
         email,
         password,
