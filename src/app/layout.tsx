@@ -4,7 +4,6 @@ import Script from "next/script";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import SessionProviderWrapper from "@/components/providers/session-provider";
-// IMPORTERA CookieBanner
 import CookieBanner from "@/components/cookie-banner"; 
 
 export const metadata = {
@@ -15,16 +14,18 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="sv">
-      <head>
-        {/* Låt detta ligga kvar tills Google godkänt sidan! */}
+      {/* Ingen manuell <head> här. Metadata-exporten ovan hanterar <head> automatiskt. */}
+      
+      <body className="min-h-screen bg-slate-950 text-slate-50">
+        {/* Google AdSense Script - Placeras i body. Next.js hanterar injektionen. */}
         <Script
+          id="adsbygoogle-init"
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2616665688666431"
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />
-      </head>
-      <body className="min-h-screen bg-slate-950 text-slate-50">
+
         <SessionProviderWrapper>
           <div className="flex min-h-screen flex-col">
             <Navbar />
@@ -32,9 +33,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Footer />
           </div>
           
-          {/* LÄGG TILL BANNER HÄR */}
           <CookieBanner />
-          
         </SessionProviderWrapper>
       </body>
     </html>
