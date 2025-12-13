@@ -96,7 +96,7 @@ export default function GetStartedPage() {
                 <Feature text="Prioriterad support" highlight />
               </div>
               <Link 
-                href="/register?plan=premium" 
+                href="/checkout/premium" 
                 className="w-full py-3.5 rounded-xl bg-blue-600 text-white hover:bg-blue-500 transition-all font-medium text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25 mt-auto"
               >
                 Bli medlem <ArrowRight size={16} />
