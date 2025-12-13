@@ -5,7 +5,7 @@ import type { User, Link as LinkModel } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
 import { getTheme } from "@/utils/theme";
-import { GoogleAdSenseScript, AdBanner } from "@/components/ads/google-adsense";
+import { AdBanner } from "@/components/ads/google-adsense";
 import { ProfileViewTracker, TrackedLink } from "@/components/analytics/trackers";
 
 type PageProps = {
@@ -43,9 +43,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
   return (
     <>
-      {/* Ladda AdSense script om ej premium */}
-      {showAds && <GoogleAdSenseScript />}
-      
       {/* Spåra visning */}
       <ProfileViewTracker userId={user.id} />
 
@@ -58,7 +55,7 @@ export default async function PublicProfilePage({ params }: PageProps) {
   );
 }
 
-// ---------- SOCIAL LAYOUT (Oförändrad) ----------
+// ---------- SOCIAL LAYOUT ----------
 
 function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
   const tokens = getTheme(user.theme);
@@ -123,10 +120,10 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
   );
 }
 
-// ---------- BUSINESS LAYOUT (Uppdaterad till mörkt tema) ----------
+// ---------- BUSINESS LAYOUT ----------
 
 function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
-  const tokens = getTheme(user.theme); // Hämta temat (Default = Mörkt)
+  const tokens = getTheme(user.theme); 
   
   const displayName = user.name || user.username;
   const headline = user.businessHeadline || user.jobTitle || "Business Profile";
@@ -139,14 +136,13 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
         {user.backgroundUrl ? (
            <Image src={user.backgroundUrl} alt="Cover" fill className="object-cover opacity-60" />
         ) : (
-           // Fallback gradient om ingen bild finns
            <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-purple-900/40" />
         )}
         <div className={`absolute inset-0 bg-gradient-to-t ${tokens.bg ? tokens.bg.replace('bg-', 'from-') : 'from-slate-950'} to-transparent`} />
       </div>
 
       <div className="mx-auto max-w-2xl px-4 sm:px-6 -mt-20 relative pb-12">
-        {/* Business Card Container - Använder tokens.card för styling */}
+        {/* Business Card Container */}
         <div className={`rounded-2xl shadow-2xl border overflow-hidden backdrop-blur-md ${tokens.card}`}>
           
           {/* Header Content */}
@@ -183,7 +179,7 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
             )}
           </div>
 
-          {/* Quick Actions (Contact) - Mörka knappar */}
+          {/* Quick Actions (Contact) */}
           <div className="grid grid-cols-2 gap-px bg-white/5 border-b border-white/5">
              {user.businessPhone && (
                 <a href={`tel:${user.businessPhone}`} className={`p-4 flex items-center justify-center gap-2 transition font-medium text-sm hover:bg-white/5 ${tokens.text}`}>
