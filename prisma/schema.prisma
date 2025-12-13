@@ -64,6 +64,12 @@ model User {
   companyDescription String?
   companyWebsite       String?
   careerPageUrl        String?
+
+  marketingConsent Boolean @default(false)
+  productUpdates   Boolean @default(true)
+  hideFromSearch   Boolean @default(false)
+
+
 }
 
 enum ProfileMode {

@@ -1,55 +1,76 @@
 import { redirect } from "next/navigation";
-
-import { ProfileSettingsForm } from "@/components/profile/profile-settings-form";
-import { prisma } from "@/lib/prisma";
 import { auth } from "@/app/api/auth/[...nextauth]/auth";
-import type { ThemeName } from "@/utils/theme";
+import { prisma } from "@/lib/prisma";
 
-export default async function ProfileSettingsPage() {
+// Komponenter
+import { SettingsTabs } from "@/components/profile/settings-tabs";
+// Tog bort ProfileSettingsForm importen
+import { AccountForm } from "@/components/profile/account-form";
+import { BillingView } from "@/components/profile/billing-view";
+import { CardsView } from "@/components/profile/cards-view";
+
+type PageProps = {
+  searchParams: { [key: string]: string | string[] | undefined };
+};
+
+export default async function ProfileSettingsPage({ searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login");
   }
 
+  // Vi hämtar bara datan som behövs för Konto, Billing och Cards
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
-      username: true,
-      bio: true,
-      theme: true,
-      font: true,
-      avatarUrl: true,
-      phoneNumber: true,
-      contactEmail: true,
-      profileMode: true,
-      links: {
-        where: { isActive: true },
-        orderBy: { order: "asc" },
-        select: {
-          id: true,
-          title: true,
-          url: true,
-          icon: true,
-        },
-      },
-    },
+      email: true,
+      isPremium: true,
+      marketingConsent: true,
+      productUpdates: true,
+      hideFromSearch: true,
+      cards: {
+        orderBy: { createdAt: 'desc' }
+      }
+    }
   });
 
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
+
+  // ÄNDRAT: Default view är nu "account"
+  const view = typeof searchParams.view === "string" ? searchParams.view : "account";
 
   return (
-    <ProfileSettingsForm
-      username={user.username}
-      bio={user.bio}
-      template={(user.theme as ThemeName | null) ?? "default"}
-      fontFamily={user.font}
-      profileImage={user.avatarUrl}
-      phoneNumber={user.phoneNumber}
-      contactEmail={user.contactEmail}
-      profileMode={user.profileMode}
-      links={user.links}
-    />
+    <div className="container mx-auto max-w-4xl px-4 py-8">
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-slate-50">Inställningar</h1>
+        <p className="text-slate-400">Hantera ditt konto, prenumeration och säkerhet.</p>
+      </div>
+
+      {/* Flik-navigation */}
+      <SettingsTabs />
+
+      {/* Rendra innehåll baserat på vald flik */}
+      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+        
+        {/* Tog bort view === "profile" blocket */}
+
+        {view === "account" && (
+          <AccountForm
+            email={user.email!}
+            marketingConsent={user.marketingConsent}
+            productUpdates={user.productUpdates}
+            hideFromSearch={user.hideFromSearch}
+          />
+        )}
+
+        {view === "billing" && (
+          <BillingView isPremium={user.isPremium} />
+        )}
+
+        {view === "cards" && (
+          <CardsView cards={user.cards as any} />
+        )}
+      </div>
+    </div>
   );
 }
