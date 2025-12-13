@@ -81,7 +81,7 @@ export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
                       Statistik
                    </Link>
                    <Link
-                      href="/profile/settings?view=themes"
+                      href="/profile/themes"
                       onClick={closeMenu}
                       className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-slate-800/80"
                    >
@@ -156,7 +156,7 @@ export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
                   <Link href="/dashboard/analytics" className="text-slate-200 hover:text-emerald-300 transition-colors">
                      Statistik
                   </Link>
-                  <Link href="/profile/settings?view=themes" className="text-slate-200 hover:text-emerald-300 transition-colors">
+                  <Link href="/profile/themes" className="text-slate-200 hover:text-emerald-300 transition-colors">
                      Teman
                   </Link>
                   <Link href="/profile/settings" className="text-slate-200 hover:text-emerald-300 transition-colors">

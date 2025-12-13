@@ -1,22 +1,27 @@
-"use client";
-
 import Image from "next/image";
-import { getTheme, type ThemeName } from "@/utils/theme";
+import { ThemeName, getTheme } from "@/utils/theme";
+import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 
-export type ProfilePreviewLink = {
+// VIKTIGT: En flexibel typ som funkar för både Settings, Dashboard och Theme Editor
+export interface PreviewLink {
   id: string;
-  title: string;
   url: string;
+  title?: string | null; // Kan komma som title
+  label?: string | null; // ...eller label
   icon?: string | null;
-};
+  isVisible?: boolean;   // Valfri
+  clicks?: number;       // Valfri
+  order?: number;        // Valfri
+}
 
-interface ProfilePreviewProps {
+export interface ProfilePreviewProps {
   username: string;
-  bio: string;
-  profileImage?: string;
-  theme: ThemeName;
-  links: ProfilePreviewLink[];
-  profileMode?: "SOCIAL" | "BUSINESS";
+  bio?: string | null;
+  profileImage?: string | null;
+  theme?: ThemeName | null;
+  links: PreviewLink[]; // Vi använder den nya flexibla typen här
+  profileMode?: "SOCIAL" | "BUSINESS" | null;
+  customSettings?: CustomThemeSettings;
 }
 
 export function ProfilePreview({
@@ -25,70 +30,111 @@ export function ProfilePreview({
   profileImage,
   theme,
   links,
-  profileMode,
+  // Fix för ESLint: Vi döper om prop:en lokalt till _profileMode
+  profileMode: _profileMode = "SOCIAL", 
+  customSettings,
 }: ProfilePreviewProps) {
-  const tokens = getTheme(theme);
+  
+  const activeSettings = customSettings || defaultSettings;
+  const isCustomMode = !!customSettings;
+  const themeTokens = getTheme(theme);
 
-  const bioPlaceholder =
-    profileMode === "BUSINESS"
-      ? "Berätta kort om din roll och hur du hjälper kunder och kontakter."
-      : "Skriv en kort presentation om dig själv i formuläret till vänster.";
+  const customStyles = isCustomMode ? {
+    backgroundColor: activeSettings.backgroundColor,
+    color: activeSettings.textColor,
+  } : {};
+
+  // Knapp-stilar
+  const getButtonStyle = () => {
+    if (!isCustomMode) return themeTokens.link;
+    
+    let classes = "flex items-center justify-between w-full px-5 py-3.5 transition-all text-sm ";
+    
+    // Form
+    if (activeSettings.buttonStyle === "pill") classes += "rounded-full ";
+    else if (activeSettings.buttonStyle === "rounded") classes += "rounded-xl ";
+    else if (activeSettings.buttonStyle === "sharp") classes += "rounded-none ";
+    else if (activeSettings.buttonStyle === "brutal") classes += "rounded-sm border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] ";
+
+    // Variant
+    if (activeSettings.buttonVariant === "shadow") classes += "shadow-lg hover:shadow-xl hover:scale-[1.02] ";
+    
+    return classes;
+  };
+
+  // Inline styles för knappar
+  const getButtonInlineStyle = () => {
+    if (!isCustomMode) return {};
+    
+    const bg = activeSettings.accentColor;
+    const variant = activeSettings.buttonVariant;
+
+    if (variant === "outline") return { border: `2px solid ${bg}`, color: activeSettings.textColor };
+    if (variant === "glass") return { backgroundColor: `${bg}30`, backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.1)" };
+    
+    // Solid default
+    return { backgroundColor: bg, color: "#ffffff" }; 
+  };
+
+  // Profilbild-ram
+  const getFrameClass = () => {
+    if (!isCustomMode) return "rounded-full";
+    const s = activeSettings.frameStyle;
+    if (s === "rounded") return "rounded-2xl";
+    if (s === "none") return "rounded-none";
+    return "rounded-full";
+  };
 
   return (
-    <div
-      className={`relative mx-auto flex w-full max-w-sm flex-col items-center justify-start rounded-[32px] border border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 p-4 shadow-2xl ${tokens.container}`}
+    <div 
+      className={`h-full w-full overflow-y-auto no-scrollbar ${!isCustomMode ? themeTokens.bg : ''}`}
+      style={customStyles}
     >
-      {/* Profilbild */}
-      <div className="mt-2 flex flex-col items-center gap-3">
-        <div className="relative h-24 w-24 overflow-hidden rounded-full border border-white/20 bg-black/40">
+      <div className="flex flex-col items-center px-6 py-10 text-center min-h-full max-w-md mx-auto">
+        
+        {/* Avatar */}
+        <div className={`relative mb-4 h-24 w-24 shrink-0 overflow-hidden shadow-2xl ${getFrameClass()}`}
+             style={isCustomMode && activeSettings.frameStyle === "glow" ? { boxShadow: `0 0 30px ${activeSettings.accentColor}` } : {}}
+        >
           {profileImage ? (
-            <Image
-              src={profileImage}
-              alt={`${username}'s profile image`}
-              fill
-              className="object-cover"
-            />
+            <Image src={profileImage} alt={username} fill className="object-cover" unoptimized />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-3xl font-semibold text-white/80">
-              {username ? username.charAt(0).toUpperCase() : "?"}
+            <div className={`flex h-full w-full items-center justify-center text-3xl font-bold ${isCustomMode ? "bg-white/10" : "bg-slate-800 text-white"}`}>
+              {username.slice(0, 1).toUpperCase()}
             </div>
           )}
         </div>
 
-        {/* Namn + bio */}
-        <div className="text-center">
-          <h2 className={`text-lg font-semibold text-white`}>
-            {username || "Ditt namn"}
-          </h2>
-          <p className="mt-1 max-w-xs text-xs text-slate-300">
-            {bio || bioPlaceholder}
-          </p>
+        {/* Text */}
+        <h1 className="mb-1 text-xl font-bold tracking-tight">{username}</h1>
+        {bio && <p className="mb-6 text-sm opacity-80 leading-relaxed max-w-[280px]">{bio}</p>}
+
+        {/* Länkar */}
+        <div className="w-full space-y-3">
+          {links.length === 0 && (
+            <div className="p-4 border border-dashed border-white/20 rounded-xl text-xs opacity-50">
+               Inga länkar tillagda än.
+            </div>
+          )}
+          {links.map((link) => (
+            <a
+              key={link.id}
+              href="#"
+              className={getButtonStyle()}
+              style={getButtonInlineStyle()}
+              onClick={(e) => e.preventDefault()}
+            >
+              {/* Hanterar både title och label */}
+              <span className="font-medium mx-auto">{link.title || link.label || link.url}</span>
+            </a>
+          ))}
+        </div>
+
+        {/* Branding */}
+        <div className="mt-auto pt-8 pb-4">
+           <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">SocialCard</span>
         </div>
       </div>
-
-      {/* Länkar */}
-      <div className="mt-5 flex w-full flex-col gap-3">
-        {links.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/20 px-4 py-3 text-center text-[11px] text-slate-300">
-            Lägg till länkar i din dashboard för att se dem här.
-          </div>
-        ) : (
-          links.map((link) => (
-            <button
-              key={link.id}
-              type="button"
-              className={`w-full rounded-full px-4 py-2 text-sm font-medium shadow-lg transition ${tokens.link}`}
-            >
-              {link.title || link.url}
-            </button>
-          ))
-        )}
-      </div>
-
-      {/* Dekorativ bottenskugga */}
-      <div className="pointer-events-none absolute inset-x-6 bottom-4 h-10 rounded-full bg-gradient-to-r from-purple-500/20 via-cyan-400/20 to-purple-500/20 blur-2xl" />
     </div>
   );
 }
-
-export default ProfilePreview;

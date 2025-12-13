@@ -15,7 +15,7 @@ model User {
   name          String?
   username      String    @unique
   bio           String?
-  theme         String    @default("default")
+
   font          String    @default("inter")
   avatarUrl     String?
   backgroundUrl String?
@@ -68,6 +68,9 @@ model User {
   marketingConsent Boolean @default(false)
   productUpdates   Boolean @default(true)
   hideFromSearch   Boolean @default(false)
+
+  theme String @default("default")
+  themeSettings Json?
 
 
 }
