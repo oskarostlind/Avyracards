@@ -1,74 +1,82 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { prisma } from "./lib/prisma";
-import { verifyPassword } from "./lib/password";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/lib/prisma";
+import { verifyPassword } from "@/lib/password";
+import { z } from "zod";
+
+// Schema för validering
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.NEXTAUTH_SECRET,
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
   providers: [
     Credentials({
-      id: "credentials",
-      name: "Användarnamn & lösenord",
+      name: "credentials",
       credentials: {
-        username: { label: "Användarnamn", type: "text" },
-        password: { label: "Lösenord", type: "password" }
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
-        const username = credentials?.username as string | undefined;
-        const password = credentials?.password as string | undefined;
+      authorize: async (credentials) => {
+        // 1. Validera input
+        const result = loginSchema.safeParse(credentials);
 
-        if (!username || !password) {
-          throw new Error("Användarnamn och lösenord krävs");
+        if (!result.success) {
+          throw new Error("Ogiltig e-post eller lösenord");
         }
 
-        // --- NORMALISERING (NYTT) ---
-        // Konvertera input till lowercase innan sökning
+        const { email, password } = result.data;
+
+        // 2. Hitta användare via e-post
         const user = await prisma.user.findUnique({
-          where: {
-            username: username.toLowerCase().trim() 
-          }
+          where: { email },
         });
-        // ----------------------------
 
-        if (!user) {
-          throw new Error("Felaktiga uppgifter");
+        // Kontrollera om användare finns och har ett lösenord
+        if (!user || !user.passwordHash) {
+          throw new Error("Felaktig e-post eller lösenord");
         }
 
+        // 3. Verifiera lösenord
         const isValid = await verifyPassword(password, user.passwordHash);
 
         if (!isValid) {
-          throw new Error("Felaktiga uppgifter");
+          throw new Error("Felaktig e-post eller lösenord");
         }
-        
-        // Vi behåller verifierings-checken utkommenterad tills vidare
-        // if (!user.emailVerified) throw new Error("Kontot är inte verifierat");
 
+        // 4. Returnera användardata (Mappar avatarUrl till image)
         return {
           id: user.id,
-          name: user.name ?? undefined,
           email: user.email,
-          username: user.username
+          name: user.username, // NextAuth förväntar sig ofta 'name', vi sätter username där
+          username: user.username,
+          image: user.avatarUrl, // VIKTIGT: Här rättade vi felet från din screenshot
         };
-      }
-    })
+      },
+    }),
   ],
-  // ... callbacks och pages är oförändrade ...
   callbacks: {
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.sub as string;
+        // Vi tvingar typerna här för att lösa TS-felen snabbt
+        (session.user as any).username = token.username as string;
+      }
+      return session;
+    },
     async jwt({ token, user }) {
       if (user) {
-        return { ...token, id: (user as any).id, username: (user as any).username };
+        token.username = (user as any).username;
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token && session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).username = token.username;
-      }
-      return session;
-    }
   },
-  pages: {
-    signIn: "/login"
-  }
 });
