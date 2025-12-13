@@ -56,28 +56,7 @@ export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
         {isOpen && (
           <div className="absolute left-0 right-0 top-full border-b border-slate-800 bg-slate-950/95 p-4 shadow-xl md:hidden animate-in slide-in-from-top-2">
              
-             {/* Utforska */}
-             <div className="mb-4 rounded-xl bg-slate-900/80 p-1">
-                <div className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                   Utforska
-                </div>
-                <nav className="space-y-1">
-                   <Link
-                      href="/social"
-                      onClick={closeMenu}
-                      className={`block rounded-lg px-3 py-2 text-sm ${inSocial ? "bg-slate-800/80 text-slate-50" : "text-slate-100 hover:bg-slate-800/80"}`}
-                   >
-                      Socialt
-                   </Link>
-                   <Link
-                      href="/business"
-                      onClick={closeMenu}
-                      className={`block rounded-lg px-3 py-2 text-sm ${inBusiness ? "bg-slate-800/80 text-slate-50" : "text-slate-100 hover:bg-slate-800/80"}`}
-                   >
-                      Business
-                   </Link>
-                </nav>
-             </div>
+             
 
              {/* Konto Navigation */}
              {isAuthenticated ? (
@@ -101,14 +80,6 @@ export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
                    >
                       Statistik
                    </Link>
-
-                   <Link
-                      href="/profile/settings"
-                      onClick={closeMenu}
-                      className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-slate-800/80"
-                   >
-                      Inställningar
-                   </Link>
                    <Link
                       href="/profile/settings?view=themes"
                       onClick={closeMenu}
@@ -116,6 +87,14 @@ export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
                    >
                       Teman
                    </Link>
+                   <Link
+                      href="/profile/settings"
+                      onClick={closeMenu}
+                      className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-slate-800/80"
+                   >
+                      Inställningar
+                   </Link>
+
                    <div className="mt-2 border-t border-slate-800 pt-2 px-3">
                       <SignOutButton />
                    </div>
@@ -177,13 +156,13 @@ export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
                   <Link href="/dashboard/analytics" className="text-slate-200 hover:text-emerald-300 transition-colors">
                      Statistik
                   </Link>
-
-                  <Link href="/profile/settings" className="text-slate-200 hover:text-emerald-300 transition-colors">
-                     Inställningar
-                  </Link>
                   <Link href="/profile/settings?view=themes" className="text-slate-200 hover:text-emerald-300 transition-colors">
                      Teman
                   </Link>
+                  <Link href="/profile/settings" className="text-slate-200 hover:text-emerald-300 transition-colors">
+                     Inställningar
+                  </Link>
+                  
                   <div className="ml-1">
                      <SignOutButton />
                   </div>
