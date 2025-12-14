@@ -94,14 +94,17 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1">
+        {/*
         <h2 className="text-sm font-semibold text-slate-50">
           Businessprofil – visitkorts-läge
         </h2>
+        
         <p className="text-xs text-slate-400">
           Denna information används när din profil är i{" "}
           <span className="font-semibold text-slate-100">Business-läge</span>{" "}
           och visas på /u/{user.username}.
         </p>
+        */}
       </div>
 
       {/* HERO */}
@@ -131,7 +134,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
-              placeholder="Telia Company"
+              placeholder="Företag AB"
             />
           </div>
 
@@ -143,7 +146,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
               value={location}
               onChange={(e) => setLocation(e.target.value)}
               className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
-              placeholder="Luleå, Norra Sverige"
+              placeholder="Umeå, Norra Sverige"
             />
           </div>
 

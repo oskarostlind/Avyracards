@@ -33,7 +33,7 @@ export default function HomePage() {
             {/* CTA + segment-indikator */}
             <div className="flex flex-wrap items-center gap-4">
               <Link
-                href="/register"
+                href="/get-started"
                 className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-medium text-slate-950 shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400"
               >
                 Skapa konto gratis

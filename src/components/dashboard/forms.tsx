@@ -144,10 +144,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           </label>
         </div>
 
-        <p className="text-[11px] text-slate-400">
-          Bilden sparas som data-URL direkt i din profil och används i både
-          dashboard och publik vy.
-        </p>
+
       </div>
 
       {/* Telefonnummer */}
@@ -162,10 +159,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           onChange={(e) => setPhoneNumber(e.target.value)}
           placeholder="+46 70 123 45 67"
         />
-        <p className="text-[11px] text-slate-400">
-          Visas som kontaktuppgift på din publika profil (om du väljer att
-          använda det där).
-        </p>
+
       </div>
 
       {/* Kontakt-mail */}
@@ -180,10 +174,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           onChange={(e) => setContactEmail(e.target.value)}
           placeholder="namn@företag.se"
         />
-        <p className="text-[11px] text-slate-400">
-          Den här adressen är tänkt som den publika mailen som syns på din
-          SocialCard-sida (inte inloggningsmejlet).
-        </p>
+
       </div>
 
       
@@ -464,11 +455,14 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
           Din publika profil:{" "}
           <span className="font-mono text-slate-200">{publicUrl}</span>
         </p>
+        
+        {/*
         <p className="text-[11px] text-slate-500">
           Klicka på <span className="font-semibold">Offentlig</span> på en länk
           för att använda den som redirect för <code>/u/username</code>. Klickar
           du på samma igen stängs redirect av och din profilsida visas istället.
         </p>
+        */}
       </div>
 
       <ul className="space-y-2">

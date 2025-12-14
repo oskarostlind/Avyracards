@@ -72,12 +72,19 @@ model User {
   theme String @default("default")
   themeSettings Json?
 
+  role Role @default(USER)
+
 
 }
 
 enum ProfileMode {
   SOCIAL
   BUSINESS
+}
+
+enum Role {
+  USER
+  ADMIN
 }
 
 model Link {
