@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft, CreditCard, User, Mail, Link as LinkIcon } from "lucide-react";
+import { ArrowLeft, CreditCard, User, Mail, Link as LinkIcon, Wand2 } from "lucide-react"; // Lade till Wand2 här i importen
 import { OrderStatus } from "@prisma/client";
 import { AdminOrderActions } from "@/components/admin/order-actions";
 
@@ -68,13 +68,14 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                   </div>
                   <p className="text-slate-300 font-medium">Inga koder genererade</p>
                   <p className="text-sm text-slate-500 mt-1">
-                    Tryck på "Generera Koder" för att skapa unika länkar.
+                    {/* FIX 1: Använd &quot; istället för " */}
+                    Tryck på &quot;Generera Koder&quot; för att skapa unika länkar.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {order.cards.map((card, index) => {
-                    // VIKTIGT: Detta är URL:en som ska skrivas till NFC-taggen!
+                  {/* FIX 2: Tog bort 'index' då den inte användes */}
+                  {order.cards.map((card) => {
                     const nfcUrl = `https://socialcard.se/c/${card.cardCode}`;
                     
                     return (
@@ -159,7 +160,6 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   );
 }
 
-// Dubblett från admin/page.tsx - kan flyttas till egen fil om du vill
 function StatusBadge({ status }: { status: OrderStatus }) {
   const colors = {
     PENDING: "bg-amber-500/10 text-amber-400 border-amber-500/20",
@@ -173,6 +173,3 @@ function StatusBadge({ status }: { status: OrderStatus }) {
     </span>
   );
 }
-
-// För att fixa import-felet om Wand2 saknas i ikonen ovan
-import { Wand2 } from "lucide-react";
