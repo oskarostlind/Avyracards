@@ -32,7 +32,7 @@ export default function SocialLandingPage() {
 
             <div className="flex flex-wrap items-center gap-4">
               <Link
-                href="/register?mode=social"
+                href="/get-started?"
                 className="rounded-full bg-sky-500 px-6 py-2.5 text-sm font-medium text-slate-950 shadow-lg shadow-sky-500/25 transition hover:bg-sky-400"
               >
                 Skapa gratis social profil

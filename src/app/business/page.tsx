@@ -32,7 +32,7 @@ export default function BusinessLandingPage() {
 
             <div className="flex flex-wrap items-center gap-4">
               <Link
-                href="/register?mode=business"
+                href="/get-started"
                 className="rounded-full bg-emerald-500 px-6 py-2.5 text-sm font-medium text-slate-950 shadow-lg shadow-emerald-500/25 transition hover:bg-emerald-400"
               >
                 Skapa professionell profil

@@ -1,27 +1,40 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import type { Stripe } from "stripe";
+
+// Definiera interface för inkommande data
+interface CheckoutBody {
+  quantity?: number;
+  material?: string;
+  color?: string;
+  design?: string;
+  isSubscription?: boolean;
+  bundled?: boolean;
+}
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    
-    // Vi hanterar två fall: 
-    // 1. Vanligt köp av kort (quantity, material etc finns)
-    // 2. Premium prenumeration (isSubscription = true)
+    const body = (await req.json()) as CheckoutBody;
     
     const { 
       quantity, 
       material, 
       color, 
       design, 
-      isSubscription, // Ny flagga
-      bundled // Ny flagga om man köper BÅDE kort och premium
+      isSubscription, 
+      bundled 
     } = body;
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // 1. Säkerställ URL. Kastar fel om den saknas i prod för att undvika localhost-redirects av misstag.
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    
+    if (!baseUrl) {
+      console.error("NEXT_PUBLIC_BASE_URL is missing");
+      return new NextResponse("Server Configuration Error", { status: 500 });
+    }
 
-    const line_items: any[] = [];
-    let mode: "payment" | "subscription" = "payment";
+    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    let mode: Stripe.Checkout.SessionCreateParams.Mode = "payment";
 
     // --- FALL 1: Endast Premium Prenumeration ---
     if (isSubscription && !bundled) {
@@ -53,16 +66,14 @@ export async function POST(req: Request) {
           currency: "sek",
           product_data: {
             name: productName,
-            description: `${material.toUpperCase()} | ${color.toUpperCase()} | ${design.toUpperCase()}`,
+            description: `${(material || "").toUpperCase()} | ${(color || "").toUpperCase()} | ${(design || "").toUpperCase()}`,
           },
           unit_amount: unitPrice,
         },
         quantity: quantity || 1,
       });
 
-      // 2. Om Bundling är vald -> Lägg till Premium (6 månader förbetalt engångsköp eller subscription)
-      // För enkelhetens skull i detta skede gör vi bundlingen som ett engångsköp av "6 månader Premium"
-      // eftersom att blanda subscription och one-time payment i samma checkout kräver mer komplex Stripe-setup.
+      // 2. Bundling (6 månader Premium engångsköp)
       if (bundled) {
         line_items.push({
           price_data: {
@@ -77,16 +88,17 @@ export async function POST(req: Request) {
         });
       }
       
-      mode = "payment"; // Vi kör payment även vid bundling för enkelhet (6 mån förbetalt)
+      mode = "payment";
     }
 
     // Skapa sessionen
     const session = await stripe.checkout.sessions.create({
       line_items,
       mode: mode,
+      // Vi använder baseUrl som nu garanterat är satt eller error
       success_url: isSubscription && !bundled 
-        ? `${baseUrl}/register/activate?session_id={CHECKOUT_SESSION_ID}` // Om bara premium -> Gå till aktivering
-        : `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`,     // Om kortköp -> Gå till tack-sida för leverans
+        ? `${baseUrl}/register/activate?session_id={CHECKOUT_SESSION_ID}`
+        : `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`,
       
       cancel_url: isSubscription ? `${baseUrl}/get-started` : `${baseUrl}/order`,
       
@@ -101,15 +113,18 @@ export async function POST(req: Request) {
       
       shipping_address_collection: (material && !isSubscription) ? {
         allowed_countries: ["SE"], 
-      } : undefined, // Ingen frakt om det bara är digital prenumeration
+      } : undefined,
       
       phone_number_collection: {
         enabled: true,
       },
       
-      // Tillåt promotion codes om du vill ha rabatter
       allow_promotion_codes: true,
     });
+
+    if (!session.url) {
+        return new NextResponse("Failed to create session", { status: 500 });
+    }
 
     return NextResponse.json({ url: session.url });
   } catch (error) {
