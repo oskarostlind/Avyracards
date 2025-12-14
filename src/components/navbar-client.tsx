@@ -5,12 +5,14 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignOutButton } from "@/components/sign-out-button";
+import { ShieldCheck } from "lucide-react"; // Snygg ikon för admin
 
 type NavbarClientProps = {
   isAuthenticated: boolean;
+  isAdmin?: boolean; // <-- NY PROP
 };
 
-export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
+export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
 
@@ -56,14 +58,24 @@ export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
         {isOpen && (
           <div className="absolute left-0 right-0 top-full border-b border-slate-800 bg-slate-950/95 p-4 shadow-xl md:hidden animate-in slide-in-from-top-2">
              
-             
-
              {/* Konto Navigation */}
              {isAuthenticated ? (
                 <nav className="space-y-2">
                    <div className="px-2 text-[10px] font-semibold uppercase tracking-wide text-slate-400">
                       Mitt konto
                    </div>
+                   
+                   {/* ADMIN LÄNK (MOBIL) */}
+                   {isAdmin && (
+                     <Link
+                       href="/admin"
+                       onClick={closeMenu}
+                       className="flex items-center gap-2 rounded-lg bg-purple-500/10 px-3 py-2 text-sm font-medium text-purple-400 border border-purple-500/20 hover:bg-purple-500/20"
+                     >
+                       <ShieldCheck size={16} /> Admin Panel
+                     </Link>
+                   )}
+
                    <Link
                       href="/dashboard"
                       onClick={closeMenu}
@@ -72,7 +84,6 @@ export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
                       Dashboard
                    </Link>
                    
-                   {/* NY LÄNK: STATISTIK */}
                    <Link
                       href="/dashboard/analytics"
                       onClick={closeMenu}
@@ -148,11 +159,20 @@ export function NavbarClient({ isAuthenticated }: NavbarClientProps) {
           <nav aria-label="Huvudnavigering" className="flex items-center gap-4 text-sm">
             {isAuthenticated ? (
                <>
+                  {/* ADMIN LÄNK (DESKTOP) */}
+                  {isAdmin && (
+                    <Link 
+                      href="/admin" 
+                      className="flex items-center gap-1.5 rounded-full bg-purple-500/10 px-3 py-1 text-xs font-bold text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-colors"
+                    >
+                      <ShieldCheck size={14} /> Admin
+                    </Link>
+                  )}
+
                   <Link href="/dashboard" className="text-slate-200 hover:text-emerald-300 transition-colors">
                      Dashboard
                   </Link>
                   
-                  {/* NY LÄNK: STATISTIK */}
                   <Link href="/dashboard/analytics" className="text-slate-200 hover:text-emerald-300 transition-colors">
                      Statistik
                   </Link>

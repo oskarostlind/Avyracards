@@ -1,9 +1,16 @@
 import { auth } from "@/auth";
-import { NavbarClient } from "@/components/navbar-client";
+import { NavbarClient } from "./navbar-client";
 
 export async function Navbar() {
   const session = await auth();
-  const isAuthenticated = Boolean(session?.user);
+  const isAuthenticated = !!session?.user;
+  // Hämta rollen (om användaren är inloggad)
+  const isAdmin = session?.user?.role === "ADMIN";
 
-  return <NavbarClient isAuthenticated={isAuthenticated} />;
+  return (
+    <NavbarClient 
+      isAuthenticated={isAuthenticated} 
+      isAdmin={isAdmin} // Skicka med prop:en
+    />
+  );
 }
