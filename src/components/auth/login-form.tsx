@@ -8,6 +8,8 @@ import Link from "next/link";
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  
+  // Get callbackUrl from URL, default to /dashboard
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const registered = searchParams.get("registered");
   
@@ -40,6 +42,7 @@ export default function LoginForm() {
         setError("Felaktig e-post eller lösenord");
         setLoading(false);
       } else {
+        // Redirect to the callback URL (e.g. /activate/confirm)
         router.push(callbackUrl);
         router.refresh();
       }
@@ -51,7 +54,7 @@ export default function LoginForm() {
 
   return (
     <div className="w-full max-w-md p-8 space-y-8 bg-[#030712] border border-gray-800 rounded-2xl shadow-2xl">
-      {/* Header Section - Matchar Register */}
+      {/* Header Section */}
       <div className="text-center space-y-2">
         <h3 className="text-xs font-bold tracking-widest text-gray-500 uppercase">
           SocialCard
@@ -141,12 +144,6 @@ export default function LoginForm() {
           >
             Har du inget konto? <span className="font-semibold text-white">Skapa konto</span>
           </Link>
-          
-          {/* Optional: Glömt lösenord länk om du vill ha den här nere istället */}
-          {/* <div>
-             <Link href="/forgot-password" class="text-xs text-gray-500 hover:text-gray-300">Glömt lösenord?</Link>
-          </div> 
-          */}
         </div>
       </form>
     </div>

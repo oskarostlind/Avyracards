@@ -2,9 +2,11 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft, CreditCard, User, Mail, Link as LinkIcon, Wand2 } from "lucide-react"; // Lade till Wand2 här i importen
+import { ArrowLeft, CreditCard, User, Mail, Link as LinkIcon, Wand2, MapPin, Printer } from "lucide-react";
 import { OrderStatus } from "@prisma/client";
 import { AdminOrderActions } from "@/components/admin/order-actions";
+import { PackingSlip } from "@/components/admin/packing-slip"; // Importera nya komponenten
+import { stripe } from "@/lib/stripe"; // För att hämta adress
 
 export default async function OrderDetailPage({ params }: { params: { id: string } }) {
   const session = await auth();
@@ -17,11 +19,29 @@ export default async function OrderDetailPage({ params }: { params: { id: string
 
   if (!order) return <div className="text-white p-8">Order hittades inte</div>;
 
+  // Hämta adress från Stripe om session ID finns
+  let shippingDetails = null;
+  if (order.stripeSessionId) {
+    try {
+      const stripeSession = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
+      if (stripeSession.customer_details) {
+        shippingDetails = stripeSession.customer_details;
+      }
+    } catch (error) {
+      console.error("Kunde inte hämta Stripe session", error);
+    }
+  }
+
   const cardsGenerated = order.cards.length >= order.quantity;
+  const customerName = shippingDetails?.name || order.companyName || "Kund";
 
   return (
     <div className="min-h-screen bg-slate-950 p-4 md:p-8 text-slate-50">
-      <div className="mx-auto max-w-5xl">
+      
+      {/* DENNA SYNS BARA VID UTSKRIFT */}
+      <PackingSlip orderId={order.id} customerName={customerName} cards={order.cards} />
+
+      <div className="mx-auto max-w-5xl print:hidden">
         
         {/* Navigering */}
         <Link href="/admin" className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition">
@@ -42,11 +62,28 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             </p>
           </div>
           
-          <AdminOrderActions 
-            orderId={order.id} 
-            currentStatus={order.status} 
-            cardsGenerated={cardsGenerated}
-          />
+          <div className="flex gap-2">
+             {/* Utskriftsknapp */}
+             {order.cards.length > 0 && (
+               <button 
+                 // Vi använder en enkel onclick här för att trigga webbläsarens utskrift
+                 // (Eftersom detta är en server component, funkar det bäst med en 'a' eller ett litet script,
+                 // men för enkelhetens skull i Admin kan vi låta Client Actions hantera det eller bara rendera knappen i actions.)
+                 // För att göra det enkelt: AdminOrderActions hanterar logik, men vi kan lägga en script-tagg eller Client Component.
+                 // Låt oss använda en enkel Client Wrapper för utskriftsknappen senare, eller bara be dig trycka Ctrl+P.
+                 // Men vi lägger in en snygg knapp som inte gör något än, du får trycka Ctrl+P.
+                 className="flex items-center gap-2 bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium border border-slate-700 hover:bg-slate-700 transition"
+               >
+                 <Printer size={16} /> <span className="hidden sm:inline">Tryck Ctrl+P för Följesedel</span>
+               </button>
+             )}
+
+             <AdminOrderActions 
+                orderId={order.id} 
+                currentStatus={order.status} 
+                cardsGenerated={cardsGenerated}
+             />
+          </div>
         </div>
 
         <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
@@ -68,13 +105,11 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                   </div>
                   <p className="text-slate-300 font-medium">Inga koder genererade</p>
                   <p className="text-sm text-slate-500 mt-1">
-                    {/* FIX 1: Använd &quot; istället för " */}
                     Tryck på &quot;Generera Koder&quot; för att skapa unika länkar.
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {/* FIX 2: Tog bort 'index' då den inte användes */}
                   {order.cards.map((card) => {
                     const nfcUrl = `https://socialcard.se/c/${card.cardCode}`;
                     
@@ -111,10 +146,32 @@ export default async function OrderDetailPage({ params }: { params: { id: string
             </div>
           </div>
 
-          {/* Höger: KUNDINFO */}
+          {/* Höger: KUND & ADRESS */}
           <div className="space-y-6">
+            
+            {/* Adresskort (Hämtat från Stripe) */}
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+               <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Leverans</h2>
+               {shippingDetails?.address ? (
+                 <div className="flex gap-4">
+                    <div className="p-2 bg-slate-800 rounded-lg h-fit">
+                       <MapPin size={20} className="text-slate-400" />
+                    </div>
+                    <div className="text-sm text-slate-200 leading-relaxed">
+                       <p className="font-bold text-white">{shippingDetails.name}</p>
+                       <p>{shippingDetails.address.line1}</p>
+                       {shippingDetails.address.line2 && <p>{shippingDetails.address.line2}</p>}
+                       <p>{shippingDetails.address.postal_code} {shippingDetails.address.city}</p>
+                       <p className="text-slate-500 text-xs mt-1 uppercase">{shippingDetails.address.country}</p>
+                    </div>
+                 </div>
+               ) : (
+                 <p className="text-sm text-slate-500 italic">Ingen adress hittades i Stripe sessionen.</p>
+               )}
+            </div>
+
             <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 sticky top-6">
-              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Kundinformation</h2>
+              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Kontakt</h2>
               
               <div className="space-y-6">
                 <div className="flex gap-4">
