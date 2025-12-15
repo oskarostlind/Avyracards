@@ -2,6 +2,8 @@
 "use client";
 
 import { ChangeEvent, useEffect, useState } from "react";
+// NYTT: Importerar ikoner för kopiera-funktionen
+import { Copy, Check, ExternalLink } from "lucide-react";
 
 /* ---------------- Profilformulär ---------------- */
 
@@ -143,8 +145,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
             />
           </label>
         </div>
-
-
       </div>
 
       {/* Telefonnummer */}
@@ -159,7 +159,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
           onChange={(e) => setPhoneNumber(e.target.value)}
           placeholder="+46 70 123 45 67"
         />
-
       </div>
 
       {/* Kontakt-mail */}
@@ -174,10 +173,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           onChange={(e) => setContactEmail(e.target.value)}
           placeholder="namn@företag.se"
         />
-
       </div>
-
-      
 
       <button
         type="submit"
@@ -229,6 +225,9 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState<string | null>(null);
   const [redirectEnabled, setRedirectEnabled] = useState(false);
+  
+  // NYTT STATE FÖR KOPIERING
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -401,6 +400,17 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
     }
   }
 
+  // --- NY FUNKTION FÖR ATT KOPIERA LÄNK ---
+  const fullUrl = typeof window !== "undefined" 
+    ? `${window.location.origin}${publicUrl}`
+    : `https://socialcard.se${publicUrl}`;
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(fullUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   if (loading) {
     return <p className="text-xs text-slate-400">Laddar länkar...</p>;
   }
@@ -409,6 +419,36 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
 
   return (
     <div className="space-y-4">
+      
+      {/* --- NY SEKTION: Kopiera Länk --- */}
+      <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4 mb-6">
+        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-purple-400">
+          Din publika profil
+        </label>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 truncate rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-300 font-mono">
+            {fullUrl}
+          </div>
+          <button
+            type="button"
+            onClick={copyToClipboard}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
+            title="Kopiera länk"
+          >
+            {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
+          </button>
+          <a
+            href={publicUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
+            title="Öppna profil"
+          >
+            <ExternalLink size={18} />
+          </a>
+        </div>
+      </div>
+
       {/* formulär för ny länk */}
       <form onSubmit={handleAddLink} className="space-y-3">
         <div className="space-y-2">
@@ -449,21 +489,6 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
           {status}
         </p>
       )}
-
-      <div className="space-y-1">
-        <p className="text-xs text-slate-400">
-          Din publika profil:{" "}
-          <span className="font-mono text-slate-200">{publicUrl}</span>
-        </p>
-        
-        {/*
-        <p className="text-[11px] text-slate-500">
-          Klicka på <span className="font-semibold">Offentlig</span> på en länk
-          för att använda den som redirect för <code>/u/username</code>. Klickar
-          du på samma igen stängs redirect av och din profilsida visas istället.
-        </p>
-        */}
-      </div>
 
       <ul className="space-y-2">
         {links.map((link) => (
