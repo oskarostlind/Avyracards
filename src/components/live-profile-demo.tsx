@@ -1,38 +1,48 @@
 "use client";
 
-import { ProfilePreview } from "@/components/profile-preview";
+import { ProfilePreview, type PreviewLink } from "@/components/profile-preview";
+import { defaultSettings } from "@/types/theme"; // Vi importerar default-inställningarna
+
+const MOCK_LINKS: PreviewLink[] = [
+  { 
+    id: "1", 
+    title: "Instagram", 
+    url: "https://instagram.com", 
+    icon: "instagram" 
+  },
+  { 
+    id: "2", 
+    title: "Min Hemsida", 
+    url: "https://example.com", 
+    icon: "globe" 
+  },
+  { 
+    id: "3", 
+    title: "Boka tid", 
+    url: "https://calendly.com", 
+    icon: "calendar" 
+  },
+];
 
 export function LiveProfileDemo() {
-  // Låtsas-data för förhandsvisningen
-  const mockLinks = [
-    { id: "1", title: "Min Portfolio", url: "#", icon: null },
-    { id: "2", title: "Instagram", url: "#", icon: null },
-    { id: "3", title: "Boka möte", url: "#", icon: null },
-    { id: "4", title: "Kontakta mig", url: "#", icon: null },
-  ];
-
   return (
-    <div className="relative mx-auto w-full max-w-[320px]">
-      {/* Glow effekt bakom */}
-      <div className="absolute -inset-4 bg-gradient-to-tr from-blue-600/20 to-purple-600/20 rounded-[40px] blur-xl" />
-      
-      {/* Din befintliga komponent */}
-      <div className="relative transform transition-transform hover:scale-[1.02] duration-500">
+    <div className="w-full h-full flex justify-center items-center bg-slate-900/50 rounded-3xl overflow-hidden border border-slate-800 relative">
+      {/* Skala ner previewen lite så den får plats snyggt i demorutan */}
+      <div className="transform scale-[0.65] sm:scale-[0.8] origin-center h-[750px] w-[375px] pointer-events-none select-none border-[8px] border-slate-800 rounded-[3rem] overflow-hidden bg-black shadow-2xl">
         <ProfilePreview 
           username="Anna Andersson"
+          name="Anna Andersson"
           bio="Digital Creator & Designer. Hjälper företag att synas online."
-          theme="default" // Eller "simple", beroende på vad du har för teman i din theme.ts
-          links={mockLinks}
-          profileMode="SOCIAL"
-          // Om du inte har en bild URL just nu, kommer den visa initialer vilket är helt ok
-          profileImage="" 
+          avatarUrl={null} // Eller en URL till en demobild om du har
+          links={MOCK_LINKS}
+          // HÄR ÄR FIXEN: Vi skickar in defaultSettings istället för 'theme="default"'
+          customSettings={defaultSettings}
+          // Vi tar bort 'profileMode' eftersom nya komponenten inte använder det propet längre
         />
-        
-        {/* Flytande "Verified" badge ovanpå för extra säljeffekt */}
-        <div className="absolute -right-2 top-6 bg-green-500 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-lg border border-[#030712] animate-in fade-in slide-in-from-bottom-2 duration-1000 delay-500">
-          VERIFIERAD
-        </div>
       </div>
+      
+      {/* En overlay som gör att man inte kan klicka på länkarna i demot (valfritt) */}
+      <div className="absolute inset-0 z-20"></div>
     </div>
   );
 }
