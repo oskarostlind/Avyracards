@@ -3,7 +3,8 @@
 import type React from "react";
 import { useMemo, useState } from "react";
 import type { ThemeName } from "@/utils/theme";
-import { ProfilePreview } from "@/components/profile-preview";
+import { ProfilePreview, type PreviewLink } from "@/components/profile-preview"; // Importera PreviewLink
+import { defaultSettings } from "@/types/theme"; // Importera default settings
 
 type ProfileLink = {
   id: string;
@@ -43,7 +44,13 @@ export function ProfileSettingsForm({
   const [profileImage, setProfileImage] = useState(initialProfileImage ?? "");
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber ?? "");
   const [contactEmail, setContactEmail] = useState(initialContactEmail ?? "");
-  const [links] = useState<ProfileLink[]>(initialLinks ?? []);
+  
+  // Konvertera links till rätt format för PreviewLink om det behövs
+  // Här antar vi att strukturen är kompatibel eller gör en enkel map
+  const [links] = useState<PreviewLink[]>(
+    (initialLinks ?? []).map(l => ({ ...l, icon: l.icon || undefined })) 
+  );
+  
   const [profileMode, setProfileMode] = useState<ProfileMode>(
     initialProfileMode ?? "SOCIAL"
   );
@@ -77,7 +84,7 @@ export function ProfileSettingsForm({
           avatarUrl: profileImage || null,
           phoneNumber: phoneNumber || null,
           contactEmail: contactEmail || null,
-          profileMode, // 👈 skickas till API:t
+          profileMode,
         }),
       });
 
@@ -284,14 +291,20 @@ export function ProfileSettingsForm({
         <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">
           Förhandsgranskning
         </p>
-        <ProfilePreview
-          username={username}
-          bio={bio}
-          profileImage={profileImage}
-          theme={template}
-          links={links}
-          profileMode={profileMode}
-        />
+        <div className="flex justify-center">
+          <div className="transform scale-[0.8] origin-top">
+            <ProfilePreview
+              username={username}
+              name={username} // Eller använd display name om det finns
+              bio={bio}
+              avatarUrl={profileImage}
+              links={links}
+              // Använder defaultSettings här eftersom detta är en "innehålls-editor" 
+              // och inte "design-editor". Designen ställs in på en annan sida.
+              customSettings={defaultSettings} 
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
