@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { z } from "zod";
 import { type Role } from "@prisma/client"; 
-import { type Adapter } from "next-auth/adapters"; // <--- 1. Importera Adapter-typen
+import { type Adapter } from "next-auth/adapters";
 
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
@@ -14,10 +14,13 @@ const loginSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // 2. Vi castar adaptern till 'Adapter' för att matcha vår utökade User-typ
-  adapter: PrismaAdapter(prisma) as Adapter,
+  // 1. VIKTIGT: Vi kommenterar ut adaptern tillfälligt.
+  // Detta hindrar NextAuth från att "automatiskt" hämta hela user-objektet (med themeSettings)
+  // och trycka in det i cookien, vilket orsakade "Headers too big".
+  // adapter: PrismaAdapter(prisma) as Adapter,
   
   session: { strategy: "jwt" },
+  trustHost: true, // Viktigt för att Vercel/Edge ska hantera https rätt
   pages: {
     signIn: "/login",
     error: "/login",
@@ -52,12 +55,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Felaktig e-post eller lösenord");
         }
 
+        // Här returnerar vi BARA det nödvändiga för sessionen.
+        // Vi utelämnar 'bio', 'themeSettings' etc för att hålla cookien liten.
         return {
           id: user.id,
           email: user.email,
           name: user.username,
           username: user.username,
-          image: user.avatarUrl,
+          //image: user.avatarUrl,
           role: user.role, 
         };
       },
@@ -67,7 +72,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ session, token }) {
       if (token.sub && session.user) {
         session.user.id = token.sub;
-        // 3. Vi castar specifikt till rätt typ (string och Role) istället för 'any'
         session.user.username = token.username as string;
         session.user.role = token.role as Role; 
       }
