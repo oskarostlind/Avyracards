@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
-  const { pathname, searchParams } = req.nextUrl;
+  const { pathname, searchParams, origin } = req.nextUrl; // Hämta origin direkt
 
   const isAuthRoute = pathname.startsWith("/login") || pathname.startsWith("/register");
   const isAdminRoute = pathname.startsWith("/admin");
@@ -14,13 +14,25 @@ export default auth((req) => {
     const callbackUrl = searchParams.get("callbackUrl");
 
     if (callbackUrl) {
-      // SÄKERHETSCHECK:
-      // Avkoda URL:en och kolla så vi inte redirectar tillbaka till login (vilket skapar loop)
-      const targetUrl = decodeURIComponent(callbackUrl);
-      
-      // Om callback INTE innehåller "/login" eller "/register", då är det säkert att gå dit
-      if (!targetUrl.includes("/login") && !targetUrl.includes("/register")) {
-         return NextResponse.redirect(new URL(targetUrl, req.url));
+      try {
+        // SÄKERHET: Skapa ett URL-objekt för att analysera destinationen.
+        // Vi använder req.url som bas för att hantera relativa sökvägar korrekt.
+        const targetUrl = new URL(callbackUrl, req.url);
+
+        // 1. Origin Check: Se till att vi stannar på samma domän.
+        // Detta stoppar "Open Redirect"-attacker (t.ex. redirect till phishing-sida).
+        if (targetUrl.origin === origin) {
+          
+          // 2. Loop Protection: Se till att vi inte skickas tillbaka till login/register
+          const targetPath = targetUrl.pathname;
+          if (!targetPath.startsWith("/login") && !targetPath.startsWith("/register")) {
+            return NextResponse.redirect(targetUrl);
+          }
+        }
+      } catch (error) {
+        // Om callbackUrl är ogiltig/felformaterad (t.ex. trasig encoding),
+        // fångar vi felet här och faller tillbaka till standard-redirecten nedan.
+        // Detta förhindrar 500 Server Error.
       }
     }
 
@@ -41,6 +53,7 @@ export default auth((req) => {
 
   // 3. Skydda Dashboard/Profil-router (Kräver inloggning)
   if (isDashboardRoute && !isLoggedIn) {
+    // Här använder vi encodeURIComponent för att säkert bygga URL:en
     const callbackUrl = encodeURIComponent(pathname);
     return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, req.url));
   }

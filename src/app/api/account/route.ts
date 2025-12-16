@@ -17,7 +17,19 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json();
-    const data = accountSchema.parse(body);
+    
+    // FIX: Använd safeParse för att hantera valideringsfel snyggt
+    const result = accountSchema.safeParse(body);
+
+    if (!result.success) {
+      // Returnera 400 Bad Request istället för att krascha med 500
+      return NextResponse.json(
+        { error: "Ogiltig data", details: result.error.flatten() },
+        { status: 400 }
+      );
+    }
+
+    const data = result.data;
 
     const user = await prisma.user.update({
       where: { id: session.user.id },

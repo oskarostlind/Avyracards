@@ -1,9 +1,9 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-//import { PrismaAdapter } from "@auth/prisma-adapter";
+// import { PrismaAdapter } from "@auth/prisma-adapter";
 import { z } from "zod";
 import { type Role } from "@prisma/client"; 
-//import { type Adapter } from "next-auth/adapters";
+// import { type Adapter } from "next-auth/adapters";
 
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
@@ -14,13 +14,11 @@ const loginSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // 1. VIKTIGT: Vi kommenterar ut adaptern tillfälligt.
-  // Detta hindrar NextAuth från att "automatiskt" hämta hela user-objektet (med themeSettings)
-  // och trycka in det i cookien, vilket orsakade "Headers too big".
+  // Vi behåller adaptern utkommenterad för att undvika cookie-storleksfel
   // adapter: PrismaAdapter(prisma) as Adapter,
   
   session: { strategy: "jwt" },
-  trustHost: true, // Viktigt för att Vercel/Edge ska hantera https rätt
+  trustHost: true,
   pages: {
     signIn: "/login",
     error: "/login",
@@ -39,7 +37,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Ogiltig e-post eller lösenord");
         }
 
-        const { email, password } = result.data;
+        // FIX 1: Normalisera e-post till gemener (lowercase)
+        // Detta säkerställer att User@Example.com hittas även om man skriver user@example.com
+        const email = result.data.email.toLowerCase();
+        const password = result.data.password;
 
         const user = await prisma.user.findUnique({
           where: { email },
@@ -49,20 +50,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Felaktig e-post eller lösenord");
         }
 
+        // FIX 2: Kontrollera om e-posten är verifierad
+        // Hindrar inloggning om kontot inte aktiverats via mail
+        if (!user.emailVerified) {
+          throw new Error("Du måste verifiera din e-postadress innan du kan logga in.");
+        }
+
         const isValid = await verifyPassword(password, user.passwordHash);
 
         if (!isValid) {
           throw new Error("Felaktig e-post eller lösenord");
         }
 
-        // Här returnerar vi BARA det nödvändiga för sessionen.
-        // Vi utelämnar 'bio', 'themeSettings' etc för att hålla cookien liten.
         return {
           id: user.id,
           email: user.email,
           name: user.username,
           username: user.username,
-          //image: user.avatarUrl,
+          // image: user.avatarUrl, // Fortsatt utkommenterad pga Base64-problemet
           role: user.role, 
         };
       },

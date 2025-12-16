@@ -1,21 +1,33 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import type { Stripe } from "stripe";
+import { z } from "zod";
 
-// Definiera interface för inkommande data
-interface CheckoutBody {
-  quantity?: number;
-  material?: string;
-  color?: string;
-  design?: string;
-  isSubscription?: boolean;
-  bundled?: boolean;
-}
+// 1. Definiera Zod-schema för strikt validering
+const checkoutSchema = z.object({
+  quantity: z.number().min(1).max(50).default(1), // Spärra orimliga kvantiteter
+  material: z.enum(["pvc", "metal"]).optional(), // Tillåt bara giltiga material
+  color: z.string().max(50).optional(),
+  design: z.string().max(50).optional(),
+  isSubscription: z.boolean().optional(),
+  bundled: z.boolean().optional(),
+}).refine((data) => data.isSubscription || data.material, {
+  // 2. Logisk validering: Man måste köpa NÅGOT (antingen prenumeration eller kort)
+  message: "Du måste välja antingen en prenumeration eller ett kortmaterial.",
+});
 
 export async function POST(req: Request) {
   try {
-    const body = (await req.json()) as CheckoutBody;
+    const body = await req.json();
     
+    // 3. Validera indata
+    const result = checkoutSchema.safeParse(body);
+
+    if (!result.success) {
+      console.error("[CHECKOUT_VALIDATION_ERROR]", result.error);
+      return new NextResponse("Invalid request data", { status: 400 });
+    }
+
     const { 
       quantity, 
       material, 
@@ -23,11 +35,10 @@ export async function POST(req: Request) {
       design, 
       isSubscription, 
       bundled 
-    } = body;
+    } = result.data;
 
-    // 1. Säkerställ URL. Kastar fel om den saknas i prod för att undvika localhost-redirects av misstag.
+    // 4. Säkerställ URL
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
-    
     if (!baseUrl) {
       console.error("NEXT_PUBLIC_BASE_URL is missing");
       return new NextResponse("Server Configuration Error", { status: 500 });
@@ -37,6 +48,7 @@ export async function POST(req: Request) {
     let mode: Stripe.Checkout.SessionCreateParams.Mode = "payment";
 
     // --- FALL 1: Endast Premium Prenumeration ---
+    // (Om man inte köper kort samtidigt, dvs !bundled)
     if (isSubscription && !bundled) {
       mode = "subscription";
       line_items.push({
@@ -66,11 +78,11 @@ export async function POST(req: Request) {
           currency: "sek",
           product_data: {
             name: productName,
-            description: `${(material || "").toUpperCase()} | ${(color || "").toUpperCase()} | ${(design || "").toUpperCase()}`,
+            description: `${material.toUpperCase()} | ${(color || "DEFAULT").toUpperCase()} | ${(design || "DEFAULT").toUpperCase()}`,
           },
           unit_amount: unitPrice,
         },
-        quantity: quantity || 1,
+        quantity: quantity,
       });
 
       // 2. Bundling (6 månader Premium engångsköp)
@@ -84,18 +96,22 @@ export async function POST(req: Request) {
             },
             unit_amount: 29900, // 299 kr
           },
-          quantity: 1,
+          quantity: 1, // Alltid 1 paket per köp i dagsläget
         });
       }
       
       mode = "payment";
     }
 
+    // Dubbelkoll så vi inte skickar en tom array till Stripe (ska fångas av Zod .refine, men som extra säkerhet)
+    if (line_items.length === 0) {
+      return new NextResponse("No items to checkout", { status: 400 });
+    }
+
     // Skapa sessionen
     const session = await stripe.checkout.sessions.create({
       line_items,
       mode: mode,
-      // Vi använder baseUrl som nu garanterat är satt eller error
       success_url: isSubscription && !bundled 
         ? `${baseUrl}/register/activate?session_id={CHECKOUT_SESSION_ID}`
         : `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`,
@@ -104,13 +120,14 @@ export async function POST(req: Request) {
       
       metadata: {
         type: isSubscription ? "premium_subscription" : "card_order",
-        quantity: quantity?.toString() || "1",
+        quantity: quantity.toString(),
         material: material || "",
         color: color || "",
         design: design || "",
         isBundled: bundled ? "true" : "false"
       },
       
+      // Vi kräver adress ENDAST om det är en fysisk produkt
       shipping_address_collection: (material && !isSubscription) ? {
         allowed_countries: ["SE"], 
       } : undefined,
@@ -123,7 +140,7 @@ export async function POST(req: Request) {
     });
 
     if (!session.url) {
-        return new NextResponse("Failed to create session", { status: 500 });
+      return new NextResponse("Failed to create session", { status: 500 });
     }
 
     return NextResponse.json({ url: session.url });

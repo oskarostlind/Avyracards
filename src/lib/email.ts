@@ -64,20 +64,36 @@ Om du inte har skapat ett konto kan du ignorera detta meddelande.
 Vänliga hälsningar,
 Team SocialCard
     `,
+    // UPPDATERING: Fullständig HTML-struktur för bättre kompatibilitet
     html: `
-      <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-        <h2 style="color:#4CAF50;">Välkommen till SocialCard 🎉</h2>
-        <p>Tack för att du registrerat dig! Klicka på knappen nedan för att verifiera din e-postadress och aktivera ditt konto:</p>
-        <p style="text-align:center;">
-          <a href="${verifyUrl}" target="_blank" rel="noopener noreferrer"
-             style="display:inline-block; padding:12px 24px; background-color:#4CAF50; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;">
-            Verifiera mitt konto
-          </a>
-        </p>
-        <p>Om du inte har skapat ett konto kan du ignorera detta meddelande.</p>
-        <hr style="margin:20px 0; border:none; border-top:1px solid #eee;" />
-        <p style="font-size:12px; color:#777;">Detta är ett automatiskt utskick från SocialCard. Svara inte på detta mail.</p>
-      </div>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Verifiera ditt konto</title>
+</head>
+<body style="font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 20px;">
+  <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <h2 style="color:#4CAF50; margin-top:0;">Välkommen till SocialCard 🎉</h2>
+    <p style="color:#333; line-height:1.6;">Tack för att du registrerat dig! Klicka på knappen nedan för att verifiera din e-postadress och aktivera ditt konto:</p>
+    
+    <p style="text-align:center; margin: 30px 0;">
+      <a href="${verifyUrl}" target="_blank" rel="noopener noreferrer"
+         style="display:inline-block; padding:12px 24px; background-color:#4CAF50; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold; font-size:16px;">
+        Verifiera mitt konto
+      </a>
+    </p>
+    
+    <p style="color:#555; font-size:14px; line-height:1.5;">Om du inte har skapat ett konto kan du ignorera detta meddelande.</p>
+    
+    <hr style="margin:30px 0; border:none; border-top:1px solid #eee;" />
+    
+    <p style="font-size:12px; color:#999; text-align:center;">
+      Detta är ett automatiskt utskick från SocialCard. Går ej att svara på.
+    </p>
+  </div>
+</body>
+</html>
     `,
   });
 
