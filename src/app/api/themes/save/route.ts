@@ -1,27 +1,46 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { auth } from "@/auth"; // Kontrollera att sökvägen stämmer
 import { prisma } from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
     const session = await auth();
+
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const data = await req.json();
+    // Hämta inställningarna från request body
+    const settings = await req.json();
 
-    await prisma.user.update({
+    // Vi validerar att användaren är premium innan vi sparar
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isPremium: true }
+    });
+
+    if (!user?.isPremium) {
+      return NextResponse.json(
+        { error: "Du måste vara premium för att spara teman." }, 
+        { status: 403 }
+      );
+    }
+
+    // Uppdatera användaren med JSON-datan
+    const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        themeSettings: data, // Sparar JSON direkt
-        theme: "custom",     // Sätter temat till 'custom' automatiskt
+        themeSettings: settings, // Prisma hanterar JSON-konverteringen automatiskt
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, data: updatedUser.themeSettings });
+
   } catch (error) {
     console.error("Theme save error:", error);
-    return NextResponse.json({ error: "Failed to save theme" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Kunde inte spara temat." }, 
+      { status: 500 }
+    );
   }
 }

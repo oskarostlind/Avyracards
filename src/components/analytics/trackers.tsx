@@ -34,19 +34,25 @@ export function ProfileViewTracker({ userId }: { userId: string }) {
 
 // --- CLICK TRACKER ---
 // Wrapper runt länkar för att spåra klick
+
+// Uppdaterat interface som inkluderar 'style'
+interface TrackedLinkProps {
+  linkId: string;
+  ownerId: string;
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties; // <-- Här är fixen för ditt felmeddelande
+}
+
 export function TrackedLink({ 
   linkId, 
   ownerId, 
   href, 
   children, 
-  className 
-}: { 
-  linkId: string, 
-  ownerId: string, 
-  href: string, 
-  children: React.ReactNode,
-  className?: string
-}) {
+  className,
+  style // <-- Tar emot style
+}: TrackedLinkProps) {
   
   const handleClick = () => {
     // Använd sendBeacon om möjligt för att garantera att requesten går iväg även om sidan byts
@@ -68,9 +74,10 @@ export function TrackedLink({
     <a 
       href={href} 
       target="_blank" 
-      rel="noreferrer" 
+      rel="noopener noreferrer" 
       onClick={handleClick}
       className={className}
+      style={style} // <-- Skickar vidare style till a-taggen
     >
       {children}
     </a>

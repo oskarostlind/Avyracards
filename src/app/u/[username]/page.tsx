@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getTheme } from "@/utils/theme";
 import { AdBanner } from "@/components/ads/google-adsense";
 import { ProfileViewTracker, TrackedLink } from "@/components/analytics/trackers";
+import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 
 type PageProps = {
   params: { username: string };
@@ -43,7 +44,6 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
   return (
     <>
-      {/* Spåra visning */}
       <ProfileViewTracker userId={user.id} />
 
       {user.profileMode === "BUSINESS" ? (
@@ -55,22 +55,133 @@ export default async function PublicProfilePage({ params }: PageProps) {
   );
 }
 
-// ---------- SOCIAL LAYOUT ----------
+// ---------- SOCIAL LAYOUT (MED FIXAD AVATAR & GLOW) ----------
 
 function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
+  const useCustomTheme = !!user.themeSettings;
+  const savedSettings = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
+  const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
+  
   const tokens = getTheme(user.theme);
+
   const displayName = user.name || user.username;
   const bio = user.bio;
 
+  // --- STYLING LOGIK ---
+
+  // 1. Bakgrund
+  const pageStyle: React.CSSProperties = useCustomTheme ? {
+    fontFamily: settings.font,
+    color: settings.textColor,
+    backgroundColor: settings.backgroundType === 'solid' ? settings.backgroundColor : '#000',
+    backgroundImage: settings.backgroundType === 'image' ? `url(${settings.backgroundImage})` : 
+                     settings.backgroundType === 'gradient' ? `linear-gradient(${settings.gradientDir}, ${settings.gradientFrom}, ${settings.gradientTo})` : undefined,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
+  } : {};
+
+  // 2. Kortet
+  const cardStyle: React.CSSProperties = useCustomTheme ? {
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    backdropFilter: 'blur(16px)',
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: '1px',
+    color: settings.textColor,
+  } : {};
+
+  // 3. Knappar
+  const getLinkStyle = (): React.CSSProperties => {
+    if (!useCustomTheme) return {};
+
+    const base: React.CSSProperties = {
+      color: settings.textColor,
+    };
+
+    if (settings.buttonStyle === 'pill') base.borderRadius = '9999px';
+    else if (settings.buttonStyle === 'rounded') base.borderRadius = '0.75rem';
+    else if (settings.buttonStyle === 'sharp') base.borderRadius = '0px';
+    else if (settings.buttonStyle === 'brutal') {
+        base.borderRadius = '0.25rem';
+        base.border = `2px solid ${settings.textColor}`;
+        base.boxShadow = `4px 4px 0px 0px ${settings.textColor}`;
+    }
+
+    const accent = settings.accentColor || '#fff';
+    
+    if (settings.buttonVariant === 'solid') {
+        base.backgroundColor = accent;
+    } else if (settings.buttonVariant === 'outline') {
+        base.border = `2px solid ${accent}`;
+        base.color = accent;
+        base.backgroundColor = 'transparent';
+    } else if (settings.buttonVariant === 'soft') {
+        base.backgroundColor = accent;
+        base.opacity = 0.9;
+    } else if (settings.buttonVariant === 'glass') {
+        base.backgroundColor = 'rgba(255,255,255,0.15)';
+        base.backdropFilter = 'blur(10px)';
+        base.border = '1px solid rgba(255,255,255,0.2)';
+    } else if (settings.buttonVariant === 'shadow') {
+        base.backgroundColor = accent;
+        base.boxShadow = `0 10px 15px -3px ${accent}40`;
+    }
+
+    if (settings.buttonShadow && settings.buttonStyle !== 'brutal') {
+        base.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+    }
+
+    return base;
+  };
+
+  const linkStyle = getLinkStyle();
+
+  // 4. FIXAD AVATAR LOGIK
+  // Vi extraherar värdena säkert först
+  const frameStyle = settings.frameStyle || 'circle';
+  const accentColor = settings.accentColor || '#ffffff';
+
+  let borderRadius = '50%'; // Default för circle, glow, ring
+  if (frameStyle === 'rounded') borderRadius = '20%';
+  if (frameStyle === 'none') borderRadius = '0';
+  if (frameStyle === 'hexagon') borderRadius = '0'; // (Kräver egentligen clip-path, men 0 är safe fallback)
+
+  const avatarStyle: React.CSSProperties = useCustomTheme ? {
+    borderColor: frameStyle === 'ring' ? accentColor : 'rgba(255,255,255,0.1)',
+    borderRadius: borderRadius,
+    // Fixat: Glow använder nu accentColor säkert
+    boxShadow: frameStyle === 'glow' ? `0 0 30px ${accentColor}` : 'none',
+  } : {};
+
+
   return (
-    <main className={`min-h-screen ${tokens.bg || 'bg-slate-950'} ${tokens.text || 'text-slate-50'}`}>
-      <div className="mx-auto flex min-h-screen max-w-md flex-col items-center px-4 py-12">
+    <main 
+      className={`min-h-screen ${!useCustomTheme ? (tokens.bg || 'bg-slate-950') : ''} ${!useCustomTheme ? (tokens.text || 'text-slate-50') : ''}`}
+      style={pageStyle}
+    >
+      {useCustomTheme && settings.backgroundType === "image" && (
+        <div 
+          className="fixed inset-0 z-0 pointer-events-none"
+          style={{ 
+            backgroundColor: `rgba(0,0,0, ${settings.backgroundOverlay ? settings.backgroundOverlay / 100 : 0})`,
+            backdropFilter: `blur(${settings.backgroundBlur || 0}px)` 
+          }}
+        />
+      )}
+
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col items-center px-4 py-12">
         
-        {/* Profile Card */}
-        <section className={`w-full rounded-[32px] border p-8 shadow-2xl backdrop-blur-md ${tokens.card}`}>
+        {/* --- PROFILE CARD START --- */}
+        <section 
+          className={`w-full rounded-[32px] border p-8 shadow-2xl ${!useCustomTheme ? `${tokens.card} backdrop-blur-md` : ''}`}
+          style={cardStyle}
+        >
           <div className="flex flex-col items-center gap-5">
             {/* Avatar */}
-            <div className="relative h-28 w-28 overflow-hidden rounded-full border-4 border-white/10 shadow-xl">
+            <div 
+              className={`relative h-28 w-28 overflow-hidden border-4 shadow-xl`}
+              style={useCustomTheme ? avatarStyle : { borderRadius: '50%', borderColor: 'rgba(255,255,255,0.1)' }}
+            >
               {user.avatarUrl ? (
                 <Image src={user.avatarUrl} alt={displayName} fill className="object-cover" />
               ) : (
@@ -83,7 +194,14 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
             {/* Info */}
             <div className="text-center space-y-2">
               <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
-              {bio && <p className={`text-sm leading-relaxed max-w-[280px] mx-auto ${tokens.textMuted}`}>{bio}</p>}
+              {bio && (
+                <p 
+                  className={`text-sm leading-relaxed max-w-[280px] mx-auto ${!useCustomTheme ? tokens.textMuted : ''}`}
+                  style={{ opacity: 0.9, whiteSpace: 'pre-line' }} 
+                >
+                  {bio}
+                </p>
+              )}
             </div>
           </div>
 
@@ -95,11 +213,12 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
                 linkId={link.id}
                 ownerId={user.id}
                 href={normalizeUrl(link.url)}
-                className={`flex items-center justify-between rounded-xl px-5 py-4 text-sm font-medium shadow-md transition-all hover:scale-[1.02] hover:shadow-lg ${tokens.link}`}
+                className={`flex items-center justify-between px-5 py-4 text-sm font-medium transition-all hover:scale-[1.02] ${!useCustomTheme ? `${tokens.link} shadow-md` : ''}`}
+                style={linkStyle}
               >
                 <span className="flex items-center gap-3">
-                  <span className="text-lg">{getSocialIcon(link.url || link.title)}</span>
-                  <span>{link.title || link.url}</span>
+                  <span className="text-lg opacity-80">{getSocialIcon(link.url || link.title)}</span>
+                  <span className="font-semibold">{link.title || link.url}</span>
                 </span>
               </TrackedLink>
             ))}
@@ -108,11 +227,12 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
           {/* Ads */}
           {showAds && <AdBanner />}
         </section>
+        {/* --- PROFILE CARD END --- */}
 
         {/* Branding Footer */}
         {!user.isPremium && (
-          <div className="mt-8 text-xs text-slate-500 font-medium">
-            Powered by <span className="text-slate-300">SocialCard</span>
+          <div className="mt-8 text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity" style={{ color: useCustomTheme ? settings.textColor : undefined }}>
+            Powered by SocialCard
           </div>
         )}
       </div>
@@ -120,7 +240,7 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
   );
 }
 
-// ---------- BUSINESS LAYOUT ----------
+// ---------- BUSINESS LAYOUT (OFÖRÄNDRAD) ----------
 
 function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
   const tokens = getTheme(user.theme); 
@@ -131,7 +251,6 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
 
   return (
     <main className={`min-h-screen font-sans ${tokens.bg} ${tokens.text}`}>
-      {/* Hero Header */}
       <div className="relative h-48 w-full overflow-hidden bg-gray-900">
         {user.backgroundUrl ? (
            <Image src={user.backgroundUrl} alt="Cover" fill className="object-cover opacity-60" />
@@ -142,10 +261,7 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
       </div>
 
       <div className="mx-auto max-w-2xl px-4 sm:px-6 -mt-20 relative pb-12">
-        {/* Business Card Container */}
         <div className={`rounded-2xl shadow-2xl border overflow-hidden backdrop-blur-md ${tokens.card}`}>
-          
-          {/* Header Content */}
           <div className="p-6 sm:p-8 border-b border-white/5">
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
                 <div className="relative h-24 w-24 rounded-2xl overflow-hidden border-4 border-white/10 shadow-lg bg-gray-800 flex-shrink-0">
@@ -179,7 +295,6 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
             )}
           </div>
 
-          {/* Quick Actions (Contact) */}
           <div className="grid grid-cols-2 gap-px bg-white/5 border-b border-white/5">
              {user.businessPhone && (
                 <a href={`tel:${user.businessPhone}`} className={`p-4 flex items-center justify-center gap-2 transition font-medium text-sm hover:bg-white/5 ${tokens.text}`}>
@@ -198,7 +313,6 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
              )}
           </div>
 
-          {/* Links List */}
           {user.links.length > 0 && (
              <div className="p-6 bg-black/20">
                 <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Resurser & Länkar</h3>
@@ -222,7 +336,6 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
              </div>
           )}
 
-          {/* Ads */}
           {showAds && (
              <div className="p-4 border-t border-white/5 text-center bg-black/20">
                 <p className="text-[10px] text-gray-600 uppercase mb-2">Annons</p>
@@ -233,7 +346,6 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
           )}
         </div>
 
-        {/* Footer */}
         {!user.isPremium && (
            <div className="text-center mt-8">
               <a href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-xs font-bold shadow-lg hover:bg-white/20 transition border border-white/10">

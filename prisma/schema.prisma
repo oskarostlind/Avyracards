@@ -16,12 +16,12 @@ model User {
   username      String    @unique
   bio           String?
 
+  // Grundläggande utseende
   font          String    @default("inter")
   avatarUrl     String?
   backgroundUrl String?
   isPremium     Boolean   @default(false)
   
-  // Stripe Customer ID (bra för framtiden vid recurring subs)
   stripeCustomerId String? 
 
   emailVerified     DateTime?
@@ -32,17 +32,13 @@ model User {
 
   redirectEnabled Boolean @default(true)
 
-  links        Link[]
-  
-  // Kort som användaren har claimat/äger
-  cards        Card[]
-
-  // RELATION TILL STATISTIK (LÖSER FELET)
+  links         Link[]
+  cards         Card[]
   analyticsEvents AnalyticsEvent[]
 
   profileMode ProfileMode @default(SOCIAL)
 
-  // Hero
+  // Hero / Business
   jobTitle         String?
   companyName      String?
   location         String?
@@ -54,27 +50,26 @@ model User {
   vcardUrl      String?
   bookingUrl    String?
 
-  // Nyckelinfo / chips
+  // Nyckelinfo
   expertiseTags  String?
   languages      String?
   businessRegion String?
 
   // Företagssektion
-  companyLogoUrl       String?
+  companyLogoUrl     String?
   companyDescription String?
-  companyWebsite       String?
-  careerPageUrl        String?
+  companyWebsite     String?
+  careerPageUrl      String?
 
   marketingConsent Boolean @default(false)
   productUpdates   Boolean @default(true)
   hideFromSearch   Boolean @default(false)
 
+  // THEME ENGINE
   theme String @default("default")
-  themeSettings Json?
+  themeSettings Json?  // Här sparas hela CustomThemeSettings-objektet
 
   role Role @default(USER)
-
-
 }
 
 enum ProfileMode {
@@ -99,13 +94,10 @@ model Link {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // RELATION TILL STATISTIK (LÖSER FELET)
   analyticsEvents AnalyticsEvent[]
 
   @@index([userId, order])
 }
-
-// --- NYA TABELLER FÖR KÖPFLÖDET ---
 
 model Order {
   id              String      @id @default(cuid())
@@ -113,18 +105,17 @@ model Order {
   updatedAt       DateTime    @updatedAt
   
   stripeSessionId String?     @unique
-  amountTotal     Int         // I öre (cent)
+  amountTotal     Int         
   currency        String      @default("sek")
   
   status          OrderStatus @default(PENDING)
   
   customerEmail   String
   customerType    CustomerType @default(PRIVATE)
-  companyName     String?     // Endast om företag
+  companyName     String?     
   
   quantity        Int         @default(1)
   
-  // En order kan innehålla flera kort-slots
   cards           Card[]
 }
 
@@ -132,30 +123,23 @@ model Card {
   id              String      @id @default(cuid())
   createdAt       DateTime    @default(now())
   
-  // Unik kod som trycks på kortet (t.ex. "X9F2P1")
   cardCode        String      @unique
-  
-  // Hemlig token för att claima kortet (används i URL vid första scan)
   claimToken      String      @unique
   
-  // Status på kortet
   status          CardStatus @default(UNCLAIMED)
   
   claimedAt       DateTime?
   
-  // Koppling till Order (ursprunget)
   orderId         String
   order           Order       @relation(fields: [orderId], references: [id])
   
-  // Koppling till User (när det är claimat)
   assignedUserId String?
-  user           User?       @relation(fields: [assignedUserId], references: [id])
+  user           User?        @relation(fields: [assignedUserId], references: [id])
   
-  // Metadata om själva kortet (från produktbyggaren)
-  material        String?     // plast, metall
-  designTemplate String?     // minimal, full-logo
-  colorOption     String?     // black, white, gold
-  printFileUrl    String?     // URL till uppladdad logga
+  material        String?     
+  designTemplate String?     
+  colorOption     String?     
+  printFileUrl    String?     
 }
 
 enum OrderStatus {
@@ -177,28 +161,21 @@ enum CardStatus {
   LOST
 }
 
-
-// --- NY TABELL FÖR STATISTIK ---
-
 model AnalyticsEvent {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
 
-  // Vem äger profilen som besöktes?
   profileOwnerId String
   profileOwner   User   @relation(fields: [profileOwnerId], references: [id], onDelete: Cascade)
 
-  // Typ av händelse
-  type EventType // VIEW eller CLICK
+  type EventType 
 
-  // Om det var ett klick, vilken länk?
   linkId String?
   link   Link?   @relation(fields: [linkId], references: [id], onDelete: SetNull)
 
-  // Data om besökaren
-  referrer String? // Vart kom de ifrån? (t.ex. instagram.com)
-  country  String? // (Kan läggas till senare via IP-uppslag)
-  device   String? // mobile/desktop
+  referrer String? 
+  country  String? 
+  device   String? 
   
   @@index([profileOwnerId])
   @@index([createdAt])
