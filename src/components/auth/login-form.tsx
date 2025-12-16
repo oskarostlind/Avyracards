@@ -39,10 +39,15 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
-        setError("Felaktig e-post eller lösenord");
+        // Om felet innehåller "verifiera" (från vår backend), visa det. Annars standardfel.
+        if (result.error.toLowerCase().includes("verifiera")) {
+             setError("Du måste verifiera din e-postadress innan du kan logga in.");
+        } else {
+             setError("Felaktig e-post eller lösenord");
+        }
         setLoading(false);
       } else {
-        // Redirect to the callback URL (e.g. /activate/confirm)
+        // Redirect to the callback URL
         router.push(callbackUrl);
         router.refresh();
       }
@@ -70,13 +75,19 @@ export default function LoginForm() {
       {/* Feedback Messages */}
       {registered && (
         <div className="p-3 text-sm text-green-500 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
-          Ditt konto har skapats! Du kan nu logga in.
+          Ditt konto har skapats! 
+          <br/>Vi har skickat ett verifieringsmail till dig.
         </div>
       )}
 
       {error && (
-        <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
-          {error}
+        <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg text-center flex flex-col gap-2">
+          <span>{error}</span>
+          
+          {/* Visa Resend-länk direkt i felrutan om det är relevant, eller alltid */}
+          <Link href="/verify-resend" className="text-xs underline hover:text-red-400">
+            Fick du inget mail? Skicka igen
+          </Link>
         </div>
       )}
 
@@ -136,13 +147,21 @@ export default function LoginForm() {
           {loading ? "Loggar in..." : "Logga in"}
         </button>
 
-        {/* Footer Link */}
-        <div className="text-center space-y-4">
+        {/* Footer Links */}
+        <div className="text-center space-y-4 pt-2">
           <Link
             href="/get-started"
-            className="text-sm text-gray-400 hover:text-white transition-colors"
+            className="block text-sm text-gray-400 hover:text-white transition-colors"
           >
             Har du inget konto? <span className="font-semibold text-white">Skapa konto</span>
+          </Link>
+
+          {/* NY LÄNK: Resend Verification */}
+          <Link
+            href="/verify-resend"
+            className="block text-xs text-emerald-500 hover:text-emerald-400 transition-colors"
+          >
+            Har du inte fått verifieringsmailet? <span className="underline">Skicka igen</span>
           </Link>
         </div>
       </form>
