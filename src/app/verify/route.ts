@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     // Säkerställ att vi alltid har en giltig bas-URL
