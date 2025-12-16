@@ -3,7 +3,7 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { z } from "zod";
 import { type Role } from "@prisma/client"; 
-import { type Adapter } from "next-auth/adapters";
+//import { type Adapter } from "next-auth/adapters";
 
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
