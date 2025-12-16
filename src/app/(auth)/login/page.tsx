@@ -2,8 +2,8 @@ import LoginForm from "@/components/auth/login-form";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Logga in | SocialCard",
-  description: "Logga in på ditt SocialCard konto",
+  title: "Logga in | AvyraCards",
+  description: "Logga in pAť ditt AvyraCards konto",
 };
 
 export default function LoginPage() {

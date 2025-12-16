@@ -403,7 +403,7 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
   // --- NY FUNKTION FÖR ATT KOPIERA LÄNK ---
   const fullUrl = typeof window !== "undefined" 
     ? `${window.location.origin}${publicUrl}`
-    : `https://socialcard.se${publicUrl}`;
+    : `https://avyracards.se${publicUrl}`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(fullUrl);

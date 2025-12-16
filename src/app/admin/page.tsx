@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 import type { OrderStatus } from "@prisma/client";
 
 export const metadata = {
-  title: "Admin Dashboard | SocialCard",
+  title: "Admin Dashboard | AvyraCards",
 };
 
 // Hjälpfunktion för att formatera valuta (öre -> kr)

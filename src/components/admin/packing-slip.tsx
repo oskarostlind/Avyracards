@@ -15,7 +15,7 @@ export function PackingSlip({ orderId, customerName, cards }: PackingSlipProps) 
       {/* Huvud/Logga */}
       <div className="flex justify-between items-start mb-12 border-b-2 border-black pb-6">
         <div>
-          <h1 className="text-4xl font-bold tracking-tighter text-black">SocialCard</h1>
+          <h1 className="text-4xl font-bold tracking-tighter text-black">AvyraCards</h1>
           <p className="text-sm text-gray-500 mt-2">Ditt digitala visitkort</p>
         </div>
         <div className="text-right">
@@ -28,7 +28,7 @@ export function PackingSlip({ orderId, customerName, cards }: PackingSlipProps) 
       <div className="mb-16">
         <h2 className="text-2xl font-bold text-black mb-4">Hej {customerName || "där"}! 👋</h2>
         <p className="text-lg text-gray-700 max-w-xl leading-relaxed">
-          Tack för din beställning. Här kommer ditt nya SocialCard! 
+          Tack för din beställning. Här kommer ditt nya AvyraCards! 
           Vi hoppas att det ska hjälpa dig att nätverka smartare och snyggare.
         </p>
       </div>
@@ -54,7 +54,7 @@ export function PackingSlip({ orderId, customerName, cards }: PackingSlipProps) 
           <p className="text-gray-600 text-sm mb-4">
             Om NFC inte fungerar direkt kan du alltid skanna QR-koden nedan eller besöka länken manuellt.
           </p>
-          <p className="text-sm font-medium text-black">support@socialcard.se</p>
+          <p className="text-sm font-medium text-black">support@avyracards.se</p>
         </div>
       </div>
 
@@ -66,7 +66,7 @@ export function PackingSlip({ orderId, customerName, cards }: PackingSlipProps) 
         
         <div className="grid grid-cols-2 gap-8">
           {cards.map((card) => {
-            const url = `https://socialcard.se/c/${card.cardCode}`;
+            const url = `https://avyracards.se/c/${card.cardCode}`;
             return (
               <div key={card.id} className="flex items-start gap-6 p-6 border-2 border-dashed border-gray-300 rounded-2xl break-inside-avoid">
                 <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-100">
@@ -87,7 +87,7 @@ export function PackingSlip({ orderId, customerName, cards }: PackingSlipProps) 
 
       {/* Footer */}
       <div className="fixed bottom-10 left-10 right-10 text-center text-xs text-gray-400">
-        <p>SocialCard Sweden AB &bull; www.socialcard.se</p>
+        <p>AvyraCards Sweden AB &bull; www.avyracards.se</p>
       </div>
     </div>
   );

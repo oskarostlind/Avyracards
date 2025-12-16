@@ -10,7 +10,7 @@ const pass = process.env.SMTP_PASS ?? process.env.STRATO_SMTP_PASS;
 
 const from =
   process.env.SMTP_FROM ??
-  (user ? `SocialCard <${user}>` : undefined);
+  (user ? `AvyraCards <${user}>` : undefined);
 
 if (!host || !user || !pass) {
   console.warn(
@@ -51,10 +51,10 @@ export async function sendVerificationEmail(to: string, token: string) {
   const info = await transporter.sendMail({
     from,
     to,
-    subject: "✨ Välkommen till SocialCard – Verifiera ditt konto",
+    subject: "✨ Välkommen till AvyraCards – Verifiera ditt konto",
     text: `Hej!
 
-Tack för att du registrerat dig hos SocialCard. 
+Tack för att du registrerat dig hos AvyraCards. 
 Klicka på länken nedan för att verifiera din e-postadress och aktivera ditt konto:
 
 ${verifyUrl}
@@ -62,7 +62,7 @@ ${verifyUrl}
 Om du inte har skapat ett konto kan du ignorera detta meddelande.
 
 Vänliga hälsningar,
-Team SocialCard
+Team AvyraCards
     `,
     // UPPDATERING: Fullständig HTML-struktur för bättre kompatibilitet
     html: `
@@ -74,7 +74,7 @@ Team SocialCard
 </head>
 <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 20px;">
   <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-    <h2 style="color:#4CAF50; margin-top:0;">Välkommen till SocialCard 🎉</h2>
+    <h2 style="color:#4CAF50; margin-top:0;">Välkommen till AvyraCards 🎉</h2>
     <p style="color:#333; line-height:1.6;">Tack för att du registrerat dig! Klicka på knappen nedan för att verifiera din e-postadress och aktivera ditt konto:</p>
     
     <p style="text-align:center; margin: 30px 0;">
@@ -89,7 +89,7 @@ Team SocialCard
     <hr style="margin:30px 0; border:none; border-top:1px solid #eee;" />
     
     <p style="font-size:12px; color:#999; text-align:center;">
-      Detta är ett automatiskt utskick från SocialCard. Går ej att svara på.
+      Detta är ett automatiskt utskick från AvyraCards. Går ej att svara på.
     </p>
   </div>
 </body>

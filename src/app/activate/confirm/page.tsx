@@ -12,7 +12,7 @@ interface Props {
 }
 
 export const metadata = {
-  title: "Bekräfta Aktivering | SocialCard",
+  title: "Bekräfta Aktivering | AvyraCards",
 };
 
 export default async function ConfirmActivationPage({ searchParams }: Props) {
@@ -73,7 +73,7 @@ export default async function ConfirmActivationPage({ searchParams }: Props) {
 
         <h1 className="text-2xl font-bold text-white mb-2">Kortet är aktiverat!</h1>
         <p className="text-slate-400 mb-8">
-          Ditt SocialCard <strong>{cardCode}</strong> är nu kopplat till din profil.
+          Ditt AvyraCards <strong>{cardCode}</strong> är nu kopplat till din profil.
         </p>
 
         <div className="space-y-3">

@@ -106,7 +106,7 @@ export function AccountForm({
           <div className="h-px bg-slate-800 my-4" />
           <ToggleItem
             label="Dölj från Google"
-            description="Neka sökmotorer från att indexera din SocialCard-profil."
+            description="Neka sökmotorer från att indexera din AvyraCards-profil."
             checked={hideSearch}
             onChange={setHideSearch}
           />

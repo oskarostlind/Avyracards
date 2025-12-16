@@ -55,7 +55,7 @@ export async function POST(req: Request) {
         price_data: {
           currency: "sek",
           product_data: {
-            name: "SocialCard Premium",
+            name: "AvyraCards Premium",
             description: "Månadsprenumeration - Lås upp alla funktioner",
           },
           unit_amount: 9900, // 99 kr
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     // --- FALL 2: Kortköp (Med eller utan Premium Bundling) ---
     else if (material) {
       const unitPrice = material === "metal" ? 49900 : 14900; 
-      const productName = material === "metal" ? "SocialCard Metal" : "SocialCard Standard";
+      const productName = material === "metal" ? "AvyraCards Metal" : "AvyraCards Standard";
 
       // 1. Lägg till kortet
       line_items.push({
@@ -91,7 +91,7 @@ export async function POST(req: Request) {
           price_data: {
             currency: "sek",
             product_data: {
-              name: "SocialCard Premium (6 månader)",
+              name: "AvyraCards Premium (6 månader)",
               description: "Bundling-erbjudande (Spara 37%)",
             },
             unit_amount: 29900, // 299 kr

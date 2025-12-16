@@ -87,7 +87,7 @@ function ActivateContent() {
           <CreditCard size={32} />
         </div>
 
-        <h1 className="text-2xl font-bold text-center mb-2">Aktivera ditt SocialCard</h1>
+        <h1 className="text-2xl font-bold text-center mb-2">Aktivera ditt AvyraCards</h1>
         <p className="text-slate-400 text-center mb-8 text-sm">
           Du håller i kortet <strong className="text-white font-mono">{activeCode}</strong>. <br/>
           Koppla det till en profil för att komma igång.

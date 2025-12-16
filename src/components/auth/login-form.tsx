@@ -57,7 +57,7 @@ export default function LoginForm() {
       {/* Header Section */}
       <div className="text-center space-y-2">
         <h3 className="text-xs font-bold tracking-widest text-gray-500 uppercase">
-          SocialCard
+          AvyraCards
         </h3>
         <h1 className="text-3xl font-bold text-white tracking-tight">
           Logga in

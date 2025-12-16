@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignOutButton } from "@/components/sign-out-button";
-import { ShieldCheck } from "lucide-react"; // Snygg ikon för admin
+import { ShieldCheck } from "lucide-react"; // Snygg ikon fAr admin
 
 type NavbarClientProps = {
   isAuthenticated: boolean;
@@ -32,13 +32,13 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
             onClick={closeMenu}
             className="text-base font-semibold tracking-tight text-slate-50"
           >
-            SocialCard
+            AvyraCards
           </Link>
 
           <button
             onClick={() => setIsOpen(!isOpen)}
             className="flex cursor-pointer items-center justify-center rounded-full border border-slate-700 bg-slate-900/80 px-3 py-2 text-slate-100 transition hover:bg-slate-800"
-            aria-label="Öppna meny"
+            aria-label="A-ppna meny"
           >
             {isOpen ? (
                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,7 +65,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                       Mitt konto
                    </div>
                    
-                   {/* ADMIN LÄNK (MOBIL) */}
+                   {/* ADMIN LA,NK (MOBIL) */}
                    {isAdmin && (
                      <Link
                        href="/admin"
@@ -103,7 +103,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                       onClick={closeMenu}
                       className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-slate-800/80"
                    >
-                      Inställningar
+                      InstAllningar
                    </Link>
 
                    <div className="mt-2 border-t border-slate-800 pt-2 px-3">
@@ -120,7 +120,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                       onClick={closeMenu}
                       className="block w-full text-center rounded-lg bg-emerald-500/10 border border-emerald-500/50 px-3 py-2 text-sm font-medium text-emerald-400 hover:bg-emerald-500/20"
                    >
-                      Kom igång
+                      Kom igAťng
                    </Link>
                    <div className="px-3">
                       <SignInButton />
@@ -137,7 +137,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
               href="/"
               className="text-sm font-semibold tracking-tight text-slate-50 md:text-base"
             >
-              SocialCard
+              AvyraCards
             </Link>
 
             <nav aria-label="Segment" className="rounded-full border border-slate-800 bg-slate-900/80 px-1 py-0.5 text-xs text-slate-200 shadow-sm">
@@ -159,7 +159,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
           <nav aria-label="Huvudnavigering" className="flex items-center gap-4 text-sm">
             {isAuthenticated ? (
                <>
-                  {/* ADMIN LÄNK (DESKTOP) */}
+                  {/* ADMIN LA,NK (DESKTOP) */}
                   {isAdmin && (
                     <Link 
                       href="/admin" 
@@ -180,7 +180,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                      Teman
                   </Link>
                   <Link href="/profile/settings" className="text-slate-200 hover:text-emerald-300 transition-colors">
-                     Inställningar
+                     InstAllningar
                   </Link>
                   
                   <div className="ml-1">
@@ -190,7 +190,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
             ) : (
                <>
                   <Link href="/get-started" className="rounded-full border border-slate-500/70 px-4 py-1.5 text-sm font-medium text-slate-100 hover:border-emerald-400 hover:text-emerald-300 transition-colors">
-                     Kom igång
+                     Kom igAťng
                   </Link>
                   <SignInButton />
                </>

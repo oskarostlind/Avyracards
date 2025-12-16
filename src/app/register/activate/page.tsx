@@ -81,7 +81,7 @@ export default function ActivateAccountPage() {
                         className="w-full bg-[#030712] border border-gray-700 rounded-xl pl-11 pr-4 py-3 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition-all placeholder:text-gray-600" 
                      />
                   </div>
-                  <p className="text-[10px] text-gray-500 pl-1">Din länk: socialcard.se/användarnamn</p>
+                  <p className="text-[10px] text-gray-500 pl-1">Din länk: avyracards.se/användarnamn</p>
                </div>
 
                <div className="space-y-2">

@@ -10,7 +10,7 @@ export async function GET(req: Request) {
   try {
     // Säkerställ att vi alltid har en giltig bas-URL
     const baseFallback =
-      process.env.NEXT_PUBLIC_BASE_URL ?? "https://socialcard.se";
+      process.env.NEXT_PUBLIC_BASE_URL ?? "https://avyracards.se";
 
     const currentUrl = new URL(req.url, baseFallback);
     const { searchParams, origin } = currentUrl;

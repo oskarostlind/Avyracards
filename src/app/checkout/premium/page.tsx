@@ -84,7 +84,7 @@ export default function PremiumCheckoutPage() {
 
               <div className="bg-black/40 p-4 rounded-xl border border-gray-800 mb-6 space-y-3">
                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-sm">SocialCard Premium</span>
+                    <span className="font-medium text-sm">AvyraCards Premium</span>
                     <span className="font-bold">99 kr<span className="text-gray-500 font-normal text-xs">/mån</span></span>
                  </div>
                  <div className="h-px bg-gray-800 w-full"></div>

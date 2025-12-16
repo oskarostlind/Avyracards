@@ -232,7 +232,7 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
         {/* Branding Footer */}
         {!user.isPremium && (
           <div className="mt-8 text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity" style={{ color: useCustomTheme ? settings.textColor : undefined }}>
-            Powered by SocialCard
+            Powered by AvyraCards
           </div>
         )}
       </div>
@@ -349,7 +349,7 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
         {!user.isPremium && (
            <div className="text-center mt-8">
               <a href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-xs font-bold shadow-lg hover:bg-white/20 transition border border-white/10">
-                 <span className="text-blue-400">⚡</span> Skapa ditt eget SocialCard
+                 <span className="text-blue-400">⚡</span> Skapa ditt eget AvyraCards
               </a>
            </div>
         )}

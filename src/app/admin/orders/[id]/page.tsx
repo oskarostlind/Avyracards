@@ -111,7 +111,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               ) : (
                 <div className="space-y-4">
                   {order.cards.map((card) => {
-                    const nfcUrl = `https://socialcard.se/c/${card.cardCode}`;
+                    const nfcUrl = `https://avyracards.se/c/${card.cardCode}`;
                     
                     return (
                       <div key={card.id} className="rounded-xl border border-slate-700 bg-slate-950 p-5 shadow-lg relative overflow-hidden group">

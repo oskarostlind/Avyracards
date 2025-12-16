@@ -251,8 +251,8 @@ export function ProfilePreview({
 
       {/* --- FOOTER (Nu utanför kortet) --- */}
       <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity">
-         <a href="https://socialcard.se" target="_blank" className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white no-underline drop-shadow-md">
-           <span>Powered by SocialCard</span>
+         <a href="https://avyracards.se" target="_blank" className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white no-underline drop-shadow-md">
+           <span>Powered by AvyraCards</span>
          </a>
       </div>
 

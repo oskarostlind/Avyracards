@@ -113,7 +113,7 @@ export function ProfileSettingsForm({
         <div className="mb-4 space-y-1">
           <h1 className="text-lg font-semibold text-slate-50">Profilinställningar</h1>
           <p className="text-xs text-slate-400">
-            Uppdatera hur din offentliga SocialCard-profil ser ut.
+            Uppdatera hur din offentliga AvyraCards-profil ser ut.
           </p>
         </div>
 
@@ -171,7 +171,7 @@ export function ProfileSettingsForm({
               placeholder="Skriv en kort text om dig själv..."
             />
             <p className="text-xs text-slate-500">
-              Detta visas överst på din offentliga SocialCard-sida.
+              Detta visas överst på din offentliga AvyraCards-sida.
             </p>
           </div>
 

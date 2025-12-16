@@ -10,7 +10,7 @@ export default function HomePage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/60 px-3 py-1 text-xs text-slate-300">
               <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                Live – SocialCard
+                Live – AvyraCards
               </span>
               <span className="h-3 w-px bg-slate-700" />
               <span>Digitalt visitkort med NFC & länkprofil</span>
@@ -24,7 +24,7 @@ export default function HomePage() {
                 </span>
               </h1>
               <p className="max-w-xl text-sm text-slate-300 sm:text-base">
-                SocialCard samlar dina viktigaste länkar på en snygg profilsida
+                AvyraCards samlar dina viktigaste länkar på en snygg profilsida
                 – kopplad till ett NFC-kort du kan hålla mot en mobil.
                 Perfekt för både sociala medier och professionella kontakter.
               </p>
@@ -91,7 +91,7 @@ export default function HomePage() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <h2 className="text-xl font-semibold sm:text-2xl">
-                Så funkar SocialCard
+                Så funkar AvyraCards
               </h2>
               <p className="mt-1 max-w-2xl text-sm text-slate-300">
                 På några minuter har du en personlig landningssida och ett kort
@@ -121,7 +121,7 @@ export default function HomePage() {
               </span>
               <h3 className="text-sm font-semibold">Koppla NFC-kort</h3>
               <p className="text-xs text-slate-300">
-                Beställ ett SocialCard eller använd ett befintligt NFC-kort och
+                Beställ ett AvyraCards eller använd ett befintligt NFC-kort och
                 peka det mot din unika profil-URL.
               </p>
             </div>
@@ -161,7 +161,7 @@ export default function HomePage() {
               href="/social"
               className="mt-4 inline-flex text-xs font-medium text-sky-300 underline-offset-4 hover:underline"
             >
-              Läs mer om SocialCard Social →
+              Läs mer om AvyraCards Social →
             </Link>
           </div>
 
@@ -185,7 +185,7 @@ export default function HomePage() {
               href="/business"
               className="mt-4 inline-flex text-xs font-medium text-amber-300 underline-offset-4 hover:underline"
             >
-              Läs mer om SocialCard Business →
+              Läs mer om AvyraCards Business →
             </Link>
           </div>
         </section>
@@ -195,14 +195,14 @@ export default function HomePage() {
           <div>
             <h2 className="text-xl font-semibold sm:text-2xl">Vanliga frågor</h2>
             <p className="mt-1 text-sm text-slate-300">
-              Här är svar på några av de vanligaste frågorna kring SocialCard.
+              Här är svar på några av de vanligaste frågorna kring AvyraCards.
             </p>
           </div>
 
           <div className="space-y-3">
             <details className="group rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-3">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-slate-100">
-                Behöver jag köpa ett NFC-kort för att använda SocialCard?
+                Behöver jag köpa ett NFC-kort för att använda AvyraCards?
                 <span className="text-xs text-slate-400 group-open:hidden">
                   +
                 </span>
@@ -219,7 +219,7 @@ export default function HomePage() {
 
             <details className="group rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-3">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-medium text-slate-100">
-                Fungerar SocialCard på alla mobiler?
+                Fungerar AvyraCards på alla mobiler?
                 <span className="text-xs text-slate-400 group-open:hidden">
                   +
                 </span>
@@ -277,7 +277,7 @@ export default function HomePage() {
             Redo att byta ut visitkort & link trees?
           </h2>
           <p className="mt-2 text-sm text-slate-200">
-            Skapa ditt SocialCard på ett par minuter och testa hur det känns att
+            Skapa ditt AvyraCards på ett par minuter och testa hur det känns att
             dela allt med ett enda tryck.
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">

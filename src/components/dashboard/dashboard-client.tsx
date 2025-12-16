@@ -67,7 +67,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
         <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
           <div>
             <h1 className="text-lg font-semibold text-slate-50">
-              Din SocialCard-panel
+              Din AvyraCards-panel
             </h1>
             <p className="text-xs text-slate-400">
               Uppdatera din profil och hantera dina länkar. Välj om du jobbar i
@@ -147,7 +147,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
 
           <CollapsibleSection
             title="Länkar (Social)"
-            description="Lägg till och hantera knapparna på din SocialCard-sida."
+            description="Lägg till och hantera knapparna på din AvyraCards-sida."
             defaultOpen
           >
             <LinksForm publicUrl={`/u/${user.username}`} />

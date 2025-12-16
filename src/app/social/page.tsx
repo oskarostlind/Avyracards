@@ -7,67 +7,69 @@ export default function SocialLandingPage() {
         {/* HERO */}
         <section className="grid gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-center">
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-600/40 bg-sky-950/40 px-3 py-1 text-xs text-sky-100">
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-950/40 px-3 py-1 text-xs text-sky-100">
               <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-sky-400" />
-                SocialCard Social
+                AvyraCards Social
               </span>
               <span className="h-3 w-px bg-sky-700/70" />
-              <span>Link-in-bio & NFC-kort för kreatörer</span>
+              <span>Digital lAnkprofil fAr kreatArer</span>
             </div>
 
             <div className="space-y-4">
               <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
-                Samla alla dina länkar
-                <span className="block text-sky-400">
-                  i en profil du faktiskt gillar.
+                Samla alla dina lAnkar
+                <span className="block text-sky-300">
+                  i en snygg profil.
                 </span>
               </h1>
               <p className="max-w-xl text-sm text-slate-300 sm:text-base">
-                En länk för alla dina kanaler – TikTok, Instagram, YouTube,
-                Twitch, merch, bokningar och mer. Koppla den till ett
-                NFC-kort för en riktig “wow”-känsla IRL.
+                AvyraCards Social Ar byggt fAr kreatArer, streamers och alla som
+                vill dela allt viktigt pA ett stAlle. Koppla lAnkar, merch, bokning och
+                mycket mer.
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-4">
               <Link
-                href="/get-started?"
-                className="rounded-full bg-sky-500 px-6 py-2.5 text-sm font-medium text-slate-950 shadow-lg shadow-sky-500/25 transition hover:bg-sky-400"
+                href="/get-started"
+                className="rounded-full bg-sky-400 px-6 py-2.5 text-sm font-medium text-slate-950 shadow-lg shadow-sky-500/20 transition hover:bg-sky-300"
               >
-                Skapa gratis social profil
+                Skapa konto gratis
               </Link>
               <Link
                 href="#features"
                 className="text-sm text-slate-300 underline-offset-4 hover:underline"
               >
-                Se vad som ingår
+                Se funktioner
               </Link>
             </div>
 
             <p className="text-xs text-slate-400">
-              Gratis att börja med. Uppgradera till premium senare om du vill ha
-              mer statistik, teman och kontroll.
+              Perfekt fAr bios pA TikTok, Instagram, YouTube, Twitch och mer.
             </p>
           </div>
 
-          {/* Enkel mockup / placeholder */}
+          {/* Mockup */}
           <div className="relative h-[260px] overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 shadow-xl sm:h-[320px]">
             <div className="absolute inset-6 rounded-3xl bg-slate-950/70 p-4">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-gradient-to-br from-sky-400 to-fuchsia-500" />
+                <div className="h-12 w-12 rounded-full bg-slate-700" />
                 <div className="space-y-1">
-                  <div className="h-3 w-32 rounded bg-slate-700" />
-                  <div className="h-2.5 w-20 rounded bg-slate-800" />
+                  <div className="h-3 w-36 rounded bg-slate-700" />
+                  <div className="h-2.5 w-28 rounded bg-slate-800" />
+                  <div className="h-2 w-24 rounded bg-slate-800" />
                 </div>
               </div>
-              <div className="mt-5 space-y-3">
-                <div className="h-8 rounded-full bg-slate-800" />
-                <div className="h-8 rounded-full bg-slate-800" />
+              <div className="mt-5 space-y-2">
+                <div className="flex gap-2">
+                  <div className="h-8 flex-1 rounded-full bg-sky-500/80" />
+                  <div className="h-8 flex-1 rounded-full bg-slate-800" />
+                </div>
                 <div className="h-8 rounded-full bg-slate-800" />
               </div>
               <div className="absolute bottom-3 right-4 text-[10px] text-slate-500">
-                Exempelvy – inte riktig data
+                Exempelvy ƒ?" inte riktig data
               </div>
             </div>
           </div>
@@ -76,55 +78,52 @@ export default function SocialLandingPage() {
         {/* FEATURES */}
         <section id="features" className="space-y-6">
           <div>
-            <h2 className="text-xl font-semibold sm:text-2xl">
-              Bygg din sociala hub på några minuter
-            </h2>
+            <h2 className="text-xl font-semibold sm:text-2xl">Funktioner fAr kreatArer</h2>
             <p className="mt-1 max-w-2xl text-sm text-slate-300">
-              SocialCard Social är byggt för kreatörer, streamers och alla som
-              vill samla sitt digitala liv på ett ställe.
+              Byggt fAr kreatArer och profiler som vill fA en modern lAsning fAr sina lAnkar.
             </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
             <div className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-              <h3 className="text-sm font-semibold">Alla länkar på ett ställe</h3>
+              <h3 className="text-sm font-semibold">Alla lAnkar pA en plats</h3>
               <p className="text-xs text-slate-300">
-                Lägg till obegränsat med länkar till dina viktigaste plattformar:
-                TikTok, Instagram, YouTube, Twitch, Spotify, Patreon med mera.
+                Samla sociala medier, merch, bokningar och kontakt i en lAnkar-sida som Ar enkel att uppdatera.
               </p>
             </div>
             <div className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-              <h3 className="text-sm font-semibold">Teman & stil</h3>
+              <h3 className="text-sm font-semibold">Matcha din stil</h3>
               <p className="text-xs text-slate-300">
-                Anpassa färger, bakgrund och stil så att din profil matchar ditt
-                varumärke. Premium ger ännu mer kontroll.
+                VAlj teman och anpassa utseendet fAr att passa ditt varumArke och din estetik.
               </p>
             </div>
             <div className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-              <h3 className="text-sm font-semibold">Redo för bio & NFC-kort</h3>
+              <h3 className="text-sm font-semibold">Delas med ett tryck</h3>
               <p className="text-xs text-slate-300">
-                Lägg samma länk i alla dina bios – eller koppla den till ett
-                fysiskt NFC-kort som du kan dela IRL.
+                Koppla till ett NFC-kort frAn AvyraCards och dela med ett tryck pA mobilen, eller via QR-kod och lAnk.
               </p>
             </div>
           </div>
         </section>
 
-        {/* BOTTOM CTA */}
+        {/* CTA */}
         <section className="mt-4 rounded-3xl border border-sky-500/40 bg-sky-500/10 p-6 text-center">
-          <h2 className="text-lg font-semibold">
-            Redo att uppgradera din link-in-bio?
-          </h2>
+          <h2 className="text-lg font-semibold">Redo att samla allt?</h2>
           <p className="mt-2 text-sm text-slate-200">
-            Skapa en gratis profil, lägg till dina viktigaste länkar och testa
-            hur det känns. Du kan alltid uppgradera senare.
+            Skapa din AvyraCards-profil pA ett par minuter och dela med en enda lAnk.
           </p>
           <div className="mt-4 flex flex-wrap justify-center gap-3">
             <Link
-              href="/register?mode=social"
-              className="rounded-full bg-sky-500 px-6 py-2 text-sm font-medium text-slate-950 hover:bg-sky-400"
+              href="/register"
+              className="rounded-full bg-white px-6 py-2 text-sm font-medium text-slate-950 hover:bg-slate-200"
             >
-              Skapa gratis social profil
+              Skapa konto
+            </Link>
+            <Link
+              href="/login"
+              className="text-sm text-sky-200 underline-offset-4 hover:underline"
+            >
+              Jag har redan ett konto
             </Link>
           </div>
         </section>

@@ -150,7 +150,7 @@ export function CardPreview3D({ material, color, design, customImage }: CardPrev
               {!customImage || material !== "metal" ? (
                   <div>
                       <div className="text-lg md:text-2xl font-bold tracking-wide">Ditt Namn</div>
-                      <div className="text-[10px] md:text-xs opacity-70 mt-1 uppercase tracking-wider">SocialCard {material}</div>
+                      <div className="text-[10px] md:text-xs opacity-70 mt-1 uppercase tracking-wider">AvyraCards {material}</div>
                   </div>
               ) : (
                 /* Om metal + custom image visas inget namn text, bara bilden som bakgrund */

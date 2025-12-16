@@ -10,7 +10,7 @@ export default function BusinessLandingPage() {
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-600/40 bg-emerald-950/40 px-3 py-1 text-xs text-emerald-100">
               <span className="inline-flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                SocialCard Business
+                AvyraCards Business
               </span>
               <span className="h-3 w-px bg-emerald-700/70" />
               <span>Digitalt visitkort för yrkespersoner & företag</span>
