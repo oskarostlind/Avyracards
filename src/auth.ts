@@ -1,6 +1,6 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+//import { PrismaAdapter } from "@auth/prisma-adapter";
 import { z } from "zod";
 import { type Role } from "@prisma/client"; 
 //import { type Adapter } from "next-auth/adapters";
