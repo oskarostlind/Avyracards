@@ -40,11 +40,9 @@ export async function POST(req: Request) {
       profileMode: profileModeRaw = "social",
     } = parsed.data;
 
-    // --- NORMALISERING (NYTT) ---
-    // Tvinga alltid lowercase och trimma mellanslag
+    // --- NORMALISERING ---
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedUsername = username.toLowerCase().trim();
-    // ----------------------------
 
     // Kolla om användare redan finns
     const existingUser = await prisma.user.findFirst({
@@ -60,14 +58,12 @@ export async function POST(req: Request) {
       );
     }
 
-    // Hasha lösenordet
     const passwordHash = await hashPassword(password);
-
     const verificationToken = randomUUID();
     const prismaProfileMode =
       profileModeRaw === "business" ? "BUSINESS" : "SOCIAL";
 
-    // Skapa användaren
+    // 1. Skapa användaren
     const user = await prisma.user.create({
       data: {
         email: normalizedEmail,
@@ -78,12 +74,28 @@ export async function POST(req: Request) {
       },
     });
 
-    // Skicka verifieringsmail
-    await sendVerificationEmail(user.email, verificationToken);
+    // 2. Försök skicka mail (med felhantering/rollback)
+    try {
+      await sendVerificationEmail(user.email, verificationToken);
+    } catch (emailError: any) {
+      console.error("[register] Mail misslyckades, rullar tillbaka användare:", emailError.message);
+      
+      // VIKTIGT: Ta bort användaren eftersom mailet misslyckades
+      await prisma.user.delete({ where: { id: user.id } });
+
+      return NextResponse.json(
+        { 
+          error: "Kunde inte skicka verifieringsmail. Kontrollera att din e-postadress är korrekt.",
+          details: emailError.message // Skickar med teknisk orsak för debugging (ta bort i prod sen)
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({ ok: true }, { status: 201 });
+
   } catch (err) {
-    console.error("[register] Fel vid registrering:", err);
+    console.error("[register] Kritisk krasch:", err);
     return NextResponse.json(
       { error: "Något gick fel vid registrering. Försök igen senare." },
       { status: 500 }
