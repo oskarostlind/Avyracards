@@ -11,9 +11,9 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold text-slate-100">1. Data vi samlar in</h2>
           <p className="mt-2">
-            Vi samlar in den information du själv tillhandahAťller, sAťsom namn,
+            Vi samlar in den information du själv tillhandahåller, såsom namn,
             e-postadress, profilinformation, länkar och inställningar. Vi kan
-            ocksAť samla teknisk data som IP-adress, enhetstyp och
+            också samla teknisk data som IP-adress, enhetstyp och
             användningsstatistik.
           </p>
         </section>
@@ -23,7 +23,7 @@ export default function PrivacyPage() {
             2. Hur vi använder informationen
           </h2>
           <p className="mt-2">
-            Informationen används för att tillhandahAťlla och förbättra tjänsten,
+            Informationen används för att tillhandahålla och förbättra tjänsten,
             anpassa din profil, analysera användning och erbjuda support. Vi
             säljer aldrig din information till tredje part.
           </p>
@@ -34,9 +34,9 @@ export default function PrivacyPage() {
             3. Lagring & säkerhet
           </h2>
           <p className="mt-2">
-            Data lagras säkert i EU hos vAťra molnleverantörer. Vi vidtar tekniska
-            och organisatoriska Aťtgärder för att skydda din information mot
-            obehörig Aťtkomst eller förlust.
+            Data lagras säkert i EU hos våra molnleverantörer. Vi vidtar tekniska
+            och organisatoriska åtgärder för att skydda din information mot
+            obehörig åtkomst eller förlust.
           </p>
         </section>
 
@@ -75,7 +75,7 @@ export default function PrivacyPage() {
           <p className="mt-2">
             Vi använder cookies för att förbättra användarupplevelsen, mäta
             trafik och hantera inloggningar. Du kan välja att blockera cookies i
-            din webbläsare, men vissa funktioner kan dAť sluta fungera.
+            din webbläsare, men vissa funktioner kan då sluta fungera.
           </p>
         </section>
 
@@ -85,7 +85,7 @@ export default function PrivacyPage() {
           </h2>
           <p className="mt-2">
             Vi kan uppdatera denna policy vid behov. Den senaste versionen finns
-            alltid pAť denna sida.
+            alltid på denna sida.
           </p>
         </section>
       </div>

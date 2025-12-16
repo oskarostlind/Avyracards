@@ -3,7 +3,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Logga in | AvyraCards",
-  description: "Logga in pAť ditt AvyraCards konto",
+  description: "Logga in på ditt AvyraCards konto",
 };
 
 export default function LoginPage() {

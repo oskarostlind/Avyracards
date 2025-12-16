@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
       <body className="min-h-screen bg-slate-950 text-slate-50">
         {/* Google AdSense Script - Laddas ENDAST om vi är i produktion */}
-        {/* Detta förhindrar tracking-fel och nätverksspam pAť localhost */}
+        {/* Detta förhindrar tracking-fel och nätverksspam på localhost */}
         {isProduction && (
           <Script
             id="adsbygoogle-init"
