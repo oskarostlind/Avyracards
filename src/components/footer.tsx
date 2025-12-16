@@ -4,18 +4,18 @@ export function Footer() {
   return (
     <footer className="border-t border-slate-900/70 bg-slate-950">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 text-xs text-slate-300 md:flex-row md:justify-between md:text-sm">
-        {/* VAnster: brand & kort text */}
+        {/* Vänster: brand & kort text */}
         <div className="max-w-sm space-y-3">
           <div className="text-sm font-semibold text-slate-50 md:text-base">
             AvyraCards
           </div>
           <p className="text-xs text-slate-400 md:text-sm">
-            Digitalt visitkort och lAnkprofil kopplad till NFC-kort. Byggd i
-            Sverige fAr kreatArer, frilansare och fAretag.
+            Digitalt visitkort och länkprofil kopplad till NFC-kort. Byggd i
+            Sverige för kreatörer, frilansare och företag.
           </p>
         </div>
 
-        {/* Mitten: lAnkkolumner */}
+        {/* Mitten: länkkolumner */}
         <div className="grid flex-1 grid-cols-2 gap-6 md:grid-cols-3">
           <div className="space-y-2">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
@@ -24,7 +24,7 @@ export function Footer() {
             <ul className="space-y-1 text-xs text-slate-300 md:text-sm">
               <li>
                 <Link href="/#how-it-works" className="hover:text-emerald-300">
-                  SA funkar det
+                  Så funkar det
                 </Link>
               </li>
               <li>
@@ -42,7 +42,7 @@ export function Footer() {
 
           <div className="space-y-2">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-              FAr fAretag
+              För företag
             </div>
             <ul className="space-y-1 text-xs text-slate-300 md:text-sm">
               <li>
@@ -65,7 +65,7 @@ export function Footer() {
             <ul className="space-y-1 text-xs text-slate-300 md:text-sm">
               <li>
                 <Link href="/terms" className="hover:text-emerald-300">
-                  AnvAndarvillkor
+                  Användarvillkor
                 </Link>
               </li>
               <li>
@@ -77,11 +77,11 @@ export function Footer() {
           </div>
         </div>
 
-        {/* HAger: meta / kontakt */}
+        {/* Höger: meta / kontakt */}
         <div className="space-y-3 text-xs text-slate-400 md:text-sm md:text-right">
           <div>Ac {new Date().getFullYear()} AvyraCards.</div>
           <div>
-            FrAgor?{" "}
+            Frågor?{" "}
             <a
               href="mailto:kontakt@avyracards.se"
               className="text-emerald-300 hover:text-emerald-200"

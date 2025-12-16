@@ -1,132 +1,144 @@
 import Link from "next/link";
+//import Image from "next/image";
 
 export default function SocialLandingPage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto flex max-w-6xl flex-col gap-16 px-4 pb-24 pt-16 md:px-8 md:pt-20">
+    <main className="min-h-screen bg-slate-950 text-slate-50 selection:bg-sky-500/30">
+      <div className="mx-auto flex max-w-6xl flex-col gap-24 px-4 pb-24 pt-20 md:px-8">
+        
         {/* HERO */}
-        <section className="grid gap-10 md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-center">
-          <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/40 bg-sky-950/40 px-3 py-1 text-xs text-sky-100">
-              <span className="inline-flex items-center gap-1">
-                <span className="h-2 w-2 rounded-full bg-sky-400" />
-                AvyraCards Social
-              </span>
-              <span className="h-3 w-px bg-sky-700/70" />
-              <span>Digital lAnkprofil fAr kreatArer</span>
+        <section className="grid gap-16 lg:grid-cols-2 lg:items-center">
+          <div className="space-y-8 relative z-10">
+            <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-950/30 px-4 py-1.5 text-xs font-semibold text-sky-200">
+              <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
+              Avyra Social
             </div>
 
-            <div className="space-y-4">
-              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
-                Samla alla dina lAnkar
-                <span className="block text-sky-300">
-                  i en snygg profil.
+            <div className="space-y-6">
+              <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl">
+                En länk för <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">
+                  hela din värld.
                 </span>
               </h1>
-              <p className="max-w-xl text-sm text-slate-300 sm:text-base">
-                AvyraCards Social Ar byggt fAr kreatArer, streamers och alla som
-                vill dela allt viktigt pA ett stAlle. Koppla lAnkar, merch, bokning och
-                mycket mer.
+              <p className="max-w-xl text-lg text-slate-400 leading-relaxed">
+                AvyraCards Social är byggt för kreatörer, artister och influencers. 
+                Samla TikTok, Instagram, YouTube och merch på en snygg landningssida.
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap gap-4">
               <Link
-                href="/get-started"
-                className="rounded-full bg-sky-400 px-6 py-2.5 text-sm font-medium text-slate-950 shadow-lg shadow-sky-500/20 transition hover:bg-sky-300"
+                href="/register"
+                className="rounded-full bg-sky-500 px-8 py-3 text-sm font-bold text-slate-950 shadow-[0_0_20px_rgba(14,165,233,0.3)] transition hover:bg-sky-400 hover:scale-105"
               >
-                Skapa konto gratis
+                Skapa min sida
               </Link>
               <Link
                 href="#features"
-                className="text-sm text-slate-300 underline-offset-4 hover:underline"
+                className="rounded-full border border-slate-700 bg-slate-900/50 px-8 py-3 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition"
               >
-                Se funktioner
+                Funktioner
               </Link>
             </div>
+          </div>
 
-            <p className="text-xs text-slate-400">
-              Perfekt fAr bios pA TikTok, Instagram, YouTube, Twitch och mer.
+          {/* SOCIAL PHONE MOCKUP */}
+          <div className="relative flex justify-center lg:justify-end">
+             {/* Bakgrunds-blob */}
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-sky-500/20 rounded-full blur-[80px]" />
+
+             {/* Telefonen */}
+             <div className="relative w-[300px] h-[600px] bg-slate-950 rounded-[3rem] border-8 border-slate-900 shadow-2xl overflow-hidden ring-1 ring-slate-800">
+               {/* Notch */}
+               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-slate-900 rounded-b-xl z-20" />
+               
+               {/* Screen Content */}
+               <div className="h-full w-full bg-slate-900 overflow-y-auto hide-scrollbar">
+                 {/* Cover & Header */}
+                 <div className="h-32 bg-gradient-to-br from-indigo-600 to-sky-600 w-full relative"></div>
+                 <div className="px-6 -mt-10 flex flex-col items-center">
+                   <div className="h-20 w-20 rounded-full border-4 border-slate-900 bg-slate-800 overflow-hidden relative shadow-lg">
+                      {/* Avatar placeholder - Använd Image om du har en fil */}
+                      <div className="absolute inset-0 bg-slate-700 flex items-center justify-center text-2xl">🎨</div>
+                   </div>
+                   <h3 className="mt-3 text-lg font-bold text-white">Alex Creator</h3>
+                   <p className="text-xs text-slate-400 text-center mt-1 px-4">
+                     Digital artist & Content Creator. New video every Friday! 📸
+                   </p>
+                   
+                   {/* Social Icons */}
+                   <div className="flex gap-4 mt-4">
+                     {[1,2,3,4].map(i => (
+                       <div key={i} className="h-8 w-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-xs text-slate-400">
+                         icon
+                       </div>
+                     ))}
+                   </div>
+                 </div>
+
+                 {/* Link Buttons */}
+                 <div className="px-5 mt-6 space-y-3">
+                   {["Senaste YouTube Videon", "Köp min Merch", "Boka fotografering", "Min Portfolio"].map((label, i) => (
+                     <div key={i} className="group relative w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:bg-sky-500/10 hover:border-sky-500/50 transition-all cursor-pointer flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-200">{label}</span>
+                        <div className="text-slate-500 group-hover:text-sky-400">→</div>
+                     </div>
+                   ))}
+                   {/* Spotify Embed Mockup */}
+                   <div className="w-full h-20 rounded-xl bg-green-500/10 border border-green-500/20 mt-4 flex items-center gap-3 px-3">
+                      <div className="h-12 w-12 rounded bg-green-500/20"></div>
+                      <div className="space-y-1">
+                        <div className="h-2 w-24 bg-green-500/30 rounded"></div>
+                        <div className="h-2 w-16 bg-green-500/20 rounded"></div>
+                      </div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+          </div>
+        </section>
+
+        {/* FEATURES GRID */}
+        <section id="features">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <h2 className="text-3xl font-bold text-white mb-4">Allt du behöver för att växa</h2>
+            <p className="text-slate-400">Du skapar innehållet, vi gör det enkelt för din publik att hitta det.</p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              { title: "Tema & Design", desc: "Välj färger, typsnitt och bakgrunder som matchar ditt personliga varumärke." },
+              { title: "NFC-kompatibel", desc: "Koppla till våra NFC-kort och dela din profil IRL genom att bara blippa." },
+              { title: "Statistik", desc: "Se vilka länkar dina följare klickar på mest och optimera ditt flöde." }
+            ].map((f, i) => (
+              <div key={i} className="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 hover:border-sky-500/30 transition-colors">
+                <h3 className="text-xl font-bold text-white mb-3">{f.title}</h3>
+                <p className="text-slate-400 text-sm leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* BOTTOM BANNER */}
+        <section className="relative rounded-[3rem] overflow-hidden bg-sky-600 px-6 py-20 text-center">
+          <div className="absolute inset-0 bg-[url('/noise.png')] opacity-20 mix-blend-overlay"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-sky-900/80 to-transparent"></div>
+          
+          <div className="relative z-10 max-w-xl mx-auto space-y-6">
+            <h2 className="text-3xl font-bold text-white">Sluta tappa följare</h2>
+            <p className="text-sky-100">
+              Gör det enkelt för folk att hitta allt du gör. En länk i bio är allt som behövs.
             </p>
-          </div>
-
-          {/* Mockup */}
-          <div className="relative h-[260px] overflow-hidden rounded-3xl border border-slate-800 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-800 shadow-xl sm:h-[320px]">
-            <div className="absolute inset-6 rounded-3xl bg-slate-950/70 p-4">
-              <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-full bg-slate-700" />
-                <div className="space-y-1">
-                  <div className="h-3 w-36 rounded bg-slate-700" />
-                  <div className="h-2.5 w-28 rounded bg-slate-800" />
-                  <div className="h-2 w-24 rounded bg-slate-800" />
-                </div>
-              </div>
-              <div className="mt-5 space-y-2">
-                <div className="flex gap-2">
-                  <div className="h-8 flex-1 rounded-full bg-sky-500/80" />
-                  <div className="h-8 flex-1 rounded-full bg-slate-800" />
-                </div>
-                <div className="h-8 rounded-full bg-slate-800" />
-              </div>
-              <div className="absolute bottom-3 right-4 text-[10px] text-slate-500">
-                Exempelvy ƒ?" inte riktig data
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* FEATURES */}
-        <section id="features" className="space-y-6">
-          <div>
-            <h2 className="text-xl font-semibold sm:text-2xl">Funktioner fAr kreatArer</h2>
-            <p className="mt-1 max-w-2xl text-sm text-slate-300">
-              Byggt fAr kreatArer och profiler som vill fA en modern lAsning fAr sina lAnkar.
-            </p>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-              <h3 className="text-sm font-semibold">Alla lAnkar pA en plats</h3>
-              <p className="text-xs text-slate-300">
-                Samla sociala medier, merch, bokningar och kontakt i en lAnkar-sida som Ar enkel att uppdatera.
-              </p>
-            </div>
-            <div className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-              <h3 className="text-sm font-semibold">Matcha din stil</h3>
-              <p className="text-xs text-slate-300">
-                VAlj teman och anpassa utseendet fAr att passa ditt varumArke och din estetik.
-              </p>
-            </div>
-            <div className="space-y-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
-              <h3 className="text-sm font-semibold">Delas med ett tryck</h3>
-              <p className="text-xs text-slate-300">
-                Koppla till ett NFC-kort frAn AvyraCards och dela med ett tryck pA mobilen, eller via QR-kod och lAnk.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA */}
-        <section className="mt-4 rounded-3xl border border-sky-500/40 bg-sky-500/10 p-6 text-center">
-          <h2 className="text-lg font-semibold">Redo att samla allt?</h2>
-          <p className="mt-2 text-sm text-slate-200">
-            Skapa din AvyraCards-profil pA ett par minuter och dela med en enda lAnk.
-          </p>
-          <div className="mt-4 flex flex-wrap justify-center gap-3">
-            <Link
-              href="/register"
-              className="rounded-full bg-white px-6 py-2 text-sm font-medium text-slate-950 hover:bg-slate-200"
+            <Link 
+              href="/register" 
+              className="inline-block rounded-full bg-white px-8 py-3 text-sky-900 font-bold hover:bg-slate-100 transition-colors"
             >
-              Skapa konto
-            </Link>
-            <Link
-              href="/login"
-              className="text-sm text-sky-200 underline-offset-4 hover:underline"
-            >
-              Jag har redan ett konto
+              Kom igång gratis
             </Link>
           </div>
         </section>
+
       </div>
     </main>
   );

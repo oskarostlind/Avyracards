@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignOutButton } from "@/components/sign-out-button";
-import { ShieldCheck } from "lucide-react"; // Snygg ikon fAr admin
+import { ShieldCheck } from "lucide-react"; // Snygg ikon för admin
 
 type NavbarClientProps = {
   isAuthenticated: boolean;
@@ -103,7 +103,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                       onClick={closeMenu}
                       className="block rounded-lg px-3 py-2 text-sm text-slate-200 hover:bg-slate-800/80"
                    >
-                      InstAllningar
+                      Inställningar
                    </Link>
 
                    <div className="mt-2 border-t border-slate-800 pt-2 px-3">
@@ -180,7 +180,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                      Teman
                   </Link>
                   <Link href="/profile/settings" className="text-slate-200 hover:text-emerald-300 transition-colors">
-                     InstAllningar
+                     Inställningar
                   </Link>
                   
                   <div className="ml-1">

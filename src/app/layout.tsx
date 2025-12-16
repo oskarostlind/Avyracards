@@ -8,20 +8,20 @@ import CookieBanner from "@/components/cookie-banner";
 
 export const metadata = {
   title: "AvyraCards",
-  description: "Digital NFC-baserad visitkortslAsning",
+  description: "Digital NFC-baserad visitkortslösning",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  // Kontrollera om vi kAr i produktion (Live) eller Development (Lokalt)
+  // Kontrollera om vi kör i produktion (Live) eller Development (Lokalt)
   const isProduction = process.env.NODE_ENV === "production";
 
   return (
     <html lang="sv">
-      {/* Ingen manuell <head> hAr. Metadata-exporten ovan hanterar <head> automatiskt. */}
+      {/* Ingen manuell <head> här. Metadata-exporten ovan hanterar <head> automatiskt. */}
 
       <body className="min-h-screen bg-slate-950 text-slate-50">
-        {/* Google AdSense Script - Laddas ENDAST om vi Ar i produktion */}
-        {/* Detta fArhindrar tracking-fel och nAtverksspam pAť localhost */}
+        {/* Google AdSense Script - Laddas ENDAST om vi är i produktion */}
+        {/* Detta förhindrar tracking-fel och nätverksspam pAť localhost */}
         {isProduction && (
           <Script
             id="adsbygoogle-init"
