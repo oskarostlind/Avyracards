@@ -174,7 +174,9 @@ model AnalyticsEvent {
   link   Link?   @relation(fields: [linkId], references: [id], onDelete: SetNull)
 
   referrer String? 
-  country  String? 
+  source   String? // Nytt fält: "nfc", "qr", "link", "direct"
+  country  String? // Fanns innan
+  city     String? // Nytt fält: "Stockholm", "New York"
   device   String? 
   
   @@index([profileOwnerId])

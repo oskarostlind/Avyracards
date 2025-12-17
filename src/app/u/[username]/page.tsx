@@ -11,6 +11,7 @@ import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 
 type PageProps = {
   params: { username: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 };
 
 type UserWithLinks = User & { links: LinkModel[] };
@@ -18,7 +19,7 @@ type UserWithLinks = User & { links: LinkModel[] };
 export const runtime = "nodejs";
 export const revalidate = 0;
 
-export default async function PublicProfilePage({ params }: PageProps) {
+export default async function PublicProfilePage({ params, searchParams }: PageProps) {
   const user = await prisma.user.findUnique({
     where: { username: params.username },
     include: {
@@ -42,9 +43,13 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
   const showAds = !user.isPremium;
 
+  // Hämta source från URL (t.ex. ?source=nfc)
+  const sourceParam = typeof searchParams.source === 'string' ? searchParams.source : undefined;
+
   return (
     <>
-      <ProfileViewTracker userId={user.id} />
+      {/* Skicka med sourceParam till trackern */}
+      <ProfileViewTracker userId={user.id} sourceParam={sourceParam} />
 
       {user.profileMode === "BUSINESS" ? (
         <BusinessProfile user={user} showAds={showAds} />
@@ -55,7 +60,10 @@ export default async function PublicProfilePage({ params }: PageProps) {
   );
 }
 
-// ---------- SOCIAL LAYOUT (MED FIXAD AVATAR & GLOW) ----------
+// ... (Resten av filen SocialProfile, BusinessProfile och Helpers är oförändrade) ...
+// Klistra in resten av din gamla kod här nedanför om du vill, eller behåll den som den var.
+// Det enda viktiga var ändringen i 'export default function' och 'ProfileViewTracker'.
+// --------------------------------------------------------------------------------------
 
 function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
   const useCustomTheme = !!user.themeSettings;
@@ -137,19 +145,17 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
   const linkStyle = getLinkStyle();
 
   // 4. FIXAD AVATAR LOGIK
-  // Vi extraherar värdena säkert först
   const frameStyle = settings.frameStyle || 'circle';
   const accentColor = settings.accentColor || '#ffffff';
 
-  let borderRadius = '50%'; // Default för circle, glow, ring
+  let borderRadius = '50%'; 
   if (frameStyle === 'rounded') borderRadius = '20%';
   if (frameStyle === 'none') borderRadius = '0';
-  if (frameStyle === 'hexagon') borderRadius = '0'; // (Kräver egentligen clip-path, men 0 är safe fallback)
+  if (frameStyle === 'hexagon') borderRadius = '0'; 
 
   const avatarStyle: React.CSSProperties = useCustomTheme ? {
     borderColor: frameStyle === 'ring' ? accentColor : 'rgba(255,255,255,0.1)',
     borderRadius: borderRadius,
-    // Fixat: Glow använder nu accentColor säkert
     boxShadow: frameStyle === 'glow' ? `0 0 30px ${accentColor}` : 'none',
   } : {};
 
@@ -240,8 +246,6 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
   );
 }
 
-// ---------- BUSINESS LAYOUT (OFÖRÄNDRAD) ----------
-
 function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
   const tokens = getTheme(user.theme); 
   
@@ -282,7 +286,7 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
                    </div>
                    {user.location && (
                       <div className="text-xs text-gray-500 flex items-center gap-1 pt-1">
-                         <MapPin size={12}/> {user.location}
+                          <MapPin size={12}/> {user.location}
                       </div>
                    )}
                 </div>
@@ -357,8 +361,6 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
     </main>
   );
 }
-
-// ---------- HELPERS ----------
 
 function normalizeUrl(url: string): string {
   if (!url) return "/";

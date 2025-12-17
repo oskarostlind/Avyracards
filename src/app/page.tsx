@@ -20,7 +20,7 @@ export default function HomePage() {
 
             <div className="space-y-6">
               <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl leading-[1.1]">
-                Ett kort. <br />
+                En sida. <br />
                 Alla dina länkar.
                 <span className="mt-2 block bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">
                   Socialt & Business.

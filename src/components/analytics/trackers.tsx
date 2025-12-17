@@ -1,73 +1,70 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 // --- VIEW TRACKER ---
-// Körs en gång när profilsidan laddas
-export function ProfileViewTracker({ userId }: { userId: string }) {
+export function ProfileViewTracker({ userId, sourceParam }: { userId: string, sourceParam?: string }) {
+  const hasFired = useRef(false);
+
   useEffect(() => {
-    const trackView = async () => {
-      // Försök hämta referrer från document
-      const referrer = document.referrer || "direct";
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (hasFired.current) return;
+    hasFired.current = true;
 
-      try {
-        await fetch("/api/analytics", {
-          method: "POST",
-          body: JSON.stringify({
-            type: "VIEW",
-            profileOwnerId: userId,
-            referrer: referrer,
-            device: isMobile ? "mobile" : "desktop",
-          }),
-        });
-      } catch (e) {
-        // Ignorera fel tyst för användaren
-      }
-    };
+    // 1. Avgör källa
+    let source = sourceParam || "direct"; // Prioritera ?source=nfc
 
-    trackView();
-  }, [userId]);
+    // Om ingen source via URL, kolla referrer (var kom man ifrån?)
+    if (!sourceParam && typeof document !== "undefined" && document.referrer) {
+      const ref = document.referrer.toLowerCase();
+      
+      if (ref.includes("instagram")) source = "Instagram";
+      else if (ref.includes("facebook")) source = "Facebook";
+      else if (ref.includes("linkedin")) source = "LinkedIn";
+      else if (ref.includes("t.co") || ref.includes("twitter") || ref.includes("x.com")) source = "X (Twitter)";
+      else if (ref.includes("google")) source = "Google";
+      else if (ref.includes(window.location.hostname)) source = "Internal"; // Från egen sida
+      else source = "Webbplats"; // Annan webbplats
+    }
 
-  return null; // Renderar inget synligt
+    // 2. Skicka event
+    fetch("/api/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "VIEW",
+        profileOwnerId: userId,
+        source: source,
+        device: getDeviceType(),
+        referrer: document.referrer || undefined
+      }),
+    }).catch((err) => console.error("Tracking failed", err));
+    
+  }, [userId, sourceParam]);
+
+  return null;
 }
 
-// --- CLICK TRACKER ---
-// Wrapper runt länkar för att spåra klick
-
-// Uppdaterat interface som inkluderar 'style'
-interface TrackedLinkProps {
-  linkId: string;
-  ownerId: string;
-  href: string;
-  children: React.ReactNode;
-  className?: string;
-  style?: React.CSSProperties; // <-- Här är fixen för ditt felmeddelande
-}
-
+// --- LINK TRACKER ---
 export function TrackedLink({ 
   linkId, 
   ownerId, 
   href, 
   children, 
   className,
-  style // <-- Tar emot style
-}: TrackedLinkProps) {
+  style 
+}: any) {
   
   const handleClick = () => {
-    // Använd sendBeacon om möjligt för att garantera att requesten går iväg även om sidan byts
-    const data = JSON.stringify({
-      type: "CLICK",
-      profileOwnerId: ownerId,
-      linkId: linkId,
-    });
-
-    if (navigator.sendBeacon) {
-      navigator.sendBeacon("/api/analytics", data);
-    } else {
-      // Fallback
-      fetch("/api/analytics", { method: "POST", body: data });
-    }
+    fetch("/api/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "CLICK",
+        profileOwnerId: ownerId,
+        linkId: linkId,
+        device: getDeviceType(),
+      }),
+    }).catch(() => {}); // Ignorera fel tyst för användaren
   };
 
   return (
@@ -77,9 +74,17 @@ export function TrackedLink({
       rel="noopener noreferrer" 
       onClick={handleClick}
       className={className}
-      style={style} // <-- Skickar vidare style till a-taggen
+      style={style}
     >
       {children}
     </a>
   );
+}
+
+function getDeviceType() {
+  if (typeof navigator === "undefined") return "Unknown";
+  const ua = navigator.userAgent;
+  if (/mobile/i.test(ua)) return "Mobile";
+  if (/ipad|tablet/i.test(ua)) return "Tablet";
+  return "Desktop";
 }
