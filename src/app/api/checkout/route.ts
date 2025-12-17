@@ -1,26 +1,29 @@
 import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
+import { auth } from "@/auth"; // <-- NYTT: Viktig import
 import type { Stripe } from "stripe";
 import { z } from "zod";
 
-// 1. Definiera Zod-schema för strikt validering
 const checkoutSchema = z.object({
-  quantity: z.number().min(1).max(50).default(1), // Spärra orimliga kvantiteter
-  material: z.enum(["pvc", "metal"]).optional(), // Tillåt bara giltiga material
+  quantity: z.number().min(1).max(50).default(1),
+  material: z.enum(["pvc", "metal"]).optional(),
   color: z.string().max(50).optional(),
   design: z.string().max(50).optional(),
   isSubscription: z.boolean().optional(),
   bundled: z.boolean().optional(),
 }).refine((data) => data.isSubscription || data.material, {
-  // 2. Logisk validering: Man måste köpa NÅGOT (antingen prenumeration eller kort)
   message: "Du måste välja antingen en prenumeration eller ett kortmaterial.",
 });
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    // 1. HÄMTA INLOGGAD ANVÄNDARE (Detta saknades!)
+    const sessionAuth = await auth();
+    const userId = sessionAuth?.user?.id;
     
-    // 3. Validera indata
+    console.log("DEBUG CHECKOUT - UserID:", userId); // Kommer synas i Vercel logs
+
+    const body = await req.json();
     const result = checkoutSchema.safeParse(body);
 
     if (!result.success) {
@@ -37,7 +40,6 @@ export async function POST(req: Request) {
       bundled 
     } = result.data;
 
-    // 4. Säkerställ URL
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     if (!baseUrl) {
       console.error("NEXT_PUBLIC_BASE_URL is missing");
@@ -48,7 +50,6 @@ export async function POST(req: Request) {
     let mode: Stripe.Checkout.SessionCreateParams.Mode = "payment";
 
     // --- FALL 1: Endast Premium Prenumeration ---
-    // (Om man inte köper kort samtidigt, dvs !bundled)
     if (isSubscription && !bundled) {
       mode = "subscription";
       line_items.push({
@@ -58,7 +59,7 @@ export async function POST(req: Request) {
             name: "AvyraCards Premium",
             description: "Månadsprenumeration - Lås upp alla funktioner",
           },
-          unit_amount: 9900, // 99 kr
+          unit_amount: 9900,
           recurring: {
             interval: "month",
           },
@@ -67,12 +68,11 @@ export async function POST(req: Request) {
       });
     } 
     
-    // --- FALL 2: Kortköp (Med eller utan Premium Bundling) ---
+    // --- FALL 2: Kortköp ---
     else if (material) {
       const unitPrice = material === "metal" ? 49900 : 14900; 
       const productName = material === "metal" ? "AvyraCards Metal" : "AvyraCards Standard";
 
-      // 1. Lägg till kortet
       line_items.push({
         price_data: {
           currency: "sek",
@@ -85,7 +85,6 @@ export async function POST(req: Request) {
         quantity: quantity,
       });
 
-      // 2. Bundling (6 månader Premium engångsköp)
       if (bundled) {
         line_items.push({
           price_data: {
@@ -94,31 +93,42 @@ export async function POST(req: Request) {
               name: "AvyraCards Premium (6 månader)",
               description: "Bundling-erbjudande (Spara 37%)",
             },
-            unit_amount: 29900, // 299 kr
+            unit_amount: 29900,
           },
-          quantity: 1, // Alltid 1 paket per köp i dagsläget
+          quantity: 1,
         });
       }
       
       mode = "payment";
     }
 
-    // Dubbelkoll så vi inte skickar en tom array till Stripe (ska fångas av Zod .refine, men som extra säkerhet)
     if (line_items.length === 0) {
       return new NextResponse("No items to checkout", { status: 400 });
+    }
+
+    // Bestäm vart användaren ska skickas efter köp
+    let successUrl = `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`;
+    
+    // Om det är en ren prenumeration
+    if (isSubscription && !bundled) {
+        if (userId) {
+            // Om användaren redan finns (uppgradering), skicka till settings
+            successUrl = `${baseUrl}/profile/settings?view=billing&success=true`;
+        } else {
+            // Om ny användare, skicka till registrering
+            successUrl = `${baseUrl}/register/activate?session_id={CHECKOUT_SESSION_ID}`;
+        }
     }
 
     // Skapa sessionen
     const session = await stripe.checkout.sessions.create({
       line_items,
       mode: mode,
-      success_url: isSubscription && !bundled 
-        ? `${baseUrl}/register/activate?session_id={CHECKOUT_SESSION_ID}`
-        : `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`,
-      
+      success_url: successUrl,
       cancel_url: isSubscription ? `${baseUrl}/get-started` : `${baseUrl}/order`,
       
       metadata: {
+        userId: userId || "", // <-- HÄR ÄR FIXEN: Vi skickar med ID:t!
         type: isSubscription ? "premium_subscription" : "card_order",
         quantity: quantity.toString(),
         material: material || "",
@@ -127,7 +137,6 @@ export async function POST(req: Request) {
         isBundled: bundled ? "true" : "false"
       },
       
-      // Vi kräver adress ENDAST om det är en fysisk produkt
       shipping_address_collection: (material && !isSubscription) ? {
         allowed_countries: ["SE"], 
       } : undefined,

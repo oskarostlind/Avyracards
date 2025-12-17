@@ -34,7 +34,7 @@ export default function HomePage() {
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
               <Link
-                href="/register"
+                href="/get-started"
                 className="inline-flex h-12 items-center justify-center rounded-full bg-emerald-500 px-8 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95"
               >
                 Skapa konto gratis
@@ -242,7 +242,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link
-                href="/register"
+                href="/get-started"
                 className="rounded-full bg-emerald-500 px-8 py-3 text-base font-semibold text-slate-950 hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20"
               >
                 Kom igång nu
