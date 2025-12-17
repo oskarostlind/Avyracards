@@ -8,9 +8,10 @@ import { sv } from "date-fns/locale";
 
 interface BillingProps {
   isPremium: boolean;
+  // userId borttaget – vi hanterar det i API:et istället
   subscription?: {
     status: string;
-    currentPeriodEnd: number; // Unix timestamp
+    currentPeriodEnd: number;
     amount: number;
     currency: string;
     interval: string;
@@ -29,7 +30,7 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert("Kunde inte öppna portalen. Har du en aktiv prenumeration?");
+        alert("Kunde inte öppna portalen.");
         setLoading(false);
       }
     } catch (error) {
@@ -38,7 +39,22 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
     }
   };
 
-  // Formattera pris (t.ex. 99 SEK)
+  // SÄKER DATUMHANTERING
+  // Denna funktion förhindrar "RangeError: Invalid time value"
+  const formatDateSafe = (timestamp: number | undefined | null) => {
+    if (!timestamp || isNaN(timestamp)) return "Datum saknas";
+    try {
+      // Stripe skickar sekunder, JS vill ha millisekunder (* 1000)
+      const date = new Date(timestamp * 1000);
+      // Extra kontroll så datumet är giltigt
+      if (isNaN(date.getTime())) return "Ogiltigt datum";
+      
+      return format(date, "d MMM yyyy", { locale: sv });
+    } catch (e) {
+      return "Fel vid datumvisning";
+    }
+  };
+
   const formattedPrice = subscription 
     ? new Intl.NumberFormat("sv-SE", { style: "currency", currency: subscription.currency.toUpperCase() }).format(subscription.amount / 100)
     : "";
@@ -78,16 +94,16 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
             Hantera via Stripe
           </button>
         ) : (
-          <Link
-            href="/checkout/premium"
-            className="whitespace-nowrap rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-500 shadow-lg shadow-purple-500/20"
-          >
-            Uppgradera Nu
-          </Link>
+           <Link
+             href="/checkout/premium"
+             className="whitespace-nowrap rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-500 shadow-lg shadow-purple-500/20"
+           >
+             Uppgradera Nu
+           </Link>
         )}
       </div>
 
-      {/* --- DETALJER (Visas bara om man har prenumeration) --- */}
+      {/* --- DETALJER --- */}
       {isPremium && subscription && (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2">
             
@@ -97,7 +113,7 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
                     <Calendar size={14} /> Nästa dragning
                 </div>
                 <div className="text-slate-100 font-medium">
-                    {format(new Date(subscription.currentPeriodEnd * 1000), "d MMM yyyy", { locale: sv })}
+                    {formatDateSafe(subscription.currentPeriodEnd)}
                 </div>
             </div>
 
@@ -117,7 +133,7 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
                     <Clock size={14} /> Medlem sedan
                 </div>
                 <div className="text-slate-100 font-medium">
-                    {format(new Date(subscription.createdAt * 1000), "MMM yyyy", { locale: sv })}
+                    {formatDateSafe(subscription.createdAt)}
                 </div>
             </div>
         </div>
