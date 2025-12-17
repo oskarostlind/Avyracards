@@ -1,9 +1,52 @@
-import { Star } from "lucide-react";
-import Link from "next/link";
+"use client";
 
-export function BillingView({ isPremium }: { isPremium: boolean }) {
+import { useState } from "react";
+import { Star, Loader2, Calendar, CreditCard, Clock } from "lucide-react";
+import Link from "next/link";
+import { format } from "date-fns";
+import { sv } from "date-fns/locale";
+
+interface BillingProps {
+  isPremium: boolean;
+  subscription?: {
+    status: string;
+    currentPeriodEnd: number; // Unix timestamp
+    amount: number;
+    currency: string;
+    interval: string;
+    createdAt: number;
+  } | null;
+}
+
+export function BillingView({ isPremium, subscription }: BillingProps) {
+  const [loading, setLoading] = useState(false);
+
+  const handlePortal = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        alert("Kunde inte öppna portalen. Har du en aktiv prenumeration?");
+        setLoading(false);
+      }
+    } catch (error) {
+      alert("Något gick fel.");
+      setLoading(false);
+    }
+  };
+
+  // Formattera pris (t.ex. 99 SEK)
+  const formattedPrice = subscription 
+    ? new Intl.NumberFormat("sv-SE", { style: "currency", currency: subscription.currency.toUpperCase() }).format(subscription.amount / 100)
+    : "";
+
   return (
     <div className="max-w-2xl space-y-6">
+      
+      {/* --- HUVUDKORT --- */}
       <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
@@ -26,7 +69,12 @@ export function BillingView({ isPremium }: { isPremium: boolean }) {
         </div>
 
         {isPremium ? (
-          <button className="whitespace-nowrap rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700">
+          <button 
+            onClick={handlePortal}
+            disabled={loading}
+            className="whitespace-nowrap rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            {loading && <Loader2 className="animate-spin h-4 w-4" />}
             Hantera via Stripe
           </button>
         ) : (
@@ -38,6 +86,42 @@ export function BillingView({ isPremium }: { isPremium: boolean }) {
           </Link>
         )}
       </div>
+
+      {/* --- DETALJER (Visas bara om man har prenumeration) --- */}
+      {isPremium && subscription && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2">
+            
+            {/* Nästa dragning */}
+            <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/30">
+                <div className="flex items-center gap-2 text-slate-400 mb-2 text-xs uppercase font-bold tracking-wider">
+                    <Calendar size={14} /> Nästa dragning
+                </div>
+                <div className="text-slate-100 font-medium">
+                    {format(new Date(subscription.currentPeriodEnd * 1000), "d MMM yyyy", { locale: sv })}
+                </div>
+            </div>
+
+            {/* Kostnad */}
+            <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/30">
+                <div className="flex items-center gap-2 text-slate-400 mb-2 text-xs uppercase font-bold tracking-wider">
+                    <CreditCard size={14} /> Kostnad
+                </div>
+                <div className="text-slate-100 font-medium">
+                    {formattedPrice} <span className="text-slate-500 text-sm">/ {subscription.interval === 'month' ? 'mån' : 'år'}</span>
+                </div>
+            </div>
+
+            {/* Medlem sedan */}
+            <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/30">
+                <div className="flex items-center gap-2 text-slate-400 mb-2 text-xs uppercase font-bold tracking-wider">
+                    <Clock size={14} /> Medlem sedan
+                </div>
+                <div className="text-slate-100 font-medium">
+                    {format(new Date(subscription.createdAt * 1000), "MMM yyyy", { locale: sv })}
+                </div>
+            </div>
+        </div>
+      )}
     </div>
   );
 }
