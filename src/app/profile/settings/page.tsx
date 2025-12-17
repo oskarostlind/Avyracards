@@ -19,11 +19,12 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
     redirect("/login");
   }
 
-  // Vi hämtar bara datan som behövs för Konto, Billing och Cards
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       email: true,
+      username: true, // <-- NYTT
+      passwordHash: true, // <-- NYTT (för att kolla om vi ska visa lösenordsbyte)
       isPremium: true,
       marketingConsent: true,
       productUpdates: true,
@@ -36,8 +37,8 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
 
   if (!user) redirect("/login");
 
-  // ÄNDRAT: Default view är nu "account"
   const view = typeof searchParams.view === "string" ? searchParams.view : "account";
+  const hasPassword = !!user.passwordHash; // Konvertera till boolean
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
@@ -46,17 +47,14 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
         <p className="text-slate-400">Hantera ditt konto, prenumeration och säkerhet.</p>
       </div>
 
-      {/* Flik-navigation */}
       <SettingsTabs />
 
-      {/* Rendra innehåll baserat på vald flik */}
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-        
-        {/* Tog bort view === "profile" blocket */}
-
         {view === "account" && (
           <AccountForm
             email={user.email!}
+            username={user.username || ""}
+            hasPassword={hasPassword}
             marketingConsent={user.marketingConsent}
             productUpdates={user.productUpdates}
             hideFromSearch={user.hideFromSearch}
