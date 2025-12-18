@@ -38,41 +38,41 @@ export async function GET() {
     // 3. Skapa unikt ID
     const objectId = `${GOOGLE_WALLET_ISSUER_ID}.${user.id.replace(/-/g, '')}-${Date.now()}`;
 
-    // 4. URL-hantering (Endast för länkarna inuti kortet)
-    const walletBaseUrl = "https://avyracards.se"; 
-
-    // 5. Bygg ett EXTREMT förenklat Wallet-objekt för att testa kopplingen
+    // 4. Bygg ett SUPER-MINIMALT Wallet-objekt
+    // Vi har tagit bort ALLT som kan skapa valideringsfel (bilder, länkar, origins).
     const walletObject = {
       id: objectId,
       classId: GOOGLE_WALLET_CLASS_ID,
       state: "ACTIVE",
-      // VIKTIGT: Vi tar bort logo, barcode och linksModuleData helt.
-      // Om detta funkar så var det något fel med URL:erna eller formatet i de modulerna.
       textModulesData: [
         {
           header: "STATUS",
-          body: "Koppling fungerar!",
+          body: "Kopplingen fungerar!",
           id: "status_test"
+        },
+        {
+          header: "NAMN",
+          body: user.name || "Test",
+          id: "name"
         }
       ]
     };
 
-    // 6. Skapa JWT payload
+    // 5. Skapa JWT payload
     const claims = {
       iss: GOOGLE_CLIENT_EMAIL,
       aud: "google",
-      // VIKTIGT: Vi tar bort 'origins' helt. Det är den vanligaste orsaken till 400-fel.
-      // origins: [walletBaseUrl], 
       typ: "savetowallet",
+      // INGA ORIGINS, INGET ANNAT
       payload: {
         walletObjects: [walletObject]
       }
     };
 
-    // 7. Signera token
+    // 6. Signera token
     const token = jwt.sign(claims, privateKey, { algorithm: "RS256" });
 
-    // 8. Returnera POST-formulär
+    // 7. Returnera POST-formulär
     const html = `
       <!DOCTYPE html>
       <html>
