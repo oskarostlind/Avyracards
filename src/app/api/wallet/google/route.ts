@@ -38,24 +38,25 @@ export async function GET() {
     // 3. Skapa unikt ID
     const objectId = `${GOOGLE_WALLET_ISSUER_ID}.${user.id.replace(/-/g, '')}-${Date.now()}`;
 
-    // 4. Bygg ett SUPER-MINIMALT Wallet-objekt
-    // Vi har tagit bort ALLT som kan skapa valideringsfel (bilder, länkar, origins).
+    // 4. Bygg ett EXTREMT förenklat Wallet-objekt (NO IMAGES, NO LINKS)
+    // Vi har tagit bort alla variabler som skapar build-fel och alla fält som kan skapa 400-fel.
     const walletObject = {
       id: objectId,
       classId: GOOGLE_WALLET_CLASS_ID,
       state: "ACTIVE",
       textModulesData: [
         {
-          header: "STATUS",
-          body: "Kopplingen fungerar!",
+          header: "TEST",
+          body: "Om du ser detta fungerar kopplingen!",
           id: "status_test"
         },
         {
           header: "NAMN",
-          body: user.name || "Test",
+          body: user.name || "Användare",
           id: "name"
         }
       ]
+      // Inga logos. Inga barcodes. Inga länkar.
     };
 
     // 5. Skapa JWT payload
@@ -63,7 +64,6 @@ export async function GET() {
       iss: GOOGLE_CLIENT_EMAIL,
       aud: "google",
       typ: "savetowallet",
-      // INGA ORIGINS, INGET ANNAT
       payload: {
         walletObjects: [walletObject]
       }
