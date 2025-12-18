@@ -41,59 +41,20 @@ export async function GET() {
     // 4. URL-hantering (Endast för länkarna inuti kortet)
     const walletBaseUrl = "https://avyracards.se"; 
 
-    // 5. Bygg ett FÖRENKLAT Wallet-objekt
-    // VIKTIGT: Ingen heroImage just nu. Den orsakar ofta 400-fel om dimensionerna inte är exakt 3:1.
+    // 5. Bygg ett EXTREMT förenklat Wallet-objekt för att testa kopplingen
     const walletObject = {
       id: objectId,
       classId: GOOGLE_WALLET_CLASS_ID,
       state: "ACTIVE",
-      logo: {
-        sourceUri: {
-          uri: `${walletBaseUrl}/wallet/logo.png`
-        },
-        contentDescription: {
-          defaultValue: {
-            language: "en-US",
-            value: "Logo"
-          }
-        }
-      },
+      // VIKTIGT: Vi tar bort logo, barcode och linksModuleData helt.
+      // Om detta funkar så var det något fel med URL:erna eller formatet i de modulerna.
       textModulesData: [
         {
-          header: "NAMN",
-          body: user.name || user.username || "Användare",
-          id: "name"
-        },
-        {
-          header: "TITEL",
-          body: user.bio || "Digital Profil",
-          id: "title"
-        },
-        {
-          header: "PROFIL",
-          body: `avyracards.se/u/${user.username}`,
-          id: "url"
+          header: "STATUS",
+          body: "Koppling fungerar!",
+          id: "status_test"
         }
-      ],
-      linksModuleData: {
-        uris: [
-          {
-            uri: `${walletBaseUrl}/dashboard`,
-            description: "Hantera Profil",
-            id: "manage_link"
-          },
-          {
-            uri: `${walletBaseUrl}/u/${user.username}`,
-            description: "Visa Profil",
-            id: "view_link"
-          }
-        ]
-      },
-      barcode: {
-        type: "QR_CODE",
-        value: `${walletBaseUrl}/u/${user.username}`,
-        alternateText: user.username || "Scan"
-      }
+      ]
     };
 
     // 6. Skapa JWT payload
