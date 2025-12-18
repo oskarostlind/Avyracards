@@ -33,7 +33,7 @@ export async function GET() {
     }
 
     // 2. Läs in bilder från PUBLIC-mappen (Dessa följer med i deployen)
-    const publicDir = path.join(process.cwd(), 'public', 'images', 'wallet');
+    const publicDir = path.join(process.cwd(), 'public', 'wallet');
     const [iconBuffer, logoBuffer] = await Promise.all([
       fs.readFile(path.join(publicDir, "icon.png")),
       fs.readFile(path.join(publicDir, "logo.png")),
