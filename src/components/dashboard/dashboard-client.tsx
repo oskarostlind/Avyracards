@@ -131,6 +131,7 @@ export function DashboardClient({ user }: DashboardClientProps) {
               defaultOpen
             >
               <LinksWorkspace initialLinks={linkItems} />
+              
             </CollapsibleSection>
           </aside>
         </div>
