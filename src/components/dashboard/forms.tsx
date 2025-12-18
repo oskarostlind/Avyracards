@@ -4,6 +4,7 @@
 import { ChangeEvent, useEffect, useState } from "react";
 // NYTT: Importerar ikoner för kopiera-funktionen
 import { Copy, Check, ExternalLink } from "lucide-react";
+import { Wallet } from "lucide-react";
 
 /* ---------------- Profilformulär ---------------- */
 
@@ -445,6 +446,13 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
             title="Öppna profil"
           >
             <ExternalLink size={18} />
+          </a>
+          <a 
+            href="/api/wallet/apple"
+            className="flex items-center gap-2 bg-black text-white border border-slate-800 px-4 py-2 rounded-lg hover:bg-slate-900 transition-all font-medium text-sm"
+          >
+            <Wallet size={16} />
+            <span>Add to Apple Wallet</span>
           </a>
         </div>
       </div>
