@@ -5,19 +5,15 @@ import { PKPass } from "passkit-generator";
 import path from "path";
 import fs from "fs/promises";
 
-// Vi stänger av caching för denna route så att passet alltid är nytt
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // 1. Autentisering
     const session = await auth();
     if (!session || !session.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // 2. Hämta användardata
-    // FIX 1: Vi tar bort 'include: { profile: true }' eftersom fälten ligger direkt på User
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
     });
@@ -26,19 +22,24 @@ export async function GET() {
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // 3. Konfigurera sökvägar till certifikat och bilder
-    const certsDir = path.resolve(process.cwd(), "certs");
-    
-    // Läs in filerna
-    const [signerPem, privateKey, wwdrPem, iconBuffer, logoBuffer] = await Promise.all([
-      fs.readFile(path.join(certsDir, "signer.pem")),
-      fs.readFile(path.join(certsDir, "private.key")),
-      fs.readFile(path.join(certsDir, "wwdr.pem")),
-      fs.readFile(path.join(certsDir, "icon.png")),
-      fs.readFile(path.join(certsDir, "logo.png")),
+    // 1. Läs in certifikat från MILJÖVARIABLER (Base64)
+    // Vi konverterar tillbaka från Base64 till Buffer/String
+    const signerPem = Buffer.from(process.env.WALLET_SIGNER_PEM || '', 'base64');
+    const privateKey = Buffer.from(process.env.WALLET_PRIVATE_KEY || '', 'base64');
+    const wwdrPem = Buffer.from(process.env.WALLET_WWDR_PEM || '', 'base64');
+
+    if (!signerPem.length || !privateKey.length || !wwdrPem.length) {
+        throw new Error("Missing wallet certificates in environment variables");
+    }
+
+    // 2. Läs in bilder från PUBLIC-mappen (Dessa följer med i deployen)
+    const publicDir = path.join(process.cwd(), 'public', 'images', 'wallet');
+    const [iconBuffer, logoBuffer] = await Promise.all([
+      fs.readFile(path.join(publicDir, "icon.png")),
+      fs.readFile(path.join(publicDir, "logo.png")),
     ]);
 
-    // 4. Skapa Passet
+    // 3. Skapa Passet
     const pass = new PKPass(
       {
         "logo.png": logoBuffer,
@@ -48,7 +49,6 @@ export async function GET() {
         wwdr: wwdrPem,
         signerCert: signerPem,
         signerKey: privateKey,
-        // Vi använder lösenordet från .env som vi fixade
         signerKeyPassphrase: process.env.APPLE_WALLET_PASSPHRASE, 
       },
       {
@@ -64,7 +64,6 @@ export async function GET() {
       }
     );
 
-    // 5. Definiera innehållet
     pass.setBarcodes({
       format: "PKBarcodeFormatQR",
       message: `${process.env.NEXT_PUBLIC_BASE_URL}/u/${user.username}`,
@@ -74,7 +73,6 @@ export async function GET() {
 
     pass.type = "generic"; 
 
-    // FIX 2: Vi hämtar datan direkt från 'user' objektet
     pass.primaryFields.push({
       key: "name",
       label: "NAMN",
@@ -100,11 +98,8 @@ export async function GET() {
         attributedValue: `<a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard">Klicka här för att redigera</a>`
     });
 
-    // 6. Generera bufferten
     const buffer = pass.getAsBuffer();
 
-    // 7. Skicka som respons
-    // FIX 3: 'buffer as any' löser TypeScript-felet med BodyInit
     return new NextResponse(buffer as any, {
       status: 200,
       headers: {
@@ -116,6 +111,6 @@ export async function GET() {
 
   } catch (error) {
     console.error("Wallet Error:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return new NextResponse("Internal Server Error: " + (error as Error).message, { status: 500 });
   }
 }
