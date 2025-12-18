@@ -421,37 +421,47 @@ export function LinksForm({ publicUrl }: LinksFormProps) {
   return (
     <div className="space-y-4">
       
-      {/* --- NY SEKTION: Kopiera Länk --- */}
+            {/* --- NY SEKTION: Kopiera Länk & Wallet --- */}
       <div className="rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4 mb-6">
-        <label className="mb-2 block text-xs font-bold uppercase tracking-wider text-purple-400">
-          Din publika profil
-        </label>
-        <div className="flex items-center gap-2">
-          <div className="flex-1 truncate rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-300 font-mono">
-            {fullUrl}
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-purple-400">
+            Din publika profil
+          </label>
+        </div>
+
+        <div className="flex flex-col gap-3">
+          {/* Rad 1: URL och Verktyg */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-300 font-mono truncate">
+              {fullUrl}
+            </div>
+            
+            <button
+              type="button"
+              onClick={copyToClipboard}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
+              title="Kopiera länk"
+            >
+              {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
+            </button>
+            
+            <a
+              href={publicUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
+              title="Öppna profil"
+            >
+              <ExternalLink size={18} />
+            </a>
           </div>
-          <button
-            type="button"
-            onClick={copyToClipboard}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
-            title="Kopiera länk"
-          >
-            {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
-          </button>
-          <a
-            href={publicUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
-            title="Öppna profil"
-          >
-            <ExternalLink size={18} />
-          </a>
+
+          {/* Rad 2: Apple Wallet (Full bredd) */}
           <a 
             href="/api/wallet/apple"
-            className="flex items-center gap-2 bg-black text-white border border-slate-800 px-4 py-2 rounded-lg hover:bg-slate-900 transition-all font-medium text-sm"
+            className="flex items-center justify-center gap-2 bg-[#1C1C1E] text-white border border-white/10 px-4 py-3 rounded-xl hover:bg-[#2C2C2E] transition-all font-medium text-sm w-full shadow-lg"
           >
-            <Wallet size={16} />
+            <Wallet size={18} className="text-white" />
             <span>Add to Apple Wallet</span>
           </a>
         </div>

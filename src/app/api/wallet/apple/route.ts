@@ -7,6 +7,20 @@ import fs from "fs/promises";
 
 export const dynamic = 'force-dynamic';
 
+// Hjälpfunktion för att hämta bild från URL och göra om till Buffer
+async function fetchImageBuffer(url: string | null): Promise<Buffer | undefined> {
+  if (!url) return undefined;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return undefined;
+    const arrayBuffer = await res.arrayBuffer();
+    return Buffer.from(arrayBuffer);
+  } catch (e) {
+    console.error("Failed to fetch image", e);
+    return undefined;
+  }
+}
+
 export async function GET() {
   try {
     const session = await auth();
@@ -23,7 +37,6 @@ export async function GET() {
     }
 
     // 1. Läs in certifikat från MILJÖVARIABLER (Base64)
-    // Vi konverterar tillbaka från Base64 till Buffer/String
     const signerPem = Buffer.from(process.env.WALLET_SIGNER_PEM || '', 'base64');
     const privateKey = Buffer.from(process.env.WALLET_PRIVATE_KEY || '', 'base64');
     const wwdrPem = Buffer.from(process.env.WALLET_WWDR_PEM || '', 'base64');
@@ -32,19 +45,31 @@ export async function GET() {
         throw new Error("Missing wallet certificates in environment variables");
     }
 
-    // 2. Läs in bilder från PUBLIC-mappen (Dessa följer med i deployen)
+    // 2. Hämta profilbild (Thumbnail)
+    // FIX: Vi använder bara avatarUrl eftersom 'image' inte finns i ditt schema
+    const avatarUrl = user.avatarUrl;
+    const thumbnailBuffer = await fetchImageBuffer(avatarUrl);
+
+    // 3. Läs in statiska ikoner från PUBLIC-mappen
     const publicDir = path.join(process.cwd(), 'public', 'wallet');
     const [iconBuffer, logoBuffer] = await Promise.all([
       fs.readFile(path.join(publicDir, "icon.png")),
       fs.readFile(path.join(publicDir, "logo.png")),
     ]);
 
-    // 3. Skapa Passet
-    const pass = new PKPass(
-      {
+    // Skapa bild-objektet dynamiskt
+    const passImages: Record<string, Buffer> = {
         "logo.png": logoBuffer,
         "icon.png": iconBuffer,
-      },
+    };
+
+    if (thumbnailBuffer) {
+        passImages["thumbnail.png"] = thumbnailBuffer;
+    }
+
+    // 4. Skapa Passet
+    const pass = new PKPass(
+      passImages,
       {
         wwdr: wwdrPem,
         signerCert: signerPem,
