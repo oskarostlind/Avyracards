@@ -8,7 +8,8 @@ import {
   AlertCircle, 
   Clock, 
   ChevronRight,
-  Search
+  Search,
+  Tag // <-- NY IMPORT
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import type { OrderStatus } from "@prisma/client";
@@ -96,15 +97,22 @@ export default async function AdminPage() {
               Välkommen tillbaka, {session.user.username}.
             </p>
           </div>
-          <div className="flex gap-2">
-             {/* Plats för framtida knappar, t.ex. "Skapa manuell order" */}
+          <div className="flex gap-3">
+             {/* --- NY KNAPP FÖR PRODUKTHANTERING --- */}
+             <Link 
+                href="/admin/products"
+                className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 transition shadow-lg shadow-purple-500/20"
+             >
+                <Tag size={16} /> Hantera Produkter
+             </Link>
+
              <button className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition">
                 <Search size={16} /> Sök order
              </button>
           </div>
         </div>
 
-        {/* KPI / Stats Cards (Enkla placeholders än så länge) */}
+        {/* KPI / Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
             <div className="text-sm font-medium text-slate-400">Att skicka</div>
@@ -113,7 +121,6 @@ export default async function AdminPage() {
               <span className="text-sm text-slate-500">ordrar</span>
             </div>
           </div>
-          {/* Fler stats kan läggas här senare */}
         </div>
 
         {/* SEKTION 1: ATT GÖRA (PRIO) */}

@@ -183,7 +183,69 @@ model AnalyticsEvent {
   @@index([createdAt])
 }
 
+
+
+
 enum EventType {
   VIEW
   CLICK
+}
+
+
+
+
+// --- PRODUKTHANTERING (PIM) ---
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String   
+  description String?
+  slug        String   @unique 
+  features    String[] 
+  isActive    Boolean  @default(true)
+  
+  variants    ProductVariant[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ProductVariant {
+  id            String  @id @default(cuid())
+  productId     String
+  product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  name          String  
+  type          String  // "PHYSICAL" eller "SUBSCRIPTION"
+  
+  // PRIS & KAMPANJ
+  price         Int     // Det aktuella priset kunden betalar (t.ex. 39900)
+  compareAtPrice Int?   // Det gamla "ordinarie" priset (t.ex. 49900). Om denna finns visas REA-skylt.
+  
+  currency      String  @default("sek")
+  stripePriceId String? 
+  
+  // UI & Lager
+  imageUrl      String? 
+  colorCode     String? 
+  stock         Int     @default(100)
+  isActive      Boolean @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+// NY MODELL: RABATTKODER
+model Discount {
+  id          String    @id @default(cuid())
+  code        String    @unique // T.ex. "BLACKWEEK"
+  type        String    // "PERCENTAGE" eller "FIXED"
+  value       Int       // 20 (för 20%) eller 10000 (för 100kr)
+  
+  startsAt    DateTime? // När börjar koden gälla?
+  expiresAt   DateTime? // När går den ut?
+  usageLimit  Int?      // Max antal gånger den får användas totalt (t.ex. 50 första kunderna)
+  usedCount   Int       @default(0) // Hur många gånger har den använts?
+  
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
 }
