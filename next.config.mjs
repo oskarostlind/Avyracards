@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone", // <--- Denna rad löser Vercel-felet
+  // Vi tar bort output: "standalone" - Vercel sköter detta automatiskt
   experimental: {
     serverActions: {
       allowedOrigins: ["localhost:3000", "avyracards.se"]
