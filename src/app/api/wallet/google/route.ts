@@ -38,41 +38,23 @@ export async function GET() {
     // 3. Skapa unikt ID
     const objectId = `${GOOGLE_WALLET_ISSUER_ID}.${user.id.replace(/-/g, '')}-${Date.now()}`;
 
-    // 4. Hantera URL:er (FIX FÖR LOCALHOST 400 ERROR)
-    // Vi skiljer på "appUrl" (där koden körs) och "walletUrl" (vad som står på kortet)
-    
-    const appUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://avyracards.se";
-    
-    // VIKTIGT: För Google Wallet måste vi ALLTID använda en publik domän för länkar och bilder.
-    // Även om du kör localhost, så måste kortet peka på din live-site.
-    // Annars vägrar Google skapa kortet (Error 400).
+    // 4. URL-hantering (Endast för länkarna inuti kortet)
     const walletBaseUrl = "https://avyracards.se"; 
 
-    // Bild-logik: 
-    // Om vi kör lokalt -> Använd statisk logga.
-    // Om vi kör live -> Använd proxyn (som nu pekar på live-domänen).
-    let heroImageUri;
-    if (appUrl.includes("localhost")) {
-        console.log("Localhost detected: Using static logo and forcing live URLs for Google Wallet.");
-        heroImageUri = `${walletBaseUrl}/wallet/logo.png`;
-    } else {
-        heroImageUri = `${walletBaseUrl}/api/public/avatar/${user.username}`;
-    }
-
-    // 5. Bygg Wallet-objektet
-    // OBS: Vi använder 'walletBaseUrl' (live) för alla länkar här nere, inte 'appUrl' (localhost)
+    // 5. Bygg ett FÖRENKLAT Wallet-objekt
+    // VIKTIGT: Ingen heroImage just nu. Den orsakar ofta 400-fel om dimensionerna inte är exakt 3:1.
     const walletObject = {
       id: objectId,
       classId: GOOGLE_WALLET_CLASS_ID,
       state: "ACTIVE",
-      heroImage: {
+      logo: {
         sourceUri: {
-          uri: heroImageUri
+          uri: `${walletBaseUrl}/wallet/logo.png`
         },
         contentDescription: {
           defaultValue: {
             language: "en-US",
-            value: "Profile Image"
+            value: "Logo"
           }
         }
       },
@@ -96,12 +78,12 @@ export async function GET() {
       linksModuleData: {
         uris: [
           {
-            uri: `${walletBaseUrl}/dashboard`, // Tvingar https://avyracards.se
+            uri: `${walletBaseUrl}/dashboard`,
             description: "Hantera Profil",
             id: "manage_link"
           },
           {
-            uri: `${walletBaseUrl}/u/${user.username}`, // Tvingar https://avyracards.se
+            uri: `${walletBaseUrl}/u/${user.username}`,
             description: "Visa Profil",
             id: "view_link"
           }
@@ -109,7 +91,7 @@ export async function GET() {
       },
       barcode: {
         type: "QR_CODE",
-        value: `${walletBaseUrl}/u/${user.username}`, // Tvingar https://avyracards.se
+        value: `${walletBaseUrl}/u/${user.username}`,
         alternateText: user.username || "Scan"
       }
     };
@@ -117,19 +99,14 @@ export async function GET() {
     // 6. Skapa JWT payload
     const claims = {
       iss: GOOGLE_CLIENT_EMAIL,
-      aud: "google", 
-      origins: [walletBaseUrl], // Vi säger till Google att detta kommer från live-domänen
+      aud: "google",
+      // VIKTIGT: Vi tar bort 'origins' helt. Det är den vanligaste orsaken till 400-fel.
+      // origins: [walletBaseUrl], 
       typ: "savetowallet",
       payload: {
         walletObjects: [walletObject]
       }
     };
-
-    // --- DEBUG LOGS ---
-    console.log("--- GOOGLE WALLET DEBUG ---");
-    console.log("Object ID:", walletObject.id);
-    console.log("Using Base URL for Wallet:", walletBaseUrl);
-    // ------------------
 
     // 7. Signera token
     const token = jwt.sign(claims, privateKey, { algorithm: "RS256" });
