@@ -21,12 +21,13 @@ export async function GET() {
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // 2. Hämta miljövariabler
+    // 2. Hämta och validera miljövariabler
     const { 
       GOOGLE_CLIENT_EMAIL, 
       GOOGLE_PRIVATE_KEY, 
       GOOGLE_WALLET_ISSUER_ID, 
-      GOOGLE_WALLET_CLASS_ID 
+      GOOGLE_WALLET_CLASS_ID,
+      NEXT_PUBLIC_BASE_URL
     } = process.env;
 
     if (!GOOGLE_CLIENT_EMAIL || !GOOGLE_PRIVATE_KEY || !GOOGLE_WALLET_ISSUER_ID || !GOOGLE_WALLET_CLASS_ID) {
@@ -34,45 +35,97 @@ export async function GET() {
     }
 
     const privateKey = GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
+    const baseUrl = NEXT_PUBLIC_BASE_URL || "https://avyracards.se";
 
-    // 3. Skapa unikt ID
+    // 3. Skapa unikt ID (IssuerID.UserUUID-Timestamp)
     const objectId = `${GOOGLE_WALLET_ISSUER_ID}.${user.id.replace(/-/g, '')}-${Date.now()}`;
 
-    // 4. Bygg ett EXTREMT förenklat Wallet-objekt (NO IMAGES, NO LINKS)
-    // Vi har tagit bort alla variabler som skapar build-fel och alla fält som kan skapa 400-fel.
+    // 4. Hantera Bild-URL
+    // Använd Proxy-routen vi byggde för att hantera Base64 och externa bilder säkert
+    const heroImageUri = `${baseUrl}/api/public/avatar/${user.username}`;
+
+    // 5. Bygg Wallet-objektet (Fullständig version)
     const walletObject = {
       id: objectId,
       classId: GOOGLE_WALLET_CLASS_ID,
       state: "ACTIVE",
+      // Logo/Hero Image
+      logo: {
+        sourceUri: {
+          uri: `${baseUrl}/wallet/logo.png`
+        },
+        contentDescription: {
+          defaultValue: {
+            language: "en-US",
+            value: "AvyraCards Logo"
+          }
+        }
+      },
+      // Huvudbild (Profilbild via proxy)
+      heroImage: {
+        sourceUri: {
+          uri: heroImageUri
+        },
+        contentDescription: {
+          defaultValue: {
+            language: "en-US",
+            value: "Profile Image"
+          }
+        }
+      },
       textModulesData: [
         {
-          header: "TEST",
-          body: "Om du ser detta fungerar kopplingen!",
-          id: "status_test"
+          header: "NAMN",
+          body: user.name || user.username || "Användare",
+          id: "name"
         },
         {
-          header: "NAMN",
-          body: user.name || "Användare",
-          id: "name"
+          header: "TITEL",
+          body: user.bio || "Digital Profil",
+          id: "title"
+        },
+        {
+          header: "PROFIL",
+          body: `avyracards.se/u/${user.username}`,
+          id: "url"
         }
-      ]
-      // Inga logos. Inga barcodes. Inga länkar.
+      ],
+      linksModuleData: {
+        uris: [
+          {
+            uri: `${baseUrl}/dashboard`,
+            description: "Hantera Profil",
+            id: "manage_link"
+          },
+          {
+            uri: `${baseUrl}/u/${user.username}`,
+            description: "Visa Profil",
+            id: "view_link"
+          }
+        ]
+      },
+      barcode: {
+        type: "QR_CODE",
+        value: `${baseUrl}/u/${user.username}`,
+        alternateText: user.username || "Scan"
+      }
     };
 
-    // 5. Skapa JWT payload
+    // 6. Skapa JWT payload
     const claims = {
       iss: GOOGLE_CLIENT_EMAIL,
       aud: "google",
+      origins: [baseUrl], // Bra praxis för live-miljö
       typ: "savetowallet",
       payload: {
         walletObjects: [walletObject]
       }
     };
 
-    // 6. Signera token
+    // 7. Signera token
     const token = jwt.sign(claims, privateKey, { algorithm: "RS256" });
 
-    // 7. Returnera POST-formulär
+    // 8. Returnera POST-formulär (Auto-submit)
     const html = `
       <!DOCTYPE html>
       <html>
