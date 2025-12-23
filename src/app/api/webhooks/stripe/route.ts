@@ -36,16 +36,19 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     
-    // Hämta viktig data från metadata
     const type = session.metadata?.type;
-    const userId = session.metadata?.userId; // Denna skickade vi med från checkout!
+    const userId = session.metadata?.userId; 
 
     // ==========================================
     // SCENARIO 1: Endast Premium-prenumeration
     // ==========================================
     if (type === "premium_subscription") {
-      if (!userId) {
-        console.error("❌ Premium purchased but no userId found in metadata.");
+      
+      // FIX: Hantera gästköp (userId saknas eller är tom sträng)
+      if (!userId || userId.trim() === "") {
+        console.log(`📝 Guest Premium purchase detected for session ${session.id}. Waiting for manual activation via /register.`);
+        // Vi returnerar 200 OK för att Stripe ska vara nöjda.
+        // Aktiveringen sker senare via /api/stripe/verify-session när användaren skapat konto.
         return new NextResponse(null, { status: 200 });
       }
 
@@ -56,13 +59,13 @@ export async function POST(req: Request) {
           where: { id: userId },
           data: {
             isPremium: true,
-            stripeCustomerId: session.customer as string, // Spara kopplingen för framtida fakturering
+            stripeCustomerId: session.customer as string,
           },
         });
         console.log("✅ User updated to Premium successfully.");
       } catch (err) {
         console.error("Failed to update user premium status:", err);
-        // Vi returnerar ändå 200 för att inte få Stripe att försöka igen oändligt om det är ett databasfel som inte går att lösa
+        // Returnera 200 även vid fel för att undvika loopar hos Stripe, logga felet noga.
       }
 
       return new NextResponse(null, { status: 200 });
@@ -72,7 +75,7 @@ export async function POST(req: Request) {
     // SCENARIO 2: Fysisk Kortbeställning
     // ==========================================
     
-    // 1. Idempotency Check: Har vi redan hanterat denna order?
+    // 1. Idempotency Check
     const existingOrder = await prisma.order.findUnique({
       where: {
         stripeSessionId: session.id,
@@ -90,7 +93,7 @@ export async function POST(req: Request) {
     const design = session.metadata?.design || "minimal";
     const customerType = session.metadata?.customerType === "company" ? "COMPANY" : "PRIVATE";
 
-    // 2. Skapa Order i databasen
+    // 2. Skapa Order
     const order = await prisma.order.create({
       data: {
         stripeSessionId: session.id,
@@ -104,7 +107,7 @@ export async function POST(req: Request) {
       },
     });
 
-    // 3. Generera Card Slots (Kortkoder)
+    // 3. Generera Card Slots
     const cardsToCreate = [];
     for (let i = 0; i < quantity; i++) {
       cardsToCreate.push({
@@ -127,7 +130,6 @@ export async function POST(req: Request) {
     // ==========================================
     // SCENARIO 3: Bundle (Fysiskt kort + Premium)
     // ==========================================
-    // Om kunden köpte ett kort MED premium-tillägg
     if (session.metadata?.isBundled === "true" && userId) {
       console.log(`🎁 Bundle detected! Activating Premium for User: ${userId}`);
       await prisma.user.update({
@@ -147,7 +149,6 @@ export async function POST(req: Request) {
 
     console.log(`🚫 Subscription deleted for customer: ${stripeCustomerId}`);
 
-    // Hitta användaren via stripeCustomerId och ta bort premium
     const user = await prisma.user.findFirst({
       where: { stripeCustomerId },
     });

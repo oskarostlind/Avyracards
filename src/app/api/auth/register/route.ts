@@ -4,6 +4,7 @@ import { hashPassword } from "@/lib/password";
 import { randomUUID } from "crypto";
 import { sendVerificationEmail } from "@/lib/email";
 import { z } from "zod";
+// import { stripe } from "@/lib/stripe"; // Om du vill dubbelkolla sessionen här
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,10 @@ const RegisterSchema = z.object({
   email: z.string().email("Ogiltig e-postadress."),
   password: z.string().min(6, "Lösenordet måste vara minst 6 tecken."),
   profileMode: z.enum(["social", "business"]).optional(),
+  
+  // Lägg till dessa i schemat för att tillåta dem från frontend
+  isPremium: z.boolean().optional(),
+  stripeSessionId: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -38,6 +43,7 @@ export async function POST(req: Request) {
       email,
       password,
       profileMode: profileModeRaw = "social",
+      stripeSessionId // Hämta detta
     } = parsed.data;
 
     // --- NORMALISERING ---
@@ -63,33 +69,43 @@ export async function POST(req: Request) {
     const prismaProfileMode =
       profileModeRaw === "business" ? "BUSINESS" : "SOCIAL";
 
+    // --- AUTO-VERIFIERING VID KÖP ---
+    // Om användaren kommer från ett betalt köp, litar vi på e-posten och verifierar direkt.
+    // Detta löser problemet med att de inte kan logga in direkt för att aktivera Premium.
+    const isVerifiedByPurchase = !!stripeSessionId;
+
     // 1. Skapa användaren
     const user = await prisma.user.create({
       data: {
         email: normalizedEmail,
         username: normalizedUsername,
         passwordHash,
-        verificationToken,
+        verificationToken: isVerifiedByPurchase ? null : verificationToken, // Ingen token behövs om verifierad
+        emailVerified: isVerifiedByPurchase ? new Date() : null, // Sätt datum direkt om köp
         profileMode: prismaProfileMode,
       },
     });
 
-    // 2. Försök skicka mail (med felhantering/rollback)
-    try {
-      await sendVerificationEmail(user.email, verificationToken);
-    } catch (emailError: any) {
-      console.error("[register] Mail misslyckades, rullar tillbaka användare:", emailError.message);
-      
-      // VIKTIGT: Ta bort användaren eftersom mailet misslyckades
-      await prisma.user.delete({ where: { id: user.id } });
+    // 2. Skicka mail (ENDAST om INTE verifierad via köp)
+    if (!isVerifiedByPurchase) {
+      try {
+        await sendVerificationEmail(user.email, verificationToken);
+      } catch (emailError: any) {
+        console.error("[register] Mail misslyckades, rullar tillbaka användare:", emailError.message);
+        
+        // VIKTIGT: Ta bort användaren eftersom mailet misslyckades
+        await prisma.user.delete({ where: { id: user.id } });
 
-      return NextResponse.json(
-        { 
-          error: "Kunde inte skicka verifieringsmail. Kontrollera att din e-postadress är korrekt.",
-          details: emailError.message // Skickar med teknisk orsak för debugging (ta bort i prod sen)
-        },
-        { status: 500 }
-      );
+        return NextResponse.json(
+          { 
+            error: "Kunde inte skicka verifieringsmail. Kontrollera att din e-postadress är korrekt.",
+            details: emailError.message 
+          },
+          { status: 500 }
+        );
+      }
+    } else {
+       console.log(`[register] User ${user.email} auto-verified due to purchase session.`);
     }
 
     return NextResponse.json({ ok: true }, { status: 201 });

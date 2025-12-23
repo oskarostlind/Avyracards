@@ -1,27 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, User, Mail, Lock } from "lucide-react";
 import { signIn } from "next-auth/react";
 
 export default function ActivateAccountPage() {
-  // Tog bort const router = useRouter();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
   const [loading, setLoading] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("Aktivera konto"); // För att visa vad som händer
   const [email, setEmail] = useState(""); 
 
   const handleActivation = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
+    setStatusMessage("Skapar konto...");
 
     const formData = new FormData(e.currentTarget);
     const password = formData.get("password") as string;
     const username = formData.get("username") as string;
     
     try {
+      // STEG 1: Skapa kontot (utan att försöka sätta premium här)
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -29,8 +32,8 @@ export default function ActivateAccountPage() {
           email,
           password,
           username,
-          isPremium: true,
-          stripeSessionId: sessionId 
+          // Vi skickar INTE med isPremium/sessionId här längre, 
+          // vi hanterar det säkrare i Steg 3.
         }),
       });
 
@@ -39,15 +42,50 @@ export default function ActivateAccountPage() {
          throw new Error(data.error || "Kunde inte skapa konto");
       }
 
-      await signIn("credentials", {
+      // STEG 2: Logga in användaren (redirect: false så vi kan köra kod efteråt)
+      setStatusMessage("Loggar in...");
+      const signInRes = await signIn("credentials", {
         email,
         password,
-        callbackUrl: "/dashboard",
+        redirect: false, 
       });
+
+      if (signInRes?.error) {
+        throw new Error("Kunde inte logga in automatiskt. Försök logga in manuellt.");
+      }
+
+      // STEG 3: Aktivera Premium via "Bakdörren" (verify-session)
+      // Nu när användaren är inloggad kan vi koppla ihop betalningen med kontot.
+      if (sessionId) {
+        setStatusMessage("Verifierar betalning...");
+        try {
+          const verifyRes = await fetch("/api/stripe/verify-session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sessionId }),
+          });
+          
+          if (!verifyRes.ok) {
+            console.error("Kunde inte verifiera premium-session automatiskt.");
+            // Vi kastar inget error här för att inte hindra användaren från att komma in,
+            // men vi loggar det.
+          } else {
+            console.log("Premium aktiverat!");
+          }
+        } catch (verifyError) {
+          console.error("Fel vid aktivering av premium:", verifyError);
+        }
+      }
+
+      // STEG 4: Klar! Skicka till Dashboard
+      setStatusMessage("Klar!");
+      router.push("/dashboard");
+      router.refresh(); // Säkerställer att layouts/session uppdateras
 
     } catch (error: any) {
       console.error(error);
       setLoading(false);
+      setStatusMessage("Aktivera konto");
       alert(error.message || "Något gick fel.");
     }
   };
@@ -115,7 +153,11 @@ export default function ActivateAccountPage() {
                </div>
 
                <button disabled={loading} className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-100 transition-all shadow-lg flex justify-center mt-4">
-                  {loading ? <Loader2 className="animate-spin"/> : "Aktivera konto"}
+                  {loading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="animate-spin" size={20}/> {statusMessage}
+                    </span>
+                  ) : "Aktivera konto"}
                </button>
             </form>
          </div>
