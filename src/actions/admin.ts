@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/auth";
+import { auth, signIn } from "@/auth"; 
 import { prisma } from "@/lib/prisma";
 import { Role, PremiumSource, Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
@@ -14,7 +14,7 @@ async function requireAdmin() {
   return session;
 }
 
-// 1. Hämta användarlista (Sökbar + Paginering + Sortering)
+// 1. Hämta användarlista 
 export async function getAdminUsers({
   page = 1,
   query = "",
@@ -32,7 +32,6 @@ export async function getAdminUsers({
 
   const skip = (page - 1) * limit;
 
-  // Bygg sökfilter
   const where: Prisma.UserWhereInput = query
     ? {
         OR: [
@@ -43,37 +42,23 @@ export async function getAdminUsers({
       }
     : {};
 
-  // Bestäm sortering (säkerställer att vi inte skickar ogiltig data till Prisma)
   let orderBy: Prisma.UserOrderByWithRelationInput = { createdAt: "desc" };
 
   switch (sort) {
-    case "name":
-      orderBy = { name: order };
-      break;
-    case "email":
-      orderBy = { email: order };
-      break;
-    case "username":
-      orderBy = { username: order };
-      break;
-    case "isPremium":
-      orderBy = { isPremium: order };
-      break;
-    case "createdAt":
-      orderBy = { createdAt: order };
-      break;
-    // Fallback till createdAt desc
-    default:
-      orderBy = { createdAt: "desc" };
+    case "name": orderBy = { name: order }; break;
+    case "email": orderBy = { email: order }; break;
+    case "username": orderBy = { username: order }; break;
+    case "isPremium": orderBy = { isPremium: order }; break;
+    case "createdAt": orderBy = { createdAt: order }; break;
+    default: orderBy = { createdAt: "desc" };
   }
 
-  // Hämta data + totalt antal
   const [users, totalCount] = await Promise.all([
     prisma.user.findMany({
       where,
       take: limit,
       skip,
-      orderBy, // <-- Här används den dynamiska sorteringen
+      orderBy,
       select: {
         id: true,
         name: true,
@@ -102,14 +87,14 @@ export async function getAdminUsers({
   };
 }
 
-// 2. Hämta detaljer för en specifik användare
+// 2. Hämta detaljer 
 export async function getAdminUserDetails(userId: string) {
   await requireAdmin();
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
-      cards: true,
+      cards: true, 
       _count: {
         select: {
           links: true,
@@ -124,7 +109,7 @@ export async function getAdminUserDetails(userId: string) {
   return user;
 }
 
-// 3. Hantera Premium
+// 3. Hantera Premium 
 export async function toggleUserPremium(
   userId: string,
   shouldBePremium: boolean,
@@ -139,7 +124,7 @@ export async function toggleUserPremium(
         isPremium: true,
         premiumSource: source,
         premiumGivenAt: new Date(),
-        premiumExpiresAt: null,
+        premiumExpiresAt: null, 
         adminNotes: `Premium gifted by admin (${adminSession.user.email}) at ${new Date().toISOString()}`,
       },
     });
@@ -170,4 +155,17 @@ export async function updateAdminNotes(userId: string, notes: string) {
   });
 
   revalidatePath(`/admin/users/${userId}`);
+}
+
+// 5. Impersonate User 
+export async function impersonateUser(userId: string) {
+  const session = await requireAdmin(); 
+
+  console.log(`🕵️ Admin ${session.user.email} is impersonating user ${userId}`);
+
+  await signIn("credentials", {
+    impersonateId: userId,
+    adminSecret: process.env.NEXTAUTH_SECRET, // ÄNDRAT HÄR: Använder NEXTAUTH_SECRET
+    redirectTo: "/dashboard", 
+  });
 }

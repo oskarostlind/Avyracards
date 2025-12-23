@@ -1,9 +1,7 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-// import { PrismaAdapter } from "@auth/prisma-adapter";
 import { z } from "zod";
 import { type Role } from "@prisma/client"; 
-// import { type Adapter } from "next-auth/adapters";
 
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
@@ -14,9 +12,6 @@ const loginSchema = z.object({
 });
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // Vi behåller adaptern utkommenterad för att undvika cookie-storleksfel
-  // adapter: PrismaAdapter(prisma) as Adapter,
-  
   session: { strategy: "jwt" },
   trustHost: true,
   pages: {
@@ -29,16 +24,44 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
+        impersonateId: { label: "Impersonate Id", type: "text" },
+        adminSecret: { label: "Admin Secret", type: "text" },
       },
       authorize: async (credentials) => {
+        
+        // --- 1. IMPERSONATION LOGIN (Admin Only) ---
+        if (credentials?.impersonateId) {
+          
+          // ÄNDRAT: Kollar mot NEXTAUTH_SECRET
+          if (!credentials.adminSecret || credentials.adminSecret !== process.env.NEXTAUTH_SECRET) {
+            throw new Error("Unauthorized: Invalid admin secret or missing permissions");
+          }
+
+          const user = await prisma.user.findUnique({
+            where: { id: credentials.impersonateId as string },
+          });
+
+          if (!user) {
+            throw new Error("User not found for impersonation");
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.username,
+            username: user.username,
+            role: user.role,
+          };
+        }
+
+
+        // --- 2. VANLIG LOGIN ---
         const result = loginSchema.safeParse(credentials);
 
         if (!result.success) {
           throw new Error("Ogiltig e-post eller lösenord");
         }
 
-        // FIX 1: Normalisera e-post till gemener (lowercase)
-        // Detta säkerställer att User@Example.com hittas även om man skriver user@example.com
         const email = result.data.email.toLowerCase();
         const password = result.data.password;
 
@@ -50,8 +73,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Felaktig e-post eller lösenord");
         }
 
-        // FIX 2: Kontrollera om e-posten är verifierad
-        // Hindrar inloggning om kontot inte aktiverats via mail
         if (!user.emailVerified) {
           throw new Error("Du måste verifiera din e-postadress innan du kan logga in.");
         }
@@ -67,7 +88,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           email: user.email,
           name: user.username,
           username: user.username,
-          // image: user.avatarUrl, // Fortsatt utkommenterad pga Base64-problemet
           role: user.role, 
         };
       },
