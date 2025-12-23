@@ -1,258 +1,313 @@
 import Link from "next/link";
+import { Check, ArrowRight, Layers, Users, ShieldCheck, Zap } from "lucide-react";
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50 selection:bg-emerald-500/30">
-      <div className="mx-auto flex max-w-6xl flex-col gap-20 px-4 pb-24 pt-24 md:px-8">
+    <main className="min-h-screen bg-slate-950 text-slate-50 selection:bg-emerald-500/30 overflow-hidden">
+      <div className="mx-auto flex max-w-6xl flex-col gap-24 px-4 pb-24 pt-24 md:px-8">
         
-        {/* HERO SECTION */}
-        <section className="grid gap-12 lg:grid-cols-[1.2fr_1fr] lg:items-center">
-          <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-800 bg-slate-900/80 px-4 py-1.5 text-xs font-medium text-slate-300 backdrop-blur-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-              </span>
-              <span>Lansering: AvyraCards</span>
-              <span className="mx-1 h-3 w-px bg-slate-700" />
-              <span className="text-slate-400">Nästa generations visitkort</span>
+        {/* --- 1. HERO SECTION (OVANFÖR FOLD) --- */}
+        <section className="grid gap-16 lg:grid-cols-[1.1fr_1fr] lg:items-center">
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+            
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-400 backdrop-blur-sm shadow-lg shadow-emerald-500/5">
+              <span>Nyhet</span>
+              <span className="h-1 w-1 rounded-full bg-emerald-400" />
+              <span className="text-slate-300 font-medium">Google Wallet Integration</span>
             </div>
 
             <div className="space-y-6">
-              <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl md:text-6xl leading-[1.1]">
-                En sida. <br />
-                Alla dina länkar.
-                <span className="mt-2 block bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">
-                  Socialt & Business.
+              <h1 className="text-5xl font-bold tracking-tight text-white sm:text-6xl lg:text-7xl leading-[1.05]">
+                Dela rätt <br />
+                <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">
+                  version av dig.
                 </span>
+                <br />
+                Varje gång.
               </h1>
-              <p className="max-w-xl text-lg text-slate-400 leading-relaxed">
-                AvyraCards samlar din digitala närvaro på en snygg profilsida
-                kopplad till ett smart NFC-kort. Dela vem du är med ett enda tryck mot en mobil.
+              <p className="max-w-lg text-lg text-slate-400 leading-relaxed font-light">
+                AVYRA är din digitala identitet. En profil som anpassar sig efter sammanhang – privat och professionellt.
+                Gratis att börja. Uppgradera när du vill.
               </p>
             </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Link
-                href="/get-started"
-                className="inline-flex h-12 items-center justify-center rounded-full bg-emerald-500 px-8 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-105 active:scale-95"
-              >
-                Skapa konto gratis
-              </Link>
-              <Link
-                href="#how-it-works"
-                className="inline-flex h-12 items-center justify-center rounded-full px-6 text-sm font-medium text-slate-300 transition-colors hover:text-white hover:bg-slate-900"
-              >
-                Se hur det funkar ↓
-              </Link>
-            </div>
-
-            <div className="flex items-center gap-6 text-xs text-slate-500 font-medium">
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.5)]" />
-                För Privatpersoner
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/get-started"
+                  className="inline-flex h-14 items-center justify-center rounded-2xl bg-emerald-500 px-8 text-base font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98]"
+                >
+                  Skapa gratis profil
+                </Link>
+                <Link
+                  href="#how-it-works"
+                  className="inline-flex h-14 items-center justify-center rounded-2xl border border-slate-800 bg-slate-900/50 px-8 text-base font-medium text-slate-300 transition-all hover:bg-slate-800 hover:text-white"
+                >
+                  Se hur det funkar <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="h-1.5 w-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.5)]" />
-                För Företag
+
+              {/* Trust Microcopy */}
+              <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-medium text-slate-500">
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Tar under 2 minuter</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Funkar direkt i mobilen</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Inget kort krävs</span>
               </div>
             </div>
           </div>
 
-          {/* HERO VISUAL: 3D-liknande CSS-kort */}
-          <div className="relative mx-auto w-full max-w-[400px] lg:max-w-none perspective-1000">
+          {/* HERO VISUAL (Din 3D-Telefon - något uppdaterad) */}
+          <div className="relative mx-auto w-full max-w-[400px] lg:max-w-none perspective-1000 animate-in fade-in zoom-in duration-1000 delay-200">
              {/* Bakgrundsglöd */}
-            <div className="absolute -inset-4 bg-gradient-to-tr from-emerald-500/20 to-sky-500/20 blur-3xl opacity-50" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-emerald-500/20 to-sky-500/20 blur-[80px] opacity-60 pointer-events-none" />
             
-            <div className="relative h-[500px] w-full">
+            <div className="relative h-[600px] w-full flex items-center justify-center">
               {/* Telefonen */}
-              <div className="absolute bottom-0 left-1/2 w-[280px] -translate-x-1/2 rounded-[3rem] border-8 border-slate-900 bg-slate-950 shadow-2xl overflow-hidden z-10">
-                {/* Notch */}
-                <div className="absolute top-0 left-1/2 h-6 w-32 -translate-x-1/2 rounded-b-xl bg-slate-900 z-20"></div>
+              <div className="absolute w-[300px] rounded-[3.5rem] border-[8px] border-slate-900 bg-slate-950 shadow-2xl overflow-hidden z-10 rotate-[-6deg] hover:rotate-0 transition-transform duration-700 ease-out">
+                {/* Dynamic Island / Notch */}
+                <div className="absolute top-4 left-1/2 h-7 w-28 -translate-x-1/2 rounded-full bg-black z-20"></div>
                 
                 {/* Skärminnehåll */}
-                <div className="h-[550px] w-full bg-slate-900 pt-12 px-5 flex flex-col gap-4 overflow-hidden">
+                <div className="h-[620px] w-full bg-slate-950 pt-16 px-6 flex flex-col gap-6 overflow-hidden relative">
+                  {/* Bakgrundsbild/Gradient på skärmen */}
+                  <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-slate-800 to-slate-950 opacity-50" />
+
                   {/* Profil-header */}
-                  <div className="flex flex-col items-center gap-3">
-                    <div className="h-20 w-20 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border-2 border-slate-600 shadow-inner flex items-center justify-center text-2xl">😎</div>
-                    <div className="text-center space-y-1">
-                      <div className="h-4 w-32 bg-slate-700 rounded-full mx-auto"/>
-                      <div className="h-3 w-48 bg-slate-800 rounded-full mx-auto"/>
+                  <div className="relative z-10 flex flex-col items-center gap-4">
+                    <div className="h-24 w-24 rounded-full p-1 bg-gradient-to-tr from-emerald-400 to-sky-400">
+                        <div className="h-full w-full rounded-full bg-slate-800 flex items-center justify-center text-3xl border-4 border-slate-950">
+                            👋
+                        </div>
+                    </div>
+                    <div className="text-center space-y-2">
+                      <div className="h-5 w-40 bg-slate-800 rounded-full mx-auto animate-pulse"/>
+                      <div className="h-3 w-24 bg-slate-800/50 rounded-full mx-auto"/>
                     </div>
                   </div>
+                  
                   {/* Länkar */}
-                  <div className="space-y-3 mt-2">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="h-12 w-full rounded-xl bg-slate-800/50 border border-slate-700/50 flex items-center px-4 gap-3">
-                        <div className="h-8 w-8 rounded-full bg-slate-700/50" />
-                        <div className="h-3 w-24 bg-slate-700/50 rounded-full" />
+                  <div className="relative z-10 space-y-3 mt-4">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="h-14 w-full rounded-2xl bg-slate-900 border border-slate-800 flex items-center px-4 gap-4 shadow-sm">
+                        <div className="h-9 w-9 rounded-full bg-slate-800" />
+                        <div className="h-3 w-32 bg-slate-800 rounded-full" />
                       </div>
                     ))}
                   </div>
-                   {/* Pop-up notis */}
-                   <div className="mt-6 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 p-4 backdrop-blur-md">
-                     <div className="flex gap-3">
-                       <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950 font-bold">NFC</div>
-                       <div>
-                         <div className="text-xs text-emerald-400 font-bold mb-1">NFC-TAGG LÄST</div>
-                         <div className="text-xs text-slate-300">Öppnar avyracards.se...</div>
-                       </div>
-                     </div>
-                   </div>
+
+                   {/* NFC Pop-up (Simulerad) */}
+                   <div className="absolute bottom-8 left-4 right-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 p-4 animate-bounce duration-[2000ms]">
+                      <div className="flex gap-3 items-center">
+                        <div className="h-10 w-10 rounded-full bg-emerald-500 flex items-center justify-center text-slate-950 font-bold shrink-0">
+                            <Zap size={20} fill="currentColor" />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="text-xs text-emerald-300 font-bold mb-0.5 tracking-wide">NFC-TAGG HITTAD</div>
+                          <div className="text-xs text-white truncate">Öppnar avyra.se/alex...</div>
+                        </div>
+                      </div>
+                    </div>
                 </div>
               </div>
 
-              {/* Det svävande kortet */}
-              <div className="absolute top-20 right-0 lg:-right-12 w-48 h-72 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-2xl transform rotate-12 hover:rotate-6 transition-transform duration-500 z-20 flex flex-col items-center justify-center p-6 text-center group cursor-default">
-                 {/* Kort-glans */}
+              {/* Det svävande visitkortet */}
+              <div className="absolute bottom-20 -right-4 md:-right-12 w-56 h-80 rounded-2xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] transform rotate-[12deg] hover:rotate-[15deg] transition-transform duration-500 z-20 flex flex-col items-center justify-center p-8 text-center backdrop-blur-xl">
                  <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent rounded-2xl pointer-events-none" />
                  
-                 <div className="h-12 w-12 rounded-full bg-emerald-500 mb-4 flex items-center justify-center shadow-lg shadow-emerald-500/30 text-xl font-bold text-slate-950">
+                 <div className="h-16 w-16 rounded-full bg-emerald-500 mb-6 flex items-center justify-center shadow-lg shadow-emerald-500/20 text-2xl font-bold text-slate-950">
                    A
                  </div>
-                 <h3 className="text-white font-bold tracking-widest text-sm uppercase">Avyra</h3>
-                 <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-widest">Membership</p>
+                 <h3 className="text-white font-bold tracking-[0.2em] text-sm uppercase">Avyra</h3>
+                 <p className="text-[10px] text-slate-400 mt-2 uppercase tracking-widest font-medium">Founder Edition</p>
                  
-                 <div className="absolute bottom-6 w-full px-6 flex justify-between items-end opacity-50">
-                   <div className="h-6 w-8 rounded bg-yellow-500/20 border border-yellow-500/50"></div>
-                   <div className="text-[10px] font-mono text-slate-500">((( • )))</div>
+                 <div className="absolute bottom-8 w-full px-8 flex justify-between items-end opacity-40">
+                   <div className="h-8 w-10 rounded bg-gradient-to-r from-yellow-200 to-yellow-500 opacity-80"></div>
+                   <div className="text-[10px] font-mono text-slate-400">((( • )))</div>
                  </div>
               </div>
             </div>
           </div>
         </section>
 
-        {/* STATS / TRUST */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-4 border-y border-slate-800 py-8 bg-slate-900/20">
-            {[
-              { label: "Användare", value: "2000+" },
-              { label: "Visningar", value: "50k+" },
-              { label: "Klimatsmart", value: "100%" },
-              { label: "Designval", value: "Oändliga" },
-            ].map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-white mb-1">{stat.value}</div>
-                <div className="text-xs uppercase tracking-wider text-slate-500 font-medium">{stat.label}</div>
-              </div>
-            ))}
+
+        {/* --- 2. PROBLEMET (IGENKÄNNING) --- */}
+        <section className="py-12 md:py-24 border-t border-slate-800/50">
+          <div className="max-w-3xl mx-auto text-center space-y-12">
+            <div className="space-y-6">
+                <h2 className="text-3xl md:text-5xl font-bold text-white">
+                Du är inte samma person <br/> i alla sammanhang.
+                </h2>
+                <div className="text-lg md:text-xl text-slate-400 space-y-2 leading-relaxed font-light">
+                    <p>Ibland delar du <span className="text-white font-medium">LinkedIn</span>.</p>
+                    <p>Ibland <span className="text-white font-medium">Instagram</span>.</p>
+                    <p>Ibland ett visitkort som är för gammalt.</p>
+                    <p className="pt-4 text-red-400/80 italic">Och ibland delar du fel.</p>
+                </div>
+            </div>
+            
+            {/* Lösning Highlight */}
+            <div className="inline-block relative">
+                 <div className="absolute -inset-4 bg-emerald-500/10 blur-xl rounded-full" />
+                 <p className="relative text-xl md:text-2xl font-medium text-emerald-400">
+                    AVYRA ger dig full kontroll över hur du syns.
+                 </p>
+            </div>
+          </div>
         </section>
 
-        {/* HUR FUNKAR DET */}
+
+        {/* --- 3. KÄRNKONCEPTET (VISUAL SPLIT) --- */}
+        <section className="bg-slate-900/30 rounded-[3rem] border border-slate-800 p-8 md:p-16 overflow-hidden relative">
+            {/* Bakgrundseffekter */}
+            <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-slate-800/30 via-transparent to-transparent opacity-50" />
+            
+            <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
+                <div className="space-y-8">
+                    <div className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-xs font-bold text-slate-300">
+                        <Layers size={14} className="text-emerald-400" />
+                        <span>KÄRNKONCEPTET</span>
+                    </div>
+                    <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+                        En identitet. <br/>
+                        <span className="text-slate-400">Flera sidor av dig.</span>
+                    </h2>
+                    <p className="text-lg text-slate-400 leading-relaxed max-w-md">
+                        AVYRA är byggt för hur människor faktiskt nätverkar idag.
+                        Ett ställe för allt – men aldrig allt på samma gång.
+                        Du bestämmer vad som visas. Vi ser till att det känns rätt.
+                    </p>
+                    
+                    {/* Feature list */}
+                    <div className="space-y-4 pt-4">
+                        <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-400"><Users size={20}/></div>
+                            <div>
+                                <div className="text-white font-bold">Social Vy</div>
+                                <div className="text-sm text-slate-500">För vänner, följare & fans</div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400"><ShieldCheck size={20}/></div>
+                            <div>
+                                <div className="text-white font-bold">Business Vy</div>
+                                <div className="text-sm text-slate-500">För kunder, partners & rekryterare</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* VISUAL: Split Screen Mockup (Abstrakt UI) */}
+                <div className="relative h-[400px] w-full flex items-center justify-center">
+                    {/* Vänster kort (Social) */}
+                    <div className="absolute left-0 top-8 w-64 h-80 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl rotate-[-6deg] z-10 p-4 hover:z-30 hover:rotate-0 transition-all duration-300">
+                        <div className="h-full w-full bg-slate-950 rounded-xl p-4 flex flex-col gap-3">
+                            <div className="flex justify-between items-center mb-2">
+                                <div className="h-8 w-8 rounded-full bg-sky-500/20" />
+                                <div className="h-2 w-12 bg-slate-800 rounded-full" />
+                            </div>
+                            <div className="h-32 w-full bg-sky-500/10 rounded-lg" />
+                            <div className="flex gap-2">
+                                <div className="h-12 w-12 rounded-lg bg-slate-800" />
+                                <div className="h-12 w-12 rounded-lg bg-slate-800" />
+                                <div className="h-12 w-12 rounded-lg bg-slate-800" />
+                            </div>
+                        </div>
+                         <div className="absolute -top-3 -right-3 bg-sky-500 text-xs font-bold px-3 py-1 rounded-full text-white shadow-lg">SOCIAL</div>
+                    </div>
+
+                    {/* Höger kort (Business) */}
+                    <div className="absolute right-0 bottom-8 w-64 h-80 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl rotate-[6deg] z-20 p-4 hover:z-30 hover:rotate-0 transition-all duration-300">
+                        <div className="h-full w-full bg-slate-950 rounded-xl p-4 flex flex-col gap-3">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="h-10 w-10 rounded-full bg-emerald-500/20" />
+                                <div>
+                                    <div className="h-2 w-20 bg-slate-700 rounded-full mb-1" />
+                                    <div className="h-2 w-12 bg-slate-800 rounded-full" />
+                                </div>
+                            </div>
+                            <div className="h-10 w-full bg-slate-800 rounded-lg flex items-center px-3">
+                                <div className="h-2 w-16 bg-slate-700 rounded-full" />
+                            </div>
+                            <div className="h-10 w-full bg-emerald-600 rounded-lg flex items-center justify-center">
+                                <div className="h-2 w-24 bg-emerald-900/30 rounded-full" />
+                            </div>
+                        </div>
+                        <div className="absolute -top-3 -left-3 bg-emerald-500 text-xs font-bold px-3 py-1 rounded-full text-white shadow-lg">BUSINESS</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        {/* --- 4. HUR DET FUNKAR --- */}
         <section id="how-it-works" className="py-12">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white sm:text-4xl mb-4">Så funkar AvyraCards</h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Vi har skalat bort krånglet. Ingen app krävs för personen du möter.
-            </p>
+          <div className="text-center mb-16 space-y-4">
+            <h2 className="text-3xl font-bold text-white sm:text-4xl">Så enkelt är det.</h2>
+            <p className="text-slate-400">Ingen app krävs för den du möter.</p>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
             {[
               {
-                step: "01",
+                step: "1",
                 title: "Skapa din profil",
-                desc: "Registrera dig gratis. Lägg till din bild, bio, sociala medier, länkar och kontaktuppgifter på några minuter.",
+                desc: "Lägg till det som representerar dig. Bilder, länkar, bio.",
                 icon: "🎨"
               },
               {
-                step: "02",
-                title: "Koppla kortet",
-                desc: "Beställ ett snyggt NFC-kort från oss. När det kommer, scanna det en gång för att koppla det till din profil.",
-                icon: "🔗"
+                step: "2",
+                title: "Välj vy",
+                desc: "Anpassa efter situation – privat fest eller affärsmöte.",
+                icon: "🔄"
               },
               {
-                step: "03",
+                step: "3",
                 title: "Blippa & Dela",
-                desc: "Håll kortet mot någons mobil. Din profil öppnas direkt i deras webbläsare. Magiskt enkelt.",
+                desc: "Håll kortet mot en mobil eller dela din QR-kod. Klart.",
                 icon: "✨"
               }
             ].map((item, i) => (
-              <div key={i} className="relative group p-8 rounded-3xl border border-slate-800 bg-slate-900/40 hover:bg-slate-900/60 transition-colors">
-                <div className="absolute -top-6 left-8 h-12 w-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl shadow-xl">
+              <div key={i} className="relative group p-8 rounded-3xl border border-slate-800 bg-slate-900/40 hover:bg-slate-900 transition-colors">
+                <div className="absolute -top-6 left-8 h-12 w-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-xl shadow-xl group-hover:scale-110 transition-transform">
                   {item.icon}
                 </div>
                 <div className="mt-6">
-                  <span className="text-xs font-bold text-emerald-500 tracking-wider mb-2 block">STEG {item.step}</span>
-                  <h3 className="text-xl font-semibold text-white mb-3">{item.title}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+                  <span className="text-5xl font-bold text-slate-800 absolute right-4 top-4 select-none">{item.step}</span>
+                  <h3 className="text-xl font-bold text-white mb-3 relative z-10">{item.title}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed relative z-10">{item.desc}</p>
                 </div>
               </div>
             ))}
           </div>
         </section>
 
-        {/* SPLIT SECTION: SOCIAL VS BUSINESS */}
-        <section className="grid gap-6 md:grid-cols-2">
-          {/* SOCIAL CARD */}
-          <div className="group relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-sky-900/20 to-slate-900 border border-sky-900/30 p-8 md:p-12 hover:border-sky-500/30 transition-all">
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 rounded-full bg-sky-500/10 px-3 py-1 text-xs font-semibold text-sky-300 mb-6">
-                Avyra Social
-              </div>
-              <h3 className="text-3xl font-bold text-white mb-4">För kreatörer</h3>
-              <p className="text-slate-400 mb-8 max-w-sm">
-                En länk för allt. Samla TikTok, Instagram, YouTube och merch.
-                Byt tema och matcha din vibe.
-              </p>
-              <ul className="space-y-3 mb-8 text-sm text-slate-300">
-                <li className="flex items-center gap-2"><span className="text-sky-400">✓</span> Obegränsat antal länkar</li>
-                <li className="flex items-center gap-2"><span className="text-sky-400">✓</span> Anpassade teman</li>
-                <li className="flex items-center gap-2"><span className="text-sky-400">✓</span> QR-kod ingår</li>
-              </ul>
-              <Link href="/social" className="inline-flex items-center text-sky-400 font-medium hover:text-sky-300 transition-colors">
-                Utforska Social <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
-            </div>
-            {/* Dekorativ bakgrund */}
-            <div className="absolute bottom-0 right-0 w-64 h-64 bg-sky-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          </div>
 
-          {/* BUSINESS CARD */}
-          <div className="group relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-emerald-900/20 to-slate-900 border border-emerald-900/30 p-8 md:p-12 hover:border-emerald-500/30 transition-all">
-            <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300 mb-6">
-                Avyra Business
-              </div>
-              <h3 className="text-3xl font-bold text-white mb-4">För proffs</h3>
-              <p className="text-slate-400 mb-8 max-w-sm">
-                Ersätt papperskortet. Dela kontaktuppgifter, LinkedIn och bokning direkt till kundens telefonbok.
-              </p>
-              <ul className="space-y-3 mb-8 text-sm text-slate-300">
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Spara-kontakt-knapp (vCard)</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Team-hantering</li>
-                <li className="flex items-center gap-2"><span className="text-emerald-400">✓</span> Analys & Statistik</li>
-              </ul>
-              <Link href="/business" className="inline-flex items-center text-emerald-400 font-medium hover:text-emerald-300 transition-colors">
-                Utforska Business <span className="ml-2 group-hover:translate-x-1 transition-transform">→</span>
-              </Link>
-            </div>
-            {/* Dekorativ bakgrund */}
-            <div className="absolute bottom-0 right-0 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-          </div>
-        </section>
-
-        {/* CTA FINAL */}
-        <section className="relative overflow-hidden rounded-[3rem] bg-gradient-to-b from-slate-900 to-slate-950 border border-slate-800 p-12 text-center">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-64 bg-emerald-500/20 blur-[100px] rounded-full" />
+        {/* --- 5. HUVUD-CTA --- */}
+        <section className="relative overflow-hidden rounded-[3rem] bg-gradient-to-b from-emerald-950 to-slate-950 border border-emerald-900/30 p-12 md:p-24 text-center">
+          {/* Glow effect */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-64 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
           
           <div className="relative z-10 max-w-2xl mx-auto space-y-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-white">Redo att uppgradera ditt nätverkande?</h2>
+            <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">
+              Redo att sluta dela <br/> fel version av dig?
+            </h2>
             <p className="text-slate-400 text-lg">
-              Skapa ditt konto idag och upptäck hur enkelt det är att dela med AvyraCards.
+              Skapa din profil idag och upplev hur enkelt nätverkande kan vara.
+              Ingen betalning. Inget kort. Börja direkt.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 href="/get-started"
-                className="rounded-full bg-emerald-500 px-8 py-3 text-base font-semibold text-slate-950 hover:bg-emerald-400 transition-colors shadow-lg shadow-emerald-500/20"
+                className="inline-flex h-14 items-center justify-center rounded-full bg-emerald-500 px-10 text-base font-bold text-slate-950 shadow-xl shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-105"
               >
-                Kom igång nu
+                Skapa gratis profil
               </Link>
-              <Link
-                href="/login"
-                className="rounded-full bg-slate-800 px-8 py-3 text-base font-medium text-white hover:bg-slate-700 transition-colors"
-              >
-                Logga in
-              </Link>
+            </div>
+            
+            <div className="pt-8 flex justify-center gap-8 text-sm font-medium text-slate-500">
+               <Link href="/social" className="hover:text-emerald-400 transition-colors">Utforska Social →</Link>
+               <Link href="/business" className="hover:text-emerald-400 transition-colors">Utforska Business →</Link>
             </div>
           </div>
         </section>
