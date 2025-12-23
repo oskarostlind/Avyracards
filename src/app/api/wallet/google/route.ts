@@ -1,106 +1,205 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { google } from 'googleapis';
+import jwt from 'jsonwebtoken';
 import { auth } from "@/auth";
-import jwt from "jsonwebtoken";
+import { prisma } from "@/lib/prisma";
 
+// Tvinga dynamisk rendering så vi alltid hämtar senaste datan
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+interface WalletClassResponse {
+  id?: string;
+  [key: string]: unknown;
+}
+
+export async function GET(_req: NextRequest) {
   try {
-    // 1. Auth check (kan kommenteras bort om du vill testa helt öppet lokalt)
+    console.log('--- Starting Wallet Process (Auto-Redirect Mode) ---');
+
+    // 1. Hämta session och användare
     const session = await auth();
-    if (!session) {
-      // return new NextResponse("Unauthorized", { status: 401 }); 
-      // Vi släpper igenom det för detta "Bare Bones" test
-      console.log("Warning: No session, proceeding anyway for test.");
+    if (!session || !session.user?.email) {
+      return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const { 
-      GOOGLE_CLIENT_EMAIL, 
-      GOOGLE_PRIVATE_KEY, 
-      GOOGLE_WALLET_ISSUER_ID, 
-      GOOGLE_WALLET_CLASS_ID 
-    } = process.env;
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+    });
 
-    if (!GOOGLE_CLIENT_EMAIL || !GOOGLE_PRIVATE_KEY || !GOOGLE_WALLET_ISSUER_ID || !GOOGLE_WALLET_CLASS_ID) {
-      throw new Error("Missing Google Wallet environment variables");
+    if (!user) {
+      return new NextResponse("User not found", { status: 404 });
     }
 
-    // --- NYCKELHANTERING (BASE64) ---
-    // Detta är KRITISKT för att signaturen ska bli giltig
-    let privateKeyString;
+    // 2. Credentials
+    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
+    // Hantera både "riktiga" radbrytningar och text-radbrytningar (\n)
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+    if (!clientEmail || !privateKey) {
+      return NextResponse.json({ error: 'Server config error: Missing credentials' }, { status: 500 });
+    }
+
+    const ISSUER_ID = '3388000000023044854';
+    
+    // VIKTIGT: Vi byter till v5 för att TVINGA Google att använda den nya layouten (Namn/Titel)
+    // Detta ignorerar den gamla "Points"-mallen.
+    const CLASS_ID = `${ISSUER_ID}.standard_card_v5`; 
+    
+    // Objekt-ID kopplas till user.id så användaren uppdaterar samma kort vid nästa klick
+    const OBJECT_ID = `${ISSUER_ID}.user-${user.id}`; 
+
+    const authClient = new google.auth.GoogleAuth({
+      credentials: { client_email: clientEmail, private_key: privateKey },
+      scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
+    });
+
+    const httpClient = await authClient.getClient();
+    const baseUrl = 'https://walletobjects.googleapis.com/walletobjects/v1';
+
+    // 3. SKAPA DEN NYA MALLEN (Class v5)
+    // Denna kod körs bara första gången v5 anropas
     try {
-        const decodedBuffer = Buffer.from(GOOGLE_PRIVATE_KEY, 'base64');
-        const jsonContent = JSON.parse(decodedBuffer.toString('utf-8'));
-        privateKeyString = jsonContent.private_key;
-    } catch (e) {
-        console.log("Fallback: Using raw string key (check Vercel if this fails)");
-        privateKeyString = GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
+      console.log(`Checking status for Class ID: ${CLASS_ID}`);
+      const checkClassRes = await httpClient.request<WalletClassResponse>({
+        url: `${baseUrl}/genericClass/${CLASS_ID}`,
+        method: 'GET',
+        validateStatus: (status) => status === 200 || status === 404,
+      });
+
+      if (checkClassRes.status === 404) {
+        console.log('⚠️ Class v5 not found. Creating new layout template...');
+        
+        await httpClient.request({
+          url: `${baseUrl}/genericClass`,
+          method: 'POST',
+          data: {
+            id: CLASS_ID,
+            classTemplateInfo: {
+              cardTemplateOverride: {
+                cardRowTemplateInfos: [
+                  // RAD 1: Header (Namn)
+                  {
+                    twoItems: {
+                      startItem: { 
+                        firstValue: { fields: [{ fieldPath: "object.header" }] } // Användarens Namn
+                      },
+                      endItem: { 
+                        firstValue: { fields: [{ fieldPath: "object.subheader" }] } // Etikett: "NAMN"
+                      }
+                    }
+                  },
+                  // RAD 2: Titel/Bio
+                  {
+                    oneItem: { 
+                      item: { 
+                        firstValue: { fields: [{ fieldPath: "object.textModulesData[0].body" }] }, // Bio text
+                        secondValue: { fields: [{ fieldPath: "object.textModulesData[0].header" }] } // Etikett "TITEL"
+                      } 
+                    }
+                  },
+                  // RAD 3: Länk
+                  {
+                    oneItem: { 
+                      item: { 
+                        firstValue: { fields: [{ fieldPath: "object.textModulesData[1].body" }] }, // URL text
+                        secondValue: { fields: [{ fieldPath: "object.textModulesData[1].header" }] } // Etikett "PROFIL"
+                      } 
+                    }
+                  }
+                ]
+              }
+            },
+            reviewStatus: "UNDER_REVIEW", 
+          },
+        });
+        console.log('✅ Class v5 created successfully.');
+      } else {
+        console.log('✅ Class v5 already exists.');
+      }
+    } catch (error) {
+      console.warn('Class check warning:', error);
     }
 
-    // Unikt ID för detta testobjekt
-    const objectId = `${GOOGLE_WALLET_ISSUER_ID}.BARE-BONES-TEST-${Date.now()}`;
+    // 4. Mappa datan
+    const profileUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/u/${user.username}`;
+    
+    // Säkerställ att loggan är en publik URL
+    const logoUri = (user.avatarUrl && user.avatarUrl.startsWith('http')) 
+      ? user.avatarUrl 
+      : 'https://avyracards.se/wallet/logo.png';
 
-    // --- PAYLOAD ---
-    // Vi bygger ett "Generic Object" eftersom din klass är av typen "Generic".
-    // Vi kan INTE använda "LoyaltyObject" här.
-    const genericObject = {
-      id: objectId,
-      classId: GOOGLE_WALLET_CLASS_ID,
-      state: "ACTIVE",
-      // OBLIGATORISKT FÖR GENERIC PASS:
-      cardTitle: {
-        defaultValue: { language: "en-US", value: "TEST CARD" }
-      },
-      header: {
-        defaultValue: { language: "en-US", value: "Bare Bones Test" }
-      },
-      // Minimal logga för att det ska se ut som något
-      logo: {
-        sourceUri: { uri: "https://avyracards.se/wallet/logo.png" },
-        contentDescription: { defaultValue: { language: "en-US", value: "Logo" } }
-      }
-    };
-
-    const claims = {
-      iss: GOOGLE_CLIENT_EMAIL,
-      aud: "google",
-      typ: "savetowallet",
-      // Vi anger din riktiga domän för att vara på säkra sidan, även om du kör lokalt.
-      origins: ["https://avyracards.se"], 
+    // 5. Bygg Payload för Passet
+    const walletPayload = {
+      iss: clientEmail,
+      aud: 'google',
+      typ: 'savetowallet',
+      iat: Math.floor(Date.now() / 1000),
+      origins: [], 
       payload: {
-        // VIKTIGT: "genericObjects", inte "loyaltyObjects"
-        genericObjects: [genericObject]
-      }
+        genericObjects: [
+          {
+            id: OBJECT_ID,
+            classId: CLASS_ID,
+            state: 'ACTIVE',
+            // Toppen av kortet
+            cardTitle: {
+              defaultValue: { language: 'en-US', value: 'AvyraCards' },
+            },
+            // Rad 1: Namn
+            header: {
+              defaultValue: { language: 'en-US', value: user.name || user.username || "Användare" },
+            },
+            subheader: {
+              defaultValue: { language: 'en-US', value: 'NAMN' },
+            },
+            // Rad 2 & 3: Titel och Länk
+            textModulesData: [
+              {
+                header: "TITEL",
+                body: user.bio || "Digital Profil"
+              },
+              {
+                header: "PROFIL",
+                body: `avyracards.com/u/${user.username}`
+              }
+            ],
+            // QR Kod
+            barcode: {
+              type: "QR_CODE",
+              value: profileUrl,
+              alternateText: user.username || "Profil"
+            },
+            // Bild
+            logo: {
+              sourceUri: { uri: logoUri },
+              contentDescription: {
+                defaultValue: { language: 'en-US', value: 'Profile Image' },
+              },
+            },
+            hexBackgroundColor: '#000000', // Svart bakgrund
+          },
+        ],
+      },
     };
 
-    // Signera
-    const token = jwt.sign(claims, privateKeyString, { algorithm: "RS256" });
+    // 6. Signera JWT
+    const token = jwt.sign(walletPayload, privateKey, {
+      algorithm: 'RS256',
+    });
 
-    // Returnera HTML som auto-postar till Google
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head><title>Testing Google Wallet...</title></head>
-        <body>
-            <h1>Sending to Google Wallet...</h1>
-            <form id="walletForm" action="https://pay.google.com/gp/v/save" method="POST">
-              <input type="hidden" name="jwt" value="${token}" />
-              <button type="submit" style="padding: 20px; font-size: 20px;">Click here if not redirected</button>
-            </form>
-            <script>
-              // En liten fördröjning så du hinner se sidan
-              setTimeout(() => {
-                document.getElementById("walletForm").submit();
-              }, 1000);
-            </script>
-        </body>
-      </html>
-    `;
+    const saveUrl = `https://pay.google.com/gp/v/save/${token}`;
+    
+    console.log('🚀 Redirecting user to Google Wallet...');
 
-    return new NextResponse(html, { headers: { "Content-Type": "text/html" } });
+    // DETTA FIXAR OMDDIRIGERINGEN:
+    // Istället för JSON, skickar vi en 307 Redirect som webbläsaren följer direkt.
+    return NextResponse.redirect(saveUrl);
 
   } catch (error) {
-    console.error("Google Wallet Error:", error);
-    return new NextResponse("Internal Server Error: " + (error as Error).message, { status: 500 });
+    console.error('Fatal Error:', error);
+    return NextResponse.json(
+      { error: 'Internal Server Error', details: error instanceof Error ? error.message : 'Unknown' },
+      { status: 500 }
+    );
   }
 }
