@@ -1,11 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { ChangeEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { AvatarUploader } from "@/components/avatar-uploader";
 
 /* ---------------- Profilformulär ---------------- */
-// (ProfileForm är oförändrad, men jag tar med hela filen för enkelhetens skull om du vill klistra in allt, 
-// eller så ser du bara ändringen längst ner i LinksForm)
 
 type ProfileFormProps = {
   user: {
@@ -25,34 +24,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const [bio, setBio] = useState(user.bio ?? "");
   const [phoneNumber, setPhoneNumber] = useState(user.phoneNumber ?? "");
   const [contactEmail, setContactEmail] = useState(user.contactEmail ?? "");
+  
+  // Här sparar vi URL:en (Antingen gammal Base64 eller ny Vercel Blob URL)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(
     user.avatarUrl ?? null
   );
+  
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
-
-  function handleAvatarChange(e: ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setStatus("Välj en giltig bildfil.");
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      setStatus("Bilden får max vara 2 MB.");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      const result = reader.result?.toString() ?? "";
-      setAvatarUrl(result);
-      setStatus(null);
-    };
-    reader.readAsDataURL(file);
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -65,11 +44,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
         bio,
         phoneNumber,
         contactEmail,
+        avatarUrl, // Skickar URL:en vi fått från uploader
       };
-
-      if (avatarUrl) {
-        body.avatarUrl = avatarUrl;
-      }
 
       const res = await fetch("/api/profile", {
         method: "PATCH",
@@ -89,7 +65,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
   }
 
   return (
-    <form className="space-y-4" onSubmit={handleSubmit}>
+    <form className="space-y-6" onSubmit={handleSubmit}>
       {/* Namn */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-slate-200">
@@ -116,36 +92,14 @@ export function ProfileForm({ user }: ProfileFormProps) {
         />
       </div>
 
-      {/* Profilbild */}
-      <div className="space-y-2">
-        <label className="block text-xs font-medium text-slate-200">
-          Profilbild
-        </label>
-
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full border border-slate-700 bg-slate-800 text-[11px] text-slate-400">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="Profilbild"
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span>Ingen bild</span>
-            )}
-          </div>
-
-          <label className="inline-flex cursor-pointer items-center rounded-md border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-100 hover:border-violet-400">
-            Välj fil
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleAvatarChange}
-            />
-          </label>
-        </div>
-      </div>
+      {/* NY BILDHANTERARE */}
+      <AvatarUploader 
+        label="Profilbild"
+        value={avatarUrl}
+        onChange={(url) => setAvatarUrl(url)}
+        onUploadStart={() => setSaving(true)} // Lås spara-knappen under uppladdning
+        onUploadEnd={() => setSaving(false)}
+      />
 
       {/* Telefonnummer */}
       <div className="space-y-2">
@@ -202,7 +156,6 @@ type Link = {
   isActive: boolean;
 };
 
-// ÄNDRING: Tog bort publicUrl härifrån eftersom den inte används
 type LinksFormProps = {};
 
 type ApiLink = {
@@ -216,7 +169,6 @@ type ProfileResponse = {
   redirectEnabled?: boolean;
 };
 
-// ÄNDRING: Tog bort destructuring av publicUrl här
 export function LinksForm({}: LinksFormProps) {
   const [links, setLinks] = useState<Link[]>([]);
   const [loading, setLoading] = useState(true);

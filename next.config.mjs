@@ -1,7 +1,18 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // OBS: Ingen output: "standalone" här!
-  
+
+  // --- NYTT: Tillåt bilder från Vercel Blob ---
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "wvedwsixof0ojo8s.public.blob.vercel-storage.com",
+        port: "",
+      },
+    ],
+  },
+
   experimental: {
     // Detta löser problemet med Wallet-generatorn och Prisma
     serverComponentsExternalPackages: ['passkit-generator', '@prisma/client', 'bcryptjs'],

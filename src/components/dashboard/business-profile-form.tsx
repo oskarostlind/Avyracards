@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { User, Link } from "@prisma/client";
 import { CollapsibleSection } from "@/components/dashboard/accordion";
+import { AvatarUploader } from "@/components/avatar-uploader"; // IMPORTERAD
 
 type BusinessProfileFormProps = {
   user: User & { links: Link[] };
@@ -286,16 +287,16 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
         defaultOpen={false}
       >
         <div className="space-y-3">
+          
+          {/* HÄR ÄR DEN NYA KOMPONENTEN */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-200">
-              Företagslogo (URL)
-            </label>
-            <input
-              value={companyLogoUrl}
-              onChange={(e) => setCompanyLogoUrl(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
-              placeholder="https://exempel.se/logo.png"
-            />
+             <AvatarUploader
+               label="Företagslogo"
+               value={companyLogoUrl}
+               onChange={(url) => setCompanyLogoUrl(url)}
+               onUploadStart={() => setIsSaving(true)}
+               onUploadEnd={() => setIsSaving(false)}
+             />
           </div>
 
           <div className="space-y-1.5">
