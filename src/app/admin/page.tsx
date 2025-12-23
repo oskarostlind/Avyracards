@@ -9,7 +9,8 @@ import {
   Clock, 
   ChevronRight,
   Search,
-  Tag // <-- NY IMPORT
+  Tag, // <-- NY IMPORT
+  Users
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import type { OrderStatus } from "@prisma/client";
@@ -89,28 +90,36 @@ export default async function AdminPage() {
     <div className="min-h-screen bg-slate-950 p-4 md:p-8">
       <div className="mx-auto max-w-6xl space-y-8">
         
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-100">Orderöversikt</h1>
-            <p className="text-slate-400">
-              Välkommen tillbaka, {session.user.username}.
-            </p>
-          </div>
-          <div className="flex gap-3">
-             {/* --- NY KNAPP FÖR PRODUKTHANTERING --- */}
-             <Link 
-                href="/admin/products"
-                className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 transition shadow-lg shadow-purple-500/20"
-             >
-                <Tag size={16} /> Hantera Produkter
-             </Link>
+    {/* Header */}
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-100">Orderöversikt</h1>
+        <p className="text-slate-400">
+          Välkommen tillbaka, {session.user.username}.
+        </p>
+      </div>
+      <div className="flex gap-3">
+        {/* --- NY KNAPP FÖR USERS --- */}
+        <Link 
+            href="/admin/users"
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition shadow-lg shadow-blue-500/20"
+          >
+            <Users size={16} /> Hantera Användare
+          </Link>
 
-             <button className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition">
-                <Search size={16} /> Sök order
-             </button>
-          </div>
-        </div>
+        {/* --- BEFINTLIG KNAPP FÖR PRODUKTER --- */}
+        <Link 
+            href="/admin/products"
+            className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 transition shadow-lg shadow-purple-500/20"
+          >
+            <Tag size={16} /> Hantera Produkter
+          </Link>
+
+        <button className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition">
+            <Search size={16} /> Sök order
+        </button>
+      </div>
+    </div>
 
         {/* KPI / Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3">

@@ -15,15 +15,21 @@ model User {
   name          String?
   username      String    @unique
   bio           String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt @default(now())
 
   // Grundläggande utseende
   font          String    @default("inter")
   avatarUrl     String?
   backgroundUrl String?
-  isPremium     Boolean   @default(false)
   
+  // PREMIUM STATUS
+  isPremium        Boolean        @default(false)
+  // NYTT: Premium-detaljer för admin
+  premiumSource    PremiumSource? // "PAID", "GIFT", "TRIAL"
+  premiumGivenAt   DateTime?      // När aktiverades premium?
+  premiumExpiresAt DateTime?      // Om tidsbegränsad (t.ex. trial)
+   
   stripeCustomerId String? 
 
   emailVerified     DateTime?
@@ -34,8 +40,8 @@ model User {
 
   redirectEnabled Boolean @default(true)
 
-  links         Link[]
-  cards         Card[]
+  links          Link[]
+  cards          Card[]
   analyticsEvents AnalyticsEvent[]
 
   profileMode ProfileMode @default(SOCIAL)
@@ -71,6 +77,11 @@ model User {
   theme String @default("default")
   themeSettings Json?  // Här sparas hela CustomThemeSettings-objektet
 
+  // NYTT: Admin-verktyg och interna anteckningar
+  adminNotes         String?   // "Vän till grundaren", "Early adopter"
+  featureFlags       Json?     @default("{}") // T.ex. { "new_stats": true }
+  lastImpersonatedAt DateTime? // Säkerhetslogg
+
   role Role @default(USER)
 }
 
@@ -84,17 +95,24 @@ enum Role {
   ADMIN
 }
 
+// NYTT: Enum för premium-källa
+enum PremiumSource {
+  PAID  // Köpt via Stripe
+  GIFT  // Manuellt given av admin
+  TRIAL // Tidsbegränsad test
+}
+
 model Link {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   title     String
   url       String
   icon      String?
-  order     Int      @default(0)
-  isActive  Boolean  @default(true)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  order     Int       @default(0)
+  isActive  Boolean   @default(true)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   analyticsEvents AnalyticsEvent[]
 
@@ -102,46 +120,47 @@ model Link {
 }
 
 model Order {
-  id              String      @id @default(cuid())
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  
-  stripeSessionId String?     @unique
-  amountTotal     Int         
-  currency        String      @default("sek")
-  
-  status          OrderStatus @default(PENDING)
-  
+  id              String       @id @default(cuid())
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+   
+  stripeSessionId String?      @unique
+  amountTotal     Int          
+  currency        String       @default("sek")
+   
+  status          OrderStatus  @default(PENDING)
+   
   customerEmail   String
   customerType    CustomerType @default(PRIVATE)
-  companyName     String?     
-  
-  quantity        Int         @default(1)
-  
+  companyName     String?      
+   
+  quantity        Int          @default(1)
+   
   cards           Card[]
 }
 
 model Card {
   id              String      @id @default(cuid())
   createdAt       DateTime    @default(now())
-  
+  updatedAt       DateTime    @updatedAt @default(now())
+   
   cardCode        String      @unique
   claimToken      String      @unique
-  
-  status          CardStatus @default(UNCLAIMED)
-  
+   
+  status          CardStatus  @default(UNCLAIMED)
+   
   claimedAt       DateTime?
-  
+   
   orderId         String
   order           Order       @relation(fields: [orderId], references: [id])
-  
-  assignedUserId String?
-  user           User?        @relation(fields: [assignedUserId], references: [id])
-  
-  material        String?     
-  designTemplate String?     
-  colorOption     String?     
-  printFileUrl    String?     
+   
+  assignedUserId  String?
+  user            User?       @relation(fields: [assignedUserId], references: [id])
+   
+  material        String?      
+  designTemplate  String?      
+  colorOption     String?      
+  printFileUrl    String?      
 }
 
 enum OrderStatus {
@@ -176,56 +195,50 @@ model AnalyticsEvent {
   link   Link?   @relation(fields: [linkId], references: [id], onDelete: SetNull)
 
   referrer String? 
-  source   String? // Nytt fält: "nfc", "qr", "link", "direct"
-  country  String? // Fanns innan
-  city     String? // Nytt fält: "Stockholm", "New York"
+  source   String? // "nfc", "qr", "link", "direct"
+  country  String? 
+  city     String? 
   device   String? 
-  
+   
   @@index([profileOwnerId])
   @@index([createdAt])
 }
-
-
-
 
 enum EventType {
   VIEW
   CLICK
 }
 
-
-
-
 // --- PRODUKTHANTERING (PIM) ---
 
 model Product {
-  id          String   @id @default(cuid())
-  name        String   
+  id          String    @id @default(cuid())
+  name        String    
   description String?
-  slug        String   @unique 
+  slug        String    @unique 
   features    String[] 
-  isActive    Boolean  @default(true)
-  
+  isActive    Boolean   @default(true)
+   
   variants    ProductVariant[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model ProductVariant {
   id            String  @id @default(cuid())
   productId     String
   product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  
+   
   name          String  
   type          String  // "PHYSICAL" eller "SUBSCRIPTION"
-  
+   
   // PRIS & KAMPANJ
   price         Int     // Det aktuella priset kunden betalar (t.ex. 39900)
-  compareAtPrice Int?   // Det gamla "ordinarie" priset (t.ex. 49900). Om denna finns visas REA-skylt.
-  
+  compareAtPrice Int?   // Det gamla "ordinarie" priset (t.ex. 49900)
+   
   currency      String  @default("sek")
   stripePriceId String? 
-  
+   
   // UI & Lager
   imageUrl      String? 
   colorCode     String? 
@@ -236,18 +249,19 @@ model ProductVariant {
   updatedAt     DateTime @updatedAt
 }
 
-// NY MODELL: RABATTKODER
+// RABATTKODER
 model Discount {
   id          String    @id @default(cuid())
-  code        String    @unique // T.ex. "BLACKWEEK"
+  code        String    @unique 
   type        String    // "PERCENTAGE" eller "FIXED"
-  value       Int       // 20 (för 20%) eller 10000 (för 100kr)
-  
-  startsAt    DateTime? // När börjar koden gälla?
-  expiresAt   DateTime? // När går den ut?
-  usageLimit  Int?      // Max antal gånger den får användas totalt (t.ex. 50 första kunderna)
-  usedCount   Int       @default(0) // Hur många gånger har den använts?
-  
+  value       Int       
+   
+  startsAt    DateTime? 
+  expiresAt   DateTime? 
+  usageLimit  Int?      
+  usedCount   Int       @default(0) 
+   
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt @default(now())
 }
