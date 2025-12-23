@@ -14,7 +14,7 @@ interface WalletClassResponse {
 
 export async function GET(_req: NextRequest) {
   try {
-    console.log('--- Starting Wallet Process (Auto-Redirect Mode) ---');
+    console.log('--- Starting Wallet Process (Production Safe) ---');
 
     // 1. Hämta session och användare
     const session = await auth();
@@ -30,24 +30,33 @@ export async function GET(_req: NextRequest) {
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // 2. Credentials
+    // 2. Credentials & Robust Key Cleaning
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-    // Hantera både "riktiga" radbrytningar och text-radbrytningar (\n)
-    const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+    let privateKey = process.env.GOOGLE_PRIVATE_KEY;
 
     if (!clientEmail || !privateKey) {
+      console.error('Missing credentials in environment variables.');
       return NextResponse.json({ error: 'Server config error: Missing credentials' }, { status: 500 });
     }
 
+    // --- NYCKEL-STÄDNING (Fixar produktionsfelet) ---
+    // Om nyckeln är omgiven av citattecken (vanligt fel vid copy-paste i env vars), ta bort dem.
+    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
+      privateKey = privateKey.substring(1, privateKey.length - 1);
+    }
+
+    // Ersätt bokstavliga "\n" (två tecken) med riktiga radbrytningar (ett tecken)
+    // Detta krävs oftast när man läser flerradiga nycklar från en miljövariabel-sträng.
+    privateKey = privateKey.replace(/\\n/g, '\n');
+    // ------------------------------------------------
+
     const ISSUER_ID = '3388000000023044854';
     
-    // VIKTIGT: Vi byter till v5 för att TVINGA Google att använda den nya layouten (Namn/Titel)
-    // Detta ignorerar den gamla "Points"-mallen.
+    // Vi behåller v5 eftersom den fungerade lokalt och har rätt layout
     const CLASS_ID = `${ISSUER_ID}.standard_card_v5`; 
-    
-    // Objekt-ID kopplas till user.id så användaren uppdaterar samma kort vid nästa klick
     const OBJECT_ID = `${ISSUER_ID}.user-${user.id}`; 
 
+    // 3. Autentisering mot Google
     const authClient = new google.auth.GoogleAuth({
       credentials: { client_email: clientEmail, private_key: privateKey },
       scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
@@ -56,10 +65,9 @@ export async function GET(_req: NextRequest) {
     const httpClient = await authClient.getClient();
     const baseUrl = 'https://walletobjects.googleapis.com/walletobjects/v1';
 
-    // 3. SKAPA DEN NYA MALLEN (Class v5)
-    // Denna kod körs bara första gången v5 anropas
+    // 4. Mall-kontroll (Class Check)
     try {
-      console.log(`Checking status for Class ID: ${CLASS_ID}`);
+      // console.log(`Checking status for Class ID: ${CLASS_ID}`);
       const checkClassRes = await httpClient.request<WalletClassResponse>({
         url: `${baseUrl}/genericClass/${CLASS_ID}`,
         method: 'GET',
@@ -67,7 +75,7 @@ export async function GET(_req: NextRequest) {
       });
 
       if (checkClassRes.status === 404) {
-        console.log('⚠️ Class v5 not found. Creating new layout template...');
+        console.log('⚠️ Class v5 not found via API. Creating new layout template...');
         
         await httpClient.request({
           url: `${baseUrl}/genericClass`,
@@ -81,10 +89,10 @@ export async function GET(_req: NextRequest) {
                   {
                     twoItems: {
                       startItem: { 
-                        firstValue: { fields: [{ fieldPath: "object.header" }] } // Användarens Namn
+                        firstValue: { fields: [{ fieldPath: "object.header" }] } 
                       },
                       endItem: { 
-                        firstValue: { fields: [{ fieldPath: "object.subheader" }] } // Etikett: "NAMN"
+                        firstValue: { fields: [{ fieldPath: "object.subheader" }] } 
                       }
                     }
                   },
@@ -92,8 +100,8 @@ export async function GET(_req: NextRequest) {
                   {
                     oneItem: { 
                       item: { 
-                        firstValue: { fields: [{ fieldPath: "object.textModulesData[0].body" }] }, // Bio text
-                        secondValue: { fields: [{ fieldPath: "object.textModulesData[0].header" }] } // Etikett "TITEL"
+                        firstValue: { fields: [{ fieldPath: "object.textModulesData[0].body" }] }, 
+                        secondValue: { fields: [{ fieldPath: "object.textModulesData[0].header" }] } 
                       } 
                     }
                   },
@@ -101,8 +109,8 @@ export async function GET(_req: NextRequest) {
                   {
                     oneItem: { 
                       item: { 
-                        firstValue: { fields: [{ fieldPath: "object.textModulesData[1].body" }] }, // URL text
-                        secondValue: { fields: [{ fieldPath: "object.textModulesData[1].header" }] } // Etikett "PROFIL"
+                        firstValue: { fields: [{ fieldPath: "object.textModulesData[1].body" }] }, 
+                        secondValue: { fields: [{ fieldPath: "object.textModulesData[1].header" }] } 
                       } 
                     }
                   }
@@ -113,22 +121,20 @@ export async function GET(_req: NextRequest) {
           },
         });
         console.log('✅ Class v5 created successfully.');
-      } else {
-        console.log('✅ Class v5 already exists.');
       }
     } catch (error) {
-      console.warn('Class check warning:', error);
+      console.warn('Class check warning (non-fatal):', error);
     }
 
-    // 4. Mappa datan
+    // 5. Data Mapping
     const profileUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/u/${user.username}`;
     
-    // Säkerställ att loggan är en publik URL
+    // Säkerställ att loggan är en publik URL (Google krav)
     const logoUri = (user.avatarUrl && user.avatarUrl.startsWith('http')) 
       ? user.avatarUrl 
       : 'https://avyracards.se/wallet/logo.png';
 
-    // 5. Bygg Payload för Passet
+    // 6. Bygg Payload
     const walletPayload = {
       iss: clientEmail,
       aud: 'google',
@@ -141,18 +147,15 @@ export async function GET(_req: NextRequest) {
             id: OBJECT_ID,
             classId: CLASS_ID,
             state: 'ACTIVE',
-            // Toppen av kortet
             cardTitle: {
               defaultValue: { language: 'en-US', value: 'AvyraCards' },
             },
-            // Rad 1: Namn
             header: {
               defaultValue: { language: 'en-US', value: user.name || user.username || "Användare" },
             },
             subheader: {
               defaultValue: { language: 'en-US', value: 'NAMN' },
             },
-            // Rad 2 & 3: Titel och Länk
             textModulesData: [
               {
                 header: "TITEL",
@@ -163,26 +166,24 @@ export async function GET(_req: NextRequest) {
                 body: `avyracards.com/u/${user.username}`
               }
             ],
-            // QR Kod
             barcode: {
               type: "QR_CODE",
               value: profileUrl,
               alternateText: user.username || "Profil"
             },
-            // Bild
             logo: {
               sourceUri: { uri: logoUri },
               contentDescription: {
                 defaultValue: { language: 'en-US', value: 'Profile Image' },
               },
             },
-            hexBackgroundColor: '#000000', // Svart bakgrund
+            hexBackgroundColor: '#000000', 
           },
         ],
       },
     };
 
-    // 6. Signera JWT
+    // 7. Signera JWT
     const token = jwt.sign(walletPayload, privateKey, {
       algorithm: 'RS256',
     });
@@ -191,8 +192,6 @@ export async function GET(_req: NextRequest) {
     
     console.log('🚀 Redirecting user to Google Wallet...');
 
-    // DETTA FIXAR OMDDIRIGERINGEN:
-    // Istället för JSON, skickar vi en 307 Redirect som webbläsaren följer direkt.
     return NextResponse.redirect(saveUrl);
 
   } catch (error) {
