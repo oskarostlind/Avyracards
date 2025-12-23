@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
-// Tvinga dynamisk rendering så vi alltid hämtar senaste datan
 export const dynamic = 'force-dynamic';
 
 interface WalletClassResponse {
@@ -14,7 +13,7 @@ interface WalletClassResponse {
 
 export async function GET(_req: NextRequest) {
   try {
-    console.log('--- Starting Wallet Process (Production Safe) ---');
+    console.log('--- Starting Wallet Process (UI Update v6) ---');
 
     // 1. Hämta session och användare
     const session = await auth();
@@ -30,33 +29,25 @@ export async function GET(_req: NextRequest) {
       return new NextResponse("User not found", { status: 404 });
     }
 
-    // 2. Credentials & Robust Key Cleaning
+    // 2. Credentials & Key Cleaning
     const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
     let privateKey = process.env.GOOGLE_PRIVATE_KEY;
 
     if (!clientEmail || !privateKey) {
-      console.error('Missing credentials in environment variables.');
       return NextResponse.json({ error: 'Server config error: Missing credentials' }, { status: 500 });
     }
 
-    // --- NYCKEL-STÄDNING (Fixar produktionsfelet) ---
-    // Om nyckeln är omgiven av citattecken (vanligt fel vid copy-paste i env vars), ta bort dem.
     if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
       privateKey = privateKey.substring(1, privateKey.length - 1);
     }
-
-    // Ersätt bokstavliga "\n" (två tecken) med riktiga radbrytningar (ett tecken)
-    // Detta krävs oftast när man läser flerradiga nycklar från en miljövariabel-sträng.
     privateKey = privateKey.replace(/\\n/g, '\n');
-    // ------------------------------------------------
 
     const ISSUER_ID = '3388000000023044854';
     
-    // Vi behåller v5 eftersom den fungerade lokalt och har rätt layout
-    const CLASS_ID = `${ISSUER_ID}.standard_card_v5`; 
+    // VIKTIGT: Vi byter till v6 för att aktivera den nya "STACKED" layouten
+    const CLASS_ID = `${ISSUER_ID}.standard_card_v6`; 
     const OBJECT_ID = `${ISSUER_ID}.user-${user.id}`; 
 
-    // 3. Autentisering mot Google
     const authClient = new google.auth.GoogleAuth({
       credentials: { client_email: clientEmail, private_key: privateKey },
       scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
@@ -65,9 +56,8 @@ export async function GET(_req: NextRequest) {
     const httpClient = await authClient.getClient();
     const baseUrl = 'https://walletobjects.googleapis.com/walletobjects/v1';
 
-    // 4. Mall-kontroll (Class Check)
+    // 3. SKAPA DEN NYA MALLEN (Class v6 - Stacked Layout)
     try {
-      // console.log(`Checking status for Class ID: ${CLASS_ID}`);
       const checkClassRes = await httpClient.request<WalletClassResponse>({
         url: `${baseUrl}/genericClass/${CLASS_ID}`,
         method: 'GET',
@@ -75,8 +65,9 @@ export async function GET(_req: NextRequest) {
       });
 
       if (checkClassRes.status === 404) {
-        console.log('⚠️ Class v5 not found via API. Creating new layout template...');
+        console.log('⚠️ Class v6 not found. Creating new "STACKED" layout template...');
         
+        // Här definierar vi att etiketterna ska ligga OVANFÖR värdena
         await httpClient.request({
           url: `${baseUrl}/genericClass`,
           method: 'POST',
@@ -85,33 +76,42 @@ export async function GET(_req: NextRequest) {
             classTemplateInfo: {
               cardTemplateOverride: {
                 cardRowTemplateInfos: [
-                  // RAD 1: Header (Namn)
+                  // RAD 1: Namn (Stacked)
                   {
-                    twoItems: {
-                      startItem: { 
-                        firstValue: { fields: [{ fieldPath: "object.header" }] } 
-                      },
-                      endItem: { 
-                        firstValue: { fields: [{ fieldPath: "object.subheader" }] } 
+                    oneItem: {
+                      item: {
+                        predefinedItem: {
+                          type: "STACKED",
+                          // firstValue = Etiketten (liten text ovanför)
+                          firstValue: { fields: [{ fieldPath: "object.subheader" }] }, 
+                          // secondValue = Värdet (stor text under)
+                          secondValue: { fields: [{ fieldPath: "object.header" }] }   
+                        }
                       }
                     }
                   },
-                  // RAD 2: Titel/Bio
+                  // RAD 2: Titel/Bio (Stacked)
                   {
-                    oneItem: { 
-                      item: { 
-                        firstValue: { fields: [{ fieldPath: "object.textModulesData[0].body" }] }, 
-                        secondValue: { fields: [{ fieldPath: "object.textModulesData[0].header" }] } 
-                      } 
+                    oneItem: {
+                      item: {
+                        predefinedItem: {
+                          type: "STACKED",
+                          firstValue: { fields: [{ fieldPath: "object.textModulesData[0].header" }] },
+                          secondValue: { fields: [{ fieldPath: "object.textModulesData[0].body" }] }
+                        }
+                      }
                     }
                   },
-                  // RAD 3: Länk
+                  // RAD 3: Länk (Stacked)
                   {
-                    oneItem: { 
-                      item: { 
-                        firstValue: { fields: [{ fieldPath: "object.textModulesData[1].body" }] }, 
-                        secondValue: { fields: [{ fieldPath: "object.textModulesData[1].header" }] } 
-                      } 
+                    oneItem: {
+                      item: {
+                        predefinedItem: {
+                          type: "STACKED",
+                          firstValue: { fields: [{ fieldPath: "object.textModulesData[1].header" }] },
+                          secondValue: { fields: [{ fieldPath: "object.textModulesData[1].body" }] }
+                        }
+                      }
                     }
                   }
                 ]
@@ -120,21 +120,28 @@ export async function GET(_req: NextRequest) {
             reviewStatus: "UNDER_REVIEW", 
           },
         });
-        console.log('✅ Class v5 created successfully.');
+        console.log('✅ Class v6 (Stacked) created successfully.');
       }
     } catch (error) {
       console.warn('Class check warning (non-fatal):', error);
     }
 
-    // 5. Data Mapping
-    const profileUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/u/${user.username}`;
+    // 4. Data Mapping & URL Fix
     
-    // Säkerställ att loggan är en publik URL (Google krav)
+    // FIX PUNKT 1: Tvinga .se i URL:en
+    let baseDomain = process.env.NEXT_PUBLIC_BASE_URL || 'https://avyracards.se';
+    baseDomain = baseDomain.replace('.com', '.se'); // Säkerställ att det blir .se
+    const profileUrl = `${baseDomain}/u/${user.username}`;
+    const displayUrl = `avyracards.se/u/${user.username}`;
+    
+    // FIX PUNKT 2 (Förklaring): Google kräver publika HTTPS-länkar för bilder.
+    // Base64-strängar från databasen fungerar tyvärr inte.
+    // Vi använder fallback till standardloggan om ingen http-länk finns.
     const logoUri = (user.avatarUrl && user.avatarUrl.startsWith('http')) 
       ? user.avatarUrl 
       : 'https://avyracards.se/wallet/logo.png';
 
-    // 6. Bygg Payload
+    // 5. Bygg Payload
     const walletPayload = {
       iss: clientEmail,
       aud: 'google',
@@ -150,11 +157,13 @@ export async function GET(_req: NextRequest) {
             cardTitle: {
               defaultValue: { language: 'en-US', value: 'AvyraCards' },
             },
+            // Värdena (Stor text där nere)
             header: {
               defaultValue: { language: 'en-US', value: user.name || user.username || "Användare" },
             },
+            // Etiketterna (Liten text där uppe)
             subheader: {
-              defaultValue: { language: 'en-US', value: 'NAMN' },
+              defaultValue: { language: 'sv-SE', value: 'NAMN' },
             },
             textModulesData: [
               {
@@ -163,12 +172,12 @@ export async function GET(_req: NextRequest) {
               },
               {
                 header: "PROFIL",
-                body: `avyracards.com/u/${user.username}`
+                body: displayUrl // Visar den snygga .se länken
               }
             ],
             barcode: {
               type: "QR_CODE",
-              value: profileUrl,
+              value: profileUrl, // QR-koden leder till den korrekta .se länken
               alternateText: user.username || "Profil"
             },
             logo: {
@@ -183,14 +192,14 @@ export async function GET(_req: NextRequest) {
       },
     };
 
-    // 7. Signera JWT
+    // 6. Signera och Redirecta
     const token = jwt.sign(walletPayload, privateKey, {
       algorithm: 'RS256',
     });
 
     const saveUrl = `https://pay.google.com/gp/v/save/${token}`;
     
-    console.log('🚀 Redirecting user to Google Wallet...');
+    console.log('🚀 Redirecting user to Google Wallet v6...');
 
     return NextResponse.redirect(saveUrl);
 

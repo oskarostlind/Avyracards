@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { DashboardClient } from "@/components/dashboard/dashboard-client";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell"; 
 
 export const runtime = "nodejs";
 
@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-50">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
-        <DashboardClient user={user} />
+        <DashboardShell user={user} />
       </div>
     </main>
   );
