@@ -2,7 +2,13 @@
 
 import { useState, useTransition } from "react";
 import type { User, Link } from "@prisma/client";
-import { Eye, LayoutGrid, Briefcase } from "lucide-react";
+import { 
+  LayoutGrid, 
+  Briefcase, 
+  Smartphone, 
+  CheckCircle2, 
+  Power 
+} from "lucide-react";
 
 import { SocialView } from "@/components/dashboard/social/social-view";
 import { BusinessView } from "@/components/dashboard/business/business-view";
@@ -13,25 +19,35 @@ type DashboardShellProps = {
 };
 
 export function DashboardShell({ user }: DashboardShellProps) {
-  const [profileMode, setProfileMode] = useState<"SOCIAL" | "BUSINESS">(
+  // activeMode = Det som faktiskt är sparat i databasen (Live)
+  const [activeMode, setActiveMode] = useState<"SOCIAL" | "BUSINESS">(
     (user.profileMode as "SOCIAL" | "BUSINESS") ?? "SOCIAL"
   );
+  
+  // viewMode = Det du klickar runt och redigerar just nu
+  const [viewMode, setViewMode] = useState<"SOCIAL" | "BUSINESS">(activeMode);
+  
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
-  const handleModeChange = (mode: "SOCIAL" | "BUSINESS") => {
-    if (mode === profileMode) return;
-    
+  // Funktion för att faktiskt aktivera den profil man tittar på
+  const handleActivate = () => {
+    if (viewMode === activeMode) return;
+
     startTransition(async () => {
-      setProfileMode(mode);
+      // Optimistisk uppdatering UI
+      setActiveMode(viewMode); 
+      
       try {
         await fetch("/api/profile", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ profileMode: mode }),
+          body: JSON.stringify({ profileMode: viewMode }),
         });
       } catch (error) {
-        console.error("Failed to save profile mode", error);
+        console.error("Failed to activate profile mode", error);
+        // Rulla tillbaka om det failar (valfritt, men bra praxis)
+        setActiveMode(activeMode); 
       }
     });
   };
@@ -45,59 +61,99 @@ export function DashboardShell({ user }: DashboardShellProps) {
         <div>
           <h1 className="text-3xl font-bold text-slate-50 tracking-tight">Redigera Profil</h1>
           <p className="text-sm text-slate-400 mt-1">
-            Hantera innehållet för din {profileMode === "SOCIAL" ? "privata" : "affärs"}profil.
+            Hantera innehållet för din {viewMode === "SOCIAL" ? "privata" : "affärs"}profil.
           </p>
         </div>
 
-        {/* Höger: Tabbar & Preview */}
-        <div className="flex items-center gap-3">
-            {/* Tydliga Tabs / Segmented Control */}
-            <div className="flex p-1 bg-slate-900/50 border border-slate-800 rounded-xl">
+        {/* Höger: Tabbar & Tools */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            
+            {/* --- TABBAR FÖR ATT BYTA VY --- */}
+            <div className="flex p-1 bg-slate-900/50 border border-slate-800 rounded-xl self-start sm:self-auto">
                 <button
-                    onClick={() => handleModeChange("SOCIAL")}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                        profileMode === "SOCIAL"
+                    onClick={() => setViewMode("SOCIAL")}
+                    className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                        viewMode === "SOCIAL"
                         ? "bg-slate-800 text-white shadow-sm ring-1 ring-white/10"
                         : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
                     }`}
                 >
                     <LayoutGrid size={16} />
                     Social
+                    {/* Grön prick om Social är aktivt live */}
+                    {activeMode === "SOCIAL" && (
+                      <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                    )}
                 </button>
                 <button
-                    onClick={() => handleModeChange("BUSINESS")}
-                    className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                        profileMode === "BUSINESS"
-                        ? "bg-purple-600 text-white shadow-sm shadow-purple-500/20"
+                    onClick={() => setViewMode("BUSINESS")}
+                    className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                        viewMode === "BUSINESS"
+                        ? "bg-purple-600/20 text-purple-200 shadow-sm ring-1 ring-purple-500/20" // Lite annan färg för business-tabben
                         : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
                     }`}
                 >
                     <Briefcase size={16} />
                     Business
+                    {/* Grön prick om Business är aktivt live */}
+                    {activeMode === "BUSINESS" && (
+                      <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                      </span>
+                    )}
                 </button>
             </div>
 
-            {/* Preview Knapp */}
-            <button
-                onClick={() => setIsPreviewOpen(true)}
-                className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-900 bg-emerald-400 hover:bg-emerald-300 rounded-xl transition-all shadow-lg shadow-emerald-500/10"
-            >
-                <Eye size={18} />
-                <span className="hidden sm:inline">Preview</span>
-            </button>
+            <div className="h-6 w-px bg-slate-800 hidden sm:block"></div>
+
+            {/* --- ACTION KNAPPAR --- */}
+            <div className="flex items-center gap-2">
+                
+                {/* 1. Aktivera-knapp (Visas bara om vyn inte är aktiv) */}
+                {viewMode !== activeMode ? (
+                  <button
+                    onClick={handleActivate}
+                    disabled={isPending}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition-all animate-in fade-in zoom-in-95"
+                  >
+                    <Power size={16} className={isPending ? "animate-spin" : ""} />
+                    <span>Aktivera {viewMode === "SOCIAL" ? "Social" : "Business"}</span>
+                  </button>
+                ) : (
+                  // Visas om nuvarande vy ÄR aktiv
+                  <div className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-xl cursor-default">
+                    <CheckCircle2 size={16} />
+                    <span>Aktiv Profil</span>
+                  </div>
+                )}
+
+                {/* 2. Preview Knapp (Ny ikon: Smartphone) */}
+                <button
+                    onClick={() => setIsPreviewOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-900 bg-white hover:bg-slate-200 rounded-xl transition-all shadow-lg shadow-white/5"
+                    title="Förhandsgranska profil"
+                >
+                    <Smartphone size={18} />
+                    <span className="hidden sm:inline">Preview</span>
+                </button>
+            </div>
         </div>
       </div>
 
       {/* Content Area */}
-      <div className={`transition-opacity duration-300 ${isPending ? "opacity-50" : "opacity-100"}`}>
-        {profileMode === "BUSINESS" ? (
+      <div className="transition-all duration-300 ease-in-out">
+        {viewMode === "BUSINESS" ? (
           <BusinessView user={user} />
         ) : (
           <SocialView user={user} />
         )}
       </div>
 
-      {/* Preview Modal (Popup) */}
+      {/* Preview Modal */}
       <ProfilePreviewModal 
         isOpen={isPreviewOpen} 
         onClose={() => setIsPreviewOpen(false)} 
