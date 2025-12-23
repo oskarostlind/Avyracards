@@ -5,7 +5,7 @@ import type { User, Link } from "@prisma/client";
 import { 
   LayoutGrid, 
   Briefcase, 
-  Smartphone, 
+  Eye, 
   CheckCircle2, 
   Power 
 } from "lucide-react";
@@ -137,7 +137,7 @@ export function DashboardShell({ user }: DashboardShellProps) {
                     className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-900 bg-white hover:bg-slate-200 rounded-xl transition-all shadow-lg shadow-white/5"
                     title="Förhandsgranska profil"
                 >
-                    <Smartphone size={18} />
+                    <Eye size={18} />
                     <span className="hidden sm:inline">Preview</span>
                 </button>
             </div>
