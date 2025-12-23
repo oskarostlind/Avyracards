@@ -6,10 +6,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // 1. Auth-check (Nu aktiverad för att fixa ESLint-felet och säkra routen)
+    // 1. Auth check (kan kommenteras bort om du vill testa helt öppet lokalt)
     const session = await auth();
     if (!session) {
-      return new NextResponse("Unauthorized", { status: 401 });
+      // return new NextResponse("Unauthorized", { status: 401 }); 
+      // Vi släpper igenom det för detta "Bare Bones" test
+      console.log("Warning: No session, proceeding anyway for test.");
     }
 
     const { 
@@ -23,54 +25,50 @@ export async function GET() {
       throw new Error("Missing Google Wallet environment variables");
     }
 
-    // --- NYCKEL-FIX (BASE64) ---
-    // Vi avkodar Base64-strängen från Vercel tillbaka till vanlig text
+    // --- NYCKELHANTERING (BASE64) ---
+    // Detta är KRITISKT för att signaturen ska bli giltig
     let privateKeyString;
     try {
-        // Försök avkoda Base64
         const decodedBuffer = Buffer.from(GOOGLE_PRIVATE_KEY, 'base64');
         const jsonContent = JSON.parse(decodedBuffer.toString('utf-8'));
-        // Hämta själva nyckeln ur JSON-objektet
         privateKeyString = jsonContent.private_key;
     } catch (e) {
-        // Fallback: Om det inte var Base64 (t.ex. lokalt), försök använda den som den är
-        // Vi loggar felet för debugging (använder variabeln 'e' så eslint blir nöjd eller ignorerar)
-        console.log("Could not parse as Base64 JSON, trying direct string. Error:", e);
+        console.log("Fallback: Using raw string key (check Vercel if this fails)");
         privateKeyString = GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n');
     }
 
-    const objectId = `${GOOGLE_WALLET_ISSUER_ID}.BASE64-TEST-${Date.now()}`;
+    // Unikt ID för detta testobjekt
+    const objectId = `${GOOGLE_WALLET_ISSUER_ID}.BARE-BONES-TEST-${Date.now()}`;
 
-    // Hårdkodat test-objekt
+    // --- PAYLOAD ---
+    // Vi bygger ett "Generic Object" eftersom din klass är av typen "Generic".
+    // Vi kan INTE använda "LoyaltyObject" här.
     const genericObject = {
       id: objectId,
       classId: GOOGLE_WALLET_CLASS_ID,
       state: "ACTIVE",
-      logo: {
-        sourceUri: { uri: "https://avyracards.se/wallet/logo.png" },
-        contentDescription: { defaultValue: { language: "en-US", value: "Avyra Logo" } }
-      },
+      // OBLIGATORISKT FÖR GENERIC PASS:
       cardTitle: {
-        defaultValue: { language: "en-US", value: "AvyraCards" }
+        defaultValue: { language: "en-US", value: "TEST CARD" }
       },
       header: {
-        defaultValue: { language: "en-US", value: "Test Person" }
+        defaultValue: { language: "en-US", value: "Bare Bones Test" }
       },
-      textModulesData: [
-        {
-          header: "STATUS",
-          body: "Base64 Key Test",
-          id: "status"
-        }
-      ]
+      // Minimal logga för att det ska se ut som något
+      logo: {
+        sourceUri: { uri: "https://avyracards.se/wallet/logo.png" },
+        contentDescription: { defaultValue: { language: "en-US", value: "Logo" } }
+      }
     };
 
     const claims = {
       iss: GOOGLE_CLIENT_EMAIL,
       aud: "google",
       typ: "savetowallet",
-      origins: ["https://avyracards.se"],
+      // Vi anger din riktiga domän för att vara på säkra sidan, även om du kör lokalt.
+      origins: ["https://avyracards.se"], 
       payload: {
+        // VIKTIGT: "genericObjects", inte "loyaltyObjects"
         genericObjects: [genericObject]
       }
     };
@@ -78,15 +76,23 @@ export async function GET() {
     // Signera
     const token = jwt.sign(claims, privateKeyString, { algorithm: "RS256" });
 
+    // Returnera HTML som auto-postar till Google
     const html = `
       <!DOCTYPE html>
       <html>
-        <head><title>Saving...</title></head>
+        <head><title>Testing Google Wallet...</title></head>
         <body>
+            <h1>Sending to Google Wallet...</h1>
             <form id="walletForm" action="https://pay.google.com/gp/v/save" method="POST">
-            <input type="hidden" name="jwt" value="${token}" />
+              <input type="hidden" name="jwt" value="${token}" />
+              <button type="submit" style="padding: 20px; font-size: 20px;">Click here if not redirected</button>
             </form>
-            <script>document.getElementById("walletForm").submit();</script>
+            <script>
+              // En liten fördröjning så du hinner se sidan
+              setTimeout(() => {
+                document.getElementById("walletForm").submit();
+              }, 1000);
+            </script>
         </body>
       </html>
     `;
