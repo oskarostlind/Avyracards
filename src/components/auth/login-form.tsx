@@ -124,6 +124,13 @@ export default function LoginForm() {
               >
                 Lösenord
               </label>
+              {/* LÄNK TILL GLÖMT LÖSENORD */}
+              <Link 
+                href="/forgot-password"
+                className="text-xs font-medium text-emerald-500 hover:text-emerald-400 transition-colors"
+              >
+                Glömt lösenord?
+              </Link>
             </div>
             <input
               id="password"
@@ -156,10 +163,10 @@ export default function LoginForm() {
             Har du inget konto? <span className="font-semibold text-white">Skapa konto</span>
           </Link>
 
-          {/* NY LÄNK: Resend Verification */}
+          {/* Resend Verification */}
           <Link
             href="/verify-resend"
-            className="block text-xs text-emerald-500 hover:text-emerald-400 transition-colors"
+            className="block text-xs text-gray-500 hover:text-gray-300 transition-colors"
           >
             Har du inte fått verifieringsmailet? <span className="underline">Skicka igen</span>
           </Link>

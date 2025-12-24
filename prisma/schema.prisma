@@ -18,6 +18,9 @@ model User {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt @default(now())
 
+  resetPasswordToken   String?   @unique
+  resetPasswordTokenExpiry DateTime?
+
   // Grundläggande utseende
   font          String    @default("inter")
   avatarUrl     String?
