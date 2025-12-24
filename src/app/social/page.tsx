@@ -83,11 +83,11 @@ export default function SocialLandingPage() {
                      DJ & Producer from Stockholm. <br/> New mix out now! 👇
                    </p>
                    
-                   {/* Social Icons Row */}
+                   {/* Social Icons Row - FIXAT HÄR */}
                    <div className="flex gap-4 mt-6">
-                     {[<Instagram size={18}/>, <Music size={18}/>, <Share2 size={18}/>].map((icon, i) => (
+                     {[Instagram, Music, Share2].map((Icon, i) => (
                        <div key={i} className="h-10 w-10 rounded-full bg-slate-900 border border-slate-800 hover:border-sky-500/50 hover:bg-sky-500/10 hover:text-sky-400 transition-colors flex items-center justify-center text-slate-400 cursor-pointer shadow-sm">
-                         {icon}
+                         <Icon size={18} />
                        </div>
                      ))}
                    </div>
