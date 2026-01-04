@@ -40,14 +40,14 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
       <div className="flex flex-col gap-3">
         {/* Rad 1: URL och Verktyg */}
         <div className="flex items-center gap-2">
-          <div className="flex-1 min-w-0 rounded-xl border border-slate-700 bg-slate-900/80 px-4 py-3 text-sm text-slate-300 font-mono truncate">
+          <div className="flex-1 min-w-0 rounded-xl border border-nordic-highlight/40 bg-slate-900/80 px-4 py-3 text-sm text-slate-300 font-mono truncate">
             {fullUrl}
           </div>
           
           <button
             type="button"
             onClick={copyToClipboard}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-nordic-secondary transition-colors border border-nordic-highlight/40"
             title="Kopiera länk"
           >
             {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
@@ -57,7 +57,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
             href={publicPath}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border border-slate-700"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-nordic-secondary transition-colors border border-nordic-highlight/40"
             title="Öppna profil i ny flik"
           >
             <ExternalLink size={18} />
@@ -69,9 +69,9 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
            {/* Apple Wallet */}
            <a 
              href="/api/wallet/apple"
-             className="flex items-center justify-center gap-2 bg-[#1C1C1E] text-white border border-white/10 px-4 py-3 rounded-xl hover:bg-[#2C2C2E] transition-all font-medium text-xs sm:text-sm shadow-lg"
+             className="flex items-center justify-center gap-2 bg-[#1C1C1E] text-nordic-secondary border border-white/10 px-4 py-3 rounded-xl hover:bg-[#2C2C2E] transition-all font-medium text-xs sm:text-sm shadow-lg"
            >
-             <Wallet size={16} className="text-white" />
+             <Wallet size={16} className="text-nordic-secondary" />
              <span>Apple Wallet</span>
            </a>
 
@@ -79,7 +79,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
            <a 
              href="/api/wallet/google"
              target="_blank"
-             className="flex items-center justify-center gap-2 bg-white text-gray-900 border border-gray-200 px-4 py-3 rounded-xl hover:bg-gray-50 transition-all font-medium text-xs sm:text-sm shadow-lg"
+             className="flex items-center justify-center gap-2 bg-nordic-secondary text-nordic-primary border border-nordic-support px-4 py-3 rounded-xl hover:bg-nordic-support transition-all font-medium text-xs sm:text-sm shadow-lg"
            >
              {/* Google Wallet Icon SVG */}
              <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" xmlns="http://www.w3.org/2000/svg">

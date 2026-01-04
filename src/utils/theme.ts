@@ -11,113 +11,132 @@ export type ThemeName =
   | "rainbow";
 
 export interface ThemeTokens {
-  bg: string;        // <-- NYTT: Bakgrundsfärg för hela sidan
+  bg: string;
   container: string;
   card: string;
   link: string;
   accent: string;
   text: string;
-  textMuted: string; // <-- NYTT: Färg för sekundär text (t.ex. bio)
+  textMuted: string;
 }
 
 const base = {
   container: "p-6",
   card: "rounded-3xl p-6 shadow-xl",
-  link: "",
-  accent: "",
-  text: "",
+  link: "rounded-full px-4 py-3 text-center text-sm font-semibold transition",
+  accent: "text-nordic-accent",
+  text: "text-nordic-secondary",
+  textMuted: "text-nordic-highlight",
 };
 
 export const themes: Record<ThemeName, ThemeTokens> = {
   default: {
-    bg: "bg-slate-950",
-    container: clsx(base.container, "bg-slate-900"),
+    bg: "bg-nordic-primary",
+    container: clsx(base.container, "bg-nordic-primary"),
     card: clsx(
       base.card,
-      "bg-slate-900/80 border border-slate-800 backdrop-blur"
+      "bg-nordic-primary/80 border border-nordic-highlight/30 backdrop-blur"
     ),
-    link: "rounded-full bg-slate-50 px-4 py-3 text-center text-sm font-semibold text-slate-900 hover:bg-slate-200 transition",
-    accent: "text-violet-400",
-    text: "text-slate-50",
-    textMuted: "text-slate-400",
+    link: clsx(
+      base.link,
+      "bg-nordic-secondary text-nordic-primary hover:bg-nordic-support"
+    ),
+    accent: "text-nordic-accent",
+    text: "text-nordic-secondary",
+    textMuted: "text-nordic-highlight",
   },
   elegant: {
-    bg: "bg-slate-950",
-    container: clsx(base.container, "bg-slate-900"),
+    bg: "bg-nordic-primary",
+    container: clsx(base.container, "bg-nordic-primary/90"),
     card: clsx(
       base.card,
-      "bg-gradient-to-b from-slate-900 to-black border border-slate-700/80"
+      "bg-gradient-to-b from-nordic-primary to-nordic-primary/80 border border-nordic-support/30"
     ),
-    link: "rounded-full bg-slate-50/90 px-4 py-3 text-center text-sm font-medium text-slate-900 hover:bg-white transition",
-    accent: "text-amber-300",
-    text: "text-slate-50",
-    textMuted: "text-slate-400",
+    link: clsx(
+      base.link,
+      "bg-transparent border border-nordic-support/40 text-nordic-secondary hover:bg-nordic-primary/60"
+    ),
+    accent: "text-nordic-accent",
+    text: "text-nordic-secondary",
+    textMuted: "text-nordic-highlight",
   },
   dark: {
-    bg: "bg-black",
-    container: clsx(base.container, "bg-neutral-900"),
+    bg: "bg-nordic-primary",
+    container: clsx(base.container, "bg-nordic-primary"),
     card: clsx(
       base.card,
-      "bg-neutral-900 border border-neutral-800/80 backdrop-blur"
+      "bg-nordic-primary/80 border border-nordic-highlight/40 backdrop-blur"
     ),
-    link: "rounded-full bg-neutral-800 px-4 py-3 text-center text-sm font-medium text-neutral-100 hover:bg-neutral-700 transition",
-    accent: "text-neutral-300",
-    text: "text-neutral-100",
-    textMuted: "text-neutral-400",
+    link: clsx(
+      base.link,
+      "bg-nordic-primary/60 border border-nordic-highlight/40 text-nordic-secondary hover:bg-nordic-primary/50"
+    ),
+    accent: "text-nordic-secondary",
+    text: "text-nordic-secondary",
+    textMuted: "text-nordic-highlight",
   },
   neon: {
-    bg: "bg-slate-950",
-    container: clsx(base.container, "bg-slate-900"),
+    bg: "bg-nordic-primary",
+    container: clsx(base.container, "bg-nordic-primary"),
     card: clsx(
       base.card,
-      "bg-slate-950 border border-violet-500/40 shadow-[0_0_40px_rgba(139,92,246,0.45)]"
+      "bg-nordic-primary border border-nordic-accent/30 shadow-[0_0_40px_theme(colors.nordic.accent)]"
     ),
-    link: "rounded-full bg-violet-500 px-4 py-3 text-center text-sm font-semibold text-white shadow-lg hover:bg-violet-400 transition",
-    accent: "text-violet-400",
-    text: "text-slate-50",
-    textMuted: "text-violet-200",
+    link: clsx(
+      base.link,
+      "bg-nordic-accent text-nordic-primary shadow-lg hover:bg-nordic-accent/80"
+    ),
+    accent: "text-nordic-accent",
+    text: "text-nordic-secondary",
+    textMuted: "text-nordic-secondary/80",
   },
   sun: {
-    bg: "bg-amber-50",
+    bg: "bg-nordic-secondary",
     container: clsx(
       base.container,
-      "bg-gradient-to-b from-amber-100 to-amber-300"
+      "bg-nordic-secondary/80 border border-nordic-support/60"
     ),
     card: clsx(
       base.card,
-      "bg-white/90 border border-amber-200 shadow-lg shadow-amber-200/40"
+      "bg-nordic-secondary border border-nordic-support shadow-lg shadow-nordic-support/30 text-nordic-primary"
     ),
-    link: "rounded-full bg-amber-500 px-4 py-3 text-center text-sm font-semibold text-white shadow hover:bg-amber-400 transition",
-    accent: "text-amber-600",
-    text: "text-slate-900",
-    textMuted: "text-amber-700/80",
+    link: clsx(
+      base.link,
+      "bg-nordic-accent text-nordic-primary shadow hover:bg-nordic-accent/90"
+    ),
+    accent: "text-nordic-accent",
+    text: "text-nordic-primary",
+    textMuted: "text-nordic-highlight",
   },
   graffiti: {
-    bg: "bg-slate-950",
-    container: clsx(
-      base.container,
-      "bg-slate-900"
-    ),
+    bg: "bg-nordic-primary",
+    container: clsx(base.container, "bg-nordic-primary"),
     card: clsx(
       base.card,
-      "bg-[radial-gradient(circle_at_top,_#22c55e_0,_#0f172a_45%,_#020617_100%)] border border-slate-800"
+      "bg-[radial-gradient(circle_at_top,_theme(colors.nordic.accent)_0,_theme(colors.nordic.primary)_45%,_theme(colors.nordic.primary)_100%)] border border-nordic-highlight/30"
     ),
-    link: "rounded-full bg-lime-400 px-4 py-3 text-center text-sm font-semibold text-slate-950 shadow hover:bg-lime-300 transition",
-    accent: "text-lime-300",
-    text: "text-slate-50",
-    textMuted: "text-slate-400",
+    link: clsx(
+      base.link,
+      "bg-nordic-accent text-nordic-primary shadow hover:bg-nordic-accent/90"
+    ),
+    accent: "text-nordic-accent",
+    text: "text-nordic-secondary",
+    textMuted: "text-nordic-highlight",
   },
   rainbow: {
-    bg: "bg-slate-950",
-    container: clsx(base.container, "bg-slate-900"),
+    bg: "bg-nordic-primary",
+    container: clsx(base.container, "bg-nordic-primary"),
     card: clsx(
       base.card,
-      "bg-[conic-gradient(at_top,_#f97316,_#e11d48,_#6366f1,_#22c55e,_#f97316)] text-white"
+      "bg-[conic-gradient(at_top,_theme(colors.nordic.accent),_theme(colors.nordic.secondary),_theme(colors.nordic.highlight),_theme(colors.nordic.accent))] text-nordic-primary"
     ),
-    link: "rounded-full bg-white/90 px-4 py-3 text-center text-sm font-semibold text-slate-900 shadow hover:bg-white transition",
-    accent: "text-white",
-    text: "text-white",
-    textMuted: "text-slate-100",
+    link: clsx(
+      base.link,
+      "bg-nordic-secondary text-nordic-primary shadow hover:bg-nordic-support"
+    ),
+    accent: "text-nordic-primary",
+    text: "text-nordic-primary",
+    textMuted: "text-nordic-highlight",
   },
 };
 

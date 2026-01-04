@@ -9,7 +9,7 @@ export function SignInButton() {
   return (
     <button
       onClick={() => signIn(undefined, { callbackUrl: pathname === "/" ? "/dashboard" : pathname })}
-      className="rounded-full bg-slate-900 px-4 py-2 text-white hover:bg-slate-700"
+      className="rounded-full bg-slate-900 px-4 py-2 text-nordic-secondary hover:bg-slate-700"
       type="button"
     >
       Logga in

@@ -109,10 +109,10 @@ export function ProfileSettingsForm({
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
       {/* Formulär */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-950/70 p-5 sm:p-6 shadow-xl shadow-black/40 backdrop-blur">
+      <div className="rounded-3xl border border-nordic-highlight/40 bg-nordic-primary/70 p-5 sm:p-6 shadow-xl shadow-black/40 backdrop-blur">
         <div className="mb-4 space-y-1">
-          <h1 className="text-lg font-semibold text-slate-50">Profilinställningar</h1>
-          <p className="text-xs text-slate-400">
+          <h1 className="text-lg font-semibold text-nordic-secondary">Profilinställningar</h1>
+          <p className="text-xs text-nordic-highlight">
             Uppdatera hur din offentliga AvyraCards-profil ser ut.
           </p>
         </div>
@@ -123,17 +123,17 @@ export function ProfileSettingsForm({
             <label className="block text-sm font-medium text-slate-200">
               Profil-läge
             </label>
-            <p className="text-xs text-slate-500 mb-1">
+            <p className="text-xs text-nordic-highlight mb-1">
               Välj om din offentliga profil ska fokusera på sociala medier eller
               professionell närvaro.
             </p>
-            <div className="inline-flex rounded-2xl border border-slate-700 bg-slate-950/80 p-1 text-xs">
+            <div className="inline-flex rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 p-1 text-xs">
               <button
                 type="button"
                 onClick={() => setProfileMode("SOCIAL")}
                 className={`flex-1 rounded-2xl px-3 py-1.5 font-medium transition ${
                   profileMode === "SOCIAL"
-                    ? "bg-purple-500 text-white shadow-md shadow-purple-500/40"
+                    ? "bg-purple-500 text-nordic-secondary shadow-md shadow-purple-500/40"
                     : "text-slate-300 hover:bg-slate-900/80"
                 }`}
               >
@@ -144,14 +144,14 @@ export function ProfileSettingsForm({
                 onClick={() => setProfileMode("BUSINESS")}
                 className={`flex-1 rounded-2xl px-3 py-1.5 font-medium transition ${
                   profileMode === "BUSINESS"
-                    ? "bg-purple-500 text-white shadow-md shadow-purple-500/40"
+                    ? "bg-purple-500 text-nordic-secondary shadow-md shadow-purple-500/40"
                     : "text-slate-300 hover:bg-slate-900/80"
                 }`}
               >
                 Business profil
               </button>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-nordic-highlight">
               {profileMode === "SOCIAL"
                 ? "Fokus på länkar, sociala medier och kreatörsprofil."
                 : "Fokus på titel, kontaktuppgifter och ett mer professionellt visitkorts-upplägg."}
@@ -167,10 +167,10 @@ export function ProfileSettingsForm({
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               rows={4}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="Skriv en kort text om dig själv..."
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-nordic-highlight">
               Detta visas överst på din offentliga AvyraCards-sida.
             </p>
           </div>
@@ -183,7 +183,7 @@ export function ProfileSettingsForm({
             <select
               value={template}
               onChange={(e) => setTemplate(e.target.value as ThemeName)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
             >
               <option value="default">Default</option>
               <option value="elegant">Elegant</option>
@@ -193,7 +193,7 @@ export function ProfileSettingsForm({
               <option value="graffiti">Graffiti</option>
               <option value="rainbow">Rainbow</option>
             </select>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-nordic-highlight">
               Byt utseende på din offentliga sida med olika teman.
             </p>
           </div>
@@ -206,13 +206,13 @@ export function ProfileSettingsForm({
             <select
               value={fontFamily}
               onChange={(e) => setFontFamily(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
             >
               <option value="system">System (standard)</option>
               <option value="serif">Serif</option>
               <option value="mono">Monospace</option>
             </select>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-nordic-highlight">
               Påverkar typsnittet på din offentliga profil.
             </p>
           </div>
@@ -226,10 +226,10 @@ export function ProfileSettingsForm({
               type="url"
               value={profileImage}
               onChange={(e) => setProfileImage(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="https://exempel.se/min-bild.jpg"
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-nordic-highlight">
               Bilden används både i förhandsvisningen och på den offentliga sidan.
             </p>
           </div>
@@ -243,10 +243,10 @@ export function ProfileSettingsForm({
               type="tel"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="+46 70 123 45 67"
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-nordic-highlight">
               Visas som kontaktuppgift (t.ex. på din offentliga profil).
             </p>
           </div>
@@ -260,10 +260,10 @@ export function ProfileSettingsForm({
               type="email"
               value={contactEmail}
               onChange={(e) => setContactEmail(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-sm text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="namn@företag.se"
             />
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-nordic-highlight">
               Den här adressen kan du visa utåt i stället för din inloggningsmail.
             </p>
           </div>
@@ -273,12 +273,12 @@ export function ProfileSettingsForm({
             <button
               type="submit"
               disabled={isSaving}
-              className="inline-flex items-center justify-center rounded-2xl bg-purple-500 px-4 py-2 text-sm font-medium text-white shadow-md shadow-purple-500/30 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center rounded-2xl bg-purple-500 px-4 py-2 text-sm font-medium text-nordic-secondary shadow-md shadow-purple-500/30 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSaving ? "Sparar..." : "Spara ändringar"}
             </button>
             {status && (
-              <p className="text-xs text-slate-400">
+              <p className="text-xs text-nordic-highlight">
                 {status}
               </p>
             )}
@@ -287,8 +287,8 @@ export function ProfileSettingsForm({
       </div>
 
       {/* Preview */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-950/60 p-4 sm:p-5 shadow-xl shadow-black/40 backdrop-blur">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-slate-400">
+      <div className="rounded-3xl border border-nordic-highlight/40 bg-nordic-primary/60 p-4 sm:p-5 shadow-xl shadow-black/40 backdrop-blur">
+        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-nordic-highlight">
           Förhandsgranskning
         </p>
         <div className="flex justify-center">

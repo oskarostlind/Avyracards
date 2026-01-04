@@ -32,7 +32,7 @@ export default async function AdminUsersPage({
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 md:p-8">
+    <div className="min-h-screen bg-nordic-primary p-4 md:p-8">
       <div className="mx-auto max-w-6xl space-y-8">
         
         {/* Header */}
@@ -41,7 +41,7 @@ export default async function AdminUsersPage({
             <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-3">
               <Users className="text-blue-500" /> Användare
             </h1>
-            <p className="text-slate-400">
+            <p className="text-nordic-highlight">
               Totalt {totalCount} användare i databasen.
             </p>
           </div>
@@ -52,7 +52,7 @@ export default async function AdminUsersPage({
               name="q"
               defaultValue={query}
               placeholder="Sök namn/email..."
-              className="bg-slate-900 border border-slate-800 rounded-lg px-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500"
+              className="bg-slate-900 border border-nordic-highlight/40 rounded-lg px-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500"
             />
             <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg">
               <Search size={20} />
@@ -61,10 +61,10 @@ export default async function AdminUsersPage({
         </div>
 
         {/* Tabell */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/20 overflow-hidden">
+        <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/20 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-900/50 text-slate-500">
+              <thead className="bg-slate-900/50 text-nordic-highlight">
                 <tr>
                   <th className="px-6 py-3 font-medium">Användare</th>
                   <th className="px-6 py-3 font-medium">Email</th>
@@ -81,17 +81,17 @@ export default async function AdminUsersPage({
                         <div className="font-medium text-slate-200 group-hover:text-blue-400 group-hover:underline">
                           {user.name || "Namnlös"}
                         </div>
-                        <div className="text-xs text-slate-500 font-mono">
+                        <div className="text-xs text-nordic-highlight font-mono">
                           @{user.username}
                         </div>
                       </Link>
                     </td>
-                    <td className="px-6 py-4 text-slate-400">
+                    <td className="px-6 py-4 text-nordic-highlight">
                       {user.email}
                     </td>
                     <td className="px-6 py-4">
                       {user.role === "ADMIN" ? (
-                         <span className="inline-flex items-center gap-1 rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-bold text-slate-300 border border-slate-700">
+                         <span className="inline-flex items-center gap-1 rounded-full bg-slate-800 px-2.5 py-0.5 text-xs font-bold text-slate-300 border border-nordic-highlight/40">
                            ADMIN
                          </span>
                       ) : user.isPremium ? (
@@ -99,13 +99,13 @@ export default async function AdminUsersPage({
                           <Crown size={12} /> PREMIUM
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-800/50 px-2.5 py-0.5 text-xs font-medium text-slate-500 border border-slate-800">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-800/50 px-2.5 py-0.5 text-xs font-medium text-nordic-highlight border border-nordic-highlight/40">
                           FREE
                         </span>
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex justify-center gap-4 text-xs text-slate-500">
+                      <div className="flex justify-center gap-4 text-xs text-nordic-highlight">
                         <span className="flex items-center gap-1" title="Antal Länkar">
                           <LinkIcon size={12} /> {user._count.links}
                         </span>
@@ -114,7 +114,7 @@ export default async function AdminUsersPage({
                         </span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-right text-slate-500 font-mono text-xs">
+                    <td className="px-6 py-4 text-right text-nordic-highlight font-mono text-xs">
                       {new Date(user.createdAt).toLocaleDateString("sv-SE")}
                     </td>
                   </tr>
@@ -124,7 +124,7 @@ export default async function AdminUsersPage({
           </div>
           
           {/* Pagination (Enkel) */}
-          <div className="p-4 border-t border-slate-800 flex justify-between items-center text-xs text-slate-500">
+          <div className="p-4 border-t border-nordic-highlight/40 flex justify-between items-center text-xs text-nordic-highlight">
             <span>Sida {page} av {totalPages}</span>
             <div className="flex gap-2">
               <Link 

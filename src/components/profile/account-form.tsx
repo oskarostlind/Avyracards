@@ -131,19 +131,19 @@ export function AccountForm({
       )}
 
       {/* --- 1. PROFIL & SYNLIGHET --- */}
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 space-y-6">
+      <section className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6 space-y-6">
         <h3 className="text-lg font-medium text-slate-100 flex items-center gap-2">
-            <User size={18} className="text-slate-400"/> Profilinställningar
+            <User size={18} className="text-nordic-highlight"/> Profilinställningar
         </h3>
         
         {/* Email (Låst) */}
         <div>
-           <label className="text-sm font-medium text-slate-400 block mb-1.5">E-postadress</label>
+           <label className="text-sm font-medium text-nordic-highlight block mb-1.5">E-postadress</label>
            <input
              type="text"
              disabled
              value={email}
-             className="w-full rounded-xl border border-slate-800 bg-slate-950/50 px-4 py-2.5 text-slate-400 opacity-75 cursor-not-allowed"
+             className="w-full rounded-xl border border-nordic-highlight/40 bg-nordic-primary/50 px-4 py-2.5 text-nordic-highlight opacity-75 cursor-not-allowed"
            />
         </div>
 
@@ -172,19 +172,19 @@ export function AccountForm({
       </section>
 
       {/* --- 2. SÄKERHET --- */}
-      <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 space-y-6">
+      <section className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6 space-y-6">
         <h3 className="text-lg font-medium text-slate-100 flex items-center gap-2">
-            <KeyRound size={18} className="text-slate-400"/> Säkerhet
+            <KeyRound size={18} className="text-nordic-highlight"/> Säkerhet
         </h3>
 
         {/* Byt Användarnamn */}
         <div>
-           <label className="text-sm font-medium text-slate-400 block mb-1.5">Användarnamn</label>
+           <label className="text-sm font-medium text-nordic-highlight block mb-1.5">Användarnamn</label>
            <input
              type="text"
              value={username}
              onChange={(e) => setUsername(e.target.value)}
-             className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+             className="w-full rounded-xl border border-nordic-highlight/40 bg-nordic-primary px-4 py-2.5 text-nordic-secondary focus:ring-2 focus:ring-blue-500 focus:outline-none"
            />
            {username !== initialUsername && (
                <div className="mt-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-start gap-3">
@@ -199,7 +199,7 @@ export function AccountForm({
 
         {/* Byt Lösenord (Visas endast om användaren har lösenord) */}
         {hasPassword ? (
-            <div className="space-y-4 pt-4 border-t border-slate-800">
+            <div className="space-y-4 pt-4 border-t border-nordic-highlight/40">
                 <h4 className="text-sm font-medium text-slate-300">Byt lösenord</h4>
                 <div className="grid gap-4">
                     <input
@@ -207,7 +207,7 @@ export function AccountForm({
                         placeholder="Nuvarande lösenord"
                         value={currentPassword}
                         onChange={(e) => setCurrentPassword(e.target.value)}
-                        className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-white placeholder-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                        className="w-full rounded-xl border border-nordic-highlight/40 bg-nordic-primary px-4 py-2.5 text-nordic-secondary placeholder-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                     <div className="grid grid-cols-2 gap-4">
                         <input
@@ -215,20 +215,20 @@ export function AccountForm({
                             placeholder="Nytt lösenord"
                             value={newPassword}
                             onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-white placeholder-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="w-full rounded-xl border border-nordic-highlight/40 bg-nordic-primary px-4 py-2.5 text-nordic-secondary placeholder-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                         <input
                             type="password"
                             placeholder="Bekräfta nytt"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="w-full rounded-xl border border-slate-800 bg-slate-950 px-4 py-2.5 text-white placeholder-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                            className="w-full rounded-xl border border-nordic-highlight/40 bg-nordic-primary px-4 py-2.5 text-nordic-secondary placeholder-slate-600 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                         />
                     </div>
                 </div>
             </div>
         ) : (
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-400">
+            <div className="p-4 rounded-xl bg-nordic-primary border border-nordic-highlight/40 text-sm text-nordic-highlight">
                 Du loggar in med Google/Externt konto, så du behöver inte hantera lösenord här.
             </div>
         )}
@@ -239,7 +239,7 @@ export function AccountForm({
           <button
             onClick={handleSave}
             disabled={loading}
-            className="flex items-center gap-2 rounded-xl bg-white text-slate-900 px-6 py-3 font-bold hover:bg-slate-200 disabled:opacity-50 transition-all shadow-lg shadow-white/5"
+            className="flex items-center gap-2 rounded-xl bg-nordic-secondary text-nordic-primary px-6 py-3 font-bold hover:bg-nordic-support disabled:opacity-50 transition-all shadow-lg shadow-white/5"
           >
             {loading ? <Loader2 className="animate-spin h-5 w-5" /> : <Save size={18} />}
             Spara ändringar
@@ -249,7 +249,7 @@ export function AccountForm({
       {/* --- 3. DANGER ZONE --- */}
       <section className="rounded-2xl border border-red-900/30 bg-red-950/5 p-6 mt-12">
         <h3 className="text-lg font-medium text-red-400 mb-2">Radera konto</h3>
-        <p className="text-sm text-slate-400 mb-6 max-w-lg">
+        <p className="text-sm text-nordic-highlight mb-6 max-w-lg">
             När du raderar ditt konto försvinner all din data, inklusive länkar och statistik. Detta går inte att ångra.
         </p>
         <button 
@@ -280,7 +280,7 @@ function ToggleItem({
     <div className="flex items-start justify-between gap-4">
       <div className="flex-1">
         <div className="font-medium text-slate-200 text-sm">{label}</div>
-        <div className="text-xs text-slate-500 mt-1 leading-relaxed max-w-sm">{description}</div>
+        <div className="text-xs text-nordic-highlight mt-1 leading-relaxed max-w-sm">{description}</div>
       </div>
       <button
         onClick={() => onChange(!checked)}

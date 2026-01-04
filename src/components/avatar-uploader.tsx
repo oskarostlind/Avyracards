@@ -89,7 +89,7 @@ export function AvatarUploader({
 
       <div className="flex items-center gap-4">
         {/* Visa nuvarande bild */}
-        <div className="relative h-16 w-16 overflow-hidden rounded-full border border-slate-700 bg-slate-800">
+        <div className="relative h-16 w-16 overflow-hidden rounded-full border border-nordic-highlight/40 bg-slate-800">
           {value ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -98,7 +98,7 @@ export function AvatarUploader({
               className="h-full w-full object-cover"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-slate-500">
+            <div className="flex h-full w-full items-center justify-center text-nordic-highlight">
               <ImageIcon size={24} />
             </div>
           )}
@@ -106,7 +106,7 @@ export function AvatarUploader({
 
         {/* Uppladdningsknapp */}
         <div>
-          <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition-colors">
+          <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-nordic-highlight/40 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-nordic-secondary transition-colors">
             <Upload size={14} />
             <span>Välj ny bild</span>
             <input
@@ -116,7 +116,7 @@ export function AvatarUploader({
               className="hidden"
             />
           </label>
-          <p className="mt-2 text-[10px] text-slate-500">
+          <p className="mt-2 text-[10px] text-nordic-highlight">
             JPG, PNG eller GIF. Max 4MB.
           </p>
         </div>
@@ -124,22 +124,22 @@ export function AvatarUploader({
 
       {/* CROP MODAL (Visas bara när en fil är vald) */}
       {selectedFile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-nordic-primary/90 p-4 animate-in fade-in duration-200">
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-slate-900 border border-nordic-highlight/40 shadow-2xl">
             
             {/* Header */}
-            <div className="flex items-center justify-between border-b border-slate-800 px-4 py-3">
-              <h3 className="text-sm font-semibold text-white">Justera bild</h3>
+            <div className="flex items-center justify-between border-b border-nordic-highlight/40 px-4 py-3">
+              <h3 className="text-sm font-semibold text-nordic-secondary">Justera bild</h3>
               <button
                 onClick={() => setSelectedFile(null)}
-                className="rounded-full p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+                className="rounded-full p-1 text-nordic-highlight hover:bg-slate-800 hover:text-nordic-secondary"
               >
                 <X size={18} />
               </button>
             </div>
 
             {/* Cropper Area */}
-            <div className="relative h-[300px] w-full bg-slate-950">
+            <div className="relative h-[300px] w-full bg-nordic-primary">
               <Cropper
                 image={selectedFile}
                 crop={crop}
@@ -155,7 +155,7 @@ export function AvatarUploader({
             {/* Controls */}
             <div className="space-y-4 p-4">
               <div className="flex items-center gap-2">
-                <ZoomIn size={14} className="text-slate-400" />
+                <ZoomIn size={14} className="text-nordic-highlight" />
                 <input
                   type="range"
                   value={zoom}
@@ -172,14 +172,14 @@ export function AvatarUploader({
                 <button
                   onClick={() => setSelectedFile(null)}
                   disabled={uploading}
-                  className="rounded-lg px-4 py-2 text-xs font-medium text-slate-300 hover:text-white"
+                  className="rounded-lg px-4 py-2 text-xs font-medium text-slate-300 hover:text-nordic-secondary"
                 >
                   Avbryt
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={uploading}
-                  className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-white hover:bg-purple-500 disabled:opacity-50"
+                  className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-nordic-secondary hover:bg-purple-500 disabled:opacity-50"
                 >
                   {uploading && <Loader2 size={14} className="animate-spin" />}
                   {uploading ? "Sparar..." : "Spara bild"}

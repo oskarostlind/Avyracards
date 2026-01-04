@@ -96,11 +96,11 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-1">
         {/*
-        <h2 className="text-sm font-semibold text-slate-50">
+        <h2 className="text-sm font-semibold text-nordic-secondary">
           Businessprofil – visitkorts-läge
         </h2>
         
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-nordic-highlight">
           Denna information används när din profil är i{" "}
           <span className="font-semibold text-slate-100">Business-läge</span>{" "}
           och visas på /u/{user.username}.
@@ -122,7 +122,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             <input
               value={jobTitle}
               onChange={(e) => setJobTitle(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="Kundansvarig inom IT-lösningar"
             />
           </div>
@@ -134,7 +134,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             <input
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="Företag AB"
             />
           </div>
@@ -146,7 +146,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             <input
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="Umeå, Norra Sverige"
             />
           </div>
@@ -158,10 +158,10 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             <input
               value={businessHeadline}
               onChange={(e) => setBusinessHeadline(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="Kundansvarig inom IT-lösningar | Telia Company"
             />
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[10px] text-nordic-highlight">
               En kort 1-rads pitch som visas högst upp på din businessprofil.
             </p>
           </div>
@@ -182,7 +182,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             <input
               value={businessPhone}
               onChange={(e) => setBusinessPhone(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="+46 70 123 45 67"
             />
           </div>
@@ -195,7 +195,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
               type="email"
               value={businessEmail}
               onChange={(e) => setBusinessEmail(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="namn@företag.se"
             />
           </div>
@@ -207,10 +207,10 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             <input
               value={bookingUrl}
               onChange={(e) => setBookingUrl(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="https://calendly.com/ditt-namn/30min"
             />
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[10px] text-nordic-highlight">
               Besökare kan klicka direkt för att boka ett möte med dig.
             </p>
           </div>
@@ -222,10 +222,10 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             <input
               value={vcardUrl}
               onChange={(e) => setVcardUrl(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="https://din-sajt.se/kontakt.vcf"
             />
-            <p className="text-[10px] text-slate-500">
+            <p className="text-[10px] text-nordic-highlight">
               Används om du vill erbjuda en &quot;Spara kontakt&quot;-knapp
               (vCard).
             </p>
@@ -247,7 +247,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             <input
               value={expertiseTags}
               onChange={(e) => setExpertiseTags(e.target.value)}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="Telekom, B2B-försäljning, CRM / Salesforce"
             />
           </div>
@@ -260,7 +260,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
               <input
                 value={languages}
                 onChange={(e) => setLanguages(e.target.value)}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+                className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
                 placeholder="Svenska, Engelska"
               />
             </div>
@@ -272,7 +272,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
               <input
                 value={businessRegion}
                 onChange={(e) => setBusinessRegion(e.target.value)}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+                className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
                 placeholder="Norra Sverige"
               />
             </div>
@@ -307,7 +307,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
               value={companyDescription}
               onChange={(e) => setCompanyDescription(e.target.value)}
               rows={3}
-              className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+              className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
               placeholder="Beskriv kort vad bolaget gör, målgrupp och erbjudande."
             />
           </div>
@@ -320,7 +320,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
               <input
                 value={companyWebsite}
                 onChange={(e) => setCompanyWebsite(e.target.value)}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+                className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
                 placeholder="https://företag.se"
               />
             </div>
@@ -332,7 +332,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
               <input
                 value={careerPageUrl}
                 onChange={(e) => setCareerPageUrl(e.target.value)}
-                className="w-full rounded-2xl border border-slate-700 bg-slate-950/80 px-3 py-2 text-xs text-slate-50 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
+                className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40"
                 placeholder="https://företag.se/karriar"
               />
             </div>
@@ -345,12 +345,12 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
         <button
           type="submit"
           disabled={isSaving}
-          className="inline-flex items-center justify-center rounded-2xl bg-purple-500 px-4 py-2 text-xs font-medium text-white shadow-md shadow-purple-500/40 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-2xl bg-purple-500 px-4 py-2 text-xs font-medium text-nordic-secondary shadow-md shadow-purple-500/40 transition hover:bg-purple-400 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isSaving ? "Sparar..." : "Spara businessprofil"}
         </button>
 
-        {status && <p className="text-[11px] text-slate-400">{status}</p>}
+        {status && <p className="text-[11px] text-nordic-highlight">{status}</p>}
       </div>
     </form>
   );

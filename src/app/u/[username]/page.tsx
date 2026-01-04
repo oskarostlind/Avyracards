@@ -162,7 +162,7 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
 
   return (
     <main 
-      className={`min-h-screen ${!useCustomTheme ? (tokens.bg || 'bg-slate-950') : ''} ${!useCustomTheme ? (tokens.text || 'text-slate-50') : ''}`}
+      className={`min-h-screen ${!useCustomTheme ? (tokens.bg || 'bg-nordic-primary') : ''} ${!useCustomTheme ? (tokens.text || 'text-nordic-secondary') : ''}`}
       style={pageStyle}
     >
       {useCustomTheme && settings.backgroundType === "image" && (
@@ -255,7 +255,7 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
 
   return (
     <main className={`min-h-screen font-sans ${tokens.bg} ${tokens.text}`}>
-      <div className="relative h-48 w-full overflow-hidden bg-gray-900">
+      <div className="relative h-48 w-full overflow-hidden bg-nordic-primary">
         {user.backgroundUrl ? (
            <Image src={user.backgroundUrl} alt="Cover" fill className="object-cover opacity-60" />
         ) : (
@@ -272,7 +272,7 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
                   {user.avatarUrl ? (
                     <Image src={user.avatarUrl} alt={displayName} fill className="object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-gray-400">
+                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-nordic-highlight">
                       {displayName.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -285,7 +285,7 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
                       {company && <span>@ {company}</span>}
                    </div>
                    {user.location && (
-                      <div className="text-xs text-gray-500 flex items-center gap-1 pt-1">
+                      <div className="text-xs text-nordic-highlight flex items-center gap-1 pt-1">
                           <MapPin size={12}/> {user.location}
                       </div>
                    )}
@@ -318,8 +318,8 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
           </div>
 
           {user.links.length > 0 && (
-             <div className="p-6 bg-black/20">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Resurser & Länkar</h3>
+             <div className="p-6 bg-nordic-primary/20">
+                <h3 className="text-xs font-bold text-nordic-highlight uppercase tracking-wider mb-4">Resurser & Länkar</h3>
                 <div className="space-y-3">
                    {user.links.map((link) => (
                       <TrackedLink
@@ -333,7 +333,7 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
                             <span className="text-xl group-hover:scale-110 transition-transform">{getBusinessIcon(link.url || link.title)}</span>
                             <span className={`font-medium ${tokens.text}`}>{link.title || link.url}</span>
                          </div>
-                         <span className="text-gray-500 group-hover:text-white">→</span>
+                         <span className="text-nordic-highlight group-hover:text-nordic-secondary">→</span>
                       </TrackedLink>
                    ))}
                 </div>
@@ -341,7 +341,7 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
           )}
 
           {showAds && (
-             <div className="p-4 border-t border-white/5 text-center bg-black/20">
+             <div className="p-4 border-t border-white/5 text-center bg-nordic-primary/20">
                 <p className="text-[10px] text-gray-600 uppercase mb-2">Annons</p>
                 <div className="mx-auto max-w-[300px] overflow-hidden rounded-lg">
                    <AdBanner />
@@ -352,7 +352,7 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
 
         {!user.isPremium && (
            <div className="text-center mt-8">
-              <a href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-white text-xs font-bold shadow-lg hover:bg-white/20 transition border border-white/10">
+              <a href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-nordic-secondary text-xs font-bold shadow-lg hover:bg-white/20 transition border border-white/10">
                  <span className="text-blue-400">⚡</span> Skapa ditt eget AvyraCards
               </a>
            </div>

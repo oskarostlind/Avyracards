@@ -11,7 +11,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
 
   if (!token) {
-    return <div className="min-h-screen flex items-center justify-center text-white">Ogiltig länk.</div>;
+    return <div className="min-h-screen flex items-center justify-center text-nordic-secondary">Ogiltig länk.</div>;
   }
 
   async function handleSubmit(formData: FormData) {
@@ -26,10 +26,10 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950 px-4">
-      <div className="w-full max-w-md space-y-8 bg-slate-900 p-8 rounded-2xl border border-slate-800">
+    <div className="min-h-screen flex items-center justify-center bg-nordic-primary px-4">
+      <div className="w-full max-w-md space-y-8 bg-slate-900 p-8 rounded-2xl border border-nordic-highlight/40">
         <div>
-          <h2 className="text-2xl font-bold text-white text-center">Nytt lösenord</h2>
+          <h2 className="text-2xl font-bold text-nordic-secondary text-center">Nytt lösenord</h2>
         </div>
 
         {error && (
@@ -40,14 +40,14 @@ export default function ResetPasswordPage() {
 
         <form action={handleSubmit} className="mt-8 space-y-6">
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-400 mb-2">Nytt lösenord</label>
+            <label htmlFor="password" className="block text-sm font-medium text-nordic-highlight mb-2">Nytt lösenord</label>
             <input
               id="password"
               name="password"
               type="password"
               required
               minLength={6}
-              className="block w-full rounded-lg border border-slate-700 bg-slate-950 px-3 py-3 text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
+              className="block w-full rounded-lg border border-nordic-highlight/40 bg-nordic-primary px-3 py-3 text-nordic-secondary placeholder-slate-500 focus:border-emerald-500 focus:outline-none"
               placeholder="******"
             />
           </div>
@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-500 disabled:opacity-50"
+            className="w-full flex justify-center rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-nordic-secondary hover:bg-emerald-500 disabled:opacity-50"
           >
             {loading ? "Sparar..." : "Spara nytt lösenord"}
           </button>

@@ -5,9 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertCircle } from "lucide-react"; // Tog bort oanvända ikoner
+import { Loader2, AlertCircle } from "lucide-react";
 
-// 1. Definiera validerings-schema
 const RegisterSchema = z.object({
   profileMode: z.enum(["social", "business"]),
   username: z
@@ -25,7 +24,6 @@ export default function RegisterForm() {
   const router = useRouter();
   const [globalError, setGlobalError] = useState<string>("");
 
-  // 2. Koppla React Hook Form
   const {
     register,
     handleSubmit,
@@ -35,7 +33,7 @@ export default function RegisterForm() {
   } = useForm<RegisterFormData>({
     resolver: zodResolver(RegisterSchema),
     defaultValues: {
-      profileMode: "social", // Standardval
+      profileMode: "social",
     },
   });
 
@@ -58,20 +56,18 @@ export default function RegisterForm() {
         return;
       }
 
-      // Succé! Skicka till inloggning med flagga
       router.push("/login?registered=true");
-      
     } catch (error) {
       setGlobalError("Kunde inte nå servern. Kontrollera din anslutning.");
     }
   };
 
   return (
-    <div className="w-full max-w-md mx-auto p-6 space-y-8 bg-gray-950 text-white rounded-3xl border border-gray-800 shadow-2xl">
+    <div className="w-full max-w-md mx-auto p-6 space-y-8 bg-nordic-primary text-nordic-secondary rounded-3xl border border-nordic-highlight/40 shadow-2xl">
       <div className="text-center space-y-2">
-        <h6 className="text-xs font-bold tracking-widest text-gray-500 uppercase">SOCIALCARD</h6>
+        <h6 className="text-xs font-bold tracking-widest text-nordic-highlight uppercase">SOCIALCARD</h6>
         <h1 className="text-3xl font-bold tracking-tight">Skapa konto</h1>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-nordic-highlight">
           Registrera dig för att skapa din digitala kortprofil.
         </p>
       </div>
@@ -84,22 +80,20 @@ export default function RegisterForm() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        
-        {/* Profiltyp Väljare */}
         <div className="space-y-3">
-          <label className="text-sm font-medium text-gray-300">Profiltyp</label>
+          <label className="text-sm font-medium text-nordic-highlight">Profiltyp</label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
               onClick={() => setValue("profileMode", "social")}
               className={`p-4 rounded-xl border flex flex-col items-start gap-2 transition-all ${
                 selectedMode === "social"
-                  ? "bg-blue-600 border-blue-500 text-white"
-                  : "bg-gray-900 border-gray-800 text-gray-400 hover:border-gray-700"
+                  ? "bg-nordic-accent text-nordic-primary border-nordic-accent"
+                  : "bg-nordic-primary border-nordic-highlight/40 text-nordic-highlight hover:border-nordic-highlight/60"
               }`}
             >
               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${selectedMode === "social" ? "bg-white" : "bg-gray-600"}`} />
+                <span className={`w-2 h-2 rounded-full ${selectedMode === "social" ? "bg-nordic-primary" : "bg-nordic-highlight/60"}`} />
                 <span className="font-bold text-sm">Social</span>
               </div>
               <p className="text-[10px] opacity-80 text-left leading-tight">
@@ -112,12 +106,12 @@ export default function RegisterForm() {
               onClick={() => setValue("profileMode", "business")}
               className={`p-4 rounded-xl border flex flex-col items-start gap-2 transition-all ${
                 selectedMode === "business"
-                  ? "bg-emerald-600 border-emerald-500 text-white"
-                  : "bg-gray-900 border-gray-800 text-gray-400 hover:border-gray-700"
+                  ? "bg-nordic-accent text-nordic-primary border-nordic-accent"
+                  : "bg-nordic-primary border-nordic-highlight/40 text-nordic-highlight hover:border-nordic-highlight/60"
               }`}
             >
-               <div className="flex items-center gap-2">
-                <span className={`w-2 h-2 rounded-full ${selectedMode === "business" ? "bg-white" : "bg-gray-600"}`} />
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${selectedMode === "business" ? "bg-nordic-primary" : "bg-nordic-highlight/60"}`} />
                 <span className="font-bold text-sm">Business</span>
               </div>
               <p className="text-[10px] opacity-80 text-left leading-tight">
@@ -127,17 +121,16 @@ export default function RegisterForm() {
           </div>
         </div>
 
-        {/* Användarnamn */}
         <div className="space-y-2">
-          <label htmlFor="username" className="block text-sm font-medium text-gray-300">
+          <label htmlFor="username" className="block text-sm font-medium text-nordic-highlight">
             Användarnamn
           </label>
           <input
             {...register("username")}
             id="username"
             type="text"
-            className={`w-full px-4 py-3 rounded-xl bg-gray-900 border text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all ${
-              errors.username ? "border-red-500/50 focus:border-red-500" : "border-gray-800 focus:border-blue-500"
+            className={`w-full px-4 py-3 rounded-xl bg-nordic-primary border text-nordic-secondary placeholder:text-nordic-highlight/60 focus:outline-none focus:ring-2 focus:ring-nordic-accent/60 transition-all ${
+              errors.username ? "border-red-500/50 focus:border-red-500" : "border-nordic-highlight/40 focus:border-nordic-accent"
             }`}
             placeholder="t.ex. elonmusk"
           />
@@ -146,17 +139,16 @@ export default function RegisterForm() {
           )}
         </div>
 
-        {/* E-post */}
         <div className="space-y-2">
-          <label htmlFor="email" className="block text-sm font-medium text-gray-300">
+          <label htmlFor="email" className="block text-sm font-medium text-nordic-highlight">
             E-post
           </label>
           <input
             {...register("email")}
             id="email"
             type="email"
-            className={`w-full px-4 py-3 rounded-xl bg-gray-900 border text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all ${
-              errors.email ? "border-red-500/50 focus:border-red-500" : "border-gray-800 focus:border-blue-500"
+            className={`w-full px-4 py-3 rounded-xl bg-nordic-primary border text-nordic-secondary placeholder:text-nordic-highlight/60 focus:outline-none focus:ring-2 focus:ring-nordic-accent/60 transition-all ${
+              errors.email ? "border-red-500/50 focus:border-red-500" : "border-nordic-highlight/40 focus:border-nordic-accent"
             }`}
             placeholder="namn@exempel.se"
           />
@@ -165,17 +157,16 @@ export default function RegisterForm() {
           )}
         </div>
 
-        {/* Lösenord */}
         <div className="space-y-2">
-          <label htmlFor="password" className="block text-sm font-medium text-gray-300">
+          <label htmlFor="password" className="block text-sm font-medium text-nordic-highlight">
             Lösenord
           </label>
           <input
             {...register("password")}
             id="password"
             type="password"
-            className={`w-full px-4 py-3 rounded-xl bg-gray-900 border text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all ${
-              errors.password ? "border-red-500/50 focus:border-red-500" : "border-gray-800 focus:border-blue-500"
+            className={`w-full px-4 py-3 rounded-xl bg-nordic-primary border text-nordic-secondary placeholder:text-nordic-highlight/60 focus:outline-none focus:ring-2 focus:ring-nordic-accent/60 transition-all ${
+              errors.password ? "border-red-500/50 focus:border-red-500" : "border-nordic-highlight/40 focus:border-nordic-accent"
             }`}
             placeholder="••••••••"
           />
@@ -187,13 +178,13 @@ export default function RegisterForm() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+          className="w-full py-4 bg-nordic-secondary text-nordic-primary font-bold rounded-xl hover:bg-nordic-support focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nordic-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
           {isSubmitting ? <Loader2 className="animate-spin" /> : "Skapa konto"}
         </button>
       </form>
 
-      <p className="text-center text-xs text-gray-500">
+      <p className="text-center text-xs text-nordic-highlight">
         Genom att skapa konto godkänner du våra användarvillkor.
       </p>
     </div>

@@ -17,7 +17,7 @@ export function SettingsTabs() {
   ];
 
   return (
-    <div className="flex w-full gap-2 overflow-x-auto border-b border-slate-800 pb-px mb-8">
+    <div className="flex w-full gap-2 overflow-x-auto border-b border-nordic-highlight/40 pb-px mb-8">
       {tabs.map((tab) => {
         const isActive = currentView === tab.id;
         const Icon = tab.icon;
@@ -28,7 +28,7 @@ export function SettingsTabs() {
             className={`flex items-center gap-2 whitespace-nowrap border-b-2 px-4 py-3 text-sm font-medium transition-colors ${
               isActive
                 ? "border-purple-500 text-purple-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
+                : "border-transparent text-nordic-highlight hover:text-slate-200"
             }`}
           >
             <Icon size={16} />

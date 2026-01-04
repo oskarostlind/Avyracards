@@ -63,7 +63,7 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
     <div className="max-w-2xl space-y-6">
       
       {/* --- HUVUDKORT --- */}
-      <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+      <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <h3 className="text-lg font-medium text-slate-100">Din Plan</h3>
@@ -72,12 +72,12 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
                 <Star size={10} fill="currentColor" /> PREMIUM
               </span>
             ) : (
-              <span className="bg-slate-800 text-slate-400 text-xs font-bold px-2 py-0.5 rounded-full">
+              <span className="bg-slate-800 text-nordic-highlight text-xs font-bold px-2 py-0.5 rounded-full">
                 GRATIS
               </span>
             )}
           </div>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-nordic-highlight">
             {isPremium
               ? "Du har tillgång till alla premiumfunktioner."
               : "Uppgradera för att låsa upp statistik och teman."}
@@ -88,7 +88,7 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
           <button 
             onClick={handlePortal}
             disabled={loading}
-            className="whitespace-nowrap rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 disabled:opacity-50 flex items-center gap-2"
+            className="whitespace-nowrap rounded-xl border border-nordic-highlight/40 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 disabled:opacity-50 flex items-center gap-2"
           >
             {loading && <Loader2 className="animate-spin h-4 w-4" />}
             Hantera via Stripe
@@ -96,7 +96,7 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
         ) : (
            <Link
              href="/checkout/premium"
-             className="whitespace-nowrap rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-white hover:bg-purple-500 shadow-lg shadow-purple-500/20"
+             className="whitespace-nowrap rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-nordic-secondary hover:bg-purple-500 shadow-lg shadow-purple-500/20"
            >
              Uppgradera Nu
            </Link>
@@ -108,8 +108,8 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2">
             
             {/* Nästa dragning */}
-            <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/30">
-                <div className="flex items-center gap-2 text-slate-400 mb-2 text-xs uppercase font-bold tracking-wider">
+            <div className="p-4 rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/30">
+                <div className="flex items-center gap-2 text-nordic-highlight mb-2 text-xs uppercase font-bold tracking-wider">
                     <Calendar size={14} /> Nästa dragning
                 </div>
                 <div className="text-slate-100 font-medium">
@@ -118,18 +118,18 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
             </div>
 
             {/* Kostnad */}
-            <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/30">
-                <div className="flex items-center gap-2 text-slate-400 mb-2 text-xs uppercase font-bold tracking-wider">
+            <div className="p-4 rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/30">
+                <div className="flex items-center gap-2 text-nordic-highlight mb-2 text-xs uppercase font-bold tracking-wider">
                     <CreditCard size={14} /> Kostnad
                 </div>
                 <div className="text-slate-100 font-medium">
-                    {formattedPrice} <span className="text-slate-500 text-sm">/ {subscription.interval === 'month' ? 'mån' : 'år'}</span>
+                    {formattedPrice} <span className="text-nordic-highlight text-sm">/ {subscription.interval === 'month' ? 'mån' : 'år'}</span>
                 </div>
             </div>
 
             {/* Medlem sedan */}
-            <div className="p-4 rounded-2xl border border-slate-800 bg-slate-950/30">
-                <div className="flex items-center gap-2 text-slate-400 mb-2 text-xs uppercase font-bold tracking-wider">
+            <div className="p-4 rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/30">
+                <div className="flex items-center gap-2 text-nordic-highlight mb-2 text-xs uppercase font-bold tracking-wider">
                     <Clock size={14} /> Medlem sedan
                 </div>
                 <div className="text-slate-100 font-medium">

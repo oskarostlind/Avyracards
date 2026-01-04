@@ -112,10 +112,10 @@ export default async function AnalyticsPage() {
       <div className="mb-8 flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-100">Statistik</h1>
-          <p className="text-slate-400">Insikter för @{user.username}</p>
+          <p className="text-nordic-highlight">Insikter för @{user.username}</p>
         </div>
         {!user.isPremium && (
-           <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-400 border border-slate-700">
+           <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-nordic-highlight border border-nordic-highlight/40">
              Gratisplan
            </span>
         )}

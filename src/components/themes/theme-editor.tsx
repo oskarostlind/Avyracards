@@ -202,18 +202,18 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
 
   return (
     // HUVUDCONTAINER: Låser höjden till skärmen minus header (ca 64px)
-    <div className="flex flex-col h-[calc(100vh-64px)] lg:flex-row bg-black overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-64px)] lg:flex-row bg-nordic-primary overflow-hidden">
       
       {/* --- LEFT: LIVE PREVIEW --- */}
       {/* På mobil: tar 45% av höjden. På desktop: Flex-1 (resten av bredden) */}
-      <div className="h-[45%] lg:h-full lg:flex-1 relative bg-[#050505] flex items-center justify-center p-4 overflow-hidden border-b lg:border-b-0 lg:border-r border-slate-800">
+      <div className="h-[45%] lg:h-full lg:flex-1 relative bg-[#050505] flex items-center justify-center p-4 overflow-hidden border-b lg:border-b-0 lg:border-r border-nordic-highlight/40">
         
         {/* Rutnäts-bakgrund */}
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
         {/* TELEFON-RAMEN */}
         {/* VIKTIGT: Här skalar vi ner den rejält på mobil (scale-[0.55]) så den alltid syns */}
-        <div className="transform scale-[0.55] sm:scale-[0.70] lg:scale-[0.85] xl:scale-100 transition-transform duration-500 w-[375px] h-[750px] border-[8px] border-slate-800 rounded-[3rem] overflow-hidden shadow-2xl bg-black ring-1 ring-white/10 relative z-10 shrink-0 origin-center">
+        <div className="transform scale-[0.55] sm:scale-[0.70] lg:scale-[0.85] xl:scale-100 transition-transform duration-500 w-[375px] h-[750px] border-[8px] border-nordic-highlight/40 rounded-[3rem] overflow-hidden shadow-2xl bg-nordic-primary ring-1 ring-white/10 relative z-10 shrink-0 origin-center">
            <ProfilePreview 
              username={userData.username}
              name={userData.name}
@@ -227,10 +227,10 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
 
       {/* --- RIGHT: EDITOR PANEL --- */}
       {/* På mobil: tar 55% av höjden. På desktop: fast bredd (24rem / 96) */}
-      <div className="h-[55%] lg:h-full lg:w-96 bg-slate-950 flex flex-col z-20 shadow-2xl">
+      <div className="h-[55%] lg:h-full lg:w-96 bg-nordic-primary flex flex-col z-20 shadow-2xl">
         
         {/* Tabs Navigation */}
-        <div className="grid grid-cols-4 border-b border-slate-800 shrink-0">
+        <div className="grid grid-cols-4 border-b border-nordic-highlight/40 shrink-0">
           <TabButton active={activeTab === "templates"} onClick={() => setActiveTab("templates")} icon={LayoutTemplate} label="Mallar" />
           <TabButton active={activeTab === "background"} onClick={() => setActiveTab("background")} icon={ImageIcon} label="Bakgrund" />
           <TabButton active={activeTab === "buttons"} onClick={() => setActiveTab("buttons")} icon={BoxSelect} label="Knappar" />
@@ -248,7 +248,7 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
                   <button
                     key={t.id}
                     onClick={() => applyTemplate(t.settings)}
-                    className="group relative aspect-video rounded-xl border border-slate-800 bg-slate-900 overflow-hidden hover:border-purple-500 transition-all text-left p-3 flex flex-col justify-end"
+                    className="group relative aspect-video rounded-xl border border-nordic-highlight/40 bg-slate-900 overflow-hidden hover:border-purple-500 transition-all text-left p-3 flex flex-col justify-end"
                   >
                     <div className={`absolute inset-0 opacity-50 transition-opacity group-hover:opacity-70 ${
                       t.id === 'minimal' ? 'bg-white' : 
@@ -258,11 +258,11 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
                       t.id === 'sunset' ? 'bg-gradient-to-br from-rose-500 to-amber-500' :
                       t.id === 'corporate' ? 'bg-slate-800' : 'bg-[url(https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=200)] bg-cover'
                     }`} />
-                    <span className={`relative z-10 text-xs font-bold ${t.id === 'minimal' || t.id === 'nordic' ? 'text-black' : 'text-white'}`}>{t.name}</span>
+                    <span className={`relative z-10 text-xs font-bold ${t.id === 'minimal' || t.id === 'nordic' ? 'text-nordic-secondary' : 'text-nordic-secondary'}`}>{t.name}</span>
                   </button>
                 ))}
               </div>
-              <p className="text-xs text-slate-500 text-center">Välj en mall som grund och anpassa sedan.</p>
+              <p className="text-xs text-nordic-highlight text-center">Välj en mall som grund och anpassa sedan.</p>
             </div>
           )}
 
@@ -294,14 +294,14 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
               {settings.backgroundType === "image" && (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-xs font-bold text-slate-500 uppercase">Bild URL</label>
+                    <label className="text-xs font-bold text-nordic-highlight uppercase">Bild URL</label>
                     <div className="flex gap-2">
                        <input 
                          type="text" 
                          value={settings.backgroundImage || ""} 
                          onChange={(e) => updateSetting("backgroundImage", e.target.value)}
                          placeholder="https://..."
-                         className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:border-purple-500 outline-none"
+                         className="w-full bg-slate-900 border border-nordic-highlight/40 rounded-lg px-3 py-2 text-xs text-nordic-secondary focus:border-purple-500 outline-none"
                        />
                        <button 
                          onClick={() => updateSetting("backgroundImage", "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1000")}
@@ -314,8 +314,8 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
 
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Oskärpa (Blur)</label>
-                      <span className="text-xs text-slate-400">{settings.backgroundBlur}px</span>
+                      <label className="text-xs font-bold text-nordic-highlight uppercase">Oskärpa (Blur)</label>
+                      <span className="text-xs text-nordic-highlight">{settings.backgroundBlur}px</span>
                     </div>
                     <input 
                       type="range" min="0" max="20" 
@@ -327,8 +327,8 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
 
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <label className="text-xs font-bold text-slate-500 uppercase">Mörkare (Overlay)</label>
-                      <span className="text-xs text-slate-400">{settings.backgroundOverlay}%</span>
+                      <label className="text-xs font-bold text-nordic-highlight uppercase">Mörkare (Overlay)</label>
+                      <span className="text-xs text-nordic-highlight">{settings.backgroundOverlay}%</span>
                     </div>
                     <input 
                       type="range" min="0" max="90" 
@@ -346,7 +346,7 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
           {activeTab === "buttons" && (
             <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                <div className="space-y-3">
-                 <label className="text-xs font-bold text-slate-500 uppercase">Knappform</label>
+                 <label className="text-xs font-bold text-nordic-highlight uppercase">Knappform</label>
                  <div className="grid grid-cols-4 gap-2">
                     {['rounded', 'pill', 'sharp', 'brutal'].map((style) => (
                       <button 
@@ -355,7 +355,7 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
                         className={`py-2 text-[10px] uppercase font-bold border rounded-lg transition-all ${
                           settings.buttonStyle === style 
                           ? "border-purple-500 bg-purple-500/10 text-purple-400" 
-                          : "border-slate-800 text-slate-500 hover:border-slate-600"
+                          : "border-nordic-highlight/40 text-nordic-highlight hover:border-slate-600"
                         }`}
                       >
                         {style}
@@ -365,7 +365,7 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
                </div>
 
                <div className="space-y-3">
-                 <label className="text-xs font-bold text-slate-500 uppercase">Knappstil</label>
+                 <label className="text-xs font-bold text-nordic-highlight uppercase">Knappstil</label>
                  <div className="grid grid-cols-3 gap-2">
                     {['solid', 'outline', 'soft', 'glass', 'ghost'].map((variant) => (
                       <button 
@@ -374,7 +374,7 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
                         className={`py-2 text-[10px] uppercase font-bold border rounded-lg transition-all ${
                           settings.buttonVariant === variant 
                           ? "border-purple-500 bg-purple-500/10 text-purple-400" 
-                          : "border-slate-800 text-slate-500 hover:border-slate-600"
+                          : "border-nordic-highlight/40 text-nordic-highlight hover:border-slate-600"
                         }`}
                       >
                         {variant}
@@ -383,8 +383,8 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
                  </div>
                </div>
 
-               <div className="flex items-center justify-between p-3 border border-slate-800 rounded-xl bg-slate-900/30">
-                  <span className="text-xs font-bold text-slate-400 uppercase">Skugga</span>
+               <div className="flex items-center justify-between p-3 border border-nordic-highlight/40 rounded-xl bg-slate-900/30">
+                  <span className="text-xs font-bold text-nordic-highlight uppercase">Skugga</span>
                   <button 
                     onClick={() => updateSetting("buttonShadow", !settings.buttonShadow)}
                     className={`w-10 h-5 rounded-full transition-colors relative ${settings.buttonShadow ? 'bg-purple-500' : 'bg-slate-700'}`}
@@ -393,7 +393,7 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
                   </button>
                </div>
 
-               <hr className="border-slate-800"/>
+               <hr className="border-nordic-highlight/40"/>
                
                <ColorPicker label="Knappfärg (Accent)" value={settings.accentColor} onChange={(v) => updateSetting("accentColor", v)} />
                <ColorPicker label="Textfärg (Knappar)" value={settings.textColor} onChange={(v) => updateSetting("textColor", v)} />
@@ -404,7 +404,7 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
           {activeTab === "profile" && (
              <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
                 <div className="space-y-3">
-                 <label className="text-xs font-bold text-slate-500 uppercase">Typsnitt</label>
+                 <label className="text-xs font-bold text-nordic-highlight uppercase">Typsnitt</label>
                  <div className="grid grid-cols-2 gap-2">
                     {(["inter", "playfair", "roboto", "space", "oswald", "lora"] as Font[]).map((font) => (
                        <button 
@@ -412,8 +412,8 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
                          onClick={() => updateSetting("font", font)}
                          className={`p-3 rounded-lg border text-center transition-all ${
                             settings.font === font 
-                            ? "border-purple-500 bg-purple-500/10 text-white" 
-                            : "border-slate-800 bg-slate-900 text-slate-400 hover:bg-slate-800"
+                            ? "border-purple-500 bg-purple-500/10 text-nordic-secondary" 
+                            : "border-nordic-highlight/40 bg-slate-900 text-nordic-highlight hover:bg-slate-800"
                          }`}
                        >
                           <span className="text-sm capitalize" style={{ fontFamily: font === 'inter' ? 'Inter' : font }}>{font}</span>
@@ -423,7 +423,7 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
                </div>
 
                <div className="space-y-3">
-                 <label className="text-xs font-bold text-slate-500 uppercase">Profilbild Ram</label>
+                 <label className="text-xs font-bold text-nordic-highlight uppercase">Profilbild Ram</label>
                  <div className="grid grid-cols-3 gap-2">
                     {['none', 'circle', 'rounded', 'ring', 'glow', 'hexagon'].map((frame) => (
                       <button 
@@ -432,7 +432,7 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
                         className={`py-2 text-[10px] uppercase font-bold border rounded-lg transition-all ${
                           settings.frameStyle === frame 
                           ? "border-purple-500 bg-purple-500/10 text-purple-400" 
-                          : "border-slate-800 text-slate-500 hover:border-slate-600"
+                          : "border-nordic-highlight/40 text-nordic-highlight hover:border-slate-600"
                         }`}
                       >
                         {frame}
@@ -446,10 +446,10 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-950 flex gap-3 shrink-0 z-30 relative">
+        <div className="p-4 border-t border-nordic-highlight/40 bg-nordic-primary flex gap-3 shrink-0 z-30 relative">
           <button 
             onClick={() => setSettings(initialSettings)}
-            className="p-3 rounded-xl bg-slate-900 text-slate-400 hover:text-white transition"
+            className="p-3 rounded-xl bg-slate-900 text-nordic-highlight hover:text-nordic-secondary transition"
             title="Återställ"
           >
              <RotateCcw size={18} />
@@ -457,7 +457,7 @@ export function ThemeEditor({ initialSettings, userData }: ThemeEditorProps) {
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            className="flex-1 bg-white text-black font-bold rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-slate-200 transition text-sm shadow-lg shadow-white/5"
+            className="flex-1 bg-nordic-secondary text-nordic-primary font-bold rounded-xl py-3 flex items-center justify-center gap-2 hover:bg-nordic-support transition text-sm shadow-lg shadow-nordic-accent/10"
           >
              {isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <><Save size={16}/> Spara Design</>}
           </button>
@@ -475,7 +475,7 @@ function TabButton({ active, onClick, icon: Icon, label }: { active: boolean; on
     <button 
       onClick={onClick}
       className={`flex flex-col items-center gap-1.5 py-4 border-b-2 transition-all ${
-        active ? "border-purple-500 text-white bg-slate-900" : "border-transparent text-slate-500 hover:text-slate-300 hover:bg-slate-900/50"
+        active ? "border-purple-500 text-nordic-secondary bg-slate-900" : "border-transparent text-nordic-highlight hover:text-slate-300 hover:bg-slate-900/50"
       }`}
     >
       <Icon size={18} />
@@ -488,7 +488,7 @@ function ColorPicker({ label, value, onChange }: { label: string; value?: string
    return (
       <div className="space-y-2">
          <div className="flex justify-between">
-            <label className="text-xs font-bold text-slate-500 uppercase">{label}</label>
+            <label className="text-xs font-bold text-nordic-highlight uppercase">{label}</label>
             <span className="text-[10px] font-mono text-slate-600 uppercase">{value}</span>
          </div>
          <div className="flex gap-2 items-center">
@@ -506,13 +506,13 @@ function ColorPicker({ label, value, onChange }: { label: string; value?: string
 
 function SegmentedControl({ value, onChange, options }: { value: string; onChange: (v: any) => void; options: {value: string; label: string}[] }) {
   return (
-    <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
+    <div className="flex bg-slate-900 p-1 rounded-xl border border-nordic-highlight/40">
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-             value === opt.value ? "bg-slate-800 text-white shadow-sm ring-1 ring-white/5" : "text-slate-500 hover:text-slate-300"
+             value === opt.value ? "bg-slate-800 text-nordic-secondary shadow-sm ring-1 ring-white/5" : "text-nordic-highlight hover:text-slate-300"
           }`}
         >
           {opt.label}

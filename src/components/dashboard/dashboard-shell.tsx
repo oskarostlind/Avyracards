@@ -59,8 +59,8 @@ export function DashboardShell({ user }: DashboardShellProps) {
         
         {/* Vänster: Titel */}
         <div>
-          <h1 className="text-3xl font-bold text-slate-50 tracking-tight">Redigera Profil</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-3xl font-bold text-nordic-secondary tracking-tight">Redigera Profil</h1>
+          <p className="text-sm text-nordic-highlight mt-1">
             Hantera innehållet för din {viewMode === "SOCIAL" ? "privata" : "affärs"}profil.
           </p>
         </div>
@@ -69,13 +69,13 @@ export function DashboardShell({ user }: DashboardShellProps) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             
             {/* --- TABBAR FÖR ATT BYTA VY --- */}
-            <div className="flex p-1 bg-slate-900/50 border border-slate-800 rounded-xl self-start sm:self-auto">
+            <div className="flex p-1 bg-nordic-primary/70 border border-nordic-highlight/40 rounded-xl self-start sm:self-auto">
                 <button
                     onClick={() => setViewMode("SOCIAL")}
                     className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                         viewMode === "SOCIAL"
-                        ? "bg-slate-800 text-white shadow-sm ring-1 ring-white/10"
-                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                        ? "bg-nordic-primary text-nordic-secondary shadow-sm ring-1 ring-nordic-highlight/30"
+                        : "text-nordic-highlight hover:text-nordic-secondary hover:bg-nordic-primary/60"
                     }`}
                 >
                     <LayoutGrid size={16} />
@@ -92,8 +92,8 @@ export function DashboardShell({ user }: DashboardShellProps) {
                     onClick={() => setViewMode("BUSINESS")}
                     className={`relative flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                         viewMode === "BUSINESS"
-                        ? "bg-purple-600/20 text-purple-200 shadow-sm ring-1 ring-purple-500/20" // Lite annan färg för business-tabben
-                        : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+                        ? "bg-nordic-accent/15 text-nordic-secondary shadow-sm ring-1 ring-nordic-accent/40" // Lite annan färg för business-tabben
+                        : "text-nordic-highlight hover:text-nordic-secondary hover:bg-nordic-primary/60"
                     }`}
                 >
                     <Briefcase size={16} />
@@ -118,7 +118,7 @@ export function DashboardShell({ user }: DashboardShellProps) {
                   <button
                     onClick={handleActivate}
                     disabled={isPending}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl transition-all animate-in fade-in zoom-in-95"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-nordic-secondary bg-slate-800 hover:bg-slate-700 border border-nordic-highlight/40 rounded-xl transition-all animate-in fade-in zoom-in-95"
                   >
                     <Power size={16} className={isPending ? "animate-spin" : ""} />
                     <span>Aktivera {viewMode === "SOCIAL" ? "Social" : "Business"}</span>
@@ -134,7 +134,7 @@ export function DashboardShell({ user }: DashboardShellProps) {
                 {/* 2. Preview Knapp (Ny ikon: Smartphone) */}
                 <button
                     onClick={() => setIsPreviewOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-slate-900 bg-white hover:bg-slate-200 rounded-xl transition-all shadow-lg shadow-white/5"
+                    className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-nordic-primary bg-nordic-secondary hover:bg-nordic-support rounded-xl transition-all shadow-lg shadow-nordic-accent/10 border border-nordic-support"
                     title="Förhandsgranska profil"
                 >
                     <Eye size={18} />

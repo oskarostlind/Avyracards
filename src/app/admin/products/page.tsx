@@ -29,8 +29,8 @@ export default async function AdminProductsPage() {
     <div className="p-4 sm:p-8 max-w-6xl mx-auto">
       <div className="mb-8 flex justify-between items-end">
         <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Produkthantering</h1>
-            <p className="text-slate-400">Hantera priser, lager och kampanjer.</p>
+            <h1 className="text-3xl font-bold text-nordic-secondary mb-2">Produkthantering</h1>
+            <p className="text-nordic-highlight">Hantera priser, lager och kampanjer.</p>
         </div>
       </div>
 

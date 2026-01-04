@@ -63,7 +63,7 @@ function StatusBadge({ status }: { status: OrderStatus }) {
         </span>
       );
     default:
-      return <span className="text-slate-500 text-xs">{status}</span>;
+      return <span className="text-nordic-highlight text-xs">{status}</span>;
   }
 }
 
@@ -87,14 +87,14 @@ export default async function AdminPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 md:p-8">
+    <div className="min-h-screen bg-nordic-primary p-4 md:p-8">
       <div className="mx-auto max-w-6xl space-y-8">
         
     {/* Header */}
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h1 className="text-2xl font-bold text-slate-100">Orderöversikt</h1>
-        <p className="text-slate-400">
+        <p className="text-nordic-highlight">
           Välkommen tillbaka, {session.user.username}.
         </p>
       </div>
@@ -102,7 +102,7 @@ export default async function AdminPage() {
         {/* --- NY KNAPP FÖR USERS --- */}
         <Link 
             href="/admin/users"
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500 transition shadow-lg shadow-blue-500/20"
+            className="flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-nordic-secondary hover:bg-blue-500 transition shadow-lg shadow-blue-500/20"
           >
             <Users size={16} /> Hantera Användare
           </Link>
@@ -110,7 +110,7 @@ export default async function AdminPage() {
         {/* --- BEFINTLIG KNAPP FÖR PRODUKTER --- */}
         <Link 
             href="/admin/products"
-            className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white hover:bg-purple-500 transition shadow-lg shadow-purple-500/20"
+            className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-nordic-secondary hover:bg-purple-500 transition shadow-lg shadow-purple-500/20"
           >
             <Tag size={16} /> Hantera Produkter
           </Link>
@@ -123,18 +123,18 @@ export default async function AdminPage() {
 
         {/* KPI / Stats Cards */}
         <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-            <div className="text-sm font-medium text-slate-400">Att skicka</div>
+          <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6">
+            <div className="text-sm font-medium text-nordic-highlight">Att skicka</div>
             <div className="mt-2 flex items-baseline gap-2">
               <span className="text-3xl font-bold text-slate-100">{todoOrders.length}</span>
-              <span className="text-sm text-slate-500">ordrar</span>
+              <span className="text-sm text-nordic-highlight">ordrar</span>
             </div>
           </div>
         </div>
 
         {/* SEKTION 1: ATT GÖRA (PRIO) */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/50 overflow-hidden">
-          <div className="border-b border-slate-800 bg-slate-900/80 px-6 py-4">
+        <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 overflow-hidden">
+          <div className="border-b border-nordic-highlight/40 bg-slate-900/80 px-6 py-4">
             <h2 className="flex items-center gap-2 font-semibold text-emerald-400">
               <Package size={18} />
               Kräver åtgärd
@@ -147,7 +147,7 @@ export default async function AdminPage() {
                 <CheckCircle size={24} />
               </div>
               <h3 className="text-slate-300 font-medium">Allt är klart!</h3>
-              <p className="text-slate-500 text-sm">Inga nya ordrar väntar på att skickas just nu.</p>
+              <p className="text-nordic-highlight text-sm">Inga nya ordrar väntar på att skickas just nu.</p>
             </div>
           ) : (
             <div className="divide-y divide-slate-800">
@@ -159,13 +159,13 @@ export default async function AdminPage() {
                 >
                   <div className="flex flex-col gap-1">
                     <div className="flex items-center gap-3">
-                      <span className="font-mono text-sm text-slate-400">#{order.id.slice(-6).toUpperCase()}</span>
+                      <span className="font-mono text-sm text-nordic-highlight">#{order.id.slice(-6).toUpperCase()}</span>
                       <StatusBadge status={order.status} />
                     </div>
                     <div className="font-medium text-slate-200">
                       {order.customerEmail}
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-nordic-highlight">
                       Beställd {formatDate(order.createdAt)} &bull; {order.quantity} st kort
                     </div>
                   </div>
@@ -183,13 +183,13 @@ export default async function AdminPage() {
         </div>
 
         {/* SEKTION 2: SENASTE ORDRAR (HISTORIK) */}
-        <div className="rounded-2xl border border-slate-800 bg-slate-900/20">
-          <div className="border-b border-slate-800 px-6 py-4">
+        <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/20">
+          <div className="border-b border-nordic-highlight/40 px-6 py-4">
             <h2 className="font-semibold text-slate-300">Senaste aktivitet</h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <thead className="bg-slate-900/50 text-slate-500">
+              <thead className="bg-slate-900/50 text-nordic-highlight">
                 <tr>
                   <th className="px-6 py-3 font-medium">Order ID</th>
                   <th className="px-6 py-3 font-medium">Datum</th>
@@ -201,7 +201,7 @@ export default async function AdminPage() {
               <tbody className="divide-y divide-slate-800/50">
                 {recentOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-slate-800/30">
-                    <td className="px-6 py-4 font-mono text-slate-400">
+                    <td className="px-6 py-4 font-mono text-nordic-highlight">
                       <Link href={`/admin/orders/${order.id}`} className="hover:text-purple-400 hover:underline">
                         #{order.id.slice(-6).toUpperCase()}
                       </Link>

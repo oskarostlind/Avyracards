@@ -1,10 +1,17 @@
 import "./globals.css";
 import type { ReactNode } from "react";
 import Script from "next/script";
+import { Manrope } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import SessionProviderWrapper from "@/components/providers/session-provider";
 import CookieBanner from "@/components/cookie-banner";
+
+// Initiera Manrope-fonten
+const manrope = Manrope({
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata = {
   title: "AvyraCards",
@@ -17,11 +24,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   return (
     <html lang="sv">
-      {/* Ingen manuell <head> här. Metadata-exporten ovan hanterar <head> automatiskt. */}
+      {/* Ingen manuell <head> här. Metadata-exporten hanterar <head> automatiskt. */}
 
-      <body className="min-h-screen bg-slate-950 text-slate-50">
+      /<body
+        className={`${manrope.className} min-h-screen bg-nordic-primary text-nordic-secondary antialiased`}
+      >
+
+        <body className={`${manrope.className} min-h-screen bg-black text-white antialiased`}></body>
         {/* Google AdSense Script - Laddas ENDAST om vi är i produktion */}
-        {/* Detta förhindrar tracking-fel och nätverksspam på localhost */}
         {isProduction && (
           <Script
             id="adsbygoogle-init"

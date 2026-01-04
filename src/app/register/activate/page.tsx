@@ -91,7 +91,7 @@ export default function ActivateAccountPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#030712] text-white flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#030712] text-nordic-secondary flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6 animate-in fade-in zoom-in duration-500">
          
          <div className="text-center space-y-4 mb-8">
@@ -99,7 +99,7 @@ export default function ActivateAccountPage() {
                <CheckCircle2 size={40} />
             </div>
             <h1 className="text-3xl font-bold">Betalning Mottagen!</h1>
-            <p className="text-gray-400">
+            <p className="text-nordic-highlight">
                Tack för ditt köp. Slutför din registrering nedan för att komma igång direkt.
             </p>
          </div>
@@ -108,9 +108,9 @@ export default function ActivateAccountPage() {
             <form onSubmit={handleActivation} className="space-y-5">
                
                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-gray-500">Användarnamn</label>
+                  <label className="text-xs font-bold uppercase text-nordic-highlight">Användarnamn</label>
                   <div className="relative">
-                     <User className="absolute left-4 top-3.5 text-gray-500" size={18} />
+                     <User className="absolute left-4 top-3.5 text-nordic-highlight" size={18} />
                      <input 
                         name="username" 
                         type="text" 
@@ -119,13 +119,13 @@ export default function ActivateAccountPage() {
                         className="w-full bg-[#030712] border border-gray-700 rounded-xl pl-11 pr-4 py-3 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition-all placeholder:text-gray-600" 
                      />
                   </div>
-                  <p className="text-[10px] text-gray-500 pl-1">Din länk: avyracards.se/användarnamn</p>
+                  <p className="text-[10px] text-nordic-highlight pl-1">Din länk: avyracards.se/användarnamn</p>
                </div>
 
                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-gray-500">E-post</label>
+                  <label className="text-xs font-bold uppercase text-nordic-highlight">E-post</label>
                   <div className="relative">
-                     <Mail className="absolute left-4 top-3.5 text-gray-500" size={18} />
+                     <Mail className="absolute left-4 top-3.5 text-nordic-highlight" size={18} />
                      <input 
                         name="email" 
                         type="email" 
@@ -139,9 +139,9 @@ export default function ActivateAccountPage() {
                </div>
 
                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-gray-500">Lösenord</label>
+                  <label className="text-xs font-bold uppercase text-nordic-highlight">Lösenord</label>
                   <div className="relative">
-                     <Lock className="absolute left-4 top-3.5 text-gray-500" size={18} />
+                     <Lock className="absolute left-4 top-3.5 text-nordic-highlight" size={18} />
                      <input 
                         name="password" 
                         type="password" 
@@ -152,7 +152,7 @@ export default function ActivateAccountPage() {
                   </div>
                </div>
 
-               <button disabled={loading} className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-100 transition-all shadow-lg flex justify-center mt-4">
+               <button disabled={loading} className="w-full bg-nordic-secondary text-nordic-primary font-bold py-4 rounded-xl hover:bg-nordic-support transition-all shadow-lg flex justify-center mt-4">
                   {loading ? (
                     <span className="flex items-center gap-2">
                       <Loader2 className="animate-spin" size={20}/> {statusMessage}

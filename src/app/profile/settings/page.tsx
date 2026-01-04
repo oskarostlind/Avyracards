@@ -79,8 +79,8 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-slate-50">Inställningar</h1>
-        <p className="text-slate-400">Hantera ditt konto, prenumeration och säkerhet.</p>
+        <h1 className="text-2xl font-bold text-nordic-secondary">Inställningar</h1>
+        <p className="text-nordic-highlight">Hantera ditt konto, prenumeration och säkerhet.</p>
       </div>
 
       {/* Flik-navigation */}

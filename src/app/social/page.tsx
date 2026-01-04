@@ -3,7 +3,7 @@ import { Check, ArrowRight, Instagram, Music, Share2, Wallet, QrCode, Smartphone
 
 export default function SocialLandingPage() {
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50 selection:bg-sky-500/30 overflow-hidden">
+    <main className="min-h-screen bg-nordic-primary text-nordic-secondary selection:bg-sky-500/30 overflow-hidden">
       <div className="mx-auto flex max-w-6xl flex-col gap-24 px-4 pb-24 pt-20 md:px-8">
         
         {/* --- 1. HERO SECTION --- */}
@@ -16,13 +16,13 @@ export default function SocialLandingPage() {
             </div>
 
             <div className="space-y-6">
-              <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl leading-[1.05]">
+              <h1 className="text-5xl font-extrabold tracking-tight text-nordic-secondary sm:text-6xl lg:text-7xl leading-[1.05]">
                 Dela dina länkar. <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">
                   På ditt sätt.
                 </span>
               </h1>
-              <p className="max-w-lg text-lg text-slate-400 leading-relaxed font-light">
+              <p className="max-w-lg text-lg text-nordic-highlight leading-relaxed font-light">
                 Samla Instagram, Snapchat, Spotify, länkar och kontaktuppgifter på ett ställe.
                 Dela med mobilen – eller med ett NFC-kort om du vill.
               </p>
@@ -38,14 +38,14 @@ export default function SocialLandingPage() {
                 </Link>
                 <Link
                     href="#how-it-works"
-                    className="inline-flex items-center rounded-2xl border border-slate-700 bg-slate-900/50 px-8 py-4 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition"
+                    className="inline-flex items-center rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 px-8 py-4 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-nordic-secondary transition"
                 >
                     Se hur det funkar <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
                 </div>
 
                  {/* Trust Microcopy */}
-                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-medium text-slate-500">
+                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-medium text-nordic-highlight">
                     <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-sky-500" /> Gratis att börja</span>
                     <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-sky-500" /> Ingen app krävs</span>
                     <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-sky-500" /> NFC-kort är valfritt</span>
@@ -58,12 +58,12 @@ export default function SocialLandingPage() {
              {/* Bakgrunds-blob */}
              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-sky-500/20 rounded-full blur-[100px] opacity-60 pointer-events-none" />
 
-             <div className="relative w-[320px] h-[640px] bg-slate-950 rounded-[3.5rem] border-[8px] border-slate-900 shadow-2xl overflow-hidden rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
+             <div className="relative w-[320px] h-[640px] bg-nordic-primary rounded-[3.5rem] border-[8px] border-nordic-highlight/30 shadow-2xl overflow-hidden rotate-[-3deg] hover:rotate-0 transition-transform duration-500">
                {/* Notch */}
                <div className="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-7 bg-slate-900 rounded-full z-20" />
                
                {/* Screen Content */}
-               <div className="h-full w-full bg-slate-950 overflow-y-auto hide-scrollbar relative">
+               <div className="h-full w-full bg-nordic-primary overflow-y-auto hide-scrollbar relative">
                  
                  {/* Header Image */}
                  <div className="h-40 w-full bg-[url('https://images.unsplash.com/photo-1614850523459-c2f4c699c52e?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center relative">
@@ -78,15 +78,15 @@ export default function SocialLandingPage() {
                        </div>
                    </div>
                    
-                   <h3 className="mt-3 text-xl font-bold text-white">Alex Music</h3>
-                   <p className="text-sm text-slate-400 text-center mt-1 px-2 font-light">
+                   <h3 className="mt-3 text-xl font-bold text-nordic-secondary">Alex Music</h3>
+                   <p className="text-sm text-nordic-highlight text-center mt-1 px-2 font-light">
                      DJ & Producer from Stockholm. <br/> New mix out now! 👇
                    </p>
                    
                    {/* Social Icons Row - FIXAT HÄR */}
                    <div className="flex gap-4 mt-6">
                      {[Instagram, Music, Share2].map((Icon, i) => (
-                       <div key={i} className="h-10 w-10 rounded-full bg-slate-900 border border-slate-800 hover:border-sky-500/50 hover:bg-sky-500/10 hover:text-sky-400 transition-colors flex items-center justify-center text-slate-400 cursor-pointer shadow-sm">
+                       <div key={i} className="h-10 w-10 rounded-full bg-slate-900 border border-nordic-highlight/40 hover:border-sky-500/50 hover:bg-sky-500/10 hover:text-sky-400 transition-colors flex items-center justify-center text-nordic-highlight cursor-pointer shadow-sm">
                          <Icon size={18} />
                        </div>
                      ))}
@@ -96,7 +96,7 @@ export default function SocialLandingPage() {
                  {/* Links Stack */}
                  <div className="px-5 mt-8 space-y-3 pb-8">
                    {["Lyssna på Spotify", "Kommande Spelningar", "Boka mig", "Min Soundcloud"].map((label, i) => (
-                     <div key={i} className="group w-full p-4 rounded-2xl bg-slate-900 border border-slate-800 hover:border-sky-500/30 hover:shadow-[0_0_15px_rgba(14,165,233,0.1)] transition-all cursor-pointer flex items-center justify-between">
+                     <div key={i} className="group w-full p-4 rounded-2xl bg-slate-900 border border-nordic-highlight/40 hover:border-sky-500/30 hover:shadow-[0_0_15px_rgba(14,165,233,0.1)] transition-all cursor-pointer flex items-center justify-between">
                         <span className="text-sm font-medium text-slate-200">{label}</span>
                      </div>
                    ))}
@@ -118,24 +118,24 @@ export default function SocialLandingPage() {
 
 
         {/* --- 2. PROBLEMET (VARDAGLIG IGENKÄNNING) --- */}
-        <section className="py-16 border-t border-slate-800/50">
+        <section className="py-16 border-t border-nordic-highlight/40/50">
           <div className="max-w-3xl mx-auto text-center space-y-12">
             <div className="space-y-6">
-                <h2 className="text-3xl md:text-5xl font-bold text-white">
+                <h2 className="text-3xl md:text-5xl font-bold text-nordic-secondary">
                  Det borde vara enklare <br/> att dela vem du är.
                 </h2>
-                <div className="text-lg md:text-xl text-slate-400 space-y-2 leading-relaxed font-light">
+                <div className="text-lg md:text-xl text-nordic-highlight space-y-2 leading-relaxed font-light">
                     <p>Ibland vill du dela <span className="text-sky-400 font-medium">Instagram</span>.</p>
                     <p>Ibland <span className="text-yellow-400 font-medium">Snapchat</span>.</p>
                     <p>Ibland bara ditt nummer.</p>
-                    <p className="pt-4 italic text-slate-500">Men istället letar du efter rätt app – eller förklarar hur man ska hitta dig.</p>
+                    <p className="pt-4 italic text-nordic-highlight">Men istället letar du efter rätt app – eller förklarar hur man ska hitta dig.</p>
                 </div>
             </div>
             
             {/* Lösning Highlight */}
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-6 md:p-8 inline-block max-w-2xl mx-auto">
+            <div className="bg-slate-900/50 border border-nordic-highlight/40 rounded-2xl p-6 md:p-8 inline-block max-w-2xl mx-auto">
                  <p className="text-lg md:text-xl text-slate-200">
-                    <span className="font-bold text-white">AVYRA</span> samlar allt du vill dela på ett ställe. <br/>
+                    <span className="font-bold text-nordic-secondary">AVYRA</span> samlar allt du vill dela på ett ställe. <br/>
                     Redo i fickan – när du behöver det.
                  </p>
             </div>
@@ -144,14 +144,14 @@ export default function SocialLandingPage() {
 
 
         {/* --- 3. VAD DU KAN DELA --- */}
-        <section className="bg-slate-900/30 rounded-[3rem] border border-slate-800 p-8 md:p-16 relative overflow-hidden">
+        <section className="bg-slate-900/30 rounded-[3rem] border border-nordic-highlight/40 p-8 md:p-16 relative overflow-hidden">
             <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
                 <div className="space-y-8">
-                    <h2 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+                    <h2 className="text-4xl md:text-5xl font-bold text-nordic-secondary leading-tight">
                         Dela det som <br/> är <span className="text-sky-400">du.</span>
                     </h2>
                     
-                    <ul className="space-y-4 text-lg text-slate-400">
+                    <ul className="space-y-4 text-lg text-nordic-highlight">
                         <li className="flex items-center gap-3">
                             <div className="h-2 w-2 rounded-full bg-sky-400"/> Sociala medier
                         </li>
@@ -163,7 +163,7 @@ export default function SocialLandingPage() {
                         </li>
                     </ul>
 
-                    <p className="text-slate-500 italic border-l-2 border-slate-800 pl-4 py-1">
+                    <p className="text-nordic-highlight italic border-l-2 border-nordic-highlight/40 pl-4 py-1">
                         Precis det du vill – inget mer. <br/>
                         Du ändrar när som helst. Samma sida fungerar alltid.
                     </p>
@@ -172,12 +172,12 @@ export default function SocialLandingPage() {
                 {/* VISUAL: Content Examples */}
                 <div className="grid grid-cols-2 gap-4">
                     {/* Kort 1 */}
-                    <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 rotate-[-3deg] hover:rotate-0 transition-transform">
+                    <div className="bg-nordic-primary p-4 rounded-2xl border border-nordic-highlight/40 rotate-[-3deg] hover:rotate-0 transition-transform">
                         <div className="flex items-center gap-3 mb-4">
                             <div className="h-10 w-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center">🎓</div>
                             <div>
-                                <div className="text-xs text-slate-500 font-bold uppercase">Student</div>
-                                <div className="text-white font-medium">Portfolio</div>
+                                <div className="text-xs text-nordic-highlight font-bold uppercase">Student</div>
+                                <div className="text-nordic-secondary font-medium">Portfolio</div>
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -187,12 +187,12 @@ export default function SocialLandingPage() {
                     </div>
 
                     {/* Kort 2 */}
-                    <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 rotate-[3deg] hover:rotate-0 transition-transform mt-8">
+                    <div className="bg-nordic-primary p-4 rounded-2xl border border-nordic-highlight/40 rotate-[3deg] hover:rotate-0 transition-transform mt-8">
                          <div className="flex items-center gap-3 mb-4">
                             <div className="h-10 w-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center">✈️</div>
                             <div>
-                                <div className="text-xs text-slate-500 font-bold uppercase">Resenär</div>
-                                <div className="text-white font-medium">Mina guider</div>
+                                <div className="text-xs text-nordic-highlight font-bold uppercase">Resenär</div>
+                                <div className="text-nordic-secondary font-medium">Mina guider</div>
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -201,12 +201,12 @@ export default function SocialLandingPage() {
                         </div>
                     </div>
                      {/* Kort 3 */}
-                     <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 rotate-[-2deg] hover:rotate-0 transition-transform col-span-2 w-2/3 mx-auto">
+                     <div className="bg-nordic-primary p-4 rounded-2xl border border-nordic-highlight/40 rotate-[-2deg] hover:rotate-0 transition-transform col-span-2 w-2/3 mx-auto">
                          <div className="flex items-center gap-3 mb-4">
                             <div className="h-10 w-10 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">👋</div>
                             <div>
-                                <div className="text-xs text-slate-500 font-bold uppercase">Vän</div>
-                                <div className="text-white font-medium">Bara jag</div>
+                                <div className="text-xs text-nordic-highlight font-bold uppercase">Vän</div>
+                                <div className="text-nordic-secondary font-medium">Bara jag</div>
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -221,7 +221,7 @@ export default function SocialLandingPage() {
         {/* --- 4. SÅ DELAR DU (TRE SÄTT) --- */}
         <section id="how-it-works" className="py-12">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl font-bold text-white sm:text-4xl">Välj det som passar dig.</h2>
+            <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">Välj det som passar dig.</h2>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
@@ -242,12 +242,12 @@ export default function SocialLandingPage() {
                 icon: <Smartphone size={32} className="text-emerald-400" />
               }
             ].map((item, i) => (
-              <div key={i} className="group p-8 rounded-3xl border border-slate-800 bg-slate-900/40 hover:bg-slate-900 transition-all text-center">
+              <div key={i} className="group p-8 rounded-3xl border border-nordic-highlight/40 bg-slate-900/40 hover:bg-slate-900 transition-all text-center">
                 <div className="h-16 w-16 mx-auto rounded-2xl bg-slate-800 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                   {item.icon}
                 </div>
-                <h3 className="text-xl font-bold text-white mb-3">{item.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{item.desc}</p>
+                <h3 className="text-xl font-bold text-nordic-secondary mb-3">{item.title}</h3>
+                <p className="text-nordic-highlight text-sm leading-relaxed">{item.desc}</p>
               </div>
             ))}
           </div>
@@ -255,12 +255,12 @@ export default function SocialLandingPage() {
 
 
         {/* --- 5. NFC TEASER (VALFRITT) --- */}
-        <section className="grid md:grid-cols-2 gap-12 items-center py-12 border-t border-slate-800/50">
+        <section className="grid md:grid-cols-2 gap-12 items-center py-12 border-t border-nordic-highlight/40/50">
             <div className="order-2 md:order-1">
-                <div className="relative w-full aspect-video bg-gradient-to-br from-slate-900 to-slate-950 rounded-3xl border border-slate-800 flex items-center justify-center overflow-hidden group">
+                <div className="relative w-full aspect-video bg-gradient-to-br from-slate-900 to-slate-950 rounded-3xl border border-nordic-highlight/40 flex items-center justify-center overflow-hidden group">
                      {/* Simulerat kort */}
                      <div className="w-48 h-32 bg-slate-100 rounded-xl shadow-2xl transform rotate-[-12deg] group-hover:rotate-0 transition-transform duration-500 flex items-center justify-center">
-                        <div className="h-10 w-10 rounded-full bg-sky-500 text-white flex items-center justify-center font-bold">A</div>
+                        <div className="h-10 w-10 rounded-full bg-sky-500 text-nordic-secondary flex items-center justify-center font-bold">A</div>
                      </div>
                 </div>
             </div>
@@ -268,15 +268,15 @@ export default function SocialLandingPage() {
                 <div className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-xs font-bold text-slate-300">
                     NFC
                 </div>
-                <h2 className="text-3xl font-bold text-white">Vill du dela ännu snabbare?</h2>
-                <p className="text-lg text-slate-400 leading-relaxed font-light">
+                <h2 className="text-3xl font-bold text-nordic-secondary">Vill du dela ännu snabbare?</h2>
+                <p className="text-lg text-nordic-highlight leading-relaxed font-light">
                     Med ett AVYRA-kort kan du dela din profil med ett enkelt blipp.
                     Perfekt när du möter nya människor – utan att leta efter rätt länk.
                     <br/><br/>
                     Kortet är kopplat till din sida. Ändra innehållet när du vill.
                 </p>
                 <div className="pt-2">
-                    <span className="text-sm font-medium text-slate-500">Finns som tillval inuti dashboarden.</span>
+                    <span className="text-sm font-medium text-nordic-highlight">Finns som tillval inuti dashboarden.</span>
                 </div>
             </div>
         </section>
@@ -288,10 +288,10 @@ export default function SocialLandingPage() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-64 bg-sky-500/10 blur-[120px] rounded-full pointer-events-none" />
           
           <div className="relative z-10 max-w-2xl mx-auto space-y-8">
-            <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight">
+            <h2 className="text-3xl md:text-5xl font-bold text-nordic-secondary leading-tight">
               Redo att göra det enklare?
             </h2>
-            <p className="text-slate-400 text-lg">
+            <p className="text-nordic-highlight text-lg">
               Skapa din sida idag och börja dela på ditt sätt. <br/>
               Med mobil – eller med NFC-kort om du vill.
             </p>
@@ -303,14 +303,14 @@ export default function SocialLandingPage() {
                 Skapa gratis sida
               </Link>
             </div>
-            <p className="text-xs text-slate-500 font-medium">Tar mindre än 2 minuter.</p>
+            <p className="text-xs text-nordic-highlight font-medium">Tar mindre än 2 minuter.</p>
             
-            <div className="pt-12 flex justify-center gap-6 text-sm text-slate-500 border-t border-slate-800/50 w-fit mx-auto mt-8 px-8">
-               <Link href="/social" className="hover:text-white transition-colors">För kreatörer</Link>
+            <div className="pt-12 flex justify-center gap-6 text-sm text-nordic-highlight border-t border-nordic-highlight/40/50 w-fit mx-auto mt-8 px-8">
+               <Link href="/social" className="hover:text-nordic-secondary transition-colors">För kreatörer</Link>
                <span className="text-slate-700">•</span>
-               <Link href="/business" className="hover:text-white transition-colors">För företag</Link>
+               <Link href="/business" className="hover:text-nordic-secondary transition-colors">För företag</Link>
                <span className="text-slate-700">•</span>
-               <Link href="/login" className="hover:text-white transition-colors">Logga in</Link>
+               <Link href="/login" className="hover:text-nordic-secondary transition-colors">Logga in</Link>
             </div>
           </div>
         </section>

@@ -39,7 +39,6 @@ export default function LoginForm() {
       });
 
       if (result?.error) {
-        // Om felet innehåller "verifiera" (från vår backend), visa det. Annars standardfel.
         if (result.error.toLowerCase().includes("verifiera")) {
              setError("Du måste verifiera din e-postadress innan du kan logga in.");
         } else {
@@ -47,7 +46,6 @@ export default function LoginForm() {
         }
         setLoading(false);
       } else {
-        // Redirect to the callback URL
         router.push(callbackUrl);
         router.refresh();
       }
@@ -58,34 +56,35 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md p-8 space-y-8 bg-[#030712] border border-gray-800 rounded-2xl shadow-2xl">
+    // CONTAINER: Använder nordic-primary för mörk bakgrund + en tunn border i highlight-färgen
+    <div className="w-full max-w-md p-8 space-y-8 bg-nordic-primary border border-nordic-highlight/20 rounded-2xl shadow-2xl">
+      
       {/* Header Section */}
       <div className="text-center space-y-2">
-        <h3 className="text-xs font-bold tracking-widest text-gray-500 uppercase">
+        <h3 className="text-xs font-bold tracking-widest text-nordic-highlight uppercase">
           AvyraCards
         </h3>
-        <h1 className="text-3xl font-bold text-white tracking-tight">
+        <h1 className="text-3xl font-bold text-nordic-secondary tracking-tight">
           Logga in
         </h1>
-        <p className="text-gray-400 text-sm">
+        <p className="text-nordic-highlight text-sm">
           Logga in för att hantera din profil
         </p>
       </div>
 
       {/* Feedback Messages */}
       {registered && (
-        <div className="p-3 text-sm text-green-500 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
+        // Här använder vi fortfarande grön för success, det är standard UX.
+        <div className="p-3 text-sm text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
           Ditt konto har skapats! 
           <br/>Vi har skickat ett verifieringsmail till dig.
         </div>
       )}
 
       {error && (
-        <div className="p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-lg text-center flex flex-col gap-2">
+        <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg text-center flex flex-col gap-2">
           <span>{error}</span>
-          
-          {/* Visa Resend-länk direkt i felrutan om det är relevant, eller alltid */}
-          <Link href="/verify-resend" className="text-xs underline hover:text-red-400">
+          <Link href="/verify-resend" className="text-xs underline hover:text-red-300">
             Fick du inget mail? Skicka igen
           </Link>
         </div>
@@ -99,7 +98,7 @@ export default function LoginForm() {
           <div className="space-y-2">
             <label 
               htmlFor="email" 
-              className="text-sm font-medium text-gray-200 block"
+              className="text-sm font-medium text-nordic-secondary block"
             >
               E-post
             </label>
@@ -111,7 +110,12 @@ export default function LoginForm() {
               required
               disabled={loading}
               placeholder="namn@exempel.se"
-              className="w-full px-4 py-3 bg-blue-50/50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+              // INPUT STYLING:
+              // bg-nordic-primary (mörk botten)
+              // border-nordic-highlight/30 (subtil ram)
+              // text-nordic-secondary (vit text)
+              // focus:ring-nordic-accent (turkos fokus-ring)
+              className="w-full px-4 py-3 bg-nordic-primary border border-nordic-highlight/30 rounded-xl text-nordic-secondary placeholder:text-nordic-highlight/50 focus:outline-none focus:ring-2 focus:ring-nordic-accent/50 focus:border-nordic-accent transition-all"
             />
           </div>
 
@@ -120,14 +124,14 @@ export default function LoginForm() {
             <div className="flex items-center justify-between">
               <label 
                 htmlFor="password" 
-                className="text-sm font-medium text-gray-200 block"
+                className="text-sm font-medium text-nordic-secondary block"
               >
                 Lösenord
               </label>
-              {/* LÄNK TILL GLÖMT LÖSENORD */}
+              {/* ACCENT LÄNK: Använder nordic-accent (turkos) istället för emerald */}
               <Link 
                 href="/forgot-password"
-                className="text-xs font-medium text-emerald-500 hover:text-emerald-400 transition-colors"
+                className="text-xs font-medium text-nordic-accent hover:text-nordic-accent/80 transition-colors"
               >
                 Glömt lösenord?
               </Link>
@@ -140,7 +144,7 @@ export default function LoginForm() {
               required
               disabled={loading}
               placeholder="••••••••"
-              className="w-full px-4 py-3 bg-blue-50/50 border border-gray-200 rounded-xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all"
+              className="w-full px-4 py-3 bg-nordic-primary border border-nordic-highlight/30 rounded-xl text-nordic-secondary placeholder:text-nordic-highlight/50 focus:outline-none focus:ring-2 focus:ring-nordic-accent/50 focus:border-nordic-accent transition-all"
             />
           </div>
         </div>
@@ -149,7 +153,9 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3.5 px-4 bg-white hover:bg-gray-100 text-black font-bold rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/5"
+          // BUTTON: Använder nordic-secondary (Vit) som bakgrund för hög kontrast,
+          // och nordic-primary (Mörk) för texten inuti knappen.
+          className="w-full py-3.5 px-4 bg-nordic-secondary hover:bg-nordic-support text-nordic-primary font-bold rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/5"
         >
           {loading ? "Loggar in..." : "Logga in"}
         </button>
@@ -158,15 +164,14 @@ export default function LoginForm() {
         <div className="text-center space-y-4 pt-2">
           <Link
             href="/get-started"
-            className="block text-sm text-gray-400 hover:text-white transition-colors"
+            className="block text-sm text-nordic-highlight hover:text-nordic-secondary transition-colors"
           >
-            Har du inget konto? <span className="font-semibold text-white">Skapa konto</span>
+            Har du inget konto? <span className="font-semibold text-nordic-secondary">Skapa konto</span>
           </Link>
 
-          {/* Resend Verification */}
           <Link
             href="/verify-resend"
-            className="block text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="block text-xs text-nordic-highlight hover:text-nordic-secondary transition-colors"
           >
             Har du inte fått verifieringsmailet? <span className="underline">Skicka igen</span>
           </Link>

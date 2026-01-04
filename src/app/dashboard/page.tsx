@@ -25,11 +25,11 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
+  // ÄNDRING: Tog bort <main> och bg-klasser. 
+  // Vi litar på att layout.tsx sätter den mörka bakgrunden globalt.
   return (
-    <main className="min-h-screen bg-slate-950 text-slate-50">
-      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
-        <DashboardShell user={user} />
-      </div>
-    </main>
+    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
+      <DashboardShell user={user} />
+    </div>
   );
 }

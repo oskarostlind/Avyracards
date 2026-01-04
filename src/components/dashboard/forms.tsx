@@ -72,7 +72,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           Namn
         </label>
         <input
-          className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-400"
+          className="w-full rounded-md border border-nordic-highlight/40 bg-slate-900 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-violet-400"
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Ditt namn"
@@ -85,7 +85,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
           Bio
         </label>
         <textarea
-          className="w-full min-h-[80px] rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-400"
+          className="w-full min-h-[80px] rounded-md border border-nordic-highlight/40 bg-slate-900 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-violet-400"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
           placeholder="Kort text om dig"
@@ -108,7 +108,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </label>
         <input
           type="tel"
-          className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-400"
+          className="w-full rounded-md border border-nordic-highlight/40 bg-slate-900 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-violet-400"
           value={phoneNumber}
           onChange={(e) => setPhoneNumber(e.target.value)}
           placeholder="+46 70 123 45 67"
@@ -122,7 +122,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         </label>
         <input
           type="email"
-          className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-400"
+          className="w-full rounded-md border border-nordic-highlight/40 bg-slate-900 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-violet-400"
           value={contactEmail}
           onChange={(e) => setContactEmail(e.target.value)}
           placeholder="namn@företag.se"
@@ -132,13 +132,13 @@ export function ProfileForm({ user }: ProfileFormProps) {
       <button
         type="submit"
         disabled={saving}
-        className="px-4 py-2 rounded-md bg-slate-50 text-slate-900 text-xs font-medium disabled:opacity-60"
+        className="px-4 py-2 rounded-md bg-transparent text-slate-900 text-xs font-medium disabled:opacity-60"
       >
         {saving ? "Sparar..." : "Spara"}
       </button>
 
       {status && (
-        <p className="mt-2 text-xs text-slate-400" aria-live="polite">
+        <p className="mt-2 text-xs text-nordic-highlight" aria-live="polite">
           {status}
         </p>
       )}
@@ -350,7 +350,7 @@ export function LinksForm({}: LinksFormProps) {
   }
 
   if (loading) {
-    return <p className="text-xs text-slate-400">Laddar länkar...</p>;
+    return <p className="text-xs text-nordic-highlight">Laddar länkar...</p>;
   }
 
   const primaryId = links[0]?.id;
@@ -364,7 +364,7 @@ export function LinksForm({}: LinksFormProps) {
             Länktitel
           </label>
           <input
-            className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-400"
+            className="w-full rounded-md border border-nordic-highlight/40 bg-slate-900 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-violet-400"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Ex. Instagram"
@@ -376,7 +376,7 @@ export function LinksForm({}: LinksFormProps) {
             URL
           </label>
           <input
-            className="w-full rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 outline-none focus:border-violet-400"
+            className="w-full rounded-md border border-nordic-highlight/40 bg-slate-900 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-violet-400"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             placeholder="https://..."
@@ -386,14 +386,14 @@ export function LinksForm({}: LinksFormProps) {
         <button
           type="submit"
           disabled={saving}
-          className="px-4 py-2 rounded-md bg-slate-50 text-slate-900 text-xs font-medium disabled:opacity-60"
+          className="px-4 py-2 rounded-md bg-transparent text-slate-900 text-xs font-medium disabled:opacity-60"
         >
           {saving ? "Lägger till..." : "Lägg till länk"}
         </button>
       </form>
 
       {status && (
-        <p className="text-xs text-slate-400" aria-live="polite">
+        <p className="text-xs text-nordic-highlight" aria-live="polite">
           {status}
         </p>
       )}
@@ -402,11 +402,11 @@ export function LinksForm({}: LinksFormProps) {
         {links.map((link) => (
           <li
             key={link.id}
-            className="space-y-2 rounded-md border border-slate-800 px-3 py-2 sm:flex sm:items-center sm:justify-between sm:space-y-0"
+            className="space-y-2 rounded-md border border-nordic-highlight/40 px-3 py-2 sm:flex sm:items-center sm:justify-between sm:space-y-0"
           >
             {/* Text-del */}
             <div className="min-w-0">
-              <p className="text-xs font-medium text-slate-50">
+              <p className="text-xs font-medium text-nordic-secondary">
                 {link.title}
                 {redirectEnabled && link.id === primaryId && (
                   <span className="ml-2 rounded-full bg-violet-600/20 px-2 py-[1px] text-[10px] font-semibold text-violet-300">
@@ -414,7 +414,7 @@ export function LinksForm({}: LinksFormProps) {
                   </span>
                 )}
               </p>
-              <p className="mt-1 text-[11px] text-slate-400 break-all sm:max-w-[260px] sm:truncate">
+              <p className="mt-1 text-[11px] text-nordic-highlight break-all sm:max-w-[260px] sm:truncate">
                 {link.url}
               </p>
             </div>
@@ -431,7 +431,7 @@ export function LinksForm({}: LinksFormProps) {
               <button
                 type="button"
                 onClick={() => toggleActive(link.id, !!link.isActive)}
-                className="rounded-md border border-slate-700 px-2 py-1 text-[11px]"
+                className="rounded-md border border-nordic-highlight/40 px-2 py-1 text-[11px]"
               >
                 {link.isActive ? "Aktiv" : "Inaktiv"}
               </button>
@@ -447,7 +447,7 @@ export function LinksForm({}: LinksFormProps) {
         ))}
 
         {links.length === 0 && (
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-nordic-highlight">
             Du har inga länkar ännu. Lägg till en ovanför.
           </p>
         )}

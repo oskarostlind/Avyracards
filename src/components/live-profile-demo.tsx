@@ -26,9 +26,9 @@ const MOCK_LINKS: PreviewLink[] = [
 
 export function LiveProfileDemo() {
   return (
-    <div className="w-full h-full flex justify-center items-center bg-slate-900/50 rounded-3xl overflow-hidden border border-slate-800 relative">
+    <div className="w-full h-full flex justify-center items-center bg-slate-900/50 rounded-3xl overflow-hidden border border-nordic-highlight/40 relative">
       {/* Skala ner previewen lite så den får plats snyggt i demorutan */}
-      <div className="transform scale-[0.65] sm:scale-[0.8] origin-center h-[750px] w-[375px] pointer-events-none select-none border-[8px] border-slate-800 rounded-[3rem] overflow-hidden bg-black shadow-2xl">
+      <div className="transform scale-[0.65] sm:scale-[0.8] origin-center h-[750px] w-[375px] pointer-events-none select-none border-[8px] border-nordic-highlight/40 rounded-[3rem] overflow-hidden bg-nordic-primary shadow-2xl">
         <ProfilePreview 
           username="Anna Andersson"
           name="Anna Andersson"

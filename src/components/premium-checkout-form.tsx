@@ -47,7 +47,7 @@ export function PremiumCheckoutForm({
   };
 
   return (
-    <div className="min-h-screen bg-[#030712] text-white flex items-center justify-center p-4 py-12">
+    <div className="min-h-screen bg-[#030712] text-nordic-secondary flex items-center justify-center p-4 py-12">
       <div className="max-w-6xl w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
         
         {/* VÄNSTER: Säljtext */}
@@ -61,7 +61,7 @@ export function PremiumCheckoutForm({
                 Allt du behöver för att <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">växa ditt varumärke</span>
              </h1>
-             <p className="text-gray-400 text-lg leading-relaxed max-w-md">
+             <p className="text-nordic-highlight text-lg leading-relaxed max-w-md">
                 Lås upp teman, analysverktyg och ta bort loggor. Inga bindningstider.
              </p>
           </div>
@@ -79,17 +79,17 @@ export function PremiumCheckoutForm({
              <div className="mb-8 flex items-center justify-between">
                  <div>
                     <h2 className="text-2xl font-bold">Uppgradera</h2>
-                    <p className="text-gray-500 text-sm">Gå vidare till säker betalning</p>
+                    <p className="text-nordic-highlight text-sm">Gå vidare till säker betalning</p>
                  </div>
                  <div className="bg-gray-800/50 p-2 rounded-lg">
-                    <CreditCard className="text-gray-400" />
+                    <CreditCard className="text-nordic-highlight" />
                  </div>
              </div>
 
-             <div className="bg-black/40 p-4 rounded-xl border border-gray-800 mb-6 space-y-3">
+             <div className="bg-nordic-primary/40 p-4 rounded-xl border border-gray-800 mb-6 space-y-3">
                  <div className="flex justify-between items-center">
                     <span className="font-medium text-sm">{productName}</span>
-                    <span className="font-bold">{formattedPrice}<span className="text-gray-500 font-normal text-xs">/mån</span></span>
+                    <span className="font-bold">{formattedPrice}<span className="text-nordic-highlight font-normal text-xs">/mån</span></span>
                  </div>
                  <div className="h-px bg-gray-800 w-full"></div>
                  <div className="flex justify-between items-center text-blue-400 text-sm font-medium">
@@ -109,7 +109,7 @@ export function PremiumCheckoutForm({
                  <button 
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-white text-black font-bold py-4 rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-white/5"
+                    className="w-full bg-nordic-secondary text-nordic-primary font-bold py-4 rounded-xl hover:bg-nordic-support transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-white/5"
                  >
                     {loading ? <Loader2 className="animate-spin" /> : "Gå till betalning"}
                     {!loading && <ArrowRight size={18} />}
@@ -118,7 +118,7 @@ export function PremiumCheckoutForm({
            </div>
            
            <div className="text-center mt-6">
-              <Link href="/get-started" className="text-sm text-gray-500 hover:text-white transition-colors">
+              <Link href="/get-started" className="text-sm text-nordic-highlight hover:text-nordic-secondary transition-colors">
                  Avbryt
               </Link>
            </div>

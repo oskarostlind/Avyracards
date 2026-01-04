@@ -70,7 +70,7 @@ export function CardPreview3D({ material, color, design, customImage }: CardPrev
   };
 
   const isLightColor = ["white", "silver", "gold", "yellow", "#ffffff", "#f5f5f5", "#e5e7eb", "#fcd34d"].includes(color.toLowerCase());
-  const textColor = isLightColor ? "text-black" : "text-white";
+  const textColor = isLightColor ? "text-nordic-secondary" : "text-nordic-secondary";
   const isMetal = material === "metal";
 
   // Gemensam stil för rundade hörn och skuggor
@@ -131,14 +131,14 @@ export function CardPreview3D({ material, color, design, customImage }: CardPrev
                                     <div className="text-xs md:text-sm opacity-70 mt-2 uppercase tracking-wider">AvyraCards {material}</div>
                                 </div>
                             ) : (
-                                <div className="bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-medium text-white border border-white/10">
+                                <div className="bg-nordic-primary/40 backdrop-blur-md px-4 py-1.5 rounded-full text-xs font-medium text-nordic-secondary border border-white/10">
                                     Custom Design
                                 </div>
                             )}
 
                             {design === "qr" && (
                                 <div className="bg-white p-1.5 md:p-2 rounded-xl shadow-sm">
-                                    <QrCode size={32} className="text-black md:w-10 md:h-10" />
+                                    <QrCode size={32} className="text-nordic-secondary md:w-10 md:h-10" />
                                 </div>
                             )}
                         </div>

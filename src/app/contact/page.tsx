@@ -7,7 +7,7 @@ export default function ContactPage() {
         så återkommer vi så snabbt som möjligt.
       </p>
 
-      <div className="mt-8 space-y-6 rounded-2xl border border-slate-800 bg-slate-900/40 p-6">
+      <div className="mt-8 space-y-6 rounded-2xl border border-nordic-highlight/40 bg-slate-900/40 p-6">
         <div>
           <h2 className="text-xl font-medium">E-post</h2>
           <p className="mt-1 text-slate-300">

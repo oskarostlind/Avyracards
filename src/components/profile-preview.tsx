@@ -178,7 +178,7 @@ export function ProfilePreview({
           relative z-10 w-full max-w-[380px]
           flex flex-col items-center
           p-8 mb-6
-          bg-slate-950/60 backdrop-blur-xl
+          bg-nordic-primary/60 backdrop-blur-xl
           border border-white/10
           rounded-[2.5rem]
           shadow-2xl
@@ -205,7 +205,7 @@ export function ProfilePreview({
                style={settings.frameStyle === 'ring' ? { borderRadius: '9999px' } : {}}
              />
           ) : (
-             <div className={`w-28 h-28 bg-white/10 flex items-center justify-center text-white/50 border-2 border-white/10 ${getFrameClass()}`}>
+             <div className={`w-28 h-28 bg-white/10 flex items-center justify-center text-nordic-secondary/50 border-2 border-white/10 ${getFrameClass()}`}>
                <User size={40} />
              </div>
           )}
@@ -241,7 +241,7 @@ export function ProfilePreview({
           ))}
           
           {links.length === 0 && (
-             <div className="p-6 border-2 border-dashed border-white/20 rounded-2xl text-center text-white/50 text-xs">
+             <div className="p-6 border-2 border-dashed border-white/20 rounded-2xl text-center text-nordic-secondary/50 text-xs">
                 Inga länkar tillagda ännu.
              </div>
           )}
@@ -251,7 +251,7 @@ export function ProfilePreview({
 
       {/* --- FOOTER (Nu utanför kortet) --- */}
       <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity">
-         <a href="https://avyracards.se" target="_blank" className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-white no-underline drop-shadow-md">
+         <a href="https://avyracards.se" target="_blank" className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary no-underline drop-shadow-md">
            <span>Powered by AvyraCards</span>
          </a>
       </div>

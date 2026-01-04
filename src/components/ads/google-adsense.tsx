@@ -27,7 +27,7 @@ export function AdBanner() {
   }, []);
 
   return (
-    <div className="my-6 flex justify-center overflow-hidden rounded-xl bg-gray-900/50 p-2">
+    <div className="my-6 flex justify-center overflow-hidden rounded-xl bg-nordic-primary/50 p-2">
       <ins
         className="adsbygoogle"
         style={{ display: "block", minWidth: "300px", minHeight: "250px" }}

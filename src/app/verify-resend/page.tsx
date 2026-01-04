@@ -47,30 +47,30 @@ export default function ResendVerificationPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#030712] p-4 text-slate-200">
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-slate-800 bg-slate-950 p-8 shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-nordic-primary p-4 text-nordic-secondary">
+      <div className="w-full max-w-md space-y-8 rounded-2xl border border-nordic-highlight/40 bg-nordic-primary p-8 shadow-2xl">
         <div className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 border border-slate-800">
-            <Mail className="h-6 w-6 text-emerald-500" />
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-nordic-primary border border-nordic-highlight/40">
+            <Mail className="h-6 w-6 text-nordic-accent" />
           </div>
-          <h1 className="text-2xl font-bold text-white">Verifiera ditt konto</h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <h1 className="text-2xl font-bold text-nordic-secondary">Verifiera ditt konto</h1>
+          <p className="mt-2 text-sm text-nordic-highlight">
             Skriv in din e-postadress så skickar vi en ny verifieringslänk till dig.
           </p>
         </div>
 
         {success ? (
-          <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-6 text-center animate-in fade-in zoom-in-95">
-            <div className="mb-3 flex justify-center text-emerald-400">
+          <div className="rounded-xl border border-nordic-accent/30 bg-nordic-accent/10 p-6 text-center animate-in fade-in zoom-in-95">
+            <div className="mb-3 flex justify-center text-nordic-accent">
               <CheckCircle2 size={32} />
             </div>
-            <h3 className="mb-2 font-semibold text-white">Mailet är skickat!</h3>
-            <p className="text-sm text-slate-300">
+            <h3 className="mb-2 font-semibold text-nordic-secondary">Mailet är skickat!</h3>
+            <p className="text-sm text-nordic-highlight">
               Kolla din inkorg (och skräppost). Det kan ta någon minut.
             </p>
             <Link
               href="/login"
-              className="mt-6 inline-flex items-center text-sm font-medium text-emerald-400 hover:text-emerald-300"
+              className="mt-6 inline-flex items-center text-sm font-medium text-nordic-accent hover:text-nordic-accent/80"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Tillbaka till inloggning
@@ -86,7 +86,7 @@ export default function ResendVerificationPage() {
                 {...register("email")}
                 type="email"
                 placeholder="namn@exempel.se"
-                className="w-full rounded-xl border border-slate-800 bg-slate-900 px-4 py-3 text-white placeholder-slate-600 focus:border-emerald-500 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all"
+                className="w-full rounded-xl border border-nordic-highlight/40 bg-nordic-primary px-4 py-3 text-nordic-secondary placeholder:text-nordic-highlight/60 focus:border-nordic-accent focus:outline-none focus:ring-1 focus:ring-nordic-accent transition-all"
               />
               {errors.email && (
                 <p className="text-xs text-red-400">{errors.email.message}</p>
@@ -100,7 +100,7 @@ export default function ResendVerificationPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex w-full items-center justify-center rounded-xl bg-white py-3.5 text-sm font-bold text-slate-950 transition hover:bg-slate-200 disabled:opacity-50"
+              className="flex w-full items-center justify-center rounded-xl bg-nordic-secondary py-3.5 text-sm font-bold text-nordic-primary transition hover:bg-nordic-support disabled:opacity-50"
             >
               {isSubmitting ? (
                 <Loader2 className="animate-spin" />
@@ -115,7 +115,7 @@ export default function ResendVerificationPage() {
           <div className="text-center">
             <Link
               href="/login"
-              className="text-sm text-slate-500 hover:text-slate-300 transition-colors"
+              className="text-sm text-nordic-highlight hover:text-nordic-secondary transition-colors"
             >
               Tillbaka till inloggning
             </Link>

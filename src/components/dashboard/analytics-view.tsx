@@ -32,7 +32,7 @@ export function AnalyticsView({
       </div>
 
       {/* 2. Huvudgraf */}
-      <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl">
+      <div className="rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
         <h3 className="mb-6 text-lg font-semibold text-slate-100">Aktivitet över tid</h3>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -52,7 +52,7 @@ export function AnalyticsView({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
         {/* GEOGRAFI & KARTA (Med 3D Glob) */}
-        <div className="relative flex flex-col rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl overflow-hidden min-h-[400px]">
+        <div className="relative flex flex-col rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl overflow-hidden min-h-[400px]">
           <div className="flex items-center justify-between mb-4 z-10">
             <h3 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
               <GlobeIcon className="h-5 w-5 text-indigo-400" /> Geografi
@@ -66,10 +66,10 @@ export function AnalyticsView({
                     <Globe className="scale-125" /> 
                 </div>
                 
-                <div className="relative z-10 space-y-3 mt-4 bg-slate-950/30 p-4 rounded-xl backdrop-blur-sm border border-white/5 max-w-[250px]">
+                <div className="relative z-10 space-y-3 mt-4 bg-nordic-primary/30 p-4 rounded-xl backdrop-blur-sm border border-white/5 max-w-[250px]">
                   {/* Om listan är tom, visa "Väntar på data" men låt globen vara kvar i bakgrunden */}
                   {(isPremium ? topCountries : [{code: "SE", count: 42}, {code: "US", count: 12}]).length === 0 ? (
-                      <p className="text-xs text-slate-400">Väntar på geodata...</p>
+                      <p className="text-xs text-nordic-highlight">Väntar på geodata...</p>
                   ) : (
                     (isPremium ? topCountries : [{code: "SE", count: 42}, {code: "US", count: 12}]).map((c: any, i: number) => (
                       <div key={i} className="flex items-center justify-between text-sm">
@@ -77,7 +77,7 @@ export function AnalyticsView({
                           <span>{getFlagEmoji(c.code)}</span> 
                           <span className="text-slate-200">{getCountryName(c.code)}</span>
                         </div>
-                        <span className="font-bold text-slate-400">{c.count}</span>
+                        <span className="font-bold text-nordic-highlight">{c.count}</span>
                       </div>
                     ))
                   )}
@@ -86,7 +86,7 @@ export function AnalyticsView({
         </div>
 
         {/* TRAFIKKÄLLOR */}
-        <div className="relative rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl overflow-hidden">
+        <div className="relative rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl overflow-hidden">
           <h3 className="mb-6 text-lg font-semibold text-slate-100 flex items-center gap-2">
             <QrCode className="h-5 w-5 text-pink-400" /> Trafikkällor
           </h3>
@@ -112,12 +112,12 @@ export function AnalyticsView({
       {/* 4. SENASTE AKTIVITET & TOPPLISTA (Som förut...) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Live Feed */}
-        <div className="relative rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl">
+        <div className="relative rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
              <h3 className="mb-4 text-lg font-semibold text-slate-100">Live-aktivitet</h3>
              <PremiumLock isPremium={isPremium} title="Se vem som tittar just nu">
                 <div className="space-y-4">
                     {(isPremium ? recentActivity : [1,2,3,4]).map((item: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between border-b border-slate-800/50 pb-3 last:border-0 last:pb-0">
+                    <div key={i} className="flex items-center justify-between border-b border-nordic-highlight/40/50 pb-3 last:border-0 last:pb-0">
                         <div className="flex items-center gap-3">
                             <div className="p-2 rounded-full bg-slate-800/50">
                                 {isPremium && item.type === 'CLICK' ? <MousePointerClick size={14} className="text-green-400"/> : <Eye size={14} className="text-blue-400"/>}
@@ -126,7 +126,7 @@ export function AnalyticsView({
                                 <p className="text-xs text-slate-300 font-medium">
                                     {isPremium ? (item.type === 'VIEW' ? 'Profilvisning' : 'Klick') : 'Besökare'}
                                 </p>
-                                <p className="text-[10px] text-slate-500">
+                                <p className="text-[10px] text-nordic-highlight">
                                     {isPremium ? `${item.city || 'Okänd plats'}, ${item.country || ''}` : 'Stockholm, Sverige'}
                                 </p>
                             </div>
@@ -136,17 +136,17 @@ export function AnalyticsView({
                         </div>
                     </div>
                     ))}
-                    {isPremium && recentActivity.length === 0 && <p className="text-sm text-slate-500">Ingen aktivitet än.</p>}
+                    {isPremium && recentActivity.length === 0 && <p className="text-sm text-nordic-highlight">Ingen aktivitet än.</p>}
                 </div>
              </PremiumLock>
         </div>
         
         {/* Topplista Länkar */}
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-xl">
+        <div className="rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
             <h3 className="mb-4 text-lg font-semibold text-slate-100">Mest klickade</h3>
             <div className="space-y-3">
-            {topLinks.length === 0 ? <p className="text-sm text-slate-400">Ingen data.</p> : topLinks.map((link, i) => (
-                <div key={i} className="flex items-center justify-between rounded-lg bg-slate-950/30 p-3 border border-slate-800/50">
+            {topLinks.length === 0 ? <p className="text-sm text-nordic-highlight">Ingen data.</p> : topLinks.map((link, i) => (
+                <div key={i} className="flex items-center justify-between rounded-lg bg-nordic-primary/30 p-3 border border-nordic-highlight/40/50">
                     <span className="truncate text-sm font-medium text-slate-300 max-w-[150px]">{link.title || link.url}</span>
                     <span className="text-xs font-bold text-emerald-400">{link.clicks} klick</span>
                 </div>
@@ -167,11 +167,11 @@ function PremiumLock({ isPremium, title, children }: { isPremium: boolean; title
         {children}
       </div>
       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4 text-center">
-        <div className="h-10 w-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center mb-2 shadow-xl">
+        <div className="h-10 w-10 rounded-full bg-slate-800 border border-nordic-highlight/40 flex items-center justify-center mb-2 shadow-xl">
           <Lock className="h-4 w-4 text-emerald-400" />
         </div>
         <h4 className="text-slate-200 font-bold text-sm mb-1">{title}</h4>
-        <Link href="/checkout/premium" className="rounded-full bg-emerald-600 px-4 py-1.5 text-[10px] font-bold text-white hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">
+        <Link href="/checkout/premium" className="rounded-full bg-emerald-600 px-4 py-1.5 text-[10px] font-bold text-nordic-secondary hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">
           Lås upp
         </Link>
       </div>
@@ -181,14 +181,14 @@ function PremiumLock({ isPremium, title, children }: { isPremium: boolean; title
 
 function StatCard({ title, value, icon, subtitle }: any) {
   return (
-    <div className="rounded-3xl border border-slate-800 bg-slate-900/50 p-6 shadow-lg">
+    <div className="rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-lg">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-slate-400">{title}</h3>
+        <h3 className="text-sm font-medium text-nordic-highlight">{title}</h3>
         <div className="rounded-full bg-slate-800/50 p-2">{icon}</div>
       </div>
       <div className="mt-4">
-        <div className="text-3xl font-bold text-slate-50">{value}</div>
-        <p className="mt-1 text-xs text-slate-500">{subtitle}</p>
+        <div className="text-3xl font-bold text-nordic-secondary">{value}</div>
+        <p className="mt-1 text-xs text-nordic-highlight">{subtitle}</p>
       </div>
     </div>
   );

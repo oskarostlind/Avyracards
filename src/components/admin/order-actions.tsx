@@ -53,7 +53,7 @@ export function AdminOrderActions({ orderId, currentStatus, cardsGenerated }: Pr
         <button
           onClick={handleGenerate}
           disabled={loading}
-          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 border border-slate-700"
+          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-nordic-secondary px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 border border-nordic-highlight/40"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
           Generera Koder
@@ -64,7 +64,7 @@ export function AdminOrderActions({ orderId, currentStatus, cardsGenerated }: Pr
         <button
           onClick={handleMarkShipped}
           disabled={loading}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 shadow-lg shadow-blue-900/20"
+          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-nordic-secondary px-4 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 shadow-lg shadow-blue-900/20"
         >
           {loading ? <Loader2 size={16} className="animate-spin" /> : <PackageCheck size={16} />}
           Markera som Skickad

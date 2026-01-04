@@ -28,19 +28,19 @@ export default async function AdminUserDetailPage({
   const user = await getAdminUserDetails(params.id);
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 md:p-8">
+    <div className="min-h-screen bg-nordic-primary p-4 md:p-8">
       <div className="mx-auto max-w-4xl space-y-6">
         
         {/* Tillbaka-länk */}
-        <Link href="/admin/users" className="flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors">
+        <Link href="/admin/users" className="flex items-center gap-2 text-sm text-nordic-highlight hover:text-nordic-secondary transition-colors">
           <ChevronLeft size={16} /> Tillbaka till listan
         </Link>
 
         {/* --- HEADER KORT --- */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 md:items-start justify-between">
+        <div className="bg-slate-900 border border-nordic-highlight/40 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-6 md:items-start justify-between">
           <div className="flex gap-4">
             {/* Avatar Placeholder */}
-            <div className="h-16 w-16 rounded-full bg-slate-800 flex items-center justify-center text-slate-500 border border-slate-700">
+            <div className="h-16 w-16 rounded-full bg-slate-800 flex items-center justify-center text-nordic-highlight border border-nordic-highlight/40">
                {user.avatarUrl ? (
                  // eslint-disable-next-line @next/next/no-img-element
                  <img src={user.avatarUrl} alt="" className="h-full w-full rounded-full object-cover" />
@@ -50,12 +50,12 @@ export default async function AdminUserDetailPage({
             </div>
             
             <div>
-              <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+              <h1 className="text-2xl font-bold text-nordic-secondary flex items-center gap-2">
                 {user.name || "Namnlös"}
                 {user.isPremium && <Crown size={20} className="text-amber-400 fill-amber-400/20" />}
               </h1>
-              <p className="text-slate-400 font-mono text-sm">@{user.username}</p>
-              <p className="text-slate-500 text-xs mt-1">{user.email}</p>
+              <p className="text-nordic-highlight font-mono text-sm">@{user.username}</p>
+              <p className="text-nordic-highlight text-xs mt-1">{user.email}</p>
             </div>
           </div>
 
@@ -76,7 +76,7 @@ export default async function AdminUserDetailPage({
              }}>
                <button 
                  type="submit"
-                 className="w-full py-2 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2 mb-2"
+                 className="w-full py-2 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-nordic-secondary shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2 mb-2"
                  title="Logga ut som admin och logga in som denna användare"
                >
                  <VenetianMask size={16} /> Logga in som user
@@ -105,24 +105,24 @@ export default async function AdminUserDetailPage({
         <div className="grid md:grid-cols-2 gap-6">
           
           {/* --- INFO & STATS --- */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-             <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider border-b border-slate-800 pb-2">Status & Info</h3>
+          <div className="bg-slate-900 border border-nordic-highlight/40 rounded-2xl p-6 space-y-4">
+             <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider border-b border-nordic-highlight/40 pb-2">Status & Info</h3>
              
              <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                   <span className="text-slate-500">Konto skapat:</span>
+                   <span className="text-nordic-highlight">Konto skapat:</span>
                    <span className="text-slate-300 font-mono">{new Date(user.createdAt).toLocaleDateString()}</span>
                 </div>
                 <div className="flex justify-between">
-                   <span className="text-slate-500">Premium Källa:</span>
+                   <span className="text-nordic-highlight">Premium Källa:</span>
                    <span className="text-slate-300">{user.premiumSource || "-"}</span>
                 </div>
                 <div className="flex justify-between">
-                   <span className="text-slate-500">Länkar i profil:</span>
+                   <span className="text-nordic-highlight">Länkar i profil:</span>
                    <span className="text-slate-300">{user._count.links} st</span>
                 </div>
                 <div className="flex justify-between">
-                   <span className="text-slate-500">Kopplade kort:</span>
+                   <span className="text-nordic-highlight">Kopplade kort:</span>
                    {/* Bugfix: Använd .length istället för _count.cards eftersom vi include:ar cards */}
                    <span className="text-slate-300">{user.cards.length} st</span>
                 </div>
@@ -130,8 +130,8 @@ export default async function AdminUserDetailPage({
           </div>
 
           {/* --- ANTECKNINGAR (ADMIN NOTES) --- */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-4">
-             <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider border-b border-slate-800 pb-2">Interna Anteckningar</h3>
+          <div className="bg-slate-900 border border-nordic-highlight/40 rounded-2xl p-6 space-y-4">
+             <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider border-b border-nordic-highlight/40 pb-2">Interna Anteckningar</h3>
              
              <form action={async (formData) => {
                 "use server";
@@ -142,9 +142,9 @@ export default async function AdminUserDetailPage({
                   name="notes"
                   defaultValue={user.adminNotes || ""}
                   placeholder="Skriv noteringar här... (Bara admin ser detta)"
-                  className="flex-1 bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-300 focus:outline-none focus:border-blue-500 min-h-[100px]"
+                  className="flex-1 bg-nordic-primary border border-nordic-highlight/40 rounded-lg p-3 text-sm text-slate-300 focus:outline-none focus:border-blue-500 min-h-[100px]"
                 />
-                <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-white py-2 rounded-lg text-xs font-bold transition">
+                <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-nordic-secondary py-2 rounded-lg text-xs font-bold transition">
                    Spara anteckningar
                 </button>
              </form>
@@ -153,14 +153,14 @@ export default async function AdminUserDetailPage({
         </div>
 
         {/* --- KOPPLADE KORT (NY SEKTION) --- */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-800 flex justify-between items-center">
+        <div className="bg-slate-900 border border-nordic-highlight/40 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-nordic-highlight/40 flex justify-between items-center">
              <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider">Kopplade Kort</h3>
-             <span className="text-xs text-slate-500">{user.cards.length} st</span>
+             <span className="text-xs text-nordic-highlight">{user.cards.length} st</span>
           </div>
           
           {user.cards.length === 0 ? (
-            <div className="p-8 text-center text-slate-500 text-sm">
+            <div className="p-8 text-center text-nordic-highlight text-sm">
                Inga kort kopplade till detta konto än.
             </div>
           ) : (
@@ -168,12 +168,12 @@ export default async function AdminUserDetailPage({
               {user.cards.map((card) => (
                 <div key={card.id} className="p-4 flex items-center justify-between hover:bg-slate-800/30 transition">
                    <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-lg bg-slate-800 flex items-center justify-center border border-slate-700 text-slate-400">
+                      <div className="h-10 w-10 rounded-lg bg-slate-800 flex items-center justify-center border border-nordic-highlight/40 text-nordic-highlight">
                          <QrCode size={20} />
                       </div>
                       <div>
                          <p className="text-sm font-bold text-slate-200 font-mono tracking-wide">{card.cardCode}</p>
-                         <p className="text-xs text-slate-500">
+                         <p className="text-xs text-nordic-highlight">
                            {card.status === "CLAIMED" ? "✅ Aktiverad" : "⚪ Ej aktiverad"} 
                            {card.claimedAt && ` • ${new Date(card.claimedAt).toLocaleDateString()}`}
                          </p>

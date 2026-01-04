@@ -17,7 +17,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
     include: { cards: true },
   });
 
-  if (!order) return <div className="text-white p-8">Order hittades inte</div>;
+  if (!order) return <div className="text-nordic-secondary p-8">Order hittades inte</div>;
 
   // Hämta adress från Stripe om session ID finns
   let shippingDetails = null;
@@ -36,7 +36,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   const customerName = shippingDetails?.name || order.companyName || "Kund";
 
   return (
-    <div className="min-h-screen bg-slate-950 p-4 md:p-8 text-slate-50">
+    <div className="min-h-screen bg-nordic-primary p-4 md:p-8 text-nordic-secondary">
       
       {/* DENNA SYNS BARA VID UTSKRIFT */}
       <PackingSlip orderId={order.id} customerName={customerName} cards={order.cards} />
@@ -44,12 +44,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
       <div className="mx-auto max-w-5xl print:hidden">
         
         {/* Navigering */}
-        <Link href="/admin" className="mb-6 inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition">
+        <Link href="/admin" className="mb-6 inline-flex items-center gap-2 text-sm text-nordic-highlight hover:text-nordic-secondary transition">
           <ArrowLeft size={16} /> Tillbaka till översikt
         </Link>
 
         {/* Header */}
-        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between rounded-3xl border border-slate-800 bg-slate-900/50 p-6">
+        <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6">
           <div>
             <div className="flex items-center gap-3 mb-1">
               <h1 className="text-2xl font-bold font-mono">
@@ -57,7 +57,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               </h1>
               <StatusBadge status={order.status} />
             </div>
-            <p className="text-slate-400 text-sm">
+            <p className="text-nordic-highlight text-sm">
               Skapad {new Date(order.createdAt).toLocaleString("sv-SE")}
             </p>
           </div>
@@ -72,7 +72,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                  // För att göra det enkelt: AdminOrderActions hanterar logik, men vi kan lägga en script-tagg eller Client Component.
                  // Låt oss använda en enkel Client Wrapper för utskriftsknappen senare, eller bara be dig trycka Ctrl+P.
                  // Men vi lägger in en snygg knapp som inte gör något än, du får trycka Ctrl+P.
-                 className="flex items-center gap-2 bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium border border-slate-700 hover:bg-slate-700 transition"
+                 className="flex items-center gap-2 bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium border border-nordic-highlight/40 hover:bg-slate-700 transition"
                >
                  <Printer size={16} /> <span className="hidden sm:inline">Tryck Ctrl+P för Följesedel</span>
                </button>
@@ -90,7 +90,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           
           {/* Vänster: KORT */}
           <div className="space-y-6">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
+            <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
                   <CreditCard className="text-purple-400" size={20} />
@@ -99,12 +99,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
               </div>
               
               {order.cards.length === 0 ? (
-                <div className="text-center py-12 border-2 border-dashed border-slate-800 rounded-xl bg-slate-950/50">
+                <div className="text-center py-12 border-2 border-dashed border-nordic-highlight/40 rounded-xl bg-nordic-primary/50">
                   <div className="inline-flex p-3 rounded-full bg-slate-900 mb-3">
                     <Wand2 className="text-slate-600" size={24} />
                   </div>
                   <p className="text-slate-300 font-medium">Inga koder genererade</p>
-                  <p className="text-sm text-slate-500 mt-1">
+                  <p className="text-sm text-nordic-highlight mt-1">
                     Tryck på &quot;Generera Koder&quot; för att skapa unika länkar.
                   </p>
                 </div>
@@ -114,20 +114,20 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                     const nfcUrl = `https://avyracards.se/c/${card.cardCode}`;
                     
                     return (
-                      <div key={card.id} className="rounded-xl border border-slate-700 bg-slate-950 p-5 shadow-lg relative overflow-hidden group">
+                      <div key={card.id} className="rounded-xl border border-nordic-highlight/40 bg-nordic-primary p-5 shadow-lg relative overflow-hidden group">
                         <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-purple-500 to-blue-500" />
                         
                         <div className="flex justify-between items-start mb-4 pl-3">
                           <div>
-                            <p className="text-xs text-slate-500 uppercase tracking-wider font-bold mb-1">Kortkod (Tryck)</p>
-                            <span className="font-mono text-2xl font-bold text-white tracking-widest">{card.cardCode}</span>
+                            <p className="text-xs text-nordic-highlight uppercase tracking-wider font-bold mb-1">Kortkod (Tryck)</p>
+                            <span className="font-mono text-2xl font-bold text-nordic-secondary tracking-widest">{card.cardCode}</span>
                           </div>
-                          <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold border ${card.status === 'CLAIMED' ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                          <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold border ${card.status === 'CLAIMED' ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-slate-800 text-nordic-highlight border-nordic-highlight/40'}`}>
                             {card.status}
                           </span>
                         </div>
 
-                        <div className="pl-3 p-3 bg-slate-900/80 rounded-lg border border-slate-800 flex items-center justify-between gap-4">
+                        <div className="pl-3 p-3 bg-slate-900/80 rounded-lg border border-nordic-highlight/40 flex items-center justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                                 <LinkIcon size={12} className="text-blue-400" />
@@ -150,49 +150,49 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           <div className="space-y-6">
             
             {/* Adresskort (Hämtat från Stripe) */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6">
-               <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Leverans</h2>
+            <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6">
+               <h2 className="text-xs font-bold text-nordic-highlight uppercase tracking-widest mb-6">Leverans</h2>
                {shippingDetails?.address ? (
                  <div className="flex gap-4">
                     <div className="p-2 bg-slate-800 rounded-lg h-fit">
-                       <MapPin size={20} className="text-slate-400" />
+                       <MapPin size={20} className="text-nordic-highlight" />
                     </div>
                     <div className="text-sm text-slate-200 leading-relaxed">
-                       <p className="font-bold text-white">{shippingDetails.name}</p>
+                       <p className="font-bold text-nordic-secondary">{shippingDetails.name}</p>
                        <p>{shippingDetails.address.line1}</p>
                        {shippingDetails.address.line2 && <p>{shippingDetails.address.line2}</p>}
                        <p>{shippingDetails.address.postal_code} {shippingDetails.address.city}</p>
-                       <p className="text-slate-500 text-xs mt-1 uppercase">{shippingDetails.address.country}</p>
+                       <p className="text-nordic-highlight text-xs mt-1 uppercase">{shippingDetails.address.country}</p>
                     </div>
                  </div>
                ) : (
-                 <p className="text-sm text-slate-500 italic">Ingen adress hittades i Stripe sessionen.</p>
+                 <p className="text-sm text-nordic-highlight italic">Ingen adress hittades i Stripe sessionen.</p>
                )}
             </div>
 
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-6 sticky top-6">
-              <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-6">Kontakt</h2>
+            <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6 sticky top-6">
+              <h2 className="text-xs font-bold text-nordic-highlight uppercase tracking-widest mb-6">Kontakt</h2>
               
               <div className="space-y-6">
                 <div className="flex gap-4">
                   <div className="p-2 bg-slate-800 rounded-lg h-fit">
-                    <User size={20} className="text-slate-400" />
+                    <User size={20} className="text-nordic-highlight" />
                   </div>
                   <div>
-                    <div className="text-xs text-slate-500 mb-1">Kundtyp</div>
+                    <div className="text-xs text-nordic-highlight mb-1">Kundtyp</div>
                     <div className="font-medium text-slate-200">
                         {order.customerType === "COMPANY" ? "Företag" : "Privatperson"}
                     </div>
-                    {order.companyName && <div className="text-sm text-slate-400 mt-1">{order.companyName}</div>}
+                    {order.companyName && <div className="text-sm text-nordic-highlight mt-1">{order.companyName}</div>}
                   </div>
                 </div>
 
                 <div className="flex gap-4">
                   <div className="p-2 bg-slate-800 rounded-lg h-fit">
-                    <Mail size={20} className="text-slate-400" />
+                    <Mail size={20} className="text-nordic-highlight" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs text-slate-500 mb-1">E-post</div>
+                    <div className="text-xs text-nordic-highlight mb-1">E-post</div>
                     <a href={`mailto:${order.customerEmail}`} className="text-sm text-purple-400 hover:text-purple-300 break-all">
                       {order.customerEmail}
                     </a>
@@ -202,8 +202,8 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                 <div className="h-px bg-slate-800" />
 
                 <div>
-                    <div className="text-xs text-slate-500 mb-1">Totalt belopp</div>
-                    <span className="text-2xl font-bold text-white tracking-tight">
+                    <div className="text-xs text-nordic-highlight mb-1">Totalt belopp</div>
+                    <span className="text-2xl font-bold text-nordic-secondary tracking-tight">
                         {(order.amountTotal / 100).toFixed(0)} kr
                     </span>
                 </div>

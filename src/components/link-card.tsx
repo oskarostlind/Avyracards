@@ -17,30 +17,30 @@ export function LinkCard({ id, label, url, isVisible, onToggleVisibility, onDele
 
   return (
     <div
-      className="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+      className="flex items-center justify-between rounded-xl border border-nordic-support bg-nordic-primary p-4 shadow-sm"
       {...dragProps}
     >
       <div className="flex items-center gap-3">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-700">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-nordic-secondary/10 text-nordic-accent border border-nordic-support">
           <Icon className="h-5 w-5" />
         </span>
         <div>
-          <p className="font-semibold text-slate-900">{label}</p>
-          <p className="text-sm text-slate-500">{url}</p>
+          <p className="font-semibold text-nordic-secondary">{label}</p>
+          <p className="text-sm text-nordic-highlight">{url}</p>
         </div>
       </div>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => onToggleVisibility?.(id, !isVisible)}
-          className="rounded-full border border-slate-300 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+          className="rounded-full border border-nordic-support px-3 py-1 text-xs font-medium text-nordic-highlight hover:bg-nordic-primary/60"
         >
           {isVisible ? "Dölj" : "Visa"}
         </button>
         <button
           type="button"
           onClick={() => onDelete?.(id)}
-          className="rounded-full border border-rose-200 px-3 py-1 text-xs font-medium text-rose-500 hover:bg-rose-50"
+          className="rounded-full border border-rose-300 px-3 py-1 text-xs font-medium text-rose-400 hover:bg-rose-300/10"
         >
           Ta bort
         </button>
