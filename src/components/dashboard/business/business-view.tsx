@@ -46,7 +46,11 @@ export function BusinessView({ user }: BusinessViewProps) {
           description="Hantera vilka länkar som visas i din businessprofil."
           defaultOpen
         >
-          <LinksWorkspace initialLinks={initialLinks} mode="BUSINESS" />
+          <LinksWorkspace 
+          initialLinks={initialLinks} 
+          mode="BUSINESS"
+          activeRedirectId={user.redirectLinkId} // <-- LÄGG TILL DENNA
+           />
         </CollapsibleSection>
       </aside>
     </div>

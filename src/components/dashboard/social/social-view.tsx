@@ -43,7 +43,11 @@ export function SocialView({ user }: SocialViewProps) {
         description="Lägg till och hantera knapparna på din AvyraCards-sida."
         defaultOpen
       >
-        <LinksWorkspace initialLinks={initialLinks} mode="SOCIAL" />
+        <LinksWorkspace 
+        initialLinks={initialLinks} 
+        mode="SOCIAL" 
+        activeRedirectId={user.redirectLinkId} // <-- LÄGG TILL DENNA
+        />
       </CollapsibleSection>
     </div>
   );

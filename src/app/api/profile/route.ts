@@ -56,7 +56,10 @@ const updateSchema = z.object({
   contactEmail: optionalEmail,
   avatarUrl: avatarSchema,
 
+  // Redirect-inställningar
   redirectEnabled: z.boolean().optional(),
+  redirectLinkId: z.string().nullable().optional(), // NYTT: Kan vara ett ID eller null
+
   theme: z.string().max(50).optional(),
   font: z.string().max(50).optional(),
   profileMode: z.enum(["SOCIAL", "BUSINESS"]).optional(),
@@ -112,9 +115,6 @@ async function updateProfile(req: Request) {
 
   const data = parsed.data;
 
-  // Eftersom vi använder .transform() i schemat, är 'data' redan tvättat.
-  // Tomma strängar "" har redan blivit null.
-  
   const updated = await prisma.user.update({
     where: { id: session.user.id },
     data: {
@@ -125,7 +125,10 @@ async function updateProfile(req: Request) {
       phoneNumber: data.phoneNumber,
       contactEmail: data.contactEmail,
       avatarUrl: data.avatarUrl,
+      
+      // Redirect
       redirectEnabled: data.redirectEnabled,
+      redirectLinkId: data.redirectLinkId, // NYTT: Sparar ID
 
       theme: data.theme,
       font: data.font,
@@ -152,13 +155,15 @@ async function updateProfile(req: Request) {
       companyWebsite: data.companyWebsite,
       careerPageUrl: data.careerPageUrl,
     },
-    // Vi returnerar bara det frontend behöver
+    // Vi returnerar det frontend behöver för att uppdatera statet direkt
     select: {
       id: true,
       username: true,
       name: true,
       avatarUrl: true, 
       profileMode: true,
+      redirectEnabled: true, // NYTT
+      redirectLinkId: true,  // NYTT
     },
   });
 
@@ -184,7 +189,10 @@ export async function GET() {
       phoneNumber: true,
       contactEmail: true,
       avatarUrl: true,
+      
       redirectEnabled: true,
+      redirectLinkId: true, // NYTT: Skickar med detta till frontend
+
       theme: true,
       font: true,
       profileMode: true,

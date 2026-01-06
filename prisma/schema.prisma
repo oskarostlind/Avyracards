@@ -25,14 +25,13 @@ model User {
   font          String    @default("inter")
   avatarUrl     String?
   backgroundUrl String?
-  
-  // PREMIUM STATUS
-  isPremium        Boolean        @default(false)
-  // NYTT: Premium-detaljer för admin
-  premiumSource    PremiumSource? // "PAID", "GIFT", "TRIAL"
-  premiumGivenAt   DateTime?      // När aktiverades premium?
-  premiumExpiresAt DateTime?      // Om tidsbegränsad (t.ex. trial)
    
+  // PREMIUM STATUS
+  isPremium        Boolean         @default(false)
+  premiumSource    PremiumSource? 
+  premiumGivenAt   DateTime?      
+  premiumExpiresAt DateTime?      
+    
   stripeCustomerId String? 
 
   emailVerified     DateTime?
@@ -41,10 +40,12 @@ model User {
   phoneNumber  String?
   contactEmail String?
 
-  redirectEnabled Boolean @default(true)
+  // REDIRECT FUNKTIONALITET
+  redirectEnabled Boolean @default(true) // Är funktionen påslagen?
+  redirectLinkId  String? // NYTT: ID på länken vi ska skicka vidare till
 
-  links          Link[]
-  cards          Card[]
+  links           Link[]
+  cards           Card[]
   analyticsEvents AnalyticsEvent[]
 
   profileMode ProfileMode @default(SOCIAL)
@@ -78,12 +79,12 @@ model User {
 
   // THEME ENGINE
   theme String @default("default")
-  themeSettings Json?  // Här sparas hela CustomThemeSettings-objektet
+  themeSettings Json?  
 
-  // NYTT: Admin-verktyg och interna anteckningar
-  adminNotes         String?   // "Vän till grundaren", "Early adopter"
-  featureFlags       Json?     @default("{}") // T.ex. { "new_stats": true }
-  lastImpersonatedAt DateTime? // Säkerhetslogg
+  // Admin-verktyg
+  adminNotes         String?   
+  featureFlags       Json?     @default("{}") 
+  lastImpersonatedAt DateTime? 
 
   role Role @default(USER)
 }

@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { MapPin, Globe, Mail, Phone, Briefcase } from "lucide-react";
 import type { User, Link as LinkModel } from "@prisma/client";
+//import { ProfileMode } from "@prisma/client"; // Importerar Enumen
 
 import { prisma } from "@/lib/prisma";
 import { getTheme } from "@/utils/theme";
@@ -20,8 +21,14 @@ export const runtime = "nodejs";
 export const revalidate = 0;
 
 export default async function PublicProfilePage({ params, searchParams }: PageProps) {
+  const username = params.username;
+  
+  // 1. Hämta Preview-flaggor från URL
+  const isPreview = searchParams.preview === 'true';
+  const previewMode = typeof searchParams.mode === 'string' ? searchParams.mode : null;
+
   const user = await prisma.user.findUnique({
-    where: { username: params.username },
+    where: { username },
     include: {
       links: {
         where: { isActive: true },
@@ -34,16 +41,49 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     notFound();
   }
 
-  // Redirect logic
-  if (user.redirectEnabled && user.links.length > 0) {
-    const primary = user.links[0];
-    const target = normalizeUrl(primary.url);
-    redirect(target);
+  // 2. Bestäm vilket läge vi ska visa (Live eller Preview)
+  // Om vi previewar, använd URL-parametern. Annars använd databasens värde.
+  const displayMode = (isPreview && previewMode) 
+    ? (previewMode === "BUSINESS" ? "BUSINESS" : "SOCIAL")
+    : user.profileMode;
+
+  // 3. Filtrera länkar baserat på det aktiva läget
+  // Vi visar bara Business-länkar i Business-läge, och Social i Social.
+  const filteredLinks = user.links.filter(link => {
+    // Hantera legacy-länkar som saknar mode (räkna dem som SOCIAL)
+    const linkMode = link.mode || "SOCIAL";
+    return linkMode === displayMode;
+  });
+
+  // Skapa en "displayUser" med de filtrerade länkarna
+  const userForDisplay: UserWithLinks = {
+    ...user,
+    links: filteredLinks
+  };
+
+  // 4. Redirect Logic (Uppdaterad för redirectLinkId)
+  // Vi redirectar INTE om vi är i preview-läge (annars kan man inte redigera)
+  if (user.redirectEnabled && !isPreview) {
+    let targetUrl: string | null = null;
+
+    // A. Om vi har valt en specifik länk (Det nya sättet)
+    if (user.redirectLinkId) {
+      const targetLink = user.links.find(l => l.id === user.redirectLinkId);
+      if (targetLink) {
+        targetUrl = targetLink.url;
+      }
+    } 
+    // B. Fallback (om man slagit på redirect men inte valt länk): Ta första bästa
+    else if (user.links.length > 0) {
+      targetUrl = user.links[0].url;
+    }
+
+    if (targetUrl) {
+      redirect(normalizeUrl(targetUrl));
+    }
   }
 
   const showAds = !user.isPremium;
-
-  // Hämta source från URL (t.ex. ?source=nfc)
   const sourceParam = typeof searchParams.source === 'string' ? searchParams.source : undefined;
 
   return (
@@ -51,18 +91,18 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
       {/* Skicka med sourceParam till trackern */}
       <ProfileViewTracker userId={user.id} sourceParam={sourceParam} />
 
-      {user.profileMode === "BUSINESS" ? (
-        <BusinessProfile user={user} showAds={showAds} />
+      {displayMode === "BUSINESS" ? (
+        <BusinessProfile user={userForDisplay} showAds={showAds} />
       ) : (
-        <SocialProfile user={user} showAds={showAds} />
+        <SocialProfile user={userForDisplay} showAds={showAds} />
       )}
     </>
   );
 }
 
-// ... (Resten av filen SocialProfile, BusinessProfile och Helpers är oförändrade) ...
-// Klistra in resten av din gamla kod här nedanför om du vill, eller behåll den som den var.
-// Det enda viktiga var ändringen i 'export default function' och 'ProfileViewTracker'.
+// --------------------------------------------------------------------------------------
+// RESTEN AV KOMPONENTERNA (SocialProfile, BusinessProfile, Helpers)
+// (Dessa är oförändrade, men ligger kvar här för att filen ska vara komplett)
 // --------------------------------------------------------------------------------------
 
 function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
@@ -329,11 +369,11 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
                          href={normalizeUrl(link.url)}
                          className={`flex items-center justify-between p-4 rounded-xl border border-white/5 shadow-sm transition-all group hover:border-white/20 hover:bg-white/5 ${tokens.card}`}
                       >
-                         <div className="flex items-center gap-3">
-                            <span className="text-xl group-hover:scale-110 transition-transform">{getBusinessIcon(link.url || link.title)}</span>
-                            <span className={`font-medium ${tokens.text}`}>{link.title || link.url}</span>
-                         </div>
-                         <span className="text-nordic-highlight group-hover:text-nordic-secondary">→</span>
+                          <div className="flex items-center gap-3">
+                             <span className="text-xl group-hover:scale-110 transition-transform">{getBusinessIcon(link.url || link.title)}</span>
+                             <span className={`font-medium ${tokens.text}`}>{link.title || link.url}</span>
+                          </div>
+                          <span className="text-nordic-highlight group-hover:text-nordic-secondary">→</span>
                       </TrackedLink>
                    ))}
                 </div>
