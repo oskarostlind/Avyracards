@@ -10,9 +10,11 @@ const schema = z.object({
 
 interface AddLinkFormProps {
   onCreated: () => Promise<void> | void;
+  // NYTT: Vi måste veta vilket läge vi skapar länken för
+  mode: "SOCIAL" | "BUSINESS"; 
 }
 
-export function AddLinkForm({ onCreated }: AddLinkFormProps) {
+export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
   const [form, setForm] = useState<{ label: string; url: string }>({
     label: "",
     url: "",
@@ -35,11 +37,11 @@ export function AddLinkForm({ onCreated }: AddLinkFormProps) {
       const response = await fetch("/api/links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(parsed.data), // { label, url }
+        // NYTT: Vi skickar med 'mode' här
+        body: JSON.stringify({ ...parsed.data, mode }), 
       });
 
       if (!response.ok) {
-        // Försök läsa fel från API:t
         try {
           const data = await response.json();
           setError(data.error ?? "Kunde inte spara länk");
@@ -49,10 +51,7 @@ export function AddLinkForm({ onCreated }: AddLinkFormProps) {
         return;
       }
 
-      // Nollställ formuläret
       setForm({ label: "", url: "" });
-
-      // Låt parent-komponent refetcha listan
       await onCreated();
     } finally {
       setLoading(false);
@@ -71,7 +70,8 @@ export function AddLinkForm({ onCreated }: AddLinkFormProps) {
           onChange={(e) =>
             setForm((prev) => ({ ...prev, label: e.target.value }))
           }
-          placeholder="Ex. Instagram"
+          // Dynamisk placeholder beroende på läge
+          placeholder={mode === "BUSINESS" ? "Ex. Boka möte" : "Ex. Instagram"}
           className="w-full rounded-xl border border-nordic-highlight/40 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
       </div>

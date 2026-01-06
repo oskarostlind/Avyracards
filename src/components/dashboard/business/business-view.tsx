@@ -4,7 +4,7 @@ import type { User, Link } from "@prisma/client";
 import { BusinessProfileForm } from "@/components/dashboard/business-profile-form";
 import { LinksWorkspace } from "@/components/dashboard/links-workspace";
 import { CollapsibleSection } from "@/components/dashboard/accordion";
-import { PublicProfileCard } from "@/components/dashboard/public-profile-card"; // NY IMPORT
+import { PublicProfileCard } from "@/components/dashboard/public-profile-card";
 import type { LinkItem } from "@/components/links-list";
 
 type BusinessViewProps = {
@@ -12,7 +12,10 @@ type BusinessViewProps = {
 };
 
 export function BusinessView({ user }: BusinessViewProps) {
-  const linkItems: LinkItem[] = user.links.map((link) => ({
+  // Filtrera ut länkar som är BUSINESS
+  const businessLinks = user.links.filter((l) => l.mode === "BUSINESS");
+
+  const initialLinks: LinkItem[] = businessLinks.map((link) => ({
     id: link.id,
     label: link.title || link.url,
     url: link.url,
@@ -22,7 +25,6 @@ export function BusinessView({ user }: BusinessViewProps) {
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start animate-in fade-in slide-in-from-bottom-2 duration-500">
       
-      {/* Vänster: Business Profile Form */}
       <div className="flex-1 space-y-4">
         <CollapsibleSection
           title="Businessprofil"
@@ -32,23 +34,19 @@ export function BusinessView({ user }: BusinessViewProps) {
           <BusinessProfileForm 
             user={user} 
             key={user.updatedAt?.toString() || "business-form"} 
-            />
+          />
         </CollapsibleSection>
       </div>
 
-      {/* Höger: Länkar & Publik Profil */}
       <aside className="w-full max-w-md space-y-4">
-        
-        {/* 1. Visa den publika länken även här! */}
         <PublicProfileCard username={user.username!} />
 
-        {/* 2. Länkar */}
         <CollapsibleSection
           title="Länkar (Business)"
           description="Hantera vilka länkar som visas i din businessprofil."
           defaultOpen
         >
-          <LinksWorkspace initialLinks={linkItems} />
+          <LinksWorkspace initialLinks={initialLinks} mode="BUSINESS" />
         </CollapsibleSection>
       </aside>
     </div>

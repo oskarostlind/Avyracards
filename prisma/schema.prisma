@@ -113,6 +113,11 @@ model Link {
   icon      String?
   order     Int       @default(0)
   isActive  Boolean   @default(true)
+
+  // FIXEN: Vi döper kolumnen till "link_mode" i databasen för att Postgres ska bli nöjd.
+  // I din kod heter den fortfarande bara "mode".
+  mode      ProfileMode @default(SOCIAL) @map("link_mode")
+
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

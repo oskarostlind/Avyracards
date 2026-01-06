@@ -1,29 +1,34 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-
 import { AddLinkForm } from "@/components/dashboard/add-link-form";
 import { LinksList, LinkItem } from "@/components/links-list";
 
 interface LinksWorkspaceProps {
   initialLinks: LinkItem[];
+  // NYTT: Tar emot mode för att veta vad som ska hämtas/skapas
+  mode: "SOCIAL" | "BUSINESS";
 }
 
-export function LinksWorkspace({ initialLinks }: LinksWorkspaceProps) {
+export function LinksWorkspace({ initialLinks, mode }: LinksWorkspaceProps) {
   const [links, setLinks] = useState(initialLinks);
 
+  // Nollställ listan om vi byter flik (mode) eller om initialLinks ändras
   useEffect(() => {
     setLinks(initialLinks);
-  }, [initialLinks]);
+  }, [initialLinks, mode]);
 
   const refresh = useCallback(async () => {
-    const response = await fetch("/api/links");
+    // NYTT: Lägger till ?mode=... i URL:en
+    const response = await fetch(`/api/links?mode=${mode}`);
     if (!response.ok) {
       return;
     }
-    const data = (await response.json()) as { links: LinkItem[] };
-    setLinks(data.links);
-  }, []);
+    
+    // API:et returnerar en array direkt (enligt min tidigare kod), inte { links: [] }
+    const data = (await response.json()) as LinkItem[];
+    setLinks(data);
+  }, [mode]);
 
   const handleCreated = useCallback(async () => {
     await refresh();
@@ -36,6 +41,8 @@ export function LinksWorkspace({ initialLinks }: LinksWorkspaceProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ order: ids }),
       });
+      // Inget refresh behövs här om UI:t uppdateras optimistiskt i LinksList, 
+      // men för säkerhets skull kan vi köra det.
       await refresh();
     },
     [refresh]
@@ -63,7 +70,9 @@ export function LinksWorkspace({ initialLinks }: LinksWorkspaceProps) {
 
   return (
     <div className="space-y-6">
-      <AddLinkForm onCreated={handleCreated} />
+      {/* Skickar med mode till formuläret */}
+      <AddLinkForm onCreated={handleCreated} mode={mode} />
+      
       <LinksList
         links={links}
         onReorder={handleReorder}
