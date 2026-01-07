@@ -17,8 +17,8 @@ import {
   Twitch,
   MessageCircle,
   Smartphone,
-  Briefcase,
-  LucideProps // Vi kan importera Lucides egna props om vi vill, men att definiera manuellt är ofta säkrare för autocomplete
+  Briefcase
+  // LucideProps <-- BORTTAGEN (Orsakade felet)
 } from "lucide-react";
 import React from "react";
 
@@ -92,18 +92,16 @@ export function detectIconKey(urlOrTitle?: string | null): IconKey {
 }
 
 // 3. KOMPONENTEN
-// HÄR FIXADE VI FELET: Vi lägger till size och strokeWidth i interfacet
 interface SocialIconProps extends Omit<React.ComponentProps<"svg">, "ref"> {
   url?: string | null;
   fallbackIcon?: IconKey;
-  size?: number | string;       // <-- Denna saknades!
-  strokeWidth?: number | string; // Bra att ha
+  size?: number | string;       
+  strokeWidth?: number | string;
 }
 
 export function SocialIcon({ url, fallbackIcon = "default", className, ...props }: SocialIconProps) {
   const iconKey = url ? detectIconKey(url) : fallbackIcon;
   const IconComponent = iconMap[iconKey];
 
-  // IconComponent är en Lucide-ikon, så den tar emot 'size' automatiskt via ...props
   return <IconComponent className={className} {...(props as any)} />;
 }
