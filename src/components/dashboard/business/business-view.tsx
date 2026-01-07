@@ -1,7 +1,7 @@
 "use client";
 
 import type { User, Link } from "@prisma/client";
-import { BusinessProfileForm } from "@/components/dashboard/business-profile-form";
+import { BusinessProfileForm } from "@/components/dashboard/business/business-profile-form";
 import { LinksWorkspace } from "@/components/dashboard/links-workspace";
 import { CollapsibleSection } from "@/components/dashboard/accordion";
 import { PublicProfileCard } from "@/components/dashboard/public-profile-card";

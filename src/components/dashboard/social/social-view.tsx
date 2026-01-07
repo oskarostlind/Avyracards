@@ -1,7 +1,7 @@
 "use client";
 
 import type { User, Link } from "@prisma/client";
-import { ProfileForm } from "@/components/dashboard/forms"; 
+import { SocialProfileForm } from "@/components/dashboard/social/social-profile-form"; 
 import { PublicProfileCard } from "@/components/dashboard/public-profile-card";
 import { CollapsibleSection } from "@/components/dashboard/accordion";
 import { LinksWorkspace } from "@/components/dashboard/links-workspace";
@@ -33,7 +33,7 @@ export function SocialView({ user }: SocialViewProps) {
         description="Namnet, bio och profilbild som visas på din sociala profil."
         defaultOpen
       >
-        <ProfileForm user={user} />
+        <SocialProfileForm user={user} />
       </CollapsibleSection>
 
       <PublicProfileCard username={user.username!} />
