@@ -29,6 +29,7 @@ export interface CustomThemeSettings {
   // --- Profil ---
   frameStyle?: FrameStyle;
   font?: Font;
+  hideBranding?: boolean;
 }
 
 // Standardvärden (Modern "Dark Default")
@@ -53,5 +54,7 @@ export const defaultSettings: CustomThemeSettings = {
   
   frameStyle: "circle",
   font: "inter",
+
+  hideBranding: false, // Default är att visa loggan
 };
 

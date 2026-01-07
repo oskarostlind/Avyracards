@@ -3,9 +3,10 @@
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { 
   Globe, Instagram, Linkedin, Twitter, Mail, 
-  Facebook, Github, Youtube, Link as LinkIcon 
+  Facebook, Github, Youtube, Link as LinkIcon,
+  Briefcase, MapPin, Phone
 } from "lucide-react";
-import { User } from "lucide-react";
+import { User as UserIcon } from "lucide-react";
 
 export interface PreviewLink {
   id: string;
@@ -14,6 +15,7 @@ export interface PreviewLink {
   label?: string | null;
   icon?: string | null;
   isVisible?: boolean;
+  mode?: "SOCIAL" | "BUSINESS"; // Viktigt för filtrering
 }
 
 export interface ProfilePreviewProps {
@@ -21,6 +23,16 @@ export interface ProfilePreviewProps {
   name?: string | null;      
   bio?: string | null;
   avatarUrl?: string | null;
+  
+  // Business specifika fält
+  profileMode?: "SOCIAL" | "BUSINESS";
+  jobTitle?: string | null;
+  companyName?: string | null;
+  location?: string | null;
+  businessEmail?: string | null;
+  businessPhone?: string | null;
+  companyWebsite?: string | null;
+
   links: PreviewLink[];
   customSettings?: CustomThemeSettings;
   fullscreen?: boolean;
@@ -40,6 +52,15 @@ export function ProfilePreview({
   name,
   bio,
   avatarUrl,
+  
+  profileMode = "SOCIAL", // Default till social
+  jobTitle,
+  companyName,
+  location,
+  businessEmail,
+  businessPhone,
+  companyWebsite,
+
   links,
   customSettings,
   fullscreen = false,
@@ -48,9 +69,15 @@ export function ProfilePreview({
   const settings = customSettings || defaultSettings;
   const currentFont = settings.font && fontMap[settings.font] ? fontMap[settings.font] : fontMap['inter'];
 
-  // --- BAKGRUND (Page Level) ---
-  let bgStyle: React.CSSProperties = {};
+  // FILTRERA LÄNKAR (Visa bara de som matchar läget)
+  const visibleLinks = links.filter(link => {
+      // Om länken saknar mode, visa den alltid i Social, annars matcha mode
+      const linkMode = link.mode || "SOCIAL";
+      return linkMode === profileMode;
+  });
 
+  // --- BAKGRUND ---
+  let bgStyle: React.CSSProperties = {};
   if (settings.backgroundType === "image" && settings.backgroundImage) {
     bgStyle = {
       backgroundImage: `url(${settings.backgroundImage})`,
@@ -67,23 +94,21 @@ export function ProfilePreview({
     bgStyle = { backgroundColor: settings.backgroundColor || "#0f172a" };
   }
 
-  // --- KNAPPAR (Inga inline-borders här för att undvika konflikter) ---
+  // --- KNAPP STYLES ---
   const getButtonClass = () => {
     let base = "w-full py-4 px-6 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 relative overflow-hidden group ";
     
-    // Form
     if (settings.buttonStyle === "pill") base += "rounded-full ";
     else if (settings.buttonStyle === "rounded") base += "rounded-xl ";
     else if (settings.buttonStyle === "sharp") base += "rounded-none ";
     else if (settings.buttonStyle === "brutal") base += "rounded-sm shadow-[4px_4px_0px_0px_currentColor] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ";
     
-    // Skugga (ej för brutal)
     if (settings.buttonShadow && settings.buttonStyle !== "brutal") base += "shadow-lg shadow-black/20 hover:shadow-xl hover:-translate-y-0.5 ";
 
     return base;
   };
 
-  const getButtonStyle = (): React.CSSProperties => {
+  const getButtonStyle = (isContactBtn = false): React.CSSProperties => {
     const accent = settings.accentColor || "#fff";
     const text = settings.textColor || "#000";
     const style: React.CSSProperties = {};
@@ -94,6 +119,9 @@ export function ProfilePreview({
         style.border = `2px solid ${text}`; 
     }
 
+    // Om det är kontaktknappar (Ring/Mail) i business mode, gör dem lite annorlunda (t.ex. outline eller soft)
+    // Här använder vi samma logik för enkelhetens skull, men man kan tweaka.
+    
     if (settings.buttonVariant === "outline") {
       style.border = `2px solid ${accent}`;
       style.color = accent;
@@ -149,13 +177,11 @@ export function ProfilePreview({
   };
 
   return (
-    // MAIN CONTAINER: Centrerar allt, sköter bakgrunden
     <div 
       className={`w-full relative overflow-x-hidden flex flex-col items-center justify-center p-4 ${fullscreen ? 'min-h-screen py-16' : 'h-full overflow-y-auto py-10'}`}
       style={{ fontFamily: currentFont, ...bgStyle }}
     >
       
-      {/* BACKGROUND OVERLAY (Endast om bild + blur/darken är vald) */}
       {settings.backgroundType === "image" && (
         <div 
           className="absolute inset-0 z-0 pointer-events-none"
@@ -169,10 +195,7 @@ export function ProfilePreview({
         />
       )}
 
-      {/* --- CARD CONTAINER --- 
-          Detta är det "svävande kortet". 
-          Vi flyttar footern UTANFÖR denna div. 
-      */}
+      {/* --- CARD CONTAINER --- */}
       <div 
         className={`
           relative z-10 w-full max-w-[380px]
@@ -206,27 +229,67 @@ export function ProfilePreview({
              />
           ) : (
              <div className={`w-28 h-28 bg-white/10 flex items-center justify-center text-nordic-secondary/50 border-2 border-white/10 ${getFrameClass()}`}>
-               <User size={40} />
+               <UserIcon size={40} />
              </div>
           )}
         </div>
 
-        {/* Namn & Bio */}
+        {/* --- HEADER (Namn & Titel) --- */}
         <div className="text-center space-y-2 mb-8 w-full">
           <h1 className="text-2xl font-bold tracking-tight">
             {name || username || "Ditt Namn"}
           </h1>
           
+          {/* BUSINESS INFO */}
+          {profileMode === "BUSINESS" && (
+            <div className="flex flex-col items-center gap-1 opacity-90">
+               {(jobTitle || companyName) && (
+                   <div className="flex flex-wrap justify-center gap-1 text-sm font-medium">
+                       {jobTitle && <span>{jobTitle}</span>}
+                       {jobTitle && companyName && <span>@</span>}
+                       {companyName && <span>{companyName}</span>}
+                   </div>
+               )}
+               {location && (
+                   <div className="flex items-center gap-1 text-xs opacity-70">
+                       <MapPin size={10} /> {location}
+                   </div>
+               )}
+            </div>
+          )}
+
+          {/* BIO (Visas på båda, men ofta kortare på Business) */}
           {bio && (
-            <div className="text-sm opacity-80 leading-relaxed whitespace-pre-line font-medium break-words">
+            <div className="text-sm opacity-80 leading-relaxed whitespace-pre-line font-medium break-words mt-2">
               {bio}
             </div>
           )}
         </div>
 
-        {/* Länkar */}
+        {/* --- BUSINESS KONTAKT-GRID --- */}
+        {profileMode === "BUSINESS" && (businessEmail || businessPhone || companyWebsite) && (
+            <div className="grid grid-cols-2 gap-2 w-full mb-4">
+                {businessPhone && (
+                    <a href="#" className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all border border-white/10 hover:bg-white/10`} style={{ color: settings.textColor }}>
+                        <Phone size={14} /> Ring
+                    </a>
+                )}
+                {businessEmail && (
+                    <a href="#" className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all border border-white/10 hover:bg-white/10`} style={{ color: settings.textColor }}>
+                        <Mail size={14} /> Maila
+                    </a>
+                )}
+                {companyWebsite && (
+                    <a href="#" className={`col-span-2 flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all border border-white/10 hover:bg-white/10`} style={{ color: settings.textColor }}>
+                        <Globe size={14} /> Besök Hemsida
+                    </a>
+                )}
+            </div>
+        )}
+
+        {/* --- STANDARD LÄNKAR --- */}
         <div className="w-full space-y-3">
-          {links.map((link) => (
+          {visibleLinks.map((link) => (
             <a
               key={link.id}
               href={link.url}
@@ -240,20 +303,20 @@ export function ProfilePreview({
             </a>
           ))}
           
-          {links.length === 0 && (
-             <div className="p-6 border-2 border-dashed border-white/20 rounded-2xl text-center text-nordic-secondary/50 text-xs">
-                Inga länkar tillagda ännu.
+          {visibleLinks.length === 0 && (
+             <div className="p-6 border-2 border-dashed border-white/20 rounded-2xl text-center text-nordic-secondary/50 text-xs w-full">
+                Inga länkar för detta läge.
              </div>
           )}
         </div>
 
       </div>
 
-      {/* --- FOOTER (Nu utanför kortet) --- */}
+      {/* --- FOOTER --- */}
       <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity">
-         <a href="https://avyracards.se" target="_blank" className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary no-underline drop-shadow-md">
+         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary drop-shadow-md">
            <span>Powered by AvyraCards</span>
-         </a>
+         </div>
       </div>
 
     </div>

@@ -2,7 +2,6 @@ import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import { MapPin, Globe, Mail, Phone, Briefcase } from "lucide-react";
 import type { User, Link as LinkModel } from "@prisma/client";
-//import { ProfileMode } from "@prisma/client"; // Importerar Enumen
 
 import { prisma } from "@/lib/prisma";
 import { getTheme } from "@/utils/theme";
@@ -42,38 +41,29 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
   }
 
   // 2. Bestäm vilket läge vi ska visa (Live eller Preview)
-  // Om vi previewar, använd URL-parametern. Annars använd databasens värde.
   const displayMode = (isPreview && previewMode) 
     ? (previewMode === "BUSINESS" ? "BUSINESS" : "SOCIAL")
     : user.profileMode;
 
   // 3. Filtrera länkar baserat på det aktiva läget
-  // Vi visar bara Business-länkar i Business-läge, och Social i Social.
   const filteredLinks = user.links.filter(link => {
-    // Hantera legacy-länkar som saknar mode (räkna dem som SOCIAL)
     const linkMode = link.mode || "SOCIAL";
     return linkMode === displayMode;
   });
 
-  // Skapa en "displayUser" med de filtrerade länkarna
   const userForDisplay: UserWithLinks = {
     ...user,
     links: filteredLinks
   };
 
-  // 4. Redirect Logic (Uppdaterad för redirectLinkId)
-  // Vi redirectar INTE om vi är i preview-läge (annars kan man inte redigera)
+  // 4. Redirect Logic
   if (user.redirectEnabled && !isPreview) {
     let targetUrl: string | null = null;
 
-    // A. Om vi har valt en specifik länk (Det nya sättet)
     if (user.redirectLinkId) {
       const targetLink = user.links.find(l => l.id === user.redirectLinkId);
-      if (targetLink) {
-        targetUrl = targetLink.url;
-      }
+      if (targetLink) targetUrl = targetLink.url;
     } 
-    // B. Fallback (om man slagit på redirect men inte valt länk): Ta första bästa
     else if (user.links.length > 0) {
       targetUrl = user.links[0].url;
     }
@@ -88,7 +78,6 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
 
   return (
     <>
-      {/* Skicka med sourceParam till trackern */}
       <ProfileViewTracker userId={user.id} sourceParam={sourceParam} />
 
       {displayMode === "BUSINESS" ? (
@@ -101,8 +90,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
 }
 
 // --------------------------------------------------------------------------------------
-// RESTEN AV KOMPONENTERNA (SocialProfile, BusinessProfile, Helpers)
-// (Dessa är oförändrade, men ligger kvar här för att filen ska vara komplett)
+// SOCIAL PROFILE
 // --------------------------------------------------------------------------------------
 
 function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
@@ -115,9 +103,10 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
   const displayName = user.name || user.username;
   const bio = user.bio;
 
-  // --- STYLING LOGIK ---
+  // Logic: Visa branding om man är gratisanvändare ELLER om man är premium men inte valt att dölja den.
+  const showBranding = !user.isPremium || !settings.hideBranding;
 
-  // 1. Bakgrund
+  // --- STYLING LOGIK ---
   const pageStyle: React.CSSProperties = useCustomTheme ? {
     fontFamily: settings.font,
     color: settings.textColor,
@@ -129,7 +118,6 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
     backgroundAttachment: 'fixed',
   } : {};
 
-  // 2. Kortet
   const cardStyle: React.CSSProperties = useCustomTheme ? {
     backgroundColor: 'rgba(15, 23, 42, 0.6)',
     backdropFilter: 'blur(16px)',
@@ -138,7 +126,6 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
     color: settings.textColor,
   } : {};
 
-  // 3. Knappar
   const getLinkStyle = (): React.CSSProperties => {
     if (!useCustomTheme) return {};
 
@@ -184,7 +171,6 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
 
   const linkStyle = getLinkStyle();
 
-  // 4. FIXAD AVATAR LOGIK
   const frameStyle = settings.frameStyle || 'circle';
   const accentColor = settings.accentColor || '#ffffff';
 
@@ -217,7 +203,7 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col items-center px-4 py-12">
         
-        {/* --- PROFILE CARD START --- */}
+        {/* --- PROFILE CARD --- */}
         <section 
           className={`w-full rounded-[32px] border p-8 shadow-2xl ${!useCustomTheme ? `${tokens.card} backdrop-blur-md` : ''}`}
           style={cardStyle}
@@ -273,10 +259,9 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
           {/* Ads */}
           {showAds && <AdBanner />}
         </section>
-        {/* --- PROFILE CARD END --- */}
 
-        {/* Branding Footer */}
-        {!user.isPremium && (
+        {/* Branding Footer (Uppdaterad logik) */}
+        {showBranding && (
           <div className="mt-8 text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity" style={{ color: useCustomTheme ? settings.textColor : undefined }}>
             Powered by AvyraCards
           </div>
@@ -286,9 +271,18 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
   );
 }
 
+// --------------------------------------------------------------------------------------
+// BUSINESS PROFILE
+// --------------------------------------------------------------------------------------
+
 function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
   const tokens = getTheme(user.theme); 
   
+  // Hämta inställningar för branding-check även för business
+  const savedSettings = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
+  const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
+  const showBranding = !user.isPremium || !settings.hideBranding;
+
   const displayName = user.name || user.username;
   const headline = user.businessHeadline || user.jobTitle || "Business Profile";
   const company = user.companyName;
@@ -390,7 +384,8 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
           )}
         </div>
 
-        {!user.isPremium && (
+        {/* Branding Footer (Business) */}
+        {showBranding && (
            <div className="text-center mt-8">
               <a href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-nordic-secondary text-xs font-bold shadow-lg hover:bg-white/20 transition border border-white/10">
                  <span className="text-blue-400">⚡</span> Skapa ditt eget AvyraCards
