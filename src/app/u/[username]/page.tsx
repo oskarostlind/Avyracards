@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
-import { MapPin, Globe, Mail, Phone, Briefcase } from "lucide-react";
 import type { User, Link as LinkModel } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
@@ -8,6 +7,7 @@ import { getTheme } from "@/utils/theme";
 import { AdBanner } from "@/components/ads/google-adsense";
 import { ProfileViewTracker, TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
+import { SocialIcon } from "@/components/icons/social-icons"; // <-- NY IMPORT
 
 type PageProps = {
   params: { username: string };
@@ -22,7 +22,6 @@ export const revalidate = 0;
 export default async function PublicProfilePage({ params, searchParams }: PageProps) {
   const username = params.username;
   
-  // 1. Hämta Preview-flaggor från URL
   const isPreview = searchParams.preview === 'true';
   const previewMode = typeof searchParams.mode === 'string' ? searchParams.mode : null;
 
@@ -40,12 +39,10 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     notFound();
   }
 
-  // 2. Bestäm vilket läge vi ska visa (Live eller Preview)
   const displayMode = (isPreview && previewMode) 
     ? (previewMode === "BUSINESS" ? "BUSINESS" : "SOCIAL")
     : user.profileMode;
 
-  // 3. Filtrera länkar baserat på det aktiva läget
   const filteredLinks = user.links.filter(link => {
     const linkMode = link.mode || "SOCIAL";
     return linkMode === displayMode;
@@ -56,10 +53,8 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     links: filteredLinks
   };
 
-  // 4. Redirect Logic
   if (user.redirectEnabled && !isPreview) {
     let targetUrl: string | null = null;
-
     if (user.redirectLinkId) {
       const targetLink = user.links.find(l => l.id === user.redirectLinkId);
       if (targetLink) targetUrl = targetLink.url;
@@ -67,7 +62,6 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     else if (user.links.length > 0) {
       targetUrl = user.links[0].url;
     }
-
     if (targetUrl) {
       redirect(normalizeUrl(targetUrl));
     }
@@ -79,7 +73,6 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
   return (
     <>
       <ProfileViewTracker userId={user.id} sourceParam={sourceParam} />
-
       {displayMode === "BUSINESS" ? (
         <BusinessProfile user={userForDisplay} showAds={showAds} />
       ) : (
@@ -99,14 +92,10 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
   
   const tokens = getTheme(user.theme);
-
   const displayName = user.name || user.username;
   const bio = user.bio;
-
-  // Logic: Visa branding om man är gratisanvändare ELLER om man är premium men inte valt att dölja den.
   const showBranding = !user.isPremium || !settings.hideBranding;
 
-  // --- STYLING LOGIK ---
   const pageStyle: React.CSSProperties = useCustomTheme ? {
     fontFamily: settings.font,
     color: settings.textColor,
@@ -128,11 +117,8 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
 
   const getLinkStyle = (): React.CSSProperties => {
     if (!useCustomTheme) return {};
-
-    const base: React.CSSProperties = {
-      color: settings.textColor,
-    };
-
+    const base: React.CSSProperties = { color: settings.textColor };
+    
     if (settings.buttonStyle === 'pill') base.borderRadius = '9999px';
     else if (settings.buttonStyle === 'rounded') base.borderRadius = '0.75rem';
     else if (settings.buttonStyle === 'sharp') base.borderRadius = '0px';
@@ -143,10 +129,8 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
     }
 
     const accent = settings.accentColor || '#fff';
-    
-    if (settings.buttonVariant === 'solid') {
-        base.backgroundColor = accent;
-    } else if (settings.buttonVariant === 'outline') {
+    if (settings.buttonVariant === 'solid') base.backgroundColor = accent;
+    else if (settings.buttonVariant === 'outline') {
         base.border = `2px solid ${accent}`;
         base.color = accent;
         base.backgroundColor = 'transparent';
@@ -165,15 +149,13 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
     if (settings.buttonShadow && settings.buttonStyle !== 'brutal') {
         base.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
     }
-
     return base;
   };
 
   const linkStyle = getLinkStyle();
-
   const frameStyle = settings.frameStyle || 'circle';
   const accentColor = settings.accentColor || '#ffffff';
-
+  
   let borderRadius = '50%'; 
   if (frameStyle === 'rounded') borderRadius = '20%';
   if (frameStyle === 'none') borderRadius = '0';
@@ -185,59 +167,30 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
     boxShadow: frameStyle === 'glow' ? `0 0 30px ${accentColor}` : 'none',
   } : {};
 
-
   return (
-    <main 
-      className={`min-h-screen ${!useCustomTheme ? (tokens.bg || 'bg-nordic-primary') : ''} ${!useCustomTheme ? (tokens.text || 'text-nordic-secondary') : ''}`}
-      style={pageStyle}
-    >
+    <main className={`min-h-screen ${!useCustomTheme ? (tokens.bg || 'bg-nordic-primary') : ''} ${!useCustomTheme ? (tokens.text || 'text-nordic-secondary') : ''}`} style={pageStyle}>
       {useCustomTheme && settings.backgroundType === "image" && (
-        <div 
-          className="fixed inset-0 z-0 pointer-events-none"
-          style={{ 
-            backgroundColor: `rgba(0,0,0, ${settings.backgroundOverlay ? settings.backgroundOverlay / 100 : 0})`,
-            backdropFilter: `blur(${settings.backgroundBlur || 0}px)` 
-          }}
-        />
+        <div className="fixed inset-0 z-0 pointer-events-none" style={{ backgroundColor: `rgba(0,0,0, ${settings.backgroundOverlay ? settings.backgroundOverlay / 100 : 0})`, backdropFilter: `blur(${settings.backgroundBlur || 0}px)` }} />
       )}
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col items-center px-4 py-12">
-        
-        {/* --- PROFILE CARD --- */}
-        <section 
-          className={`w-full rounded-[32px] border p-8 shadow-2xl ${!useCustomTheme ? `${tokens.card} backdrop-blur-md` : ''}`}
-          style={cardStyle}
-        >
+        <section className={`w-full rounded-[32px] border p-8 shadow-2xl ${!useCustomTheme ? `${tokens.card} backdrop-blur-md` : ''}`} style={cardStyle}>
           <div className="flex flex-col items-center gap-5">
-            {/* Avatar */}
-            <div 
-              className={`relative h-28 w-28 overflow-hidden border-4 shadow-xl`}
-              style={useCustomTheme ? avatarStyle : { borderRadius: '50%', borderColor: 'rgba(255,255,255,0.1)' }}
-            >
+            <div className={`relative h-28 w-28 overflow-hidden border-4 shadow-xl`} style={useCustomTheme ? avatarStyle : { borderRadius: '50%', borderColor: 'rgba(255,255,255,0.1)' }}>
               {user.avatarUrl ? (
                 <Image src={user.avatarUrl} alt={displayName} fill className="object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gray-800 text-4xl font-bold">
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
+                <div className="flex h-full w-full items-center justify-center bg-gray-800 text-4xl font-bold">{displayName.charAt(0).toUpperCase()}</div>
               )}
             </div>
-
-            {/* Info */}
             <div className="text-center space-y-2">
               <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
               {bio && (
-                <p 
-                  className={`text-sm leading-relaxed max-w-[280px] mx-auto ${!useCustomTheme ? tokens.textMuted : ''}`}
-                  style={{ opacity: 0.9, whiteSpace: 'pre-line' }} 
-                >
-                  {bio}
-                </p>
+                <p className={`text-sm leading-relaxed max-w-[280px] mx-auto ${!useCustomTheme ? tokens.textMuted : ''}`} style={{ opacity: 0.9, whiteSpace: 'pre-line' }}>{bio}</p>
               )}
             </div>
           </div>
 
-          {/* Links */}
           <div className="mt-8 flex flex-col gap-4">
             {user.links.map((link) => (
               <TrackedLink
@@ -249,18 +202,16 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
                 style={linkStyle}
               >
                 <span className="flex items-center gap-3">
-                  <span className="text-lg opacity-80">{getSocialIcon(link.url || link.title)}</span>
+                  {/* HÄR BYTTE VI UT getSocialIcon MOT SocialIcon */}
+                  <span className="text-lg opacity-80"><SocialIcon url={link.url || link.title} size={20} /></span>
                   <span className="font-semibold">{link.title || link.url}</span>
                 </span>
               </TrackedLink>
             ))}
           </div>
-
-          {/* Ads */}
           {showAds && <AdBanner />}
         </section>
 
-        {/* Branding Footer (Uppdaterad logik) */}
         {showBranding && (
           <div className="mt-8 text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity" style={{ color: useCustomTheme ? settings.textColor : undefined }}>
             Powered by AvyraCards
@@ -277,8 +228,6 @@ function SocialProfile({ user, showAds }: { user: UserWithLinks; showAds: boolea
 
 function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: boolean }) {
   const tokens = getTheme(user.theme); 
-  
-  // Hämta inställningar för branding-check även för business
   const savedSettings = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
   const showBranding = !user.isPremium || !settings.hideBranding;
@@ -306,47 +255,42 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
                   {user.avatarUrl ? (
                     <Image src={user.avatarUrl} alt={displayName} fill className="object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-nordic-highlight">
-                      {displayName.charAt(0).toUpperCase()}
-                    </div>
+                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-nordic-highlight">{displayName.charAt(0).toUpperCase()}</div>
                   )}
                 </div>
                 
                 <div className="space-y-1">
                    <h1 className="text-2xl sm:text-3xl font-bold">{displayName}</h1>
                    <div className={`flex flex-wrap gap-2 text-sm font-medium ${tokens.textMuted}`}>
-                      {user.jobTitle && <span className="flex items-center gap-1"><Briefcase size={14}/> {user.jobTitle}</span>}
+                      {user.jobTitle && <span className="flex items-center gap-1"><SocialIcon fallbackIcon="job" size={14}/> {user.jobTitle}</span>}
                       {company && <span>@ {company}</span>}
                    </div>
                    {user.location && (
                       <div className="text-xs text-nordic-highlight flex items-center gap-1 pt-1">
-                          <MapPin size={12}/> {user.location}
+                          <SocialIcon fallbackIcon="location" size={12}/> {user.location}
                       </div>
                    )}
                 </div>
             </div>
-
             {headline && (
-               <p className={`mt-6 text-sm leading-relaxed border-l-4 border-blue-500/50 pl-4 py-2 italic bg-white/5 rounded-r-lg ${tokens.textMuted}`}>
-                  &quot;{headline}&quot;
-               </p>
+               <p className={`mt-6 text-sm leading-relaxed border-l-4 border-blue-500/50 pl-4 py-2 italic bg-white/5 rounded-r-lg ${tokens.textMuted}`}>&quot;{headline}&quot;</p>
             )}
           </div>
 
           <div className="grid grid-cols-2 gap-px bg-white/5 border-b border-white/5">
              {user.businessPhone && (
                 <a href={`tel:${user.businessPhone}`} className={`p-4 flex items-center justify-center gap-2 transition font-medium text-sm hover:bg-white/5 ${tokens.text}`}>
-                   <Phone size={16} className="text-blue-400"/> Ring
+                   <SocialIcon fallbackIcon="phone" size={16} className="text-blue-400"/> Ring
                 </a>
              )}
              {user.businessEmail && (
                 <a href={`mailto:${user.businessEmail}`} className={`p-4 flex items-center justify-center gap-2 transition font-medium text-sm hover:bg-white/5 ${tokens.text}`}>
-                   <Mail size={16} className="text-blue-400"/> Maila
+                   <SocialIcon fallbackIcon="email" size={16} className="text-blue-400"/> Maila
                 </a>
              )}
              {user.companyWebsite && (
                 <a href={normalizeUrl(user.companyWebsite)} target="_blank" className={`p-4 flex items-center justify-center gap-2 transition font-medium text-sm col-span-2 border-t border-white/5 hover:bg-white/5 ${tokens.text}`}>
-                   <Globe size={16} className="text-blue-400"/> Besök hemsida
+                   <SocialIcon fallbackIcon="website" size={16} className="text-blue-400"/> Besök hemsida
                 </a>
              )}
           </div>
@@ -364,7 +308,10 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
                          className={`flex items-center justify-between p-4 rounded-xl border border-white/5 shadow-sm transition-all group hover:border-white/20 hover:bg-white/5 ${tokens.card}`}
                       >
                           <div className="flex items-center gap-3">
-                             <span className="text-xl group-hover:scale-110 transition-transform">{getBusinessIcon(link.url || link.title)}</span>
+                             <span className="text-xl group-hover:scale-110 transition-transform">
+                               {/* HÄR BYTTE VI UT getBusinessIcon */}
+                               <SocialIcon url={link.url || link.title} size={20} />
+                             </span>
                              <span className={`font-medium ${tokens.text}`}>{link.title || link.url}</span>
                           </div>
                           <span className="text-nordic-highlight group-hover:text-nordic-secondary">→</span>
@@ -377,14 +324,11 @@ function BusinessProfile({ user, showAds }: { user: UserWithLinks; showAds: bool
           {showAds && (
              <div className="p-4 border-t border-white/5 text-center bg-nordic-primary/20">
                 <p className="text-[10px] text-gray-600 uppercase mb-2">Annons</p>
-                <div className="mx-auto max-w-[300px] overflow-hidden rounded-lg">
-                   <AdBanner />
-                </div>
+                <div className="mx-auto max-w-[300px] overflow-hidden rounded-lg"><AdBanner /></div>
              </div>
           )}
         </div>
 
-        {/* Branding Footer (Business) */}
         {showBranding && (
            <div className="text-center mt-8">
               <a href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-nordic-secondary text-xs font-bold shadow-lg hover:bg-white/20 transition border border-white/10">
@@ -404,25 +348,4 @@ function normalizeUrl(url: string): string {
   if (/^mailto:/i.test(trimmed)) return trimmed;
   if (/^tel:/i.test(trimmed)) return trimmed;
   return `https://${trimmed}`;
-}
-
-function getSocialIcon(source: string): string {
-  const s = source.toLowerCase();
-  if (s.includes("instagram")) return "📸";
-  if (s.includes("tiktok")) return "🎵";
-  if (s.includes("youtube")) return "▶️";
-  if (s.includes("linkedin")) return "💼";
-  if (s.includes("twitter") || s.includes("x.com")) return "🐦";
-  if (s.includes("spotify")) return "🎧";
-  if (s.includes("github")) return "💻";
-  return "🔗";
-}
-
-function getBusinessIcon(source: string): string {
-  const s = source.toLowerCase();
-  if (s.includes("linkedin")) return "👔";
-  if (s.includes("calendar") || s.includes("calendly")) return "📅";
-  if (s.includes("pdf") || s.includes("drive")) return "📄";
-  if (s.includes("zoom") || s.includes("teams")) return "📹";
-  return "📌";
 }

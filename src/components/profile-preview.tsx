@@ -1,12 +1,8 @@
 "use client";
 
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
-import { 
-  Globe, Instagram, Linkedin, Twitter, Mail, 
-  Facebook, Github, Youtube, Link as LinkIcon,
-  Briefcase, MapPin, Phone
-} from "lucide-react";
-import { User as UserIcon } from "lucide-react";
+import { User as UserIcon } from "lucide-react"; // Endast User behövs separat för placeholder
+import { SocialIcon } from "@/components/icons/social-icons"; // <-- NY IMPORT
 
 export interface PreviewLink {
   id: string;
@@ -15,7 +11,7 @@ export interface PreviewLink {
   label?: string | null;
   icon?: string | null;
   isVisible?: boolean;
-  mode?: "SOCIAL" | "BUSINESS"; // Viktigt för filtrering
+  mode?: "SOCIAL" | "BUSINESS";
 }
 
 export interface ProfilePreviewProps {
@@ -24,7 +20,6 @@ export interface ProfilePreviewProps {
   bio?: string | null;
   avatarUrl?: string | null;
   
-  // Business specifika fält
   profileMode?: "SOCIAL" | "BUSINESS";
   jobTitle?: string | null;
   companyName?: string | null;
@@ -53,7 +48,7 @@ export function ProfilePreview({
   bio,
   avatarUrl,
   
-  profileMode = "SOCIAL", // Default till social
+  profileMode = "SOCIAL",
   jobTitle,
   companyName,
   location,
@@ -69,9 +64,7 @@ export function ProfilePreview({
   const settings = customSettings || defaultSettings;
   const currentFont = settings.font && fontMap[settings.font] ? fontMap[settings.font] : fontMap['inter'];
 
-  // FILTRERA LÄNKAR (Visa bara de som matchar läget)
   const visibleLinks = links.filter(link => {
-      // Om länken saknar mode, visa den alltid i Social, annars matcha mode
       const linkMode = link.mode || "SOCIAL";
       return linkMode === profileMode;
   });
@@ -108,7 +101,7 @@ export function ProfilePreview({
     return base;
   };
 
-  const getButtonStyle = (isContactBtn = false): React.CSSProperties => {
+  const getButtonStyle = (): React.CSSProperties => {
     const accent = settings.accentColor || "#fff";
     const text = settings.textColor || "#000";
     const style: React.CSSProperties = {};
@@ -118,9 +111,6 @@ export function ProfilePreview({
     if (settings.buttonStyle === "brutal") {
         style.border = `2px solid ${text}`; 
     }
-
-    // Om det är kontaktknappar (Ring/Mail) i business mode, gör dem lite annorlunda (t.ex. outline eller soft)
-    // Här använder vi samma logik för enkelhetens skull, men man kan tweaka.
     
     if (settings.buttonVariant === "outline") {
       style.border = `2px solid ${accent}`;
@@ -144,7 +134,6 @@ export function ProfilePreview({
       style.boxShadow = `0 10px 15px -3px ${accent}40`;
     }
     else {
-      // Solid (Default)
       style.backgroundColor = accent;
     }
     
@@ -158,22 +147,6 @@ export function ProfilePreview({
     if (settings.frameStyle === "none") return "rounded-none";
     if (settings.frameStyle === "ring") return "rounded-full ring-4 ring-offset-4 ring-offset-transparent";
     return "rounded-full"; 
-  };
-
-  const renderIcon = (iconName?: string | null) => {
-    if (!iconName) return null;
-    const size = 18;
-    const lower = iconName.toLowerCase();
-    if (lower.includes("insta")) return <Instagram size={size} />;
-    if (lower.includes("linkedin")) return <Linkedin size={size} />;
-    if (lower.includes("twitter") || lower.includes("x")) return <Twitter size={size} />;
-    if (lower.includes("facebook")) return <Facebook size={size} />;
-    if (lower.includes("github")) return <Github size={size} />;
-    if (lower.includes("youtube")) return <Youtube size={size} />;
-    if (lower.includes("mail")) return <Mail size={size} />;
-    if (lower.includes("web") || lower.includes("hemsida")) return <Globe size={size} />;
-    if (lower.includes("boka") || lower.includes("cal")) return <LinkIcon size={size} />;
-    return <LinkIcon size={size} />;
   };
 
   return (
@@ -252,13 +225,12 @@ export function ProfilePreview({
                )}
                {location && (
                    <div className="flex items-center gap-1 text-xs opacity-70">
-                       <MapPin size={10} /> {location}
+                       <SocialIcon fallbackIcon="location" size={10} /> {location}
                    </div>
                )}
             </div>
           )}
 
-          {/* BIO (Visas på båda, men ofta kortare på Business) */}
           {bio && (
             <div className="text-sm opacity-80 leading-relaxed whitespace-pre-line font-medium break-words mt-2">
               {bio}
@@ -271,23 +243,23 @@ export function ProfilePreview({
             <div className="grid grid-cols-2 gap-2 w-full mb-4">
                 {businessPhone && (
                     <a href="#" className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all border border-white/10 hover:bg-white/10`} style={{ color: settings.textColor }}>
-                        <Phone size={14} /> Ring
+                        <SocialIcon fallbackIcon="phone" size={14} /> Ring
                     </a>
                 )}
                 {businessEmail && (
                     <a href="#" className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all border border-white/10 hover:bg-white/10`} style={{ color: settings.textColor }}>
-                        <Mail size={14} /> Maila
+                        <SocialIcon fallbackIcon="email" size={14} /> Maila
                     </a>
                 )}
                 {companyWebsite && (
                     <a href="#" className={`col-span-2 flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all border border-white/10 hover:bg-white/10`} style={{ color: settings.textColor }}>
-                        <Globe size={14} /> Besök Hemsida
+                        <SocialIcon fallbackIcon="website" size={14} /> Besök Hemsida
                     </a>
                 )}
             </div>
         )}
 
-        {/* --- STANDARD LÄNKAR --- */}
+        {/* --- LÄNKAR --- */}
         <div className="w-full space-y-3">
           {visibleLinks.map((link) => (
             <a
@@ -298,7 +270,10 @@ export function ProfilePreview({
               className={getButtonClass()}
               style={getButtonStyle()}
             >
-               <span className="opacity-80 absolute left-5">{renderIcon(link.title || link.url)}</span>
+               {/* HÄR ÄR DEN NYA MAGIN: Automatiska ikoner */}
+               <span className="opacity-80 absolute left-5">
+                 <SocialIcon url={link.url || link.title} size={18} />
+               </span>
                <span className="flex-1 text-center truncate px-6">{link.title || link.label || link.url}</span>
             </a>
           ))}
