@@ -44,27 +44,34 @@ interface ThemeEditorProps {
     companyName?: string | null;
     location?: string | null;
     
-    businessHeadline?: string | null; // <-- NYTT: Tar emot headline
-    
+    businessHeadline?: string | null;
     businessEmail?: string | null;
     businessPhone?: string | null;
     companyWebsite?: string | null;
+
+    // --- NYA SOCIALA FÄLT ---
+    contactEmail?: string | null;
+    phoneNumber?: string | null;
   }
 }
 
 export function ThemeEditor({ initialSettings, initialBusinessSettings, userData }: ThemeEditorProps) {
   const router = useRouter();
   
+  // --- STATE ---
   const [mode, setMode] = useState<ThemeMode>(userData.profileMode || "SOCIAL");
+  
   const [socialSettings, setSocialSettings] = useState<CustomThemeSettings>({ ...defaultSettings, ...initialSettings });
   const [businessSettings, setBusinessSettings] = useState<CustomThemeSettings>({ ...defaultSettings, ...initialBusinessSettings });
 
+  // UI State
   const [activeTab, setActiveTab] = useState<"templates" | "background" | "buttons" | "profile">("templates");
   const [isSaving, setIsSaving] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const isUserPremium = userData.isPremium || false;
 
+  // --- GETTERS & SETTERS ---
   const currentSettings = mode === "BUSINESS" ? businessSettings : socialSettings;
 
   const updateSetting = (key: keyof CustomThemeSettings, value: any) => {
@@ -91,6 +98,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
       }
   };
 
+  // --- SAVE ---
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -129,6 +137,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
       <div className="h-[45%] lg:h-full lg:flex-1 relative bg-[#050505] flex items-center justify-center p-4 overflow-hidden border-b lg:border-b-0 lg:border-r border-nordic-highlight/40">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
+        {/* Toggle Overlay i Preview */}
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary shadow-lg">
              {mode === "BUSINESS" ? "Business Mode" : "Social Mode"}
         </div>
@@ -148,11 +157,14 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
              companyName={userData.companyName}
              location={userData.location}
              
-             businessHeadline={userData.businessHeadline} // <-- NYTT: Skickar med headline till preview
-
+             businessHeadline={userData.businessHeadline}
              businessEmail={userData.businessEmail}
              businessPhone={userData.businessPhone}
              companyWebsite={userData.companyWebsite}
+
+             // NYA PROPS: Skickar med social kontaktdata till preview
+             contactEmail={userData.contactEmail}
+             phoneNumber={userData.phoneNumber}
            />
         </div>
       </div>
@@ -160,6 +172,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
       {/* --- RIGHT: EDITOR PANEL --- */}
       <div className="h-[55%] lg:h-full lg:w-96 bg-nordic-primary flex flex-col z-20 shadow-2xl border-l border-nordic-highlight/20">
         
+        {/* --- TOP: MODE SWITCHER --- */}
         <div className="p-4 border-b border-nordic-highlight/40 bg-slate-900/50">
             <div className="flex bg-slate-950 p-1 rounded-xl border border-white/5">
                 <button
@@ -185,6 +198,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             </div>
         </div>
 
+        {/* Navigation Tabs */}
         <div className="grid grid-cols-4 border-b border-nordic-highlight/40 shrink-0 bg-nordic-primary">
           <TabButton active={activeTab === "templates"} onClick={() => setActiveTab("templates")} icon={LayoutTemplate} label="Mallar" />
           <TabButton active={activeTab === "background"} onClick={() => setActiveTab("background")} icon={ImageIcon} label="Bakgrund" />
@@ -192,7 +206,9 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
           <TabButton active={activeTab === "profile"} onClick={() => setActiveTab("profile")} icon={User} label="Profil" />
         </div>
 
+        {/* Content Area */}
         <div className="flex-1 p-5 overflow-y-auto custom-scrollbar relative">
+          
           <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none">
              {mode === "BUSINESS" ? <Briefcase size={100} /> : <Share2 size={100} />}
           </div>
@@ -233,6 +249,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
           </div>
         </div>
 
+        {/* Footer */}
         <div className="p-4 border-t border-nordic-highlight/40 bg-nordic-primary flex gap-3 shrink-0 z-30 relative">
           <button 
             onClick={handleReset}

@@ -25,12 +25,16 @@ export interface ProfilePreviewProps {
   companyName?: string | null;
   location?: string | null;
   
-  // Vi lägger till businessHeadline här
   businessHeadline?: string | null;
   
+  // BUSINESS Kontakt
   businessEmail?: string | null;
   businessPhone?: string | null;
   companyWebsite?: string | null;
+
+  // SOCIAL Kontakt (NYA)
+  contactEmail?: string | null;
+  phoneNumber?: string | null;
 
   links: PreviewLink[];
   customSettings?: CustomThemeSettings;
@@ -57,11 +61,14 @@ export function ProfilePreview({
   companyName,
   location,
   
-  businessHeadline, // Tar emot den nya proppen
+  businessHeadline, 
   
   businessEmail,
   businessPhone,
   companyWebsite,
+
+  contactEmail, // NY
+  phoneNumber,  // NY
 
   links,
   customSettings,
@@ -94,7 +101,7 @@ export function ProfilePreview({
     bgStyle = { backgroundColor: settings.backgroundColor || "#0f172a" };
   }
 
-  // --- KNAPP STYLES (Identisk med business-profile.tsx) ---
+  // --- KNAPP STYLES ---
   const getButtonClass = () => {
     let base = "w-full py-4 px-6 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 relative overflow-hidden group ";
     
@@ -135,7 +142,7 @@ export function ProfilePreview({
     }
     else if (settings.buttonVariant === "ghost") {
       style.backgroundColor = "transparent";
-      style.border = "1px solid transparent"; // Matchar business-profile
+      style.border = "1px solid transparent";
       style.color = settings.textColor;
     }
     else if (settings.buttonVariant === "shadow") {
@@ -160,7 +167,6 @@ export function ProfilePreview({
 
   const cardStyle: React.CSSProperties = {
     color: settings.textColor || "#fff",
-    // Vi lägger till lite business-card-specifik styling här om det är business mode, för att matcha public profile
     ...(profileMode === "BUSINESS" ? {
         backgroundColor: 'rgba(15, 23, 42, 0.6)',
         backdropFilter: 'blur(20px)',
@@ -174,15 +180,8 @@ export function ProfilePreview({
     })
   };
 
-  // Textinnehåll att visa (Bio eller Headline)
-  const textContent = profileMode === "BUSINESS" 
-    ? (businessHeadline || "") 
-    : (bio || "");
-
-  // Fallback text för headline om den är tom i business mode
-  const displayText = (profileMode === "BUSINESS" && !textContent) 
-    ? "Din rubrik här..." 
-    : textContent;
+  const textContent = profileMode === "BUSINESS" ? (businessHeadline || "") : (bio || "");
+  const displayText = (profileMode === "BUSINESS" && !textContent) ? "Din rubrik här..." : textContent;
 
   return (
     <div 
@@ -204,16 +203,7 @@ export function ProfilePreview({
       )}
 
       {/* --- CARD CONTAINER --- */}
-      <div 
-        className={`
-          relative z-10 w-full max-w-[380px]
-          flex flex-col items-center
-          p-8 mb-6
-          rounded-[2.5rem]
-          shadow-2xl
-        `}
-        style={cardStyle}
-      >
+      <div className={`relative z-10 w-full max-w-[380px] flex flex-col items-center p-8 mb-6 rounded-[2.5rem] shadow-2xl`} style={cardStyle}>
         
         {/* Avatar */}
         <div 
@@ -227,12 +217,7 @@ export function ProfilePreview({
         >
           {avatarUrl ? (
              // eslint-disable-next-line @next/next/no-img-element
-             <img 
-               src={avatarUrl} 
-               alt="Profil" 
-               className={`w-28 h-28 object-cover border-2 border-white/10 ${getFrameClass()}`} 
-               style={settings.frameStyle === 'ring' ? { borderRadius: '9999px' } : {}}
-             />
+             <img src={avatarUrl} alt="Profil" className={`w-28 h-28 object-cover border-2 border-white/10 ${getFrameClass()}`} style={settings.frameStyle === 'ring' ? { borderRadius: '9999px' } : {}}/>
           ) : (
              <div className={`w-28 h-28 bg-white/10 flex items-center justify-center text-nordic-secondary/50 border-2 border-white/10 ${getFrameClass()}`}>
                <UserIcon size={40} />
@@ -240,13 +225,10 @@ export function ProfilePreview({
           )}
         </div>
 
-        {/* --- HEADER (Namn & Titel) --- */}
+        {/* --- HEADER --- */}
         <div className="text-center space-y-2 mb-8 w-full">
-          <h1 className="text-2xl font-bold tracking-tight">
-            {name || username || "Ditt Namn"}
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">{name || username || "Ditt Namn"}</h1>
           
-          {/* BUSINESS INFO */}
           {profileMode === "BUSINESS" && (
             <div className="flex flex-col items-center gap-1 opacity-90">
                {(jobTitle || companyName) && (
@@ -264,7 +246,6 @@ export function ProfilePreview({
             </div>
           )}
 
-          {/* BIO / HEADLINE */}
           {displayText && (
             <div className={`text-sm leading-relaxed whitespace-pre-line font-medium break-words mt-2 ${profileMode === "BUSINESS" ? "italic opacity-80 border-l-4 border-white/20 pl-3 bg-white/5 py-1 rounded-r-lg" : "opacity-80"}`}>
               {displayText}
@@ -272,7 +253,23 @@ export function ProfilePreview({
           )}
         </div>
 
-        {/* --- BUSINESS KONTAKT-GRID (FIXAD) --- */}
+        {/* --- SOCIAL KONTAKT-KNAPPAR (NYTT) --- */}
+        {profileMode === "SOCIAL" && (phoneNumber || contactEmail) && (
+             <div className="flex justify-center gap-3 mb-6">
+                {phoneNumber && (
+                   <div className="p-3 rounded-full bg-white/10 border border-white/10" title="Ring">
+                      <SocialIcon fallbackIcon="phone" size={20} />
+                   </div>
+                )}
+                {contactEmail && (
+                   <div className="p-3 rounded-full bg-white/10 border border-white/10" title="Maila">
+                      <SocialIcon fallbackIcon="email" size={20} />
+                   </div>
+                )}
+             </div>
+        )}
+
+        {/* --- BUSINESS KONTAKT-GRID --- */}
         {profileMode === "BUSINESS" && (businessEmail || businessPhone || companyWebsite) && (
             <div className="grid grid-cols-2 gap-3 w-full mb-4">
                 {businessPhone && (

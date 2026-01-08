@@ -24,11 +24,14 @@ export default async function ThemesPage() {
       companyName: true,
       location: true,
       
-      businessHeadline: true, // <-- HÄR VAR DEN SAKNADE PUSSELBITEN!
-      
+      businessHeadline: true,
       businessEmail: true,
       businessPhone: true,
       companyWebsite: true,
+
+      // NYA FÄLT FÖR SOCIAL
+      contactEmail: true,
+      phoneNumber: true,
 
       links: {
         where: { isActive: true },
@@ -39,11 +42,9 @@ export default async function ThemesPage() {
 
   if (!user) redirect("/login");
 
-  // Förbered Social Settings
   const savedSocial = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const safeSocialSettings: CustomThemeSettings = { ...defaultSettings, ...savedSocial };
 
-  // Förbered Business Settings
   const savedBusiness = (user.businessThemeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const safeBusinessSettings: CustomThemeSettings = { ...defaultSettings, ...savedBusiness };
 
@@ -58,11 +59,14 @@ export default async function ThemesPage() {
     companyName: user.companyName,
     location: user.location,
     
-    businessHeadline: user.businessHeadline, // <-- Skicka vidare den till editorn
-
+    businessHeadline: user.businessHeadline,
     businessEmail: user.businessEmail,
     businessPhone: user.businessPhone,
     companyWebsite: user.companyWebsite,
+
+    // SKICKAR MED SOCIAL KONTAKTDATA
+    contactEmail: user.contactEmail,
+    phoneNumber: user.phoneNumber,
 
     links: user.links.map(l => ({
       id: l.id,

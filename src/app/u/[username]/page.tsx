@@ -36,12 +36,10 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     notFound();
   }
 
-  // Bestäm vilket läge som ska visas
   const displayMode = (isPreview && previewMode) 
     ? (previewMode === "BUSINESS" ? "BUSINESS" : "SOCIAL")
     : user.profileMode;
 
-  // Filtrera länkar
   const filteredLinks = user.links.filter(link => {
     const linkMode = link.mode || "SOCIAL";
     return linkMode === displayMode;
@@ -52,10 +50,6 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     links: filteredLinks
   };
 
-  console.log("DEBUG - Profile Mode:", user.profileMode);
-  console.log("DEBUG - Business Settings:", JSON.stringify(user.businessThemeSettings, null, 2));
-
-  // Redirect-logik (Endast om INTE preview)
   if (user.redirectEnabled && !isPreview) {
     let targetUrl: string | null = null;
     if (user.redirectLinkId) {
@@ -67,7 +61,6 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     }
     
     if (targetUrl) {
-      // Helper för redirect (behöver inte dupliceras i alla filer, men för enkelhetens skull här:)
       const normalizeUrl = (u: string) => /^(https?:|mailto:|tel:)/i.test(u.trim()) ? u.trim() : `https://${u.trim()}`;
       redirect(normalizeUrl(targetUrl));
     }

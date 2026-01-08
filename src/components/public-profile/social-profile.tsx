@@ -120,6 +120,30 @@ export function SocialProfile({ user, showAds }: SocialProfileProps) {
             </div>
           </div>
 
+          {/* NYTT: Kontaktknappar för Social Profil */}
+          {(user.phoneNumber || user.contactEmail) && (
+             <div className="flex justify-center gap-3 mt-6">
+                {user.phoneNumber && (
+                   <a 
+                     href={`tel:${user.phoneNumber}`} 
+                     className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"
+                     title="Ring"
+                   >
+                      <SocialIcon fallbackIcon="phone" size={20} />
+                   </a>
+                )}
+                {user.contactEmail && (
+                   <a 
+                     href={`mailto:${user.contactEmail}`} 
+                     className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"
+                     title="Maila"
+                   >
+                      <SocialIcon fallbackIcon="email" size={20} />
+                   </a>
+                )}
+             </div>
+          )}
+
           <div className="mt-8 flex flex-col gap-4">
             {user.links.map((link) => (
               <TrackedLink
