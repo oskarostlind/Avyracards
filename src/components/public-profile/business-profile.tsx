@@ -7,7 +7,7 @@ import { TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
-import React, { useEffect } from "react";
+//import React, { useEffect } from "react";
 
 type UserWithLinks = User & { links: LinkModel[] };
 
