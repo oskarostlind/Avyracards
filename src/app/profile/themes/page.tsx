@@ -12,20 +12,24 @@ export default async function ThemesPage() {
     where: { id: session.user.id },
     select: { 
       themeSettings: true, 
+      businessThemeSettings: true,
       isPremium: true,
       username: true,
       name: true,
       bio: true,
       avatarUrl: true,
-      // --- NYA FÄLT FÖR BUSINESS PREVIEW ---
+      
       profileMode: true,
       jobTitle: true,
       companyName: true,
       location: true,
+      
+      businessHeadline: true, // <-- HÄR VAR DEN SAKNADE PUSSELBITEN!
+      
       businessEmail: true,
       businessPhone: true,
       companyWebsite: true,
-      // -------------------------------------
+
       links: {
         where: { isActive: true },
         orderBy: { order: "asc" }
@@ -35,8 +39,13 @@ export default async function ThemesPage() {
 
   if (!user) redirect("/login");
 
-  const savedSettings = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
-  const safeSettings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
+  // Förbered Social Settings
+  const savedSocial = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
+  const safeSocialSettings: CustomThemeSettings = { ...defaultSettings, ...savedSocial };
+
+  // Förbered Business Settings
+  const savedBusiness = (user.businessThemeSettings as unknown as Partial<CustomThemeSettings>) || {};
+  const safeBusinessSettings: CustomThemeSettings = { ...defaultSettings, ...savedBusiness };
 
   const liveUserData = {
     username: user.username || "",
@@ -44,29 +53,31 @@ export default async function ThemesPage() {
     bio: user.bio || "",
     avatarUrl: user.avatarUrl || "",
     
-    // --- SKICKA VIDARE NY DATA ---
     profileMode: user.profileMode as "SOCIAL" | "BUSINESS", 
     jobTitle: user.jobTitle,
     companyName: user.companyName,
     location: user.location,
+    
+    businessHeadline: user.businessHeadline, // <-- Skicka vidare den till editorn
+
     businessEmail: user.businessEmail,
     businessPhone: user.businessPhone,
     companyWebsite: user.companyWebsite,
-    // -----------------------------
 
     links: user.links.map(l => ({
       id: l.id,
       title: l.title,
       url: l.url,
       icon: l.icon || undefined,
-      mode: l.mode as "SOCIAL" | "BUSINESS" // Viktigt för filtreringen!
+      mode: l.mode as "SOCIAL" | "BUSINESS"
     })),
     isPremium: user.isPremium
   };
 
   return (
     <ThemeEditor 
-      initialSettings={safeSettings} 
+      initialSettings={safeSocialSettings} 
+      initialBusinessSettings={safeBusinessSettings} 
       userData={liveUserData} 
     />
   );

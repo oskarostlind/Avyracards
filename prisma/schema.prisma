@@ -78,8 +78,14 @@ model User {
   hideFromSearch   Boolean @default(false)
 
   // THEME ENGINE
+// THEME ENGINE
   theme String @default("default")
-  themeSettings Json?  
+  
+  // SOCIAL THEME (Standard)
+  themeSettings Json?   
+  
+  // BUSINESS THEME (Nytt fält)
+  businessThemeSettings Json?
 
   // Admin-verktyg
   adminNotes         String?   

@@ -4,6 +4,9 @@ export type Font = "inter" | "playfair" | "roboto" | "lora" | "space" | "oswald"
 export type FrameStyle = "none" | "circle" | "rounded" | "hexagon" | "ring" | "glow";
 export type BackgroundType = "solid" | "gradient" | "image";
 
+// Vi lägger till Mode typen här för att använda i API och UI
+export type ThemeMode = "SOCIAL" | "BUSINESS";
+
 export interface CustomThemeSettings {
   // --- Bakgrund ---
   backgroundType: BackgroundType;
@@ -12,12 +15,12 @@ export interface CustomThemeSettings {
   // Gradient
   gradientFrom?: string;
   gradientTo?: string;
-  gradientDir?: string; // t.ex. "to bottom right"
+  gradientDir?: string; 
   
   // Bild
   backgroundImage?: string;
-  backgroundBlur?: number; // 0-20px
-  backgroundOverlay?: number; // 0-90%
+  backgroundBlur?: number; 
+  backgroundOverlay?: number;
 
   // --- UI Element (Knappar) ---
   accentColor?: string;
@@ -32,7 +35,6 @@ export interface CustomThemeSettings {
   hideBranding?: boolean;
 }
 
-// Standardvärden (Modern "Dark Default")
 export const defaultSettings: CustomThemeSettings = {
   backgroundType: "solid",
   backgroundColor: "#0f172a",
@@ -55,6 +57,14 @@ export const defaultSettings: CustomThemeSettings = {
   frameStyle: "circle",
   font: "inter",
 
-  hideBranding: false, // Default är att visa loggan
+  hideBranding: false,
 };
 
+// MALL-INTERFACE (Uppdaterat med category)
+export interface ThemeTemplate {
+  id: string;
+  name: string;
+  isPremium: boolean;
+  category: ThemeMode; // NYTT: SOCIAL eller BUSINESS
+  settings: Partial<CustomThemeSettings>;
+}

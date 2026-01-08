@@ -1,25 +1,18 @@
-import { CustomThemeSettings } from "@/types/theme";
+import { ThemeTemplate } from "@/types/theme";
 
-export interface ThemeTemplate {
-  id: string;
-  name: string;
-  isPremium: boolean;
-  settings: Partial<CustomThemeSettings>;
-}
-
-export const THEME_TEMPLATES: ThemeTemplate[] = [
+export const SOCIAL_TEMPLATES: ThemeTemplate[] = [
   // ========================================================================
   // GRATIS TEMAN (Clean, Modern, Essential)
   // ========================================================================
-  
   {
     id: "minimal-white",
     name: "Clean Slate",
     isPremium: false,
+    category: "SOCIAL",
     settings: {
       backgroundType: "solid",
       backgroundColor: "#ffffff",
-      textColor: "#0f172a", // Slate-900 (inte helt svart för mjukare look)
+      textColor: "#0f172a",
       accentColor: "#0f172a",
       buttonStyle: "sharp",
       buttonVariant: "outline",
@@ -32,11 +25,12 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "minimal-dark",
     name: "Midnight",
     isPremium: false,
+    category: "SOCIAL",
     settings: {
       backgroundType: "solid",
-      backgroundColor: "#020617", // Slate-950
-      textColor: "#f8fafc", // Slate-50
-      accentColor: "#334155", // Slate-700
+      backgroundColor: "#020617",
+      textColor: "#f8fafc",
+      accentColor: "#334155",
       buttonStyle: "rounded",
       buttonVariant: "soft",
       font: "inter",
@@ -48,13 +42,14 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "forest",
     name: "Evergreen",
     isPremium: false,
+    category: "SOCIAL",
     settings: {
       backgroundType: "gradient",
-      gradientFrom: "#14532d", // Green-900
-      gradientTo: "#052e16",   // Green-950
+      gradientFrom: "#14532d",
+      gradientTo: "#052e16",
       gradientDir: "to bottom",
       textColor: "#f0fdf4",
-      accentColor: "#22c55e", // Green-500
+      accentColor: "#22c55e",
       buttonStyle: "pill",
       buttonVariant: "soft",
       font: "roboto",
@@ -66,13 +61,14 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "ocean",
     name: "Deep Blue",
     isPremium: false,
+    category: "SOCIAL",
     settings: {
       backgroundType: "gradient",
-      gradientFrom: "#1e3a8a", // Blue-900
-      gradientTo: "#172554",   // Blue-950
+      gradientFrom: "#1e3a8a",
+      gradientTo: "#172554",
       gradientDir: "to bottom right",
       textColor: "#eff6ff",
-      accentColor: "#60a5fa", // Blue-400
+      accentColor: "#60a5fa",
       buttonStyle: "rounded",
       buttonVariant: "solid",
       font: "inter",
@@ -84,14 +80,15 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "cocoa",
     name: "Espresso",
     isPremium: false,
+    category: "SOCIAL",
     settings: {
       backgroundType: "solid",
-      backgroundColor: "#451a03", // Amber-950
-      textColor: "#fef3c7", // Amber-100
-      accentColor: "#78350f", // Amber-900
+      backgroundColor: "#451a03",
+      textColor: "#fef3c7",
+      accentColor: "#78350f",
       buttonStyle: "sharp",
       buttonVariant: "outline",
-      font: "lora", // Serif för en "Lifestyle"-känsla
+      font: "lora",
       frameStyle: "rounded",
       buttonShadow: false,
     }
@@ -100,11 +97,12 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "lavender",
     name: "Soft Pop",
     isPremium: false,
+    category: "SOCIAL",
     settings: {
       backgroundType: "solid",
-      backgroundColor: "#f5f3ff", // Violet-50
-      textColor: "#5b21b6", // Violet-800
-      accentColor: "#8b5cf6", // Violet-500
+      backgroundColor: "#f5f3ff",
+      textColor: "#5b21b6",
+      accentColor: "#8b5cf6",
       buttonStyle: "pill",
       buttonVariant: "solid",
       font: "inter",
@@ -116,11 +114,12 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "stone",
     name: "Atelier",
     isPremium: false,
+    category: "SOCIAL",
     settings: {
       backgroundType: "solid",
-      backgroundColor: "#e7e5e4", // Stone-200
-      textColor: "#44403c", // Stone-700
-      accentColor: "#57534e", // Stone-600
+      backgroundColor: "#e7e5e4",
+      textColor: "#44403c",
+      accentColor: "#57534e",
       buttonStyle: "sharp",
       buttonVariant: "ghost",
       font: "lora",
@@ -132,9 +131,10 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "tech-basic",
     name: "Startup",
     isPremium: false,
+    category: "SOCIAL",
     settings: {
       backgroundType: "solid",
-      backgroundColor: "#2563eb", // Blue-600 (Classic Tech Blue)
+      backgroundColor: "#2563eb",
       textColor: "#ffffff",
       accentColor: "#ffffff",
       buttonStyle: "rounded",
@@ -146,21 +146,21 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
   },
 
   // ========================================================================
-  // PREMIUM TEMAN (Wow-faktor, Glas, Neon, Luxury)
+  // PREMIUM TEMAN (Wow-faktor)
   // ========================================================================
-
   {
     id: "cyberpunk",
     name: "Neon City",
     isPremium: true,
+    category: "SOCIAL",
     settings: {
       backgroundType: "solid",
-      backgroundColor: "#050505", // Black
-      textColor: "#22d3ee", // Cyan-400
-      accentColor: "#f0abfc", // Fuchsia-300
-      buttonStyle: "brutal", // Hårda kanter + border
+      backgroundColor: "#050505",
+      textColor: "#22d3ee",
+      accentColor: "#f0abfc",
+      buttonStyle: "brutal",
       buttonVariant: "outline",
-      font: "space", // Monospace känsla
+      font: "space",
       frameStyle: "hexagon",
       buttonShadow: true,
     }
@@ -169,16 +169,17 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "luxury-gold",
     name: "Obsidian",
     isPremium: true,
+    category: "SOCIAL",
     settings: {
       backgroundType: "gradient",
-      gradientFrom: "#0c0a09", // Stone-950
+      gradientFrom: "#0c0a09",
       gradientTo: "#000000",
       gradientDir: "to bottom",
       textColor: "#fafaf9",
-      accentColor: "#d4af37", // Metallic Gold
+      accentColor: "#d4af37",
       buttonStyle: "sharp",
       buttonVariant: "outline",
-      font: "playfair", // Elegant Serif
+      font: "playfair",
       frameStyle: "ring",
       buttonShadow: false,
     }
@@ -187,15 +188,16 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "glass-morphism",
     name: "Frost",
     isPremium: true,
+    category: "SOCIAL",
     settings: {
       backgroundType: "image",
-      backgroundImage: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1000&auto=format&fit=crop", // Abstrakt lila/blå gradient
-      backgroundBlur: 10, // Mycket blur för djup
+      backgroundImage: "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?q=80&w=1000&auto=format&fit=crop",
+      backgroundBlur: 10,
       backgroundOverlay: 20,
       textColor: "#ffffff",
       accentColor: "#ffffff",
       buttonStyle: "pill",
-      buttonVariant: "glass", // Genomskinliga knappar
+      buttonVariant: "glass",
       font: "inter",
       frameStyle: "glow",
       buttonShadow: true,
@@ -205,16 +207,17 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "sunset-vibes",
     name: "Miami",
     isPremium: true,
+    category: "SOCIAL",
     settings: {
       backgroundType: "gradient",
-      gradientFrom: "#f43f5e", // Rose-500
-      gradientTo: "#8b5cf6",   // Violet-500
+      gradientFrom: "#f43f5e",
+      gradientTo: "#8b5cf6",
       gradientDir: "to bottom right",
       textColor: "#ffffff",
       accentColor: "#ffffff",
       buttonStyle: "rounded",
       buttonVariant: "glass",
-      font: "oswald", // Bold Condensed
+      font: "oswald",
       frameStyle: "circle",
       buttonShadow: true,
     }
@@ -223,11 +226,12 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "bottega",
     name: "Vogue",
     isPremium: true,
+    category: "SOCIAL",
     settings: {
       backgroundType: "solid",
-      backgroundColor: "#064e3b", // Emerald-900 (Väldigt trendig grön)
-      textColor: "#ecfdf5", // Emerald-50
-      accentColor: "#10b981", // Emerald-500
+      backgroundColor: "#064e3b",
+      textColor: "#ecfdf5",
+      accentColor: "#10b981",
       buttonStyle: "sharp",
       buttonVariant: "solid",
       font: "playfair",
@@ -239,11 +243,12 @@ export const THEME_TEMPLATES: ThemeTemplate[] = [
     id: "monochrome-pro",
     name: "Architect",
     isPremium: true,
+    category: "SOCIAL",
     settings: {
       backgroundType: "image",
-      backgroundImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000&auto=format&fit=crop", // Betong/Arkitektur
+      backgroundImage: "https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=1000&auto=format&fit=crop",
       backgroundBlur: 2,
-      backgroundOverlay: 85, // Väldigt mörk overlay
+      backgroundOverlay: 85,
       textColor: "#ffffff",
       accentColor: "#ffffff",
       buttonStyle: "brutal",

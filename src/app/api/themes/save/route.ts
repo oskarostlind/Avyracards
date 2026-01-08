@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth"; // Kontrollera att sökvägen stämmer
+import { auth } from "@/auth"; 
 import { prisma } from "@/lib/prisma";
+import { ThemeMode } from "@/types/theme"; // Importera typen
 
 export async function POST(req: Request) {
   try {
@@ -10,31 +11,43 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Hämta inställningarna från request body
-    const settings = await req.json();
+    // Hämta inställningarna OCH mode från request body
+    const { settings, mode } = await req.json();
+    
+    // Default till SOCIAL om mode saknas (för bakåtkompatibilitet)
+    const targetMode: ThemeMode = mode || "SOCIAL";
 
-    // Vi validerar att användaren är premium innan vi sparar
+    // Premium check
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { isPremium: true }
     });
 
     if (!user?.isPremium) {
+      // OBS: I framtiden kanske du vill tillåta gratisanvändare att spara basic-inställningar,
+      // men just nu är spara-logiken låst till premium i din kod.
       return NextResponse.json(
         { error: "Du måste vara premium för att spara teman." }, 
         { status: 403 }
       );
     }
 
-    // Uppdatera användaren med JSON-datan
+    // Dynamisk uppdatering baserat på mode
+    const updateData = targetMode === "BUSINESS" 
+      ? { businessThemeSettings: settings }
+      : { themeSettings: settings };
+
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: {
-        themeSettings: settings, // Prisma hanterar JSON-konverteringen automatiskt
-      },
+      data: updateData,
     });
 
-    return NextResponse.json({ success: true, data: updatedUser.themeSettings });
+    // Returnera rätt inställningar
+    const returnedSettings = targetMode === "BUSINESS" 
+      ? updatedUser.businessThemeSettings 
+      : updatedUser.themeSettings;
+
+    return NextResponse.json({ success: true, data: returnedSettings });
 
   } catch (error) {
     console.error("Theme save error:", error);

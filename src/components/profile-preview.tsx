@@ -1,8 +1,8 @@
 "use client";
 
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
-import { User as UserIcon } from "lucide-react"; // Endast User behövs separat för placeholder
-import { SocialIcon } from "@/components/icons/social-icons"; // <-- NY IMPORT
+import { User as UserIcon } from "lucide-react"; 
+import { SocialIcon } from "@/components/icons/social-icons"; 
 
 export interface PreviewLink {
   id: string;
@@ -24,6 +24,10 @@ export interface ProfilePreviewProps {
   jobTitle?: string | null;
   companyName?: string | null;
   location?: string | null;
+  
+  // Vi lägger till businessHeadline här
+  businessHeadline?: string | null;
+  
   businessEmail?: string | null;
   businessPhone?: string | null;
   companyWebsite?: string | null;
@@ -52,6 +56,9 @@ export function ProfilePreview({
   jobTitle,
   companyName,
   location,
+  
+  businessHeadline, // Tar emot den nya proppen
+  
   businessEmail,
   businessPhone,
   companyWebsite,
@@ -87,7 +94,7 @@ export function ProfilePreview({
     bgStyle = { backgroundColor: settings.backgroundColor || "#0f172a" };
   }
 
-  // --- KNAPP STYLES ---
+  // --- KNAPP STYLES (Identisk med business-profile.tsx) ---
   const getButtonClass = () => {
     let base = "w-full py-4 px-6 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 relative overflow-hidden group ";
     
@@ -96,7 +103,7 @@ export function ProfilePreview({
     else if (settings.buttonStyle === "sharp") base += "rounded-none ";
     else if (settings.buttonStyle === "brutal") base += "rounded-sm shadow-[4px_4px_0px_0px_currentColor] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ";
     
-    if (settings.buttonShadow && settings.buttonStyle !== "brutal") base += "shadow-lg shadow-black/20 hover:shadow-xl hover:-translate-y-0.5 ";
+    if (settings.buttonShadow && settings.buttonStyle !== "brutal") base += "shadow-lg hover:shadow-xl hover:-translate-y-0.5 ";
 
     return base;
   };
@@ -128,6 +135,8 @@ export function ProfilePreview({
     }
     else if (settings.buttonVariant === "ghost") {
       style.backgroundColor = "transparent";
+      style.border = "1px solid transparent"; // Matchar business-profile
+      style.color = settings.textColor;
     }
     else if (settings.buttonVariant === "shadow") {
       style.backgroundColor = accent;
@@ -148,6 +157,32 @@ export function ProfilePreview({
     if (settings.frameStyle === "ring") return "rounded-full ring-4 ring-offset-4 ring-offset-transparent";
     return "rounded-full"; 
   };
+
+  const cardStyle: React.CSSProperties = {
+    color: settings.textColor || "#fff",
+    // Vi lägger till lite business-card-specifik styling här om det är business mode, för att matcha public profile
+    ...(profileMode === "BUSINESS" ? {
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        backdropFilter: 'blur(20px)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: '1px',
+    } : {
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        backdropFilter: 'blur(16px)',
+        borderWidth: '1px',
+        borderColor: 'rgba(255,255,255,0.1)',
+    })
+  };
+
+  // Textinnehåll att visa (Bio eller Headline)
+  const textContent = profileMode === "BUSINESS" 
+    ? (businessHeadline || "") 
+    : (bio || "");
+
+  // Fallback text för headline om den är tom i business mode
+  const displayText = (profileMode === "BUSINESS" && !textContent) 
+    ? "Din rubrik här..." 
+    : textContent;
 
   return (
     <div 
@@ -174,12 +209,10 @@ export function ProfilePreview({
           relative z-10 w-full max-w-[380px]
           flex flex-col items-center
           p-8 mb-6
-          bg-nordic-primary/60 backdrop-blur-xl
-          border border-white/10
           rounded-[2.5rem]
           shadow-2xl
         `}
-        style={{ color: settings.textColor || "#fff" }}
+        style={cardStyle}
       >
         
         {/* Avatar */}
@@ -231,28 +264,29 @@ export function ProfilePreview({
             </div>
           )}
 
-          {bio && (
-            <div className="text-sm opacity-80 leading-relaxed whitespace-pre-line font-medium break-words mt-2">
-              {bio}
+          {/* BIO / HEADLINE */}
+          {displayText && (
+            <div className={`text-sm leading-relaxed whitespace-pre-line font-medium break-words mt-2 ${profileMode === "BUSINESS" ? "italic opacity-80 border-l-4 border-white/20 pl-3 bg-white/5 py-1 rounded-r-lg" : "opacity-80"}`}>
+              {displayText}
             </div>
           )}
         </div>
 
-        {/* --- BUSINESS KONTAKT-GRID --- */}
+        {/* --- BUSINESS KONTAKT-GRID (FIXAD) --- */}
         {profileMode === "BUSINESS" && (businessEmail || businessPhone || companyWebsite) && (
-            <div className="grid grid-cols-2 gap-2 w-full mb-4">
+            <div className="grid grid-cols-2 gap-3 w-full mb-4">
                 {businessPhone && (
-                    <a href="#" className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all border border-white/10 hover:bg-white/10`} style={{ color: settings.textColor }}>
+                    <a href="#" className={getButtonClass()} style={getButtonStyle()}>
                         <SocialIcon fallbackIcon="phone" size={14} /> Ring
                     </a>
                 )}
                 {businessEmail && (
-                    <a href="#" className={`flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all border border-white/10 hover:bg-white/10`} style={{ color: settings.textColor }}>
+                    <a href="#" className={getButtonClass()} style={getButtonStyle()}>
                         <SocialIcon fallbackIcon="email" size={14} /> Maila
                     </a>
                 )}
                 {companyWebsite && (
-                    <a href="#" className={`col-span-2 flex items-center justify-center gap-2 p-3 rounded-xl text-xs font-bold transition-all border border-white/10 hover:bg-white/10`} style={{ color: settings.textColor }}>
+                    <a href="#" className={`col-span-2 ${getButtonClass()}`} style={getButtonStyle()}>
                         <SocialIcon fallbackIcon="website" size={14} /> Besök Hemsida
                     </a>
                 )}
@@ -270,7 +304,6 @@ export function ProfilePreview({
               className={getButtonClass()}
               style={getButtonStyle()}
             >
-               {/* HÄR ÄR DEN NYA MAGIN: Automatiska ikoner */}
                <span className="opacity-80 absolute left-5">
                  <SocialIcon url={link.url || link.title} size={18} />
                </span>
