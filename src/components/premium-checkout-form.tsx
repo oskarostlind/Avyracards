@@ -26,11 +26,14 @@ export function PremiumCheckoutForm({
     setLoading(true);
 
     try {
+      // VIKTIGT: Vi använder nu den nya "items"-strukturen
       const response = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
-          variantId: variantId,
+          items: [
+            { variantId: variantId, quantity: 1 }
+          ]
         }),
       });
 
@@ -53,21 +56,21 @@ export function PremiumCheckoutForm({
         {/* VÄNSTER: Säljtext */}
         <div className="space-y-10 order-2 lg:order-1">
           <div className="space-y-4">
-             <div className="flex items-center gap-2 text-blue-400 bg-blue-500/10 w-fit px-3 py-1 rounded-full border border-blue-500/20">
+              <div className="flex items-center gap-2 text-blue-400 bg-blue-500/10 w-fit px-3 py-1 rounded-full border border-blue-500/20">
                 <Sparkles size={14} />
                 <span className="font-bold tracking-wider uppercase text-xs">Premium Medlemskap</span>
-             </div>
-             <h1 className="text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
+              </div>
+              <h1 className="text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
                 Allt du behöver för att <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">växa ditt varumärke</span>
-             </h1>
-             <p className="text-nordic-highlight text-lg leading-relaxed max-w-md">
+              </h1>
+              <p className="text-nordic-highlight text-lg leading-relaxed max-w-md">
                 Lås upp teman, analysverktyg och ta bort loggor. Inga bindningstider.
-             </p>
+              </p>
           </div>
 
           <div className="pl-4">
-             <LiveProfileDemo />
+              <LiveProfileDemo />
           </div>
         </div>
 

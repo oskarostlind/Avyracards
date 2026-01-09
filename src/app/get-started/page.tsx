@@ -1,26 +1,31 @@
 import { prisma } from "@/lib/prisma";
 import GetStartedView from "@/components/get-started-view";
 
-// Eftersom detta är en Server Component kan vi köra DB-frågor direkt här (async)
+// Vi sätter revalidate till 0 eller en låg siffra så att prisändringar i DB syns direkt
+export const revalidate = 0; 
+
 export default async function GetStartedPage() {
   
-  // 1. Hämta Premium (Vi behöver ta bort slug-filtret i products.ts eller köra rå prisma här för flexibilitet)
-  // Här kör vi direkt mot Prisma för att ha full kontroll på just denna sida
+  // 1. Hämta Premium (Abonnemanget)
   const premiumProduct = await prisma.product.findUnique({
-    where: { slug: "premium-subscription" },
+    where: { slug: "premium-subscription" }, // Matchar din DB-slug
     include: { variants: true }
   });
 
-  // 2. Hämta en fysisk produkt (Standard) för att visa info
-  const physicalProduct = await prisma.product.findUnique({
-    where: { slug: "standard-card" }, // eller "metal-card" beroende på vad du vill visa
+  // 2. Hämta Bundle-produkten (Den du skapade i DB)
+  const bundleProduct = await prisma.product.findUnique({
+    where: { slug: "premium-bundle" }, // Matchar din DB-slug
     include: { variants: true }
   });
+
+  // (Valfritt) Hämta standardkortet om vi vill visa jämförelsepris, 
+  // men för bundle använder vi bundleProductens eget pris.
+
 
   return (
     <GetStartedView 
       premiumProduct={premiumProduct} 
-      physicalProduct={physicalProduct} 
+      bundleProduct={bundleProduct} 
     />
   );
 }

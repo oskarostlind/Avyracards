@@ -4,8 +4,13 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
+
+// Tar emot vald plan som prop
+interface RegisterFormProps {
+  selectedPlan?: string; 
+}
 
 const RegisterSchema = z.object({
   profileMode: z.enum(["social", "business"]),
@@ -20,9 +25,14 @@ const RegisterSchema = z.object({
 
 type RegisterFormData = z.infer<typeof RegisterSchema>;
 
-export default function RegisterForm() {
+export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [globalError, setGlobalError] = useState<string>("");
+
+  // Om planen kommer från URL istället för prop (t.ex. direktlänk)
+  const planFromUrl = searchParams.get("plan");
+  const activePlan = planFromUrl || selectedPlan;
 
   const {
     register,
@@ -56,7 +66,19 @@ export default function RegisterForm() {
         return;
       }
 
-      router.push("/login?registered=true");
+      // --- VIKTIG ÄNDRING: Redirect Logik ---
+      // Om användaren valde Premium eller Bundle, skicka dem till kassan/upsell
+      if (activePlan === "premium" || activePlan === "bundle") {
+          // Logga in användaren automatiskt (om din backend stöder det) 
+          // eller skicka till inloggning med redirect tillbaka till kassan.
+          // För enkelhetens skull antar vi här att de måste logga in först, 
+          // men vi skickar med en "next"-parameter.
+          router.push(`/login?registered=true&next=/checkout/premium?plan=${activePlan}`);
+      } else {
+          // Gratis: Gå till login -> dashboard
+          router.push("/login?registered=true");
+      }
+
     } catch (error) {
       setGlobalError("Kunde inte nå servern. Kontrollera din anslutning.");
     }
@@ -70,6 +92,13 @@ export default function RegisterForm() {
         <p className="text-sm text-nordic-highlight">
           Registrera dig för att skapa din digitala kortprofil.
         </p>
+        
+        {/* Visa vilken plan de valt */}
+        {activePlan !== "free" && (
+            <div className="mt-2 inline-block px-3 py-1 rounded-full bg-nordic-accent/10 border border-nordic-accent/30 text-xs font-bold text-nordic-accent uppercase tracking-wide">
+                Vald plan: {activePlan === "bundle" ? "Pro Bundle" : "Premium"}
+            </div>
+        )}
       </div>
 
       {globalError && (

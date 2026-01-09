@@ -3,7 +3,7 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { Loader2, Layers, CreditCard, Upload, X, Check, Sparkles } from "lucide-react";
-import { CardPreview3D } from "@/components/card-preview-3d"; // Se till att denna path stämmer
+import { CardPreview3D } from "@/components/card-preview-3d"; 
 import { LiveProfileDemo } from "@/components/live-profile-demo";
 
 type MaterialType = "plastic" | "metal";
@@ -21,7 +21,6 @@ interface DbVariant {
 interface OrderViewProps {
   standardVariants: DbVariant[];
   metalVariants: DbVariant[];
-  // NY PROP
   bundleVariant: DbVariant | null; 
 }
 
@@ -48,12 +47,9 @@ export default function OrderView({ standardVariants, metalVariants, bundleVaria
   const selectedVariant = findSelectedVariant();
   const quantity = 1;
 
-  // --- HÄMTA BUNDLE DATA FRÅN DB (Eller fallback) ---
   const bundlePrice = bundleVariant ? (bundleVariant.price / 100) : 299;
   const bundleOriginalPrice = bundleVariant?.compareAtPrice ? (bundleVariant.compareAtPrice / 100) : 474;
-  // Räkna ut rabattprocent dynamiskt: (1 - 299/474) * 100
   const bundleDiscountPercent = Math.round((1 - (bundlePrice / bundleOriginalPrice)) * 100);
-
 
   const getDisplayPriceForMaterial = (m: MaterialType) => {
       const variants = m === "plastic" ? standardVariants : metalVariants;
@@ -94,25 +90,41 @@ export default function OrderView({ standardVariants, metalVariants, bundleVaria
 
   const handleCheckout = async () => {
       if (!selectedVariant) return alert("Ingen variant vald.");
+      
       try {
         setLoading(true);
-        const response = await fetch("/api/checkout", {
+        
+        // Bygg payload: En array av items
+        const items = [];
+        
+        // 1. Det fysiska kortet
+        items.push({
+            variantId: selectedVariant.id,
+            quantity: quantity,
+            color: selectedVariant.name,
+            design: design,
+            material: material,
+            // Om custom image implementeras fullt ut (upload) skulle URL skickas här
+        });
+
+        // 2. Bundle (Premium) om valt
+        if (addPremium && bundleVariant) {
+            items.push({
+                variantId: bundleVariant.id,
+                quantity: 1
+            });
+        }
+
+        const response = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-              variantId: selectedVariant.id,
-              quantity,
-              color: selectedVariant.name,
-              design,
-              material,
-              // Skicka med bundle info om vald
-              bundled: addPremium,
-              bundleVariantId: addPremium ? bundleVariant?.id : undefined
-          })
+          body: JSON.stringify({ items }) // Skicka som { items: [...] }
         });
+
         if(!response.ok) throw new Error("Checkout failed");
         const data = await response.json();
         if (data.url) window.location.href = data.url;
+      
       } catch (error) {
         console.error(error);
         setLoading(false);
@@ -124,12 +136,8 @@ export default function OrderView({ standardVariants, metalVariants, bundleVaria
   const isSale = compareAt && compareAt > cardPrice;
 
   const customPrintCost = customImage ? 100 : 0; 
-  
-  // ANVÄND DYNAMISKT BUNDLE-PRIS
   const premiumCost = addPremium ? bundlePrice : 0; 
-  
   const total = ((cardPrice + customPrintCost) * quantity) + premiumCost;
-  
   const activeVariants = material === "plastic" ? standardVariants : metalVariants;
 
   return (
@@ -139,7 +147,6 @@ export default function OrderView({ standardVariants, metalVariants, bundleVaria
         {/* VÄNSTER: PREVIEWS */}
         <div className="lg:col-span-7 order-1 lg:order-2 flex flex-col gap-6 lg:sticky lg:top-24">
             <div className="flex flex-col items-center justify-center min-h-[400px] lg:min-h-[500px]">
-                {/* Din nya fungerande ReactCardFlip komponent */}
                 <CardPreview3D material={material} color={colorCode} design={design} customImage={customImage} />
                 <div className="text-center mt-4 space-y-1 text-nordic-highlight"><p className="text-xs">Dra för att rotera</p></div>
             </div>
@@ -147,8 +154,8 @@ export default function OrderView({ standardVariants, metalVariants, bundleVaria
             {addPremium && (
                <div className="animate-in slide-in-from-bottom-4 duration-500 bg-[#0A0F1C] border border-blue-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl shadow-blue-900/10">
                   <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
-                     <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400"><Sparkles size={20}/></div>
-                     <div><h3 className="font-bold text-base text-nordic-secondary">Ingår: Premium Profil</h3><p className="text-xs text-nordic-highlight">Detta ser folk när de blippar ditt kort</p></div>
+                      <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400"><Sparkles size={20}/></div>
+                      <div><h3 className="font-bold text-base text-nordic-secondary">Ingår: Premium Profil</h3><p className="text-xs text-nordic-highlight">Detta ser folk när de blippar ditt kort</p></div>
                   </div>
                   <LiveProfileDemo />
                </div>
@@ -239,7 +246,7 @@ export default function OrderView({ standardVariants, metalVariants, bundleVaria
              </div>
           )}
 
-           {/* 4. UPGRADE (BUNDLE) - NU DYNAMISK */}
+           {/* 4. UPGRADE (BUNDLE) */}
            {bundleVariant && (
             <div className="space-y-3 pt-4">
                 <label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest ml-1">4. Uppgradera</label>
@@ -284,7 +291,6 @@ export default function OrderView({ standardVariants, metalVariants, bundleVaria
              <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-nordic-highlight">Totalt</span>
                 <div className="text-right">
-                    {/* Visa totalt ordinarie pris om vi har någon form av rabatt (kortrea eller bundle) */}
                     {(isSale || addPremium) && (
                          <span className="text-sm text-nordic-highlight line-through mr-2">
                             {compareAt! + customPrintCost + (addPremium ? bundleOriginalPrice : 0)} kr

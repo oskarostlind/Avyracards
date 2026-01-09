@@ -1,18 +1,31 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma"; // Vi behöver prisma här nu
+import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 import type { Stripe } from "stripe";
 import { z } from "zod";
 
-// Nytt schema: Vi bryr oss mest om variantId nu
-const checkoutSchema = z.object({
+// Vi definierar en "Cart Item"-struktur
+const cartItemSchema = z.object({
   variantId: z.string().min(1),
   quantity: z.number().min(1).max(50).default(1),
-  // Vi sparar dessa för fysiska kort, men de är optional för premium
+  // Metadata för produkten
   color: z.string().optional(),
   design: z.string().optional(),
-  material: z.string().optional(), 
+  material: z.string().optional(),
+});
+
+// Uppdaterat schema: Kan ta emot antingen "items" (array) eller enskild "variantId" (legacy/enkel)
+const checkoutSchema = z.object({
+  // ALTERNATIV 1: Multi-product (Bundle)
+  items: z.array(cartItemSchema).optional(),
+  
+  // ALTERNATIV 2: Single-product (Bakåtkompatibilitet)
+  variantId: z.string().optional(),
+  quantity: z.number().optional(),
+  color: z.string().optional(),
+  design: z.string().optional(),
+  material: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -27,65 +40,91 @@ export async function POST(req: Request) {
       return new NextResponse("Invalid request data", { status: 400 });
     }
 
-    const { variantId, quantity, color, design, material } = result.data;
+    // Normalisera indata till en array av items
+    let itemsToProcess: z.infer<typeof cartItemSchema>[] = [];
 
-    // 1. HÄMTA VARIANTEN FRÅN DATABASEN
-    // Detta är säkerhetsspärren. Vi litar inte på priset från frontend via JSON.
-    const variant = await prisma.productVariant.findUnique({
-      where: { id: variantId },
-      include: { product: true }
-    });
-
-    if (!variant || !variant.isActive) {
-      return new NextResponse("Produkt ej tillgänglig", { status: 404 });
+    if (result.data.items && result.data.items.length > 0) {
+        itemsToProcess = result.data.items;
+    } else if (result.data.variantId) {
+        itemsToProcess.push({
+            variantId: result.data.variantId,
+            quantity: result.data.quantity || 1,
+            color: result.data.color,
+            design: result.data.design,
+            material: result.data.material,
+        });
+    } else {
+        return new NextResponse("No items provided", { status: 400 });
     }
 
-    // 2. KONFIGURERA URL:ER
+    // Hämta alla varianter från databasen för att verifiera pris
+    const variantIds = itemsToProcess.map(i => i.variantId);
+    const dbVariants = await prisma.productVariant.findMany({
+        where: { id: { in: variantIds }, isActive: true },
+        include: { product: true }
+    });
+
+    if (dbVariants.length !== itemsToProcess.length) {
+        return new NextResponse("En eller flera produkter är ej tillgängliga", { status: 404 });
+    }
+
+    // Bygg Stripe Line Items
+    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
+    let hasSubscription = false;
+    let hasPhysical = false;
+
+    for (const item of itemsToProcess) {
+        const dbVariant = dbVariants.find(v => v.id === item.variantId);
+        if (!dbVariant) continue;
+
+        if (dbVariant.type === "SUBSCRIPTION") hasSubscription = true;
+        if (dbVariant.type === "PHYSICAL") hasPhysical = true;
+
+        line_items.push({
+            price_data: {
+                currency: dbVariant.currency,
+                product_data: {
+                    name: dbVariant.product.name,
+                    description: dbVariant.name + (item.color ? ` - ${item.color}` : ""),
+                    metadata: {
+                        color: item.color || "",
+                        material: item.material || ""
+                    }
+                },
+                unit_amount: dbVariant.price,
+                recurring: dbVariant.type === "SUBSCRIPTION" ? { interval: "month" } : undefined,
+            },
+            quantity: item.quantity,
+        });
+    }
+
+    // URL Logic
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     if (!baseUrl) return new NextResponse("Server Config Error", { status: 500 });
 
     let successUrl = `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`;
     
-    // Om det är en prenumeration (Premium)
-    if (variant.type === "SUBSCRIPTION") {
-        successUrl = userId 
-            ? `${baseUrl}/profile/settings?view=billing&success=true`
-            : `${baseUrl}/register/activate?session_id={CHECKOUT_SESSION_ID}`;
+    // Om prenumeration är inblandad, skicka till billing
+    if (hasSubscription && userId) {
+        successUrl = `${baseUrl}/profile/settings?view=billing&success=true`;
     }
 
-    // 3. SKAPA LINE ITEM BASERAT PÅ DB-DATA
-    const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [{
-      price_data: {
-        currency: variant.currency,
-        product_data: {
-          name: variant.product.name, // T.ex. "AvyraCards Premium"
-          description: variant.name,  // T.ex. "Månadsprenumeration"
-        },
-        unit_amount: variant.price, // HÄMTAS FRÅN DB (t.ex. 9900)
-        recurring: variant.type === "SUBSCRIPTION" ? { interval: "month" } : undefined,
-      },
-      quantity: quantity,
-    }];
-
-    // 4. SKAPA SESSIONEN
+    // Skapa Sessionen
     const session = await stripe.checkout.sessions.create({
       line_items,
-      mode: variant.type === "SUBSCRIPTION" ? "subscription" : "payment",
+      mode: hasSubscription ? "subscription" : "payment", // Om mixed cart, använd subscription mode (oftast)
       success_url: successUrl,
-      cancel_url: `${baseUrl}/get-started`, // Eller var man kom ifrån
+      cancel_url: `${baseUrl}/order`, // Skicka tillbaka till order-sidan vid avbrott
       
       metadata: {
         userId: userId || "",
-        type: variant.type === "SUBSCRIPTION" ? "premium_subscription" : "card_order",
-        // Vi skickar med extra data för fysiska kort om det behövs senare
-        material: material || "",
-        color: color || "",
-        design: design || "",
-        variantId: variant.id // Bra för debugging
+        type: hasSubscription ? "mixed_order" : "card_order",
+        // Vi sparar en sammanfattning i metadata för enkelhetens skull
+        itemsSummary: JSON.stringify(itemsToProcess.map(i => `${i.variantId}:${i.quantity}`))
       },
       
-      // Kräv adress endast för fysiska varor
-      shipping_address_collection: (variant.type === "PHYSICAL") ? {
+      // Adressinsamling
+      shipping_address_collection: hasPhysical ? {
         allowed_countries: ["SE"], 
       } : undefined,
       
