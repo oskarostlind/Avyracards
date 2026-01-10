@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import type { User, Link } from "@prisma/client";
+import type { User, Link as PrismaLink } from "@prisma/client";
+import NextLink from "next/link";
 import { 
   LayoutGrid, 
   Briefcase, 
@@ -9,7 +10,9 @@ import {
   CheckCircle2, 
   Power,
   Mail,
-  ExternalLink
+  ExternalLink,
+  RefreshCw,
+  AppWindow // Ny ikon för app
 } from "lucide-react";
 
 import { SocialView } from "@/components/dashboard/social/social-view";
@@ -17,17 +20,21 @@ import { BusinessView } from "@/components/dashboard/business/business-view";
 import { ProfilePreviewModal } from "@/components/dashboard/profile-preview-modal";
 
 type DashboardShellProps = {
-  user: User & { links: Link[] };
+  user: User & { links: PrismaLink[] };
 };
 
-// --- HJÄLPFUNKTION FÖR MAIL-LÄNK ---
+// --- UPPDATERAD HJÄLPFUNKTION ---
 function getEmailProviderLink(email: string) {
+    // 1. Webmail (Prioriterat för desktop-användare)
     if (email.includes("@gmail")) return "https://mail.google.com/";
     if (email.includes("@outlook") || email.includes("@hotmail") || email.includes("@live")) return "https://outlook.live.com/mail/";
     if (email.includes("@yahoo")) return "https://mail.yahoo.com/";
     if (email.includes("@proton")) return "https://mail.proton.me/";
     if (email.includes("@icloud")) return "https://www.icloud.com/mail";
-    return null; // Fallback
+    
+    // 2. Fallback: Försök öppna standard-appen (t.ex. Outlook, Apple Mail)
+    // Detta funkar bra på mobiler, men varierar på desktop.
+    return "mailto:"; 
 }
 
 export function DashboardShell({ user }: DashboardShellProps) {
@@ -57,13 +64,13 @@ export function DashboardShell({ user }: DashboardShellProps) {
     });
   };
   
-  // --- VERIFIERINGS-BANNER ---
-  const verificationLink = user.email ? getEmailProviderLink(user.email) : null;
+  const verificationLink = user.email ? getEmailProviderLink(user.email) : "mailto:";
+  const isGenericMailto = verificationLink === "mailto:";
 
   return (
     <div className="space-y-6">
       
-      {/* 1. Verifierings-Banner (Visas endast om ej verifierad) */}
+      {/* 1. Verifierings-Banner */}
       {!user.emailVerified && (
          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between animate-in fade-in slide-in-from-top-2">
             <div className="flex gap-4">
@@ -79,24 +86,34 @@ export function DashboardShell({ user }: DashboardShellProps) {
                 </div>
             </div>
             
-            {verificationLink ? (
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                {/* PRIMÄR KNAPP: Öppna Mail */}
                 <a 
                     href={verificationLink} 
-                    target="_blank" 
+                    target={isGenericMailto ? "_self" : "_blank"} // mailto ska inte öppna ny flik
                     rel="noopener noreferrer"
                     className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 whitespace-nowrap"
                 >
-                    Öppna Mailkorgen <ExternalLink size={14} />
+                    {isGenericMailto ? (
+                        <>Öppna Mail-app <AppWindow size={14} /></>
+                    ) : (
+                        <>Öppna Inkorgen <ExternalLink size={14} /></>
+                    )}
                 </a>
-            ) : (
-                <button className="w-full sm:w-auto px-5 py-2.5 bg-nordic-primary border border-nordic-highlight/30 text-nordic-highlight text-sm font-medium rounded-xl cursor-default text-center">
-                    Kolla din inkorg
-                </button>
-            )}
+
+                {/* SEKUNDÄR KNAPP: Skicka nytt (Liten text under eller bredvid) */}
+                <NextLink 
+                    href={`/verify-resend?email=${encodeURIComponent(user.email || "")}`}
+                    className="w-full sm:w-auto px-4 py-2.5 bg-transparent border border-nordic-highlight/20 hover:bg-nordic-highlight/5 text-nordic-highlight text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                >
+                    <RefreshCw size={14} />
+                    <span className="hidden sm:inline">Skicka nytt</span>
+                </NextLink>
+            </div>
          </div>
       )}
 
-      {/* 2. Header & Controls */}
+      {/* 2. Header & Controls (Oförändrad nedanför) */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         
         {/* Vänster: Titel */}
@@ -110,7 +127,7 @@ export function DashboardShell({ user }: DashboardShellProps) {
         {/* Höger: Tabbar & Tools */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             
-            {/* --- TABBAR FÖR ATT BYTA VY --- */}
+            {/* --- TABBAR --- */}
             <div className="flex p-1 bg-nordic-primary/70 border border-nordic-highlight/40 rounded-xl self-start sm:self-auto">
                 <button
                     onClick={() => setViewMode("SOCIAL")}
