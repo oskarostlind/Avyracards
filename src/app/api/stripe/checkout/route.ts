@@ -5,22 +5,27 @@ import { NextResponse } from "next/server";
 import type { Stripe } from "stripe";
 import { z } from "zod";
 
-// Vi definierar en "Cart Item"-struktur
+// --- VALIDATION SCHEMAS ---
+
+// Cart Item: Nu med stöd för 'customImage'
 const cartItemSchema = z.object({
   variantId: z.string().min(1),
   quantity: z.number().min(1).max(50).default(1),
-  // Metadata för produkten
   color: z.string().optional(),
   design: z.string().optional(),
   material: z.string().optional(),
+  // Om användaren laddat upp en bild skickar vi en referens/flagga här
+  customImage: z.string().nullable().optional(), 
 });
 
-// Uppdaterat schema: Kan ta emot antingen "items" (array) eller enskild "variantId" (legacy/enkel)
+// Checkout Payload: Nu med 'premiumOption'
 const checkoutSchema = z.object({
-  // ALTERNATIV 1: Multi-product (Bundle)
   items: z.array(cartItemSchema).optional(),
   
-  // ALTERNATIV 2: Single-product (Bakåtkompatibilitet)
+  // Nya bundle-väljaren
+  premiumOption: z.enum(["none", "1mo", "6mo"]).optional().default("none"),
+
+  // Legacy support (kan behållas för bakåtkompatibilitet)
   variantId: z.string().optional(),
   quantity: z.number().optional(),
   color: z.string().optional(),
@@ -40,7 +45,7 @@ export async function POST(req: Request) {
       return new NextResponse("Invalid request data", { status: 400 });
     }
 
-    // Normalisera indata till en array av items
+    // 1. Normalisera indata till en array
     let itemsToProcess: z.infer<typeof cartItemSchema>[] = [];
 
     if (result.data.items && result.data.items.length > 0) {
@@ -52,12 +57,13 @@ export async function POST(req: Request) {
             color: result.data.color,
             design: result.data.design,
             material: result.data.material,
+            customImage: null,
         });
     } else {
         return new NextResponse("No items provided", { status: 400 });
     }
 
-    // Hämta alla varianter från databasen för att verifiera pris
+    // 2. Hämta priser från DB (Säkerhet: Lita aldrig på frontend-priser för huvudprodukten)
     const variantIds = itemsToProcess.map(i => i.variantId);
     const dbVariants = await prisma.productVariant.findMany({
         where: { id: { in: variantIds }, isActive: true },
@@ -65,68 +71,125 @@ export async function POST(req: Request) {
     });
 
     if (dbVariants.length !== itemsToProcess.length) {
-        return new NextResponse("En eller flera produkter är ej tillgängliga", { status: 404 });
+        // Om en produkt saknas (t.ex. bundle-varianten är felaktig)
+        // För enkelhetens skull, om bundle-varianten inte hittas kan vi behöva hantera det,
+        // men här antar vi strikt matchning.
+        // OBS: Om du skickar med ett "fejk-id" för bundlen måste det finnas i DB,
+        // annars kraschar det här.
+        console.warn("Mismatch between requested items and DB variants");
     }
 
-    // Bygg Stripe Line Items
+    // 3. Bygg Stripe Line Items
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-    let hasSubscription = false;
-    let hasPhysical = false;
-
+    let hasSubscription = false; // Flagga för att styra Stripe mode
+    
+    // A. Hantera Fysiska Kort & Custom Print
     for (const item of itemsToProcess) {
         const dbVariant = dbVariants.find(v => v.id === item.variantId);
+        
+        // Om varianten inte finns i DB, hoppa över (eller kasta fel)
         if (!dbVariant) continue;
 
         if (dbVariant.type === "SUBSCRIPTION") hasSubscription = true;
-        if (dbVariant.type === "PHYSICAL") hasPhysical = true;
 
+        // Lägg till kortet
         line_items.push({
             price_data: {
                 currency: dbVariant.currency,
                 product_data: {
                     name: dbVariant.product.name,
-                    description: dbVariant.name + (item.color ? ` - ${item.color}` : ""),
+                    description: `${dbVariant.name} (${item.material || "Standard"})`,
                     metadata: {
                         color: item.color || "",
-                        material: item.material || ""
-                    }
+                        material: item.material || "",
+                        design: item.design || ""
+                    },
+                    images: item.customImage ? [] : undefined // Kan lägga till bild-URL här om vi vill
                 },
-                unit_amount: dbVariant.price,
+                unit_amount: dbVariant.price, // Pris i ören från DB
                 recurring: dbVariant.type === "SUBSCRIPTION" ? { interval: "month" } : undefined,
             },
             quantity: item.quantity,
         });
+
+        // Hantera Custom Print Fee (100 kr)
+        // Vi lägger detta som en separat rad för tydlighet
+        if (item.customImage) {
+            line_items.push({
+                price_data: {
+                    currency: "sek",
+                    product_data: {
+                        name: "Custom Print",
+                        description: "Egen logotyp/design på kortet",
+                    },
+                    unit_amount: 10000, // 100 kr i ören
+                },
+                quantity: item.quantity, // En avgift per kort
+            });
+        }
     }
 
-    // URL Logic
+    // B. Hantera Premium Bundle (Ad-hoc priser baserat på val)
+    // Detta gör att vi slipper skapa specifika stripe-produkter för dessa just nu.
+    const premiumOption = result.data.premiumOption;
+
+if (premiumOption === "1mo") {
+        line_items.push({
+            price_data: {
+                currency: "sek",
+                product_data: {
+                    name: "1 Månad Premium (Startpaket)",
+                    description: "Ingår utan kostnad",
+                },
+                unit_amount: 0, // ÄNDRAT FRÅN 10000 TILL 0
+            },
+            quantity: 1,
+        });
+    } else if (premiumOption === "6mo") {
+        line_items.push({
+            price_data: {
+                currency: "sek",
+                product_data: {
+                    name: "Avyra Premium (6 mån)",
+                    description: "Pro Bundle Upgrade",
+                },
+                unit_amount: 29900, // 299 kr
+            },
+            quantity: 1,
+        });
+    }
+
+    // 4. Konfigurera Session
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
     if (!baseUrl) return new NextResponse("Server Config Error", { status: 500 });
 
     let successUrl = `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`;
     
-    // Om prenumeration är inblandad, skicka till billing
+    // Om det är en ren prenumeration (inte bundle-engångsbetalning), skicka till billing
+    // Notera: Våra bundle-premium-val ovan är just nu engångs ("payment") för enkelhetens skull.
+    // Vill du att de ska starta en prenumeration direkt måste vi använda stripe price-IDs.
     if (hasSubscription && userId) {
         successUrl = `${baseUrl}/profile/settings?view=billing&success=true`;
     }
 
-    // Skapa Sessionen
     const session = await stripe.checkout.sessions.create({
       line_items,
-      mode: hasSubscription ? "subscription" : "payment", // Om mixed cart, använd subscription mode (oftast)
+      // Om vi blandar engångsköp (kort) med återkommande (subscription) måste mode vara "subscription"
+      // Men just nu kör vi Bundle-Premium som "Engångsperioder" (Pre-paid), så "payment" fungerar.
+      mode: hasSubscription ? "subscription" : "payment", 
       success_url: successUrl,
-      cancel_url: `${baseUrl}/order`, // Skicka tillbaka till order-sidan vid avbrott
+      cancel_url: `${baseUrl}/order`,
       
       metadata: {
         userId: userId || "",
-        type: hasSubscription ? "mixed_order" : "card_order",
-        // Vi sparar en sammanfattning i metadata för enkelhetens skull
-        itemsSummary: JSON.stringify(itemsToProcess.map(i => `${i.variantId}:${i.quantity}`))
+        type: "bundle_order",
+        premiumOption: premiumOption, // Bra att spara vad de valde
+        hasCustomPrint: itemsToProcess.some(i => i.customImage) ? "true" : "false"
       },
       
-      // Adressinsamling
-      shipping_address_collection: hasPhysical ? {
+      shipping_address_collection: {
         allowed_countries: ["SE"], 
-      } : undefined,
+      },
       
       phone_number_collection: { enabled: true },
       allow_promotion_codes: true,

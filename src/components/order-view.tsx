@@ -15,8 +15,8 @@ type PremiumOption = "none" | "1mo" | "6mo";
 export interface DbVariant {
   id: string;
   name: string;
-  price: number; // in cents
-  compareAtPrice: number | null; // in cents
+  price: number; 
+  compareAtPrice: number | null; 
   colorCode: string | null;
   type: string;
 }
@@ -24,10 +24,10 @@ export interface DbVariant {
 interface OrderViewProps {
   standardVariants: DbVariant[];
   metalVariants: DbVariant[];
-  bundleVariant: DbVariant | null; 
+  bundleVariant: DbVariant | null;
+  isPremium: boolean;
 }
 
-// --- Wrapper for Suspense (Required for useSearchParams in Next.js) ---
 export default function OrderViewWrapper(props: OrderViewProps) {
   return (
     <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#050505]"><Loader2 className="animate-spin text-white" /></div>}>
@@ -36,32 +36,32 @@ export default function OrderViewWrapper(props: OrderViewProps) {
   );
 }
 
-function OrderViewContent({ standardVariants, metalVariants, bundleVariant }: OrderViewProps) {
+function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPremium }: OrderViewProps) {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   
-  // Default Colors
   const defaultStandardColor = standardVariants[0]?.colorCode || "#1a1a1a";
   const defaultMetalColor = metalVariants[0]?.colorCode || "#171717";
 
-  // State
   const [material, setMaterial] = useState<MaterialType>("plastic");
   const [design] = useState<DesignType>("minimal"); 
   const [colorCode, setColorCode] = useState<string>(defaultStandardColor);
   const [customImage, setCustomImage] = useState<string | null>(null);
+  
+  // Default: Om bundle, välj 1mo. Om isPremium, tvinga none.
   const [premiumOption, setPremiumOption] = useState<PremiumOption>("none");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // --- Effects ---
-  // Check URL for bundle param on mount
   useEffect(() => {
     const isBundle = searchParams.get("bundle") === "pro-bundle";
-    if (isBundle) {
-      setPremiumOption("1mo"); // Default to 1 month bundle
-      setMaterial("plastic");  // Default to plastic as per bundle image
+    // Om bundle-länk och användaren INTE redan har premium -> Välj gratismånaden
+    if (isBundle && !isPremium) {
+      setPremiumOption("1mo"); 
+      setMaterial("plastic");
     }
-  }, [searchParams]);
+  }, [searchParams, isPremium]);
 
   // --- Helpers ---
   const findSelectedVariant = () => {
@@ -72,7 +72,6 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant }: Or
   const selectedVariant = findSelectedVariant();
   const quantity = 1;
 
-  // Pricing Logic
   const getDisplayPriceForMaterial = (m: MaterialType) => {
       const variants = m === "plastic" ? standardVariants : metalVariants;
       if (variants.length === 0) return { price: 0, compareAt: null };
@@ -106,7 +105,6 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant }: Or
 
   const selectMaterial = (m: MaterialType) => {
     setMaterial(m);
-    // Only clear image if switching TO plastic (Metal supports image)
     if (m === "plastic") {
       setCustomImage(null);
       setColorCode(defaultStandardColor);
@@ -123,26 +121,14 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant }: Or
         
         const items = [];
         
-        // 1. Physical Card
         items.push({
             variantId: selectedVariant.id,
             quantity: quantity,
             color: selectedVariant.name,
             design: design,
             material: material,
-            customImage: customImage ? "uploaded-image-reference" : null // Simplified for now
+            customImage: customImage ? "uploaded-image-reference" : null 
         });
-
-        // 2. Premium Bundle Logic
-        if (premiumOption !== "none" && bundleVariant) {
-            // Here we would ideally send the specific variant for 1mo or 6mo
-            // For now, we simulate the logic by sending the bundle variant + metadata
-            items.push({
-                variantId: bundleVariant.id,
-                quantity: 1,
-                option: premiumOption // Backend needs to handle pricing based on this or separate variants
-            });
-        }
 
         const response = await fetch("/api/stripe/checkout", {
           method: "POST",
@@ -163,29 +149,27 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant }: Or
   // --- Calculations ---
   const cardPrice = selectedVariant ? (selectedVariant.price / 100) : 0;
   const compareAt = selectedVariant?.compareAtPrice ? (selectedVariant.compareAtPrice / 100) : null;
-  
-  // Custom print logic: Only for metal and if image exists
   const customPrintCost = (material === "metal" && customImage) ? 100 : 0; 
 
-  // Premium Costs
-  // 1mo = 100kr (To make Plastic 199 + 100 = 299 bundle price)
-  // 6mo = 299kr (Standard upgrade price)
+  // Premium Costs Logic
   let premiumCost = 0;
-  let premiumLabel = "";
   
   if (premiumOption === "1mo") {
-    premiumCost = 100;
-    premiumLabel = "Startpaket (1 mån)";
+    premiumCost = 0; // GRATIS NU (Var 100)
   } else if (premiumOption === "6mo") {
     premiumCost = 299;
-    premiumLabel = "Premium (6 mån)";
   }
 
   const total = ((cardPrice + customPrintCost) * quantity) + premiumCost;
   const activeVariants = material === "plastic" ? standardVariants : metalVariants;
   
-  // Calculate total savings
-  const totalOriginalPrice = (compareAt || cardPrice) + customPrintCost + (premiumOption === "6mo" ? 474 : (premiumOption === "1mo" ? 149 : 0));
+  // Savings calculation
+  // Om 1mo är vald, sparar man värdet av en månad (t.ex. 69kr) eller bara ser det som en bonus.
+  // Vi kan räkna "ordinarie" pris som kort + eventuell custom print + värdet av premium.
+  const premiumValue = premiumOption === "1mo" ? 69 : (premiumOption === "6mo" ? 474 : 0);
+  const totalOriginalPrice = (compareAt || cardPrice) + customPrintCost + premiumValue;
+  
+  // Total besparing (om det finns rabatter på kortet ELLER premium)
   const savings = Math.round(totalOriginalPrice - total);
   const hasSavings = savings > 0;
 
@@ -200,12 +184,14 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant }: Or
                 <div className="text-center mt-4 space-y-1 text-nordic-highlight"><p className="text-xs">Dra för att rotera</p></div>
             </div>
 
-            {premiumOption !== "none" && (
+            {(premiumOption !== "none" || !isPremium) && (
                <div className="animate-in slide-in-from-bottom-4 duration-500 bg-[#0A0F1C] border border-blue-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl shadow-blue-900/10">
                   <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
                       <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400"><Sparkles size={20}/></div>
                       <div>
-                        <h3 className="font-bold text-base text-nordic-secondary">Ingår: Premium Profil</h3>
+                        <h3 className="font-bold text-base text-nordic-secondary">
+                            {isPremium ? "Du har Premium Profil" : "Ingår: Premium Profil"}
+                        </h3>
                         <p className="text-xs text-nordic-highlight">Detta ser folk när de blippar ditt kort</p>
                       </div>
                   </div>
@@ -298,13 +284,13 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant }: Or
              </div>
           )}
 
-           {/* 4. PREMIUM SELECTION */}
-           {bundleVariant && (
+           {/* 4. PREMIUM SELECTION - Visas om ej premium */}
+           {!isPremium && bundleVariant && (
             <div className="space-y-3 pt-4">
                 <label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest ml-1">4. Välj Nivå</label>
                 
                 <div className="space-y-3">
-                    {/* Option 1: Basic (No Premium) */}
+                    {/* Option 1: Basic */}
                     <div 
                         onClick={() => setPremiumOption("none")}
                         className={`relative p-4 rounded-xl border cursor-pointer transition-all ${premiumOption === "none" ? "border-blue-500 bg-blue-500/10" : "border-white/10 hover:border-white/20"}`}
@@ -318,7 +304,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant }: Or
                         </div>
                     </div>
 
-                    {/* Option 2: Start Bundle (1 Month) */}
+                    {/* Option 2: 1 Month FREE */}
                     <div 
                         onClick={() => setPremiumOption("1mo")}
                         className={`relative p-4 rounded-xl border cursor-pointer transition-all ${premiumOption === "1mo" ? "border-blue-500 bg-blue-500/10" : "border-white/10 hover:border-white/20"}`}
@@ -329,18 +315,19 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant }: Or
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-bold text-sm flex items-center gap-2">
-                                    Startpaket (1 mån Premium)
-                                    <span className="bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full">BUNDLE</span>
+                                    Startpaket + 1 mån Premium
+                                    <span className="bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full">GRATIS</span>
                                 </span>
-                                <span className="text-xs text-nordic-highlight">Kom igång med analys & teman</span>
+                                <span className="text-xs text-nordic-highlight">Prova på utan kostnad</span>
                             </div>
                             <div className="ml-auto text-right">
-                                <span className="block font-bold text-sm">100 kr</span>
+                                <span className="block font-bold text-sm">0 kr</span>
+                                <span className="text-xs text-nordic-highlight line-through">69 kr</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Option 3: Pro Bundle (6 Months) */}
+                    {/* Option 3: Pro Bundle */}
                     <div 
                         onClick={() => setPremiumOption("6mo")}
                         className={`relative p-4 rounded-xl border cursor-pointer transition-all ${premiumOption === "6mo" ? "border-green-500 bg-green-500/10" : "border-white/10 hover:border-white/20"}`}

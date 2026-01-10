@@ -5,7 +5,6 @@ import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 import crypto from "crypto";
 
-// Hjälpfunktion för att skapa kortkoder
 function generateShortCode(length = 6) {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; 
   let result = "";
@@ -28,126 +27,132 @@ export async function POST(req: Request) {
       process.env.STRIPE_WEBHOOK_SECRET!
     );
   } catch (error: any) {
-    console.error(`Webhook signature verification failed: ${error.message}`);
+    console.error(`Webhook verification failed: ${error.message}`);
     return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
   }
 
-  // --- HANTERA CHECKOUT SESSION COMPLETED ---
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     
     const type = session.metadata?.type;
     const userId = session.metadata?.userId; 
+    const premiumOption = session.metadata?.premiumOption;
 
-    // ==========================================
-    // SCENARIO 1: Endast Premium-prenumeration
-    // ==========================================
+    // SCENARIO 1: Premium Subscription
     if (type === "premium_subscription") {
-      
-      // FIX: Hantera gästköp (userId saknas eller är tom sträng)
-      if (!userId || userId.trim() === "") {
-        console.log(`📝 Guest Premium purchase detected for session ${session.id}. Waiting for manual activation via /register.`);
-        // Vi returnerar 200 OK för att Stripe ska vara nöjda.
-        // Aktiveringen sker senare via /api/stripe/verify-session när användaren skapat konto.
-        return new NextResponse(null, { status: 200 });
-      }
+       if (!userId || userId.trim() === "") {
+         return new NextResponse(null, { status: 200 });
+       }
+       await prisma.user.update({
+         where: { id: userId },
+         data: { isPremium: true, stripeCustomerId: session.customer as string },
+       });
+       return new NextResponse(null, { status: 200 });
+    }
 
-      console.log(`✨ Activating Premium for User: ${userId}`);
-
-      try {
-        await prisma.user.update({
-          where: { id: userId },
-          data: {
-            isPremium: true,
-            stripeCustomerId: session.customer as string,
-          },
+    // SCENARIO 2 & 3: Order & Bundle
+    if (type === "card_order" || type === "bundle_order") {
+        
+        const existingOrder = await prisma.order.findUnique({
+            where: { stripeSessionId: session.id },
         });
-        console.log("✅ User updated to Premium successfully.");
-      } catch (err) {
-        console.error("Failed to update user premium status:", err);
-        // Returnera 200 även vid fel för att undvika loopar hos Stripe, logga felet noga.
-      }
 
-      return new NextResponse(null, { status: 200 });
-    }
+        if (existingOrder) {
+            return new NextResponse(null, { status: 200 });
+        }
 
-    // ==========================================
-    // SCENARIO 2: Fysisk Kortbeställning
-    // ==========================================
-    
-    // 1. Idempotency Check
-    const existingOrder = await prisma.order.findUnique({
-      where: {
-        stripeSessionId: session.id,
-      },
-    });
+        const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+            expand: ['data.price.product'],
+        });
 
-    if (existingOrder) {
-      console.log(`⚠️ Order already processed for session ${session.id}. Skipping.`);
-      return new NextResponse(null, { status: 200 });
-    }
+        // FIX: Hantera Typ-felet genom att kasta session som any för att komma åt shipping_details
+        // Stripe har datan, men ibland bråkar TS-definitionerna.
+        const shipping = (session as any).shipping_details?.address;
+        const shippingName = (session as any).shipping_details?.name;
+        
+        const order = await prisma.order.create({
+            data: {
+                stripeSessionId: session.id,
+                amountTotal: session.amount_total || 0,
+                currency: session.currency || "sek",
+                status: "PAID",
+                customerEmail: session.customer_details?.email || "",
+                customerType: "PRIVATE",
+                
+                // FIX: Nu använder vi shipping-variabeln!
+                shippingName: shippingName || session.customer_details?.name,
+                shippingLine1: shipping?.line1,
+                shippingLine2: shipping?.line2,
+                shippingCity: shipping?.city,
+                shippingPostalCode: shipping?.postal_code,
+                shippingCountry: shipping?.country,
+                
+                quantity: lineItems.data.length,
+            },
+        });
 
-    const quantity = parseInt(session.metadata?.quantity || "1");
-    const material = session.metadata?.material || "plastic";
-    const color = session.metadata?.color || "black";
-    const design = session.metadata?.design || "minimal";
-    const customerType = session.metadata?.customerType === "company" ? "COMPANY" : "PRIVATE";
+        const cardsToCreate = [];
+        let hasPremiumProduct = false;
 
-    // 2. Skapa Order
-    const order = await prisma.order.create({
-      data: {
-        stripeSessionId: session.id,
-        amountTotal: session.amount_total || 0,
-        currency: session.currency || "sek",
-        status: "PAID",
-        customerEmail: session.customer_details?.email || "",
-        customerType: customerType,
-        companyName: session.custom_fields?.find((f) => f.key === "company_name")?.text?.value,
-        quantity: quantity,
-      },
-    });
+        for (const item of lineItems.data) {
+            // FIX: Tog bort 'const product = ...' då den inte användes.
 
-    // 3. Generera Card Slots
-    const cardsToCreate = [];
-    for (let i = 0; i < quantity; i++) {
-      cardsToCreate.push({
-        orderId: order.id,
-        cardCode: generateShortCode(),
-        claimToken: crypto.randomBytes(32).toString("hex"),
-        status: "UNCLAIMED" as const,
-        material: material,
-        colorOption: color,
-        designTemplate: design,
-      });
-    }
+            // FIX: Lade till '|| ""' för att garantera att det är en sträng
+            const description = item.description || "";
+            const isPremiumItem = description.toLowerCase().includes("premium");
+            const isCustomPrint = description.toLowerCase().includes("custom print");
 
-    await prisma.card.createMany({
-      data: cardsToCreate,
-    });
+            if (isPremiumItem) {
+                hasPremiumProduct = true;
+                continue;
+            }
 
-    console.log(`✅ ${quantity} physical cards created for Order ${order.id}`);
+            if (isCustomPrint) {
+                continue;
+            }
 
-    // ==========================================
-    // SCENARIO 3: Bundle (Fysiskt kort + Premium)
-    // ==========================================
-    if (session.metadata?.isBundled === "true" && userId) {
-      console.log(`🎁 Bundle detected! Activating Premium for User: ${userId}`);
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          isPremium: true,
-          stripeCustomerId: session.customer as string,
-        },
-      });
+            const qty = item.quantity || 1;
+            
+            for (let i = 0; i < qty; i++) {
+                 let detectedMaterial = "plastic";
+                 // FIX: description är nu garanterat en sträng
+                 if (description.toLowerCase().includes("metal")) detectedMaterial = "metal";
+                 
+                 let detectedColor = "black"; 
+
+                 cardsToCreate.push({
+                    orderId: order.id,
+                    cardCode: generateShortCode(),
+                    claimToken: crypto.randomBytes(32).toString("hex"),
+                    status: "UNCLAIMED" as const,
+                    material: detectedMaterial,
+                    colorOption: detectedColor,
+                    designTemplate: "minimal",
+                });
+            }
+        }
+
+        if (cardsToCreate.length > 0) {
+            await prisma.card.createMany({
+                data: cardsToCreate,
+            });
+        }
+
+        if (userId && (premiumOption === "1mo" || premiumOption === "6mo" || hasPremiumProduct)) {
+            await prisma.user.update({
+                where: { id: userId },
+                data: {
+                    isPremium: true,
+                    stripeCustomerId: session.customer as string,
+                },
+            });
+        }
     }
   }
 
-  // --- HANTERA AVSLUTAD PRENUMERATION ---
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object as Stripe.Subscription;
     const stripeCustomerId = subscription.customer as string;
-
-    console.log(`🚫 Subscription deleted for customer: ${stripeCustomerId}`);
 
     const user = await prisma.user.findFirst({
       where: { stripeCustomerId },
@@ -158,9 +163,6 @@ export async function POST(req: Request) {
         where: { id: user.id },
         data: { isPremium: false },
       });
-      console.log(`✅ Premium revoked for user ${user.id}`);
-    } else {
-      console.warn("Could not find user to revoke premium for.");
     }
   }
 

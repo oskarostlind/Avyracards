@@ -5,12 +5,55 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignOutButton } from "@/components/sign-out-button";
-import { ShieldCheck, ShoppingBag } from "lucide-react"; 
+import { 
+  ShieldCheck, 
+  ShoppingBag, 
+  LayoutDashboard, 
+  BarChart3, 
+  Palette, 
+  Settings,
+  Menu,
+  X 
+} from "lucide-react"; 
 
 type NavbarClientProps = {
   isAuthenticated: boolean;
   isAdmin?: boolean;
 };
+
+// Vi definierar länkarna här för att hålla koden ren och enkel att ändra
+const navLinks = [
+  { 
+    name: "Dashboard", 
+    href: "/dashboard", 
+    icon: LayoutDashboard,
+    exact: true 
+  },
+  { 
+    name: "Statistik", 
+    href: "/dashboard/analytics", 
+    icon: BarChart3,
+    exact: false
+  },
+  { 
+    name: "Teman", 
+    href: "/profile/themes", 
+    icon: Palette,
+    exact: false
+  },
+  { 
+    name: "Shop", 
+    href: "/order", 
+    icon: ShoppingBag,
+    exact: true
+  },
+  { 
+    name: "Inställningar", 
+    href: "/profile/settings", 
+    icon: Settings,
+    exact: false
+  },
+];
 
 export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
   const pathname = usePathname();
@@ -18,14 +61,20 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
 
   const inSocial = pathname === "/" || pathname.startsWith("/social");
   const inBusiness = pathname.startsWith("/business");
-  const inShop = pathname === "/order"; // Kollar om vi är i shoppen
 
   const closeMenu = () => setIsOpen(false);
 
+  // Hjälpfunktion för att kolla om en länk är aktiv
+  const isLinkActive = (href: string, exact: boolean) => {
+    if (exact) return pathname === href;
+    return pathname.startsWith(href);
+  };
+
   return (
-    <header className="sticky top-0 z-50 border-b border-nordic-highlight/30 bg-nordic-primary/80 backdrop-blur">
-      <div className="mx-auto w-full max-w-6xl px-4 py-3 md:py-4">
-        {/* === MOBILNAV === */}
+    <header className="sticky top-0 z-50 border-b border-nordic-highlight/10 bg-nordic-primary/80 backdrop-blur-md">
+      <div className="mx-auto w-full max-w-7xl px-4 py-3 md:py-4">
+        
+        {/* === MOBILNAV (HEADER) === */}
         <div className="flex items-center justify-between md:hidden">
           <Link
             href="/"
@@ -37,74 +86,62 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
 
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="flex cursor-pointer items-center justify-center rounded-full border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-nordic-secondary transition hover:bg-nordic-primary/60"
-            aria-label="Öppna meny"
+            className="flex cursor-pointer items-center justify-center rounded-full border border-nordic-highlight/20 bg-nordic-primary/50 px-3 py-2 text-nordic-secondary transition hover:bg-nordic-primary/80"
+            aria-label={isOpen ? "Stäng meny" : "Öppna meny"}
           >
-            {isOpen ? (
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            ) : (
-              <div className="flex flex-col gap-0.5">
-                <span className="h-0.5 w-4 rounded bg-nordic-secondary" />
-                <span className="h-0.5 w-4 rounded bg-nordic-secondary" />
-                <span className="h-0.5 w-4 rounded bg-nordic-secondary" />
-              </div>
-            )}
+            {isOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
 
-        {/* Mobilmeny Dropdown */}
+        {/* === MOBIL MENY (DROPDOWN) === */}
         {isOpen && (
-          <div className="absolute left-0 right-0 top-full border-b border-nordic-highlight/30 bg-nordic-primary/95 p-4 shadow-xl md:hidden animate-in slide-in-from-top-2">
+          <div className="absolute left-0 right-0 top-full border-b border-nordic-highlight/20 bg-[#050505] p-4 shadow-2xl md:hidden animate-in slide-in-from-top-2">
             {isAuthenticated ? (
               <nav className="space-y-2">
-                <div className="px-2 text-[10px] font-semibold uppercase tracking-wide text-nordic-highlight">
-                  Mitt konto
+                <div className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wide text-nordic-highlight/60">
+                  Meny
                 </div>
 
                 {isAdmin && (
                   <Link
                     href="/admin"
                     onClick={closeMenu}
-                    className="flex items-center gap-2 rounded-lg bg-nordic-accent/10 px-3 py-2 text-sm font-medium text-nordic-accent border border-nordic-accent/40 hover:bg-nordic-accent/15"
+                    className="flex items-center gap-3 rounded-xl bg-red-500/10 px-4 py-3 text-sm font-medium text-red-400 border border-red-500/20 hover:bg-red-500/20 mb-4"
                   >
-                    <ShieldCheck size={16} /> Admin Panel
+                    <ShieldCheck size={18} /> Admin Panel
                   </Link>
                 )}
 
-                <Link href="/dashboard" onClick={closeMenu} className="block rounded-lg px-3 py-2 text-sm text-nordic-secondary hover:bg-nordic-primary/70">
-                  Dashboard
-                </Link>
-                
-                {/* NY SHOP-LÄNK (MOBIL) - Samma stil som övriga */}
-                <Link href="/order" onClick={closeMenu} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-nordic-secondary hover:bg-nordic-primary/70">
-                   <ShoppingBag size={16} className="text-nordic-highlight"/> Köp Kort
-                </Link>
+                {navLinks.map((link) => {
+                  const active = isLinkActive(link.href, link.exact);
+                  const Icon = link.icon;
+                  return (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      onClick={closeMenu}
+                      className={`flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition-all ${
+                        active
+                          ? "bg-nordic-accent/10 text-nordic-accent border border-nordic-accent/20"
+                          : "text-nordic-secondary hover:bg-white/5"
+                      }`}
+                    >
+                      <Icon size={18} className={active ? "text-nordic-accent" : "text-nordic-highlight"} />
+                      {link.name}
+                    </Link>
+                  );
+                })}
 
-                <Link href="/dashboard/analytics" onClick={closeMenu} className="block rounded-lg px-3 py-2 text-sm text-nordic-secondary hover:bg-nordic-primary/70">
-                  Statistik
-                </Link>
-                <Link href="/profile/themes" onClick={closeMenu} className="block rounded-lg px-3 py-2 text-sm text-nordic-secondary hover:bg-nordic-primary/70">
-                  Teman
-                </Link>
-                <Link href="/profile/settings" onClick={closeMenu} className="block rounded-lg px-3 py-2 text-sm text-nordic-secondary hover:bg-nordic-primary/70">
-                  Inställningar
-                </Link>
-
-                <div className="mt-2 border-t border-nordic-highlight/30 pt-2 px-3">
+                <div className="mt-4 border-t border-nordic-highlight/20 pt-4 px-2">
                   <SignOutButton />
                 </div>
               </nav>
             ) : (
               <nav className="space-y-3">
-                <div className="px-2 text-[10px] font-semibold uppercase tracking-wide text-nordic-highlight">
-                  Konto
-                </div>
-                <Link href="/get-started" onClick={closeMenu} className="block w-full text-center rounded-lg bg-nordic-accent/10 border border-nordic-accent/40 px-3 py-2 text-sm font-medium text-nordic-accent hover:bg-nordic-accent/15">
+                 <Link href="/get-started" onClick={closeMenu} className="block w-full text-center rounded-lg bg-nordic-accent text-nordic-primary font-bold px-3 py-3 text-sm">
                   Kom igång
                 </Link>
-                <div className="px-3">
+                <div className="flex justify-center">
                   <SignInButton />
                 </div>
               </nav>
@@ -114,23 +151,25 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
 
         {/* === DESKTOPNAV === */}
         <div className="hidden items-center justify-between md:flex">
-          <div className="flex items-center gap-6">
+          {/* VÄNSTER SIDA */}
+          <div className="flex items-center gap-8">
             <Link
               href="/"
-              className="text-sm font-semibold tracking-tight text-nordic-secondary md:text-base"
+              className="text-lg font-bold tracking-tight text-nordic-secondary"
             >
               AvyraCards
             </Link>
 
-            <nav aria-label="Segment" className="rounded-full border border-nordic-highlight/30 bg-nordic-primary/80 px-1 py-0.5 text-xs text-nordic-highlight shadow-sm">
+            {/* Segment Switcher */}
+            <nav className="rounded-full border border-nordic-highlight/20 bg-white/5 p-1 text-xs">
               <ul className="flex items-center gap-1">
                 <li>
-                  <Link href="/social" className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${inSocial ? "bg-nordic-primary/70 text-nordic-secondary shadow-sm" : "text-nordic-highlight hover:bg-nordic-primary/70 hover:text-nordic-secondary"}`}>
+                  <Link href="/social" className={`rounded-full px-4 py-1.5 font-medium transition-all ${inSocial ? "bg-nordic-secondary text-nordic-primary shadow-sm" : "text-nordic-highlight hover:text-nordic-secondary"}`}>
                     Socialt
                   </Link>
                 </li>
                 <li>
-                  <Link href="/business" className={`rounded-full px-3 py-1 text-[11px] font-medium transition ${inBusiness ? "bg-nordic-primary/70 text-nordic-secondary shadow-sm" : "text-nordic-highlight hover:bg-nordic-primary/70 hover:text-nordic-secondary"}`}>
+                  <Link href="/business" className={`rounded-full px-4 py-1.5 font-medium transition-all ${inBusiness ? "bg-nordic-secondary text-nordic-primary shadow-sm" : "text-nordic-highlight hover:text-nordic-secondary"}`}>
                     Business
                   </Link>
                 </li>
@@ -138,48 +177,52 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
             </nav>
           </div>
 
-          <nav aria-label="Huvudnavigering" className="flex items-center gap-6 text-sm">
+          {/* HÖGER SIDA (Menyn) */}
+          <nav className="flex items-center gap-3 text-sm">
             {isAuthenticated ? (
               <>
+                {/* Dynamiska Länkar */}
+                <div className="flex items-center gap-2 mr-4 bg-white/5 rounded-full p-1 border border-white/5">
+                    {navLinks.map((link) => {
+                      const active = isLinkActive(link.href, link.exact);
+                      const Icon = link.icon;
+                      
+                      return (
+                        <Link 
+                          key={link.href}
+                          href={link.href} 
+                          className={`
+                            flex items-center gap-2 px-4 py-2 rounded-full text-xs font-medium transition-all duration-300
+                            ${active 
+                              ? "bg-nordic-accent/10 text-nordic-accent shadow-[0_0_10px_rgba(var(--accent-rgb),0.2)] border border-nordic-accent/20" 
+                              : "text-nordic-highlight hover:text-nordic-secondary hover:bg-white/5 border border-transparent"
+                            }
+                          `}
+                        >
+                           <Icon size={14} className={active ? "text-nordic-accent" : "opacity-70 group-hover:opacity-100"} />
+                           {link.name}
+                        </Link>
+                      );
+                    })}
+                </div>
+
                 {isAdmin && (
-                  <Link href="/admin" className="flex items-center gap-1.5 rounded-full bg-nordic-accent/10 px-3 py-1 text-xs font-bold text-nordic-accent border border-nordic-accent/40 hover:bg-nordic-accent/15 transition-colors">
+                  <Link href="/admin" className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors mr-2">
                     <ShieldCheck size={14} /> Admin
                   </Link>
                 )}
 
-                <Link href="/dashboard" className="text-nordic-highlight hover:text-nordic-accent transition-colors">
-                  Dashboard
-                </Link>
-                <Link href="/dashboard/analytics" className="text-nordic-highlight hover:text-nordic-accent transition-colors">
-                  Statistik
-                </Link>
-                <Link href="/profile/themes" className="text-nordic-highlight hover:text-nordic-accent transition-colors">
-                  Teman
-                </Link>
-                
-                {/* NY SHOP-LÄNK (DESKTOP) - Subtil men tydlig */}
-                <Link 
-                    href="/order" 
-                    className={`flex items-center gap-1.5 transition-colors ${inShop ? "text-nordic-accent font-medium" : "text-nordic-highlight hover:text-nordic-secondary"}`}
-                >
-                   <ShoppingBag size={16} className={inShop ? "text-nordic-accent" : "opacity-70"} /> Shop
-                </Link>
-
-                <Link href="/profile/settings" className="text-nordic-highlight hover:text-nordic-accent transition-colors">
-                  Inställningar
-                </Link>
-
-                <div className="ml-1">
+                <div className="pl-2 border-l border-white/10">
                   <SignOutButton />
                 </div>
               </>
             ) : (
-              <>
-                <Link href="/get-started" className="rounded-full border border-nordic-highlight/40 px-4 py-1.5 text-sm font-medium text-nordic-secondary hover:border-nordic-accent hover:text-nordic-accent transition-colors">
+              <div className="flex items-center gap-4">
+                <SignInButton />
+                <Link href="/get-started" className="rounded-full bg-nordic-accent px-5 py-2 text-sm font-bold text-nordic-primary hover:bg-nordic-accent/90 transition-all shadow-lg shadow-nordic-accent/20">
                   Kom igång
                 </Link>
-                <SignInButton />
-              </>
+              </div>
             )}
           </nav>
         </div>

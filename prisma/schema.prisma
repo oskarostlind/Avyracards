@@ -152,6 +152,13 @@ model Order {
   quantity        Int          @default(1)
    
   cards           Card[]
+
+  shippingName       String?
+  shippingLine1      String?
+  shippingLine2      String?
+  shippingCity       String?
+  shippingPostalCode String?
+  shippingCountry    String?
 }
 
 model Card {

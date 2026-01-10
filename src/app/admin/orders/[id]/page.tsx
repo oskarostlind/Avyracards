@@ -5,35 +5,36 @@ import { prisma } from "@/lib/prisma";
 import { ArrowLeft, CreditCard, User, Mail, Link as LinkIcon, Wand2, MapPin, Printer } from "lucide-react";
 import { OrderStatus } from "@prisma/client";
 import { AdminOrderActions } from "@/components/admin/order-actions";
-import { PackingSlip } from "@/components/admin/packing-slip"; // Importera nya komponenten
-import { stripe } from "@/lib/stripe"; // För att hämta adress
+import { PackingSlip } from "@/components/admin/packing-slip"; 
 
 export default async function OrderDetailPage({ params }: { params: { id: string } }) {
   const session = await auth();
-  if (session?.user?.role !== "ADMIN") redirect("/dashboard");
+  
+  if (session?.user?.role !== "ADMIN") {
+    redirect("/dashboard");
+  }
 
   const order = await prisma.order.findUnique({
     where: { id: params.id },
     include: { cards: true },
   });
 
-  if (!order) return <div className="text-nordic-secondary p-8">Order hittades inte</div>;
-
-  // Hämta adress från Stripe om session ID finns
-  let shippingDetails = null;
-  if (order.stripeSessionId) {
-    try {
-      const stripeSession = await stripe.checkout.sessions.retrieve(order.stripeSessionId);
-      if (stripeSession.customer_details) {
-        shippingDetails = stripeSession.customer_details;
-      }
-    } catch (error) {
-      console.error("Kunde inte hämta Stripe session", error);
-    }
+  if (!order) {
+    return (
+        <div className="min-h-screen bg-nordic-primary p-8 text-nordic-secondary">
+            Order hittades inte
+        </div>
+    );
   }
 
+  // --- LOGIK: Hämta adress från databasen istället för Stripe ---
+  // Vi kollar om första adressraden finns för att veta om vi har en adress
+  const hasShippingAddress = !!order.shippingLine1;
+  
+  // Bestäm kundnamn: Leveransnamn > Företagsnamn > Fallback
+  const customerName = order.shippingName || order.companyName || "Kund";
+
   const cardsGenerated = order.cards.length >= order.quantity;
-  const customerName = shippingDetails?.name || order.companyName || "Kund";
 
   return (
     <div className="min-h-screen bg-nordic-primary p-4 md:p-8 text-nordic-secondary">
@@ -63,19 +64,13 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           </div>
           
           <div className="flex gap-2">
-             {/* Utskriftsknapp */}
+             {/* Utskriftsknapp (Visuellt hjälpmedel, Ctrl+P gäller) */}
              {order.cards.length > 0 && (
-               <button 
-                 // Vi använder en enkel onclick här för att trigga webbläsarens utskrift
-                 // (Eftersom detta är en server component, funkar det bäst med en 'a' eller ett litet script,
-                 // men för enkelhetens skull i Admin kan vi låta Client Actions hantera det eller bara rendera knappen i actions.)
-                 // För att göra det enkelt: AdminOrderActions hanterar logik, men vi kan lägga en script-tagg eller Client Component.
-                 // Låt oss använda en enkel Client Wrapper för utskriftsknappen senare, eller bara be dig trycka Ctrl+P.
-                 // Men vi lägger in en snygg knapp som inte gör något än, du får trycka Ctrl+P.
-                 className="flex items-center gap-2 bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium border border-nordic-highlight/40 hover:bg-slate-700 transition"
-               >
-                 <Printer size={16} /> <span className="hidden sm:inline">Tryck Ctrl+P för Följesedel</span>
-               </button>
+               <div className="hidden sm:block"> 
+                  <span className="flex items-center gap-2 bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium border border-nordic-highlight/40 opacity-50 cursor-default">
+                    <Printer size={16} /> Ctrl + P för Följesedel
+                  </span>
+               </div>
              )}
 
              <AdminOrderActions 
@@ -119,7 +114,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                         
                         <div className="flex justify-between items-start mb-4 pl-3">
                           <div>
-                            <p className="text-xs text-nordic-highlight uppercase tracking-wider font-bold mb-1">Kortkod (Tryck)</p>
+                            <p className="text-xs text-nordic-highlight uppercase tracking-wider font-bold mb-1">Kortkod</p>
                             <span className="font-mono text-2xl font-bold text-nordic-secondary tracking-widest">{card.cardCode}</span>
                           </div>
                           <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold border ${card.status === 'CLAIMED' ? 'bg-green-900/30 text-green-400 border-green-800' : 'bg-slate-800 text-nordic-highlight border-nordic-highlight/40'}`}>
@@ -131,7 +126,7 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                                 <LinkIcon size={12} className="text-blue-400" />
-                                <span className="text-[10px] uppercase text-blue-400 font-bold">NFC URL (Skriv denna)</span>
+                                <span className="text-[10px] uppercase text-blue-400 font-bold">NFC URL</span>
                             </div>
                             <code className="text-sm text-slate-300 block truncate font-mono select-all">
                               {nfcUrl}
@@ -149,24 +144,26 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           {/* Höger: KUND & ADRESS */}
           <div className="space-y-6">
             
-            {/* Adresskort (Hämtat från Stripe) */}
+            {/* Adresskort (Nu hämtat direkt från DB) */}
             <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6">
                <h2 className="text-xs font-bold text-nordic-highlight uppercase tracking-widest mb-6">Leverans</h2>
-               {shippingDetails?.address ? (
+               {hasShippingAddress ? (
                  <div className="flex gap-4">
                     <div className="p-2 bg-slate-800 rounded-lg h-fit">
                        <MapPin size={20} className="text-nordic-highlight" />
                     </div>
                     <div className="text-sm text-slate-200 leading-relaxed">
-                       <p className="font-bold text-nordic-secondary">{shippingDetails.name}</p>
-                       <p>{shippingDetails.address.line1}</p>
-                       {shippingDetails.address.line2 && <p>{shippingDetails.address.line2}</p>}
-                       <p>{shippingDetails.address.postal_code} {shippingDetails.address.city}</p>
-                       <p className="text-nordic-highlight text-xs mt-1 uppercase">{shippingDetails.address.country}</p>
+                       <p className="font-bold text-nordic-secondary">{customerName}</p>
+                       <p>{order.shippingLine1}</p>
+                       {order.shippingLine2 && <p>{order.shippingLine2}</p>}
+                       <p>{order.shippingPostalCode} {order.shippingCity}</p>
+                       <p className="text-nordic-highlight text-xs mt-1 uppercase">{order.shippingCountry}</p>
                     </div>
                  </div>
                ) : (
-                 <p className="text-sm text-nordic-highlight italic">Ingen adress hittades i Stripe sessionen.</p>
+                 <p className="text-sm text-nordic-highlight italic">
+                    Ingen adress sparad i databasen för denna order.
+                 </p>
                )}
             </div>
 
