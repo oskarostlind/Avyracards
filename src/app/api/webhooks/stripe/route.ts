@@ -34,15 +34,17 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     
+    // Vi läser metadatan som vi "klistrade" på användaren i checkout
     const type = session.metadata?.type;
     const userId = session.metadata?.userId; 
     const premiumOption = session.metadata?.premiumOption;
 
-    // SCENARIO 1: Premium Subscription
+    console.log(`[Webhook] Processing session ${session.id}. Metadata UserId: ${userId}`);
+
+    // SCENARIO 1: Premium Subscription (Ren prenumeration)
     if (type === "premium_subscription") {
-       if (!userId || userId.trim() === "") {
-         return new NextResponse(null, { status: 200 });
-       }
+       if (!userId) return new NextResponse(null, { status: 200 });
+       
        await prisma.user.update({
          where: { id: userId },
          data: { isPremium: true, stripeCustomerId: session.customer as string },
@@ -65,8 +67,6 @@ export async function POST(req: Request) {
             expand: ['data.price.product'],
         });
 
-        // FIX: Hantera Typ-felet genom att kasta session som any för att komma åt shipping_details
-        // Stripe har datan, men ibland bråkar TS-definitionerna.
         const shipping = (session as any).shipping_details?.address;
         const shippingName = (session as any).shipping_details?.name;
         
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
                 customerEmail: session.customer_details?.email || "",
                 customerType: "PRIVATE",
                 
-                // FIX: Nu använder vi shipping-variabeln!
+                // Spara leveransinfo
                 shippingName: shippingName || session.customer_details?.name,
                 shippingLine1: shipping?.line1,
                 shippingLine2: shipping?.line2,
@@ -95,9 +95,6 @@ export async function POST(req: Request) {
         let hasPremiumProduct = false;
 
         for (const item of lineItems.data) {
-            // FIX: Tog bort 'const product = ...' då den inte användes.
-
-            // FIX: Lade till '|| ""' för att garantera att det är en sträng
             const description = item.description || "";
             const isPremiumItem = description.toLowerCase().includes("premium");
             const isCustomPrint = description.toLowerCase().includes("custom print");
@@ -115,7 +112,6 @@ export async function POST(req: Request) {
             
             for (let i = 0; i < qty; i++) {
                  let detectedMaterial = "plastic";
-                 // FIX: description är nu garanterat en sträng
                  if (description.toLowerCase().includes("metal")) detectedMaterial = "metal";
                  
                  let detectedColor = "black"; 
@@ -138,14 +134,23 @@ export async function POST(req: Request) {
             });
         }
 
+        // LÖSNINGEN PÅ IDENTITETSKRISEN:
+        // 1. Vi litar på userId från metadata (inte mailen).
+        // 2. Vi kollar om något av villkoren för premium är uppfyllda.
         if (userId && (premiumOption === "1mo" || premiumOption === "6mo" || hasPremiumProduct)) {
+            console.log(`[Webhook] Activating Premium for User ${userId}. Ignoring email mismatch.`);
+            
             await prisma.user.update({
                 where: { id: userId },
                 data: {
                     isPremium: true,
+                    // VIKTIGT: Vi skriver över kundens StripeID med det som användes vid köpet.
+                    // Detta "binder ihop" kontona även om mailen skiljer sig.
                     stripeCustomerId: session.customer as string,
                 },
             });
+        } else {
+            console.log(`[Webhook] No premium activation. UserId: ${userId}, Option: ${premiumOption}, HasProduct: ${hasPremiumProduct}`);
         }
     }
   }

@@ -7,7 +7,9 @@ import {
   Briefcase, 
   Eye, 
   CheckCircle2, 
-  Power 
+  Power,
+  Mail,
+  ExternalLink
 } from "lucide-react";
 
 import { SocialView } from "@/components/dashboard/social/social-view";
@@ -17,6 +19,16 @@ import { ProfilePreviewModal } from "@/components/dashboard/profile-preview-moda
 type DashboardShellProps = {
   user: User & { links: Link[] };
 };
+
+// --- HJÄLPFUNKTION FÖR MAIL-LÄNK ---
+function getEmailProviderLink(email: string) {
+    if (email.includes("@gmail")) return "https://mail.google.com/";
+    if (email.includes("@outlook") || email.includes("@hotmail") || email.includes("@live")) return "https://outlook.live.com/mail/";
+    if (email.includes("@yahoo")) return "https://mail.yahoo.com/";
+    if (email.includes("@proton")) return "https://mail.proton.me/";
+    if (email.includes("@icloud")) return "https://www.icloud.com/mail";
+    return null; // Fallback
+}
 
 export function DashboardShell({ user }: DashboardShellProps) {
   const [activeMode, setActiveMode] = useState<"SOCIAL" | "BUSINESS">(
@@ -44,10 +56,47 @@ export function DashboardShell({ user }: DashboardShellProps) {
       }
     });
   };
+  
+  // --- VERIFIERINGS-BANNER ---
+  const verificationLink = user.email ? getEmailProviderLink(user.email) : null;
 
   return (
     <div className="space-y-6">
-      {/* Header & Controls */}
+      
+      {/* 1. Verifierings-Banner (Visas endast om ej verifierad) */}
+      {!user.emailVerified && (
+         <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between animate-in fade-in slide-in-from-top-2">
+            <div className="flex gap-4">
+                <div className="bg-blue-500/20 p-2.5 rounded-xl h-fit">
+                    <Mail className="text-blue-400" size={24} />
+                </div>
+                <div>
+                    <h3 className="font-bold text-nordic-secondary text-sm sm:text-base">Verifiera din e-postadress</h3>
+                    <p className="text-xs sm:text-sm text-nordic-highlight mt-1 leading-relaxed">
+                        Vi har skickat en länk till <span className="text-nordic-secondary font-medium">{user.email}</span>. <br className="hidden sm:block"/>
+                        Verifiera för att säkra ditt konto. (Du kan fortfarande använda tjänsten nu!)
+                    </p>
+                </div>
+            </div>
+            
+            {verificationLink ? (
+                <a 
+                    href={verificationLink} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 whitespace-nowrap"
+                >
+                    Öppna Mailkorgen <ExternalLink size={14} />
+                </a>
+            ) : (
+                <button className="w-full sm:w-auto px-5 py-2.5 bg-nordic-primary border border-nordic-highlight/30 text-nordic-highlight text-sm font-medium rounded-xl cursor-default text-center">
+                    Kolla din inkorg
+                </button>
+            )}
+         </div>
+      )}
+
+      {/* 2. Header & Controls */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         
         {/* Vänster: Titel */}
@@ -143,7 +192,6 @@ export function DashboardShell({ user }: DashboardShellProps) {
         isOpen={isPreviewOpen} 
         onClose={() => setIsPreviewOpen(false)} 
         username={user.username || ""} 
-        // NYTT: Skickar med vilket läge vi vill förhandsgranska
         mode={viewMode}
       />
     </div>

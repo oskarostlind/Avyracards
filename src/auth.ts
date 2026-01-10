@@ -32,7 +32,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // --- 1. IMPERSONATION LOGIN (Admin Only) ---
         if (credentials?.impersonateId) {
           
-          // ÄNDRAT: Kollar mot NEXTAUTH_SECRET
           if (!credentials.adminSecret || credentials.adminSecret !== process.env.NEXTAUTH_SECRET) {
             throw new Error("Unauthorized: Invalid admin secret or missing permissions");
           }
@@ -73,9 +72,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new Error("Felaktig e-post eller lösenord");
         }
 
-        if (!user.emailVerified) {
+        // BORTTAGET: Spärren för email-verifiering.
+        // Detta möjliggör "Lazy Verification" (användaren får logga in direkt).
+        /* if (!user.emailVerified) {
           throw new Error("Du måste verifiera din e-postadress innan du kan logga in.");
         }
+        */
 
         const isValid = await verifyPassword(password, user.passwordHash);
 

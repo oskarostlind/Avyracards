@@ -4,7 +4,6 @@ import { hashPassword } from "@/lib/password";
 import { randomUUID } from "crypto";
 import { sendVerificationEmail } from "@/lib/email";
 import { z } from "zod";
-// import { stripe } from "@/lib/stripe"; // Om du vill dubbelkolla sessionen här
 
 export const runtime = "nodejs";
 
@@ -21,7 +20,7 @@ const RegisterSchema = z.object({
   password: z.string().min(6, "Lösenordet måste vara minst 6 tecken."),
   profileMode: z.enum(["social", "business"]).optional(),
   
-  // Lägg till dessa i schemat för att tillåta dem från frontend
+  // Tillåt dessa fält från frontend (används vid köp)
   isPremium: z.boolean().optional(),
   stripeSessionId: z.string().optional(),
 });
@@ -43,14 +42,34 @@ export async function POST(req: Request) {
       email,
       password,
       profileMode: profileModeRaw = "social",
-      stripeSessionId // Hämta detta
+      stripeSessionId
     } = parsed.data;
 
     // --- NORMALISERING ---
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedUsername = username.toLowerCase().trim();
 
-    // Kolla om användare redan finns
+    // --- 🛠️ SANDBOX MAGIC (DEV ONLY) 🛠️ ---
+    // Om vi kör lokalt och mailen är "test@test.se", radera gamla användaren först.
+    if (process.env.NODE_ENV === "development" && normalizedEmail === "test@test.se") {
+      console.log("🧪 DEV MODE: Cleaning up old test user (test@test.se)...");
+      try {
+        await prisma.user.deleteMany({
+          where: { 
+            OR: [
+              { email: "test@test.se" },
+              { username: normalizedUsername } // Rensa även om användarnamnet krockar för testkontot
+            ]
+          }
+        });
+        console.log("✨ Cleaned! Creating new test user.");
+      } catch (e) {
+        console.log("⚠️ No previous test user found or cleanup failed (ignoring).");
+      }
+    }
+    // ----------------------------------------
+
+    // Kolla om användare redan finns (för alla andra fall)
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [{ email: normalizedEmail }, { username: normalizedUsername }],
@@ -70,8 +89,7 @@ export async function POST(req: Request) {
       profileModeRaw === "business" ? "BUSINESS" : "SOCIAL";
 
     // --- AUTO-VERIFIERING VID KÖP ---
-    // Om användaren kommer från ett betalt köp, litar vi på e-posten och verifierar direkt.
-    // Detta löser problemet med att de inte kan logga in direkt för att aktivera Premium.
+    // Om användaren kommer från ett betalt köp (stripeSessionId finns), litar vi på e-posten.
     const isVerifiedByPurchase = !!stripeSessionId;
 
     // 1. Skapa användaren
@@ -80,8 +98,8 @@ export async function POST(req: Request) {
         email: normalizedEmail,
         username: normalizedUsername,
         passwordHash,
-        verificationToken: isVerifiedByPurchase ? null : verificationToken, // Ingen token behövs om verifierad
-        emailVerified: isVerifiedByPurchase ? new Date() : null, // Sätt datum direkt om köp
+        verificationToken: isVerifiedByPurchase ? null : verificationToken,
+        emailVerified: isVerifiedByPurchase ? new Date() : null,
         profileMode: prismaProfileMode,
       },
     });

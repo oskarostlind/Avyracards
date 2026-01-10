@@ -6,26 +6,18 @@ import type { Stripe } from "stripe";
 import { z } from "zod";
 
 // --- VALIDATION SCHEMAS ---
-
-// Cart Item: Nu med stöd för 'customImage'
 const cartItemSchema = z.object({
   variantId: z.string().min(1),
   quantity: z.number().min(1).max(50).default(1),
   color: z.string().optional(),
   design: z.string().optional(),
   material: z.string().optional(),
-  // Om användaren laddat upp en bild skickar vi en referens/flagga här
   customImage: z.string().nullable().optional(), 
 });
 
-// Checkout Payload: Nu med 'premiumOption'
 const checkoutSchema = z.object({
   items: z.array(cartItemSchema).optional(),
-  
-  // Nya bundle-väljaren
   premiumOption: z.enum(["none", "1mo", "6mo"]).optional().default("none"),
-
-  // Legacy support (kan behållas för bakåtkompatibilitet)
   variantId: z.string().optional(),
   quantity: z.number().optional(),
   color: z.string().optional(),
@@ -38,6 +30,12 @@ export async function POST(req: Request) {
     const sessionAuth = await auth();
     const userId = sessionAuth?.user?.id;
 
+    // VIKTIGT: För att metadata-strategin ska fungera måste vi veta vem användaren är.
+    // Om vi inte har ett ID, avbryt här för att undvika "identitetskrisen".
+    if (!userId) {
+        return new NextResponse("Unauthorized: You must be logged in to checkout", { status: 401 });
+    }
+
     const body = await req.json();
     const result = checkoutSchema.safeParse(body);
 
@@ -45,7 +43,7 @@ export async function POST(req: Request) {
       return new NextResponse("Invalid request data", { status: 400 });
     }
 
-    // 1. Normalisera indata till en array
+    // 1. Normalisera indata
     let itemsToProcess: z.infer<typeof cartItemSchema>[] = [];
 
     if (result.data.items && result.data.items.length > 0) {
@@ -63,36 +61,24 @@ export async function POST(req: Request) {
         return new NextResponse("No items provided", { status: 400 });
     }
 
-    // 2. Hämta priser från DB (Säkerhet: Lita aldrig på frontend-priser för huvudprodukten)
+    // 2. Hämta priser från DB
     const variantIds = itemsToProcess.map(i => i.variantId);
     const dbVariants = await prisma.productVariant.findMany({
         where: { id: { in: variantIds }, isActive: true },
         include: { product: true }
     });
 
-    if (dbVariants.length !== itemsToProcess.length) {
-        // Om en produkt saknas (t.ex. bundle-varianten är felaktig)
-        // För enkelhetens skull, om bundle-varianten inte hittas kan vi behöva hantera det,
-        // men här antar vi strikt matchning.
-        // OBS: Om du skickar med ett "fejk-id" för bundlen måste det finnas i DB,
-        // annars kraschar det här.
-        console.warn("Mismatch between requested items and DB variants");
-    }
-
     // 3. Bygg Stripe Line Items
     const line_items: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
-    let hasSubscription = false; // Flagga för att styra Stripe mode
+    let hasSubscription = false; 
     
     // A. Hantera Fysiska Kort & Custom Print
     for (const item of itemsToProcess) {
         const dbVariant = dbVariants.find(v => v.id === item.variantId);
-        
-        // Om varianten inte finns i DB, hoppa över (eller kasta fel)
         if (!dbVariant) continue;
 
         if (dbVariant.type === "SUBSCRIPTION") hasSubscription = true;
 
-        // Lägg till kortet
         line_items.push({
             price_data: {
                 currency: dbVariant.currency,
@@ -104,16 +90,14 @@ export async function POST(req: Request) {
                         material: item.material || "",
                         design: item.design || ""
                     },
-                    images: item.customImage ? [] : undefined // Kan lägga till bild-URL här om vi vill
+                    images: item.customImage ? [] : undefined 
                 },
-                unit_amount: dbVariant.price, // Pris i ören från DB
+                unit_amount: dbVariant.price,
                 recurring: dbVariant.type === "SUBSCRIPTION" ? { interval: "month" } : undefined,
             },
             quantity: item.quantity,
         });
 
-        // Hantera Custom Print Fee (100 kr)
-        // Vi lägger detta som en separat rad för tydlighet
         if (item.customImage) {
             line_items.push({
                 price_data: {
@@ -122,26 +106,25 @@ export async function POST(req: Request) {
                         name: "Custom Print",
                         description: "Egen logotyp/design på kortet",
                     },
-                    unit_amount: 10000, // 100 kr i ören
+                    unit_amount: 10000, 
                 },
-                quantity: item.quantity, // En avgift per kort
+                quantity: item.quantity, 
             });
         }
     }
 
-    // B. Hantera Premium Bundle (Ad-hoc priser baserat på val)
-    // Detta gör att vi slipper skapa specifika stripe-produkter för dessa just nu.
+    // B. Hantera Premium Bundle
     const premiumOption = result.data.premiumOption;
 
-if (premiumOption === "1mo") {
+    if (premiumOption === "1mo") {
         line_items.push({
             price_data: {
                 currency: "sek",
                 product_data: {
                     name: "1 Månad Premium (Startpaket)",
-                    description: "Ingår utan kostnad",
+                    description: "Ingår utan kostnad", // Innehåller "Premium" för detektering senare
                 },
-                unit_amount: 0, // ÄNDRAT FRÅN 10000 TILL 0
+                unit_amount: 0, 
             },
             quantity: 1,
         });
@@ -153,7 +136,7 @@ if (premiumOption === "1mo") {
                     name: "Avyra Premium (6 mån)",
                     description: "Pro Bundle Upgrade",
                 },
-                unit_amount: 29900, // 299 kr
+                unit_amount: 29900, 
             },
             quantity: 1,
         });
@@ -165,25 +148,22 @@ if (premiumOption === "1mo") {
 
     let successUrl = `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`;
     
-    // Om det är en ren prenumeration (inte bundle-engångsbetalning), skicka till billing
-    // Notera: Våra bundle-premium-val ovan är just nu engångs ("payment") för enkelhetens skull.
-    // Vill du att de ska starta en prenumeration direkt måste vi använda stripe price-IDs.
-    if (hasSubscription && userId) {
+    // Om ordern innehåller Premium -> skicka till billing/dashboard direkt
+    if ((premiumOption !== "none" || hasSubscription) && userId) {
         successUrl = `${baseUrl}/profile/settings?view=billing&success=true`;
     }
 
     const session = await stripe.checkout.sessions.create({
       line_items,
-      // Om vi blandar engångsköp (kort) med återkommande (subscription) måste mode vara "subscription"
-      // Men just nu kör vi Bundle-Premium som "Engångsperioder" (Pre-paid), så "payment" fungerar.
       mode: hasSubscription ? "subscription" : "payment", 
       success_url: successUrl,
       cancel_url: `${baseUrl}/order`,
       
+      // HÄR ÄR NYCKELN TILL LÖSNINGEN:
       metadata: {
-        userId: userId || "",
+        userId: userId, // Vi garanterar att detta inte är tomt nu
         type: "bundle_order",
-        premiumOption: premiumOption, // Bra att spara vad de valde
+        premiumOption: premiumOption,
         hasCustomPrint: itemsToProcess.some(i => i.customImage) ? "true" : "false"
       },
       

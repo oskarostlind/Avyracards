@@ -6,8 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
+// VIKTIGT: Importera signIn från next-auth/react (eller var din klient-auth ligger)
+import { signIn } from "next-auth/react"; 
 
-// Tar emot vald plan som prop
 interface RegisterFormProps {
   selectedPlan?: string; 
 }
@@ -29,8 +30,8 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
   const router = useRouter();
   const searchParams = useSearchParams();
   const [globalError, setGlobalError] = useState<string>("");
+  const [isLoggingIn, setIsLoggingIn] = useState(false); // Ny state för "Loggar in..."
 
-  // Om planen kommer från URL istället för prop (t.ex. direktlänk)
   const planFromUrl = searchParams.get("plan");
   const activePlan = planFromUrl || selectedPlan;
 
@@ -53,6 +54,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
     setGlobalError("");
 
     try {
+      // 1. Skapa kontot
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -66,23 +68,45 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
         return;
       }
 
-      // --- VIKTIG ÄNDRING: Redirect Logik ---
-      // Om användaren valde Premium eller Bundle, skicka dem till kassan/upsell
-      if (activePlan === "premium" || activePlan === "bundle") {
-          // Logga in användaren automatiskt (om din backend stöder det) 
-          // eller skicka till inloggning med redirect tillbaka till kassan.
-          // För enkelhetens skull antar vi här att de måste logga in först, 
-          // men vi skickar med en "next"-parameter.
-          router.push(`/login?registered=true&next=/checkout/premium?plan=${activePlan}`);
-      } else {
-          // Gratis: Gå till login -> dashboard
-          router.push("/login?registered=true");
+      // 2. Automatiskt Inloggning (Lazy Verification)
+      setIsLoggingIn(true);
+      
+      const signInResult = await signIn("credentials", {
+        redirect: false, // Vi hanterar redirect manuellt för att styra flödet
+        email: data.email,
+        password: data.password,
+      });
+
+      if (signInResult?.error) {
+        // Om inloggningen av någon anledning falierar (ovanligt efter lyckad reg)
+        setGlobalError("Konto skapat, men inloggningen misslyckades. Vänligen logga in manuellt.");
+        router.push("/login?registered=true");
+        return;
       }
+
+      // 3. Styr vart användaren hamnar ("Sticky Intent")
+      if (activePlan === "premium" || activePlan === "bundle") {
+          // Om de ville ha Bundle -> Skicka till Order
+          // Om de ville ha Premium -> Skicka till Checkout
+          if (activePlan === "bundle") {
+             router.push("/order?bundle=pro-bundle");
+          } else {
+             router.push("/checkout/premium"); // Eller var du har din rena premium-checkout
+          }
+      } else {
+          // Gratis -> Dashboard
+          router.push("/dashboard");
+      }
+      
+      router.refresh(); // Uppdatera sessionen i klienten
 
     } catch (error) {
       setGlobalError("Kunde inte nå servern. Kontrollera din anslutning.");
+      setIsLoggingIn(false);
     }
   };
+
+  const isLoading = isSubmitting || isLoggingIn;
 
   return (
     <div className="w-full max-w-md mx-auto p-6 space-y-8 bg-nordic-primary text-nordic-secondary rounded-3xl border border-nordic-highlight/40 shadow-2xl">
@@ -93,7 +117,6 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
           Registrera dig för att skapa din digitala kortprofil.
         </p>
         
-        {/* Visa vilken plan de valt */}
         {activePlan !== "free" && (
             <div className="mt-2 inline-block px-3 py-1 rounded-full bg-nordic-accent/10 border border-nordic-accent/30 text-xs font-bold text-nordic-accent uppercase tracking-wide">
                 Vald plan: {activePlan === "bundle" ? "Pro Bundle" : "Premium"}
@@ -206,10 +229,10 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
 
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={isLoading}
           className="w-full py-4 bg-nordic-secondary text-nordic-primary font-bold rounded-xl hover:bg-nordic-support focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nordic-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
-          {isSubmitting ? <Loader2 className="animate-spin" /> : "Skapa konto"}
+          {isLoading ? <Loader2 className="animate-spin" /> : "Skapa konto & Logga in"}
         </button>
       </form>
 
