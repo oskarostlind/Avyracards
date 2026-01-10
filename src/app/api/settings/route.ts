@@ -8,6 +8,11 @@ export const runtime = "nodejs";
 
 const settingsSchema = z.object({
   theme: z.string().min(2).max(20).optional(),
+  
+  // NYTT: Hantera JSON för färginställningar (Social + Business)
+  themeSettings: z.record(z.any()).optional(),
+  businessThemeSettings: z.record(z.any()).optional(),
+
   font: z.string().min(2).max(30).optional(),
   bio: z.string().max(280).optional(),
   avatarUrl: z.string().url().nullable().optional(),

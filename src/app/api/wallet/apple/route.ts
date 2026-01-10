@@ -46,7 +46,6 @@ export async function GET() {
     }
 
     // 2. Hämta profilbild (Thumbnail)
-    // FIX: Vi använder bara avatarUrl eftersom 'image' inte finns i ditt schema
     const avatarUrl = user.avatarUrl;
     const thumbnailBuffer = await fetchImageBuffer(avatarUrl);
 
@@ -89,9 +88,11 @@ export async function GET() {
       }
     );
 
+    // --- HÄR ÄR ÄNDRINGEN FÖR ANALYTICS ---
     pass.setBarcodes({
       format: "PKBarcodeFormatQR",
-      message: `${process.env.NEXT_PUBLIC_BASE_URL}/u/${user.username}`,
+      // Vi lägger till ?source=wallet här
+      message: `${process.env.NEXT_PUBLIC_BASE_URL}/u/${user.username}?source=wallet`,
       messageEncoding: "iso-8859-1",
       altText: user.username || "Profile"
     });
@@ -113,7 +114,7 @@ export async function GET() {
     pass.auxiliaryFields.push({
       key: "url",
       label: "PROFIL",
-      value: `avyracards.com/u/${user.username}`,
+      value: `avyracards.com/u/${user.username}`, // Visas bara för användaren, behöver inte source
     });
     
     pass.backFields.push({

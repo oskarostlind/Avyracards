@@ -44,7 +44,6 @@ export async function GET(_req: NextRequest) {
 
     const ISSUER_ID = '3388000000023044854';
     
-    // VIKTIGT: Vi byter till v6 för att aktivera den nya "STACKED" layouten
     const CLASS_ID = `${ISSUER_ID}.standard_card_v6`; 
     const OBJECT_ID = `${ISSUER_ID}.user-${user.id}`; 
 
@@ -67,7 +66,6 @@ export async function GET(_req: NextRequest) {
       if (checkClassRes.status === 404) {
         console.log('⚠️ Class v6 not found. Creating new "STACKED" layout template...');
         
-        // Här definierar vi att etiketterna ska ligga OVANFÖR värdena
         await httpClient.request({
           url: `${baseUrl}/genericClass`,
           method: 'POST',
@@ -82,9 +80,7 @@ export async function GET(_req: NextRequest) {
                       item: {
                         predefinedItem: {
                           type: "STACKED",
-                          // firstValue = Etiketten (liten text ovanför)
                           firstValue: { fields: [{ fieldPath: "object.subheader" }] }, 
-                          // secondValue = Värdet (stor text under)
                           secondValue: { fields: [{ fieldPath: "object.header" }] }   
                         }
                       }
@@ -131,12 +127,15 @@ export async function GET(_req: NextRequest) {
     // FIX PUNKT 1: Tvinga .se i URL:en
     let baseDomain = process.env.NEXT_PUBLIC_BASE_URL || 'https://avyracards.se';
     baseDomain = baseDomain.replace('.com', '.se'); // Säkerställ att det blir .se
-    const profileUrl = `${baseDomain}/u/${user.username}`;
+    
+    // --- HÄR ÄR ÄNDRINGEN FÖR ANALYTICS ---
+    // Vi lägger till ?source=wallet här. Detta är länken QR-koden leder till.
+    const profileUrl = `${baseDomain}/u/${user.username}?source=wallet`;
+    
+    // Visuell länk (utan ?source=wallet för att hålla det snyggt)
     const displayUrl = `avyracards.se/u/${user.username}`;
     
-    // FIX PUNKT 2 (Förklaring): Google kräver publika HTTPS-länkar för bilder.
-    // Base64-strängar från databasen fungerar tyvärr inte.
-    // Vi använder fallback till standardloggan om ingen http-länk finns.
+    // FIX PUNKT 2: Google Image URL
     const logoUri = (user.avatarUrl && user.avatarUrl.startsWith('http')) 
       ? user.avatarUrl 
       : 'https://avyracards.se/wallet/logo.png';
@@ -172,12 +171,12 @@ export async function GET(_req: NextRequest) {
               },
               {
                 header: "PROFIL",
-                body: displayUrl // Visar den snygga .se länken
+                body: displayUrl // Visar den snygga .se länken (utan tracking)
               }
             ],
             barcode: {
               type: "QR_CODE",
-              value: profileUrl, // QR-koden leder till den korrekta .se länken
+              value: profileUrl, // QR-koden innehåller tracking-länken
               alternateText: user.username || "Profil"
             },
             logo: {

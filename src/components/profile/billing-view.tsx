@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Star, Loader2, Calendar, CreditCard, Clock } from "lucide-react";
+import { Star, Loader2, Calendar, CreditCard, Clock, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
 
 interface BillingProps {
   isPremium: boolean;
-  // userId borttaget – vi hanterar det i API:et istället
   subscription?: {
     status: string;
     currentPeriodEnd: number;
@@ -16,6 +15,9 @@ interface BillingProps {
     currency: string;
     interval: string;
     createdAt: number;
+    cancelAtPeriodEnd?: boolean; // Nytt fält
+    brand?: string; // Nytt fält
+    last4?: string; // Nytt fält
   } | null;
 }
 
@@ -39,16 +41,11 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
     }
   };
 
-  // SÄKER DATUMHANTERING
-  // Denna funktion förhindrar "RangeError: Invalid time value"
   const formatDateSafe = (timestamp: number | undefined | null) => {
     if (!timestamp || isNaN(timestamp)) return "Datum saknas";
     try {
-      // Stripe skickar sekunder, JS vill ha millisekunder (* 1000)
       const date = new Date(timestamp * 1000);
-      // Extra kontroll så datumet är giltigt
       if (isNaN(date.getTime())) return "Ogiltigt datum";
-      
       return format(date, "d MMM yyyy", { locale: sv });
     } catch (e) {
       return "Fel vid datumvisning";
@@ -82,6 +79,14 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
               ? "Du har tillgång till alla premiumfunktioner."
               : "Uppgradera för att låsa upp statistik och teman."}
           </p>
+          
+          {/* VARNING OM UPPSAGD */}
+          {subscription?.cancelAtPeriodEnd && (
+             <div className="mt-3 flex items-center gap-2 text-amber-400 text-sm font-medium bg-amber-500/10 px-3 py-1.5 rounded-lg w-fit border border-amber-500/20">
+                <AlertTriangle size={14} />
+                Avslutas {formatDateSafe(subscription.currentPeriodEnd)}
+             </div>
+          )}
         </div>
 
         {isPremium ? (
@@ -110,14 +115,15 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
             {/* Nästa dragning */}
             <div className="p-4 rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/30">
                 <div className="flex items-center gap-2 text-nordic-highlight mb-2 text-xs uppercase font-bold tracking-wider">
-                    <Calendar size={14} /> Nästa dragning
+                    <Calendar size={14} /> 
+                    {subscription.cancelAtPeriodEnd ? "Upphör" : "Nästa dragning"}
                 </div>
                 <div className="text-slate-100 font-medium">
                     {formatDateSafe(subscription.currentPeriodEnd)}
                 </div>
             </div>
 
-            {/* Kostnad */}
+            {/* Kostnad & Kort */}
             <div className="p-4 rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/30">
                 <div className="flex items-center gap-2 text-nordic-highlight mb-2 text-xs uppercase font-bold tracking-wider">
                     <CreditCard size={14} /> Kostnad
@@ -125,6 +131,12 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
                 <div className="text-slate-100 font-medium">
                     {formattedPrice} <span className="text-nordic-highlight text-sm">/ {subscription.interval === 'month' ? 'mån' : 'år'}</span>
                 </div>
+                {/* Visa kortinfo om vi har det */}
+                {subscription.last4 && (
+                    <div className="text-xs text-slate-400 mt-1 uppercase">
+                        {subscription.brand} •••• {subscription.last4}
+                    </div>
+                )}
             </div>
 
             {/* Medlem sedan */}

@@ -181,7 +181,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
         <div className="lg:col-span-7 order-1 lg:order-2 flex flex-col gap-6 lg:sticky lg:top-24">
             <div className="flex flex-col items-center justify-center min-h-[400px] lg:min-h-[500px]">
                 <CardPreview3D material={material} color={colorCode} design={design} customImage={customImage} />
-                <div className="text-center mt-4 space-y-1 text-nordic-highlight"><p className="text-xs">Dra för att rotera</p></div>
+                {/*<div className="text-center mt-4 space-y-1 text-nordic-highlight"><p className="text-xs">Dra för att rotera</p></div>*/}
             </div>
 
             {(premiumOption !== "none" || !isPremium) && (

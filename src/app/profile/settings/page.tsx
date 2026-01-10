@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+// Vi behöver inte importera Stripe-typen explicit längre när vi kör "as any"
 
 // Komponenter
 import { SettingsTabs } from "@/components/profile/settings-tabs";
@@ -19,15 +20,15 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
     redirect("/login");
   }
 
-  // 1. Hämta användaren och nödvändig data
+  // 1. Hämta användaren
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
       email: true,
       username: true,
-      passwordHash: true, // För att se om vi ska visa lösenordsbyte
+      passwordHash: true, 
       isPremium: true,
-      stripeCustomerId: true, // VIKTIGT: För att hämta stripe-data
+      stripeCustomerId: true,
       marketingConsent: true,
       productUpdates: true,
       hideFromSearch: true,
@@ -39,40 +40,56 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
 
   if (!user) redirect("/login");
 
-  // 2. Hämta prenumerationsdata från Stripe (om användaren är Premium)
+  // 2. Hämta prenumerationsdata från Stripe
   let subscriptionData = null;
 
   if (user.isPremium && user.stripeCustomerId) {
     try {
       const subscriptions = await stripe.subscriptions.list({
         customer: user.stripeCustomerId,
-        status: 'active',
+        status: 'all', 
         limit: 1,
+        expand: ['data.default_payment_method']
       });
 
       if (subscriptions.data.length > 0) {
-        const sub = subscriptions.data[0];
-        // Vi plockar ut priset från första objektet i prenumerationen
+        // FIX: Vi använder 'as any' för att tvinga TypeScript att acceptera objektet
+        // Detta kringgår felet att 'current_period_end' inte skulle finnas.
+        const sub = subscriptions.data[0] as any;
+        
         const priceItem = sub.items.data[0]?.price;
+
+        // Plocka fram nästa faktureringsdatum
+        const nextBillingDate = sub.trial_end ? sub.trial_end : sub.current_period_end;
+
+        // Plocka fram kortinfo
+        let paymentMethodBrand = "";
+        let paymentMethodLast4 = "";
+        
+        if (sub.default_payment_method && typeof sub.default_payment_method !== 'string') {
+             paymentMethodBrand = sub.default_payment_method.card?.brand;
+             paymentMethodLast4 = sub.default_payment_method.card?.last4;
+        }
 
         if (priceItem) {
             subscriptionData = {
                 status: sub.status,
-                currentPeriodEnd: (sub as any).current_period_end, // Unix timestamp
+                currentPeriodEnd: nextBillingDate, 
                 amount: priceItem.unit_amount || 0,
                 currency: priceItem.currency,
                 interval: priceItem.recurring?.interval || "month",
                 createdAt: sub.created,
+                cancelAtPeriodEnd: sub.cancel_at_period_end,
+                brand: paymentMethodBrand,
+                last4: paymentMethodLast4
             };
         }
       }
     } catch (error) {
       console.error("Kunde inte hämta Stripe-data:", error);
-      // Vi låter sidan ladda ändå, men utan detaljerad billing-info
     }
   }
 
-  // 3. Bestäm vilken view som ska visas
   const view = typeof searchParams.view === "string" ? searchParams.view : "account";
   const hasPassword = !!user.passwordHash;
 
@@ -83,10 +100,8 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
         <p className="text-nordic-highlight">Hantera ditt konto, prenumeration och säkerhet.</p>
       </div>
 
-      {/* Flik-navigation */}
       <SettingsTabs />
 
-      {/* Rendra innehåll baserat på vald flik */}
       <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
         
         {view === "account" && (
@@ -108,7 +123,8 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
         )}
 
         {view === "cards" && (
-          <CardsView cards={user.cards as any} />
+          // @ts-ignore - Fixar ev. typ-mismatch
+          <CardsView cards={user.cards} />
         )}
       </div>
     </div>
