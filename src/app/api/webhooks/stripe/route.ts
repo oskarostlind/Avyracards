@@ -34,14 +34,13 @@ export async function POST(req: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     
-    // Vi läser metadatan som vi "klistrade" på användaren i checkout
     const type = session.metadata?.type;
     const userId = session.metadata?.userId; 
     const premiumOption = session.metadata?.premiumOption;
 
     console.log(`[Webhook] Processing session ${session.id}. Metadata UserId: ${userId}`);
 
-    // SCENARIO 1: Premium Subscription (Ren prenumeration)
+    // SCENARIO 1: Premium Subscription
     if (type === "premium_subscription") {
        if (!userId) return new NextResponse(null, { status: 200 });
        
@@ -63,6 +62,7 @@ export async function POST(req: Request) {
             return new NextResponse(null, { status: 200 });
         }
 
+        // Hämta detaljerade rader för att komma åt metadata på produkterna
         const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
             expand: ['data.price.product'],
         });
@@ -70,6 +70,26 @@ export async function POST(req: Request) {
         const shipping = (session as any).shipping_details?.address;
         const shippingName = (session as any).shipping_details?.name;
         
+        // Förbered OrderItems (länk mellan Order och ProductVariant)
+        const orderItemsToCreate = [];
+        
+        for (const item of lineItems.data) {
+             // @ts-ignore - Stripe types kan vara lite bråkiga med expand
+             const productMetadata = item.price?.product?.metadata || {};
+             // Hämta variantId som vi sparade i checkout-routen
+             const variantId = productMetadata.variantId; 
+
+             // Om det är en produktvariant vi känner igen (inte Custom Print eller 0kr Premium)
+             if (variantId) {
+                 orderItemsToCreate.push({
+                     productVariantId: variantId,
+                     quantity: item.quantity || 1,
+                     price: item.amount_total // Sparar vad de faktiskt betalade
+                 });
+             }
+        }
+
+        // Skapa ordern med koppling till USER och ITEMS
         const order = await prisma.order.create({
             data: {
                 stripeSessionId: session.id,
@@ -79,7 +99,15 @@ export async function POST(req: Request) {
                 customerEmail: session.customer_details?.email || "",
                 customerType: "PRIVATE",
                 
-                // Spara leveransinfo
+                // LÄNKA TILL ANVÄNDAREN (FIXEN)
+                userId: userId || null, 
+
+                // LÄNKA TILL VARIANTERNA (FIXEN)
+                items: {
+                    create: orderItemsToCreate
+                },
+                
+                // Leveransinfo
                 shippingName: shippingName || session.customer_details?.name,
                 shippingLine1: shipping?.line1,
                 shippingLine2: shipping?.line2,
@@ -91,6 +119,7 @@ export async function POST(req: Request) {
             },
         });
 
+        // Skapa korten (Cards) - Samma logik som förut
         const cardsToCreate = [];
         let hasPremiumProduct = false;
 
@@ -103,28 +132,30 @@ export async function POST(req: Request) {
                 hasPremiumProduct = true;
                 continue;
             }
+            if (isCustomPrint) continue;
 
-            if (isCustomPrint) {
-                continue;
-            }
+            // Om det har ett variantId (är ett kort)
+            // @ts-ignore
+            if (item.price?.product?.metadata?.variantId) {
+                const qty = item.quantity || 1;
+                for (let i = 0; i < qty; i++) {
+                     let detectedMaterial = "plastic";
+                     if (description.toLowerCase().includes("metal")) detectedMaterial = "metal";
+                     
+                     let detectedColor = "black"; 
 
-            const qty = item.quantity || 1;
-            
-            for (let i = 0; i < qty; i++) {
-                 let detectedMaterial = "plastic";
-                 if (description.toLowerCase().includes("metal")) detectedMaterial = "metal";
-                 
-                 let detectedColor = "black"; 
-
-                 cardsToCreate.push({
-                    orderId: order.id,
-                    cardCode: generateShortCode(),
-                    claimToken: crypto.randomBytes(32).toString("hex"),
-                    status: "UNCLAIMED" as const,
-                    material: detectedMaterial,
-                    colorOption: detectedColor,
-                    designTemplate: "minimal",
-                });
+                     cardsToCreate.push({
+                        orderId: order.id,
+                        cardCode: generateShortCode(),
+                        claimToken: crypto.randomBytes(32).toString("hex"),
+                        status: "UNCLAIMED" as const,
+                        material: detectedMaterial,
+                        colorOption: detectedColor,
+                        designTemplate: "minimal",
+                        // Tilldela kortet direkt till användaren om vi vet vem det är
+                        assignedUserId: userId || null 
+                    });
+                }
             }
         }
 
@@ -134,23 +165,17 @@ export async function POST(req: Request) {
             });
         }
 
-        // LÖSNINGEN PÅ IDENTITETSKRISEN:
-        // 1. Vi litar på userId från metadata (inte mailen).
-        // 2. Vi kollar om något av villkoren för premium är uppfyllda.
+        // Aktivera Premium om tillämpligt
         if (userId && (premiumOption === "1mo" || premiumOption === "6mo" || hasPremiumProduct)) {
-            console.log(`[Webhook] Activating Premium for User ${userId}. Ignoring email mismatch.`);
+            console.log(`[Webhook] Activating Premium for User ${userId}.`);
             
             await prisma.user.update({
                 where: { id: userId },
                 data: {
                     isPremium: true,
-                    // VIKTIGT: Vi skriver över kundens StripeID med det som användes vid köpet.
-                    // Detta "binder ihop" kontona även om mailen skiljer sig.
                     stripeCustomerId: session.customer as string,
                 },
             });
-        } else {
-            console.log(`[Webhook] No premium activation. UserId: ${userId}, Option: ${premiumOption}, HasProduct: ${hasPremiumProduct}`);
         }
     }
   }

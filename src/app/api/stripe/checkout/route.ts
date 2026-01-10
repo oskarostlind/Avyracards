@@ -30,8 +30,6 @@ export async function POST(req: Request) {
     const sessionAuth = await auth();
     const userId = sessionAuth?.user?.id;
 
-    // VIKTIGT: För att metadata-strategin ska fungera måste vi veta vem användaren är.
-    // Om vi inte har ett ID, avbryt här för att undvika "identitetskrisen".
     if (!userId) {
         return new NextResponse("Unauthorized: You must be logged in to checkout", { status: 401 });
     }
@@ -86,6 +84,8 @@ export async function POST(req: Request) {
                     name: dbVariant.product.name,
                     description: `${dbVariant.name} (${item.material || "Standard"})`,
                     metadata: {
+                        // VIKTIGT: Vi sparar variantId här så webhooken kan skapa OrderItem
+                        variantId: dbVariant.id, 
                         color: item.color || "",
                         material: item.material || "",
                         design: item.design || ""
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
                 currency: "sek",
                 product_data: {
                     name: "1 Månad Premium (Startpaket)",
-                    description: "Ingår utan kostnad", // Innehåller "Premium" för detektering senare
+                    description: "Ingår utan kostnad",
                 },
                 unit_amount: 0, 
             },
@@ -148,7 +148,6 @@ export async function POST(req: Request) {
 
     let successUrl = `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`;
     
-    // Om ordern innehåller Premium -> skicka till billing/dashboard direkt
     if ((premiumOption !== "none" || hasSubscription) && userId) {
         successUrl = `${baseUrl}/profile/settings?view=billing&success=true`;
     }
@@ -159,16 +158,15 @@ export async function POST(req: Request) {
       success_url: successUrl,
       cancel_url: `${baseUrl}/order`,
       
-      // HÄR ÄR NYCKELN TILL LÖSNINGEN:
       metadata: {
-        userId: userId, // Vi garanterar att detta inte är tomt nu
+        userId: userId, 
         type: "bundle_order",
         premiumOption: premiumOption,
         hasCustomPrint: itemsToProcess.some(i => i.customImage) ? "true" : "false"
       },
       
       shipping_address_collection: {
-        allowed_countries: ["SE"], 
+        allowed_countries: ["SE", "NO", "DK", "FI", "DE", "US", "GB"], // La till fler för säkerhets skull
       },
       
       phone_number_collection: { enabled: true },
