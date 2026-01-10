@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, X, ArrowRight, Sparkles } from "lucide-react";
-import { VARIANT_IDS } from "@/app/dashboard/page"; // Importera IDn
+import { VARIANT_IDS } from "@/lib/constants"; // <--- SÄKER IMPORT
 
 interface OrderCardWidgetProps {
   isPremium: boolean;
@@ -12,14 +12,11 @@ interface OrderCardWidgetProps {
 
 export function OrderCardWidget({ isPremium, prices }: OrderCardWidgetProps) {
   const router = useRouter();
-  const [isVisible, setIsVisible] = useState(false); // Börja som false för att undvika hydration mismatch
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Kolla om användaren har klickat bort den tidigare
     const isDismissed = localStorage.getItem("avyra_dismiss_card_widget");
-    if (!isDismissed) {
-      setIsVisible(true);
-    }
+    if (!isDismissed) setIsVisible(true);
   }, []);
 
   const handleDismiss = () => {
@@ -36,21 +33,15 @@ export function OrderCardWidget({ isPremium, prices }: OrderCardWidgetProps) {
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50 p-6 shadow-2xl animate-in fade-in slide-in-from-top-4">
-      {/* Bakgrunds-effekter */}
-      <div className="absolute top-0 right-0 -mt-10 -mr-10 h-32 w-32 rounded-full bg-emerald-500/10 blur-3xl" />
-      <div className="absolute bottom-0 left-0 -mb-10 -ml-10 h-32 w-32 rounded-full bg-indigo-500/10 blur-3xl" />
-
+      {/* ... resten av din JSX är oförändrad ... */}
       <button 
         onClick={handleDismiss}
         className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
-        aria-label="Stäng"
       >
         <X size={20} />
       </button>
 
       <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-        
-        {/* Vänster: Ikon & Text */}
         <div className="flex gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-inner">
             <CreditCard className="text-white" size={24} />
@@ -69,7 +60,6 @@ export function OrderCardWidget({ isPremium, prices }: OrderCardWidgetProps) {
           </div>
         </div>
 
-        {/* Höger: CTA Knapp */}
         <button
           onClick={handleBuy}
           className="group whitespace-nowrap flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-lg shadow-white/5 hover:bg-slate-200 transition-all active:scale-95 w-full sm:w-auto justify-center"

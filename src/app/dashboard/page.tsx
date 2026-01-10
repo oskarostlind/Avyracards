@@ -2,14 +2,11 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"; 
+import { VARIANT_IDS } from "@/lib/constants"; // <--- IMPORTERA HÄR
 
 export const runtime = "nodejs";
 
-// ID:n för varianterna (Standard & Bundle)
-export const VARIANT_IDS = {
-  STANDARD: "cmjbqkzmn0002cv4zf9wmkmyi",
-  BUNDLE: "cmjbmtf4a00036vxtmme5ao1x"
-};
+// TA BORT: export const VARIANT_IDS = { ... }
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -18,29 +15,21 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // 1. Hämta användaren OCH deras ordrar
+  // 1. Hämta användaren
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     include: {
-      links: {
-        orderBy: { order: "asc" },
-      },
-      // NYTT: Inkludera ordrar för att se om de köpt kortet
+      links: { orderBy: { order: "asc" } },
       orders: {
-        where: { status: "PAID" }, // Endast betalda ordrar
-        include: {
-          items: true,
-        },
+        where: { status: "PAID" },
+        include: { items: true },
       },
     },
   });
 
-  if (!user) {
-    redirect("/login");
-  }
+  if (!user) redirect("/login");
 
-  // 2. Beräkna om användaren har beställt kortet
-  // Vi kollar igenom alla order-items och ser om någon matchar våra IDn
+  // 2. Logik med VARIANT_IDS
   const hasOrderedCard = user.orders.some((order) => 
     order.items.some((item) => 
       [VARIANT_IDS.STANDARD, VARIANT_IDS.BUNDLE].includes(item.productVariantId)
@@ -57,7 +46,6 @@ export default async function DashboardPage() {
   const getPrice = (id: string) => {
     const variant = variants.find(v => v.id === id);
     if (!variant) return "Ej tillgänglig";
-
     return new Intl.NumberFormat("sv-SE", {
       style: "currency",
       currency: "SEK",
@@ -77,7 +65,7 @@ export default async function DashboardPage() {
         user={{
           ...user,
           hasSeenOnboarding: user.hasSeenOnboarding,
-          hasOrderedCard: hasOrderedCard // <--- Skickar med denna flagga
+          hasOrderedCard: hasOrderedCard
         }} 
         prices={prices} 
       />
