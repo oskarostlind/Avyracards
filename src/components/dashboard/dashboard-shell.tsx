@@ -12,32 +12,31 @@ import {
   Mail,
   ExternalLink,
   RefreshCw,
-  AppWindow // Ny ikon för app
+  AppWindow 
 } from "lucide-react";
 
 import { SocialView } from "@/components/dashboard/social/social-view";
 import { BusinessView } from "@/components/dashboard/business/business-view";
 import { ProfilePreviewModal } from "@/components/dashboard/profile-preview-modal";
+import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
+import { OrderCardWidget } from "@/components/dashboard/order-card-widget"; // <--- IMPORTERA
 
 type DashboardShellProps = {
-  user: User & { links: PrismaLink[] };
+  // Lägg till hasOrderedCard i typen
+  user: User & { links: PrismaLink[] } & { hasSeenOnboarding: boolean; hasOrderedCard?: boolean };
+  prices: { standard: string; bundle: string };
 };
 
-// --- UPPDATERAD HJÄLPFUNKTION ---
 function getEmailProviderLink(email: string) {
-    // 1. Webmail (Prioriterat för desktop-användare)
     if (email.includes("@gmail")) return "https://mail.google.com/";
     if (email.includes("@outlook") || email.includes("@hotmail") || email.includes("@live")) return "https://outlook.live.com/mail/";
     if (email.includes("@yahoo")) return "https://mail.yahoo.com/";
     if (email.includes("@proton")) return "https://mail.proton.me/";
     if (email.includes("@icloud")) return "https://www.icloud.com/mail";
-    
-    // 2. Fallback: Försök öppna standard-appen (t.ex. Outlook, Apple Mail)
-    // Detta funkar bra på mobiler, men varierar på desktop.
     return "mailto:"; 
 }
 
-export function DashboardShell({ user }: DashboardShellProps) {
+export function DashboardShell({ user, prices }: DashboardShellProps) {
   const [activeMode, setActiveMode] = useState<"SOCIAL" | "BUSINESS">(
     (user.profileMode as "SOCIAL" | "BUSINESS") ?? "SOCIAL"
   );
@@ -87,10 +86,9 @@ export function DashboardShell({ user }: DashboardShellProps) {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                {/* PRIMÄR KNAPP: Öppna Mail */}
                 <a 
                     href={verificationLink} 
-                    target={isGenericMailto ? "_self" : "_blank"} // mailto ska inte öppna ny flik
+                    target={isGenericMailto ? "_self" : "_blank"}
                     rel="noopener noreferrer"
                     className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 whitespace-nowrap"
                 >
@@ -101,7 +99,6 @@ export function DashboardShell({ user }: DashboardShellProps) {
                     )}
                 </a>
 
-                {/* SEKUNDÄR KNAPP: Skicka nytt (Liten text under eller bredvid) */}
                 <NextLink 
                     href={`/verify-resend?email=${encodeURIComponent(user.email || "")}`}
                     className="w-full sm:w-auto px-4 py-2.5 bg-transparent border border-nordic-highlight/20 hover:bg-nordic-highlight/5 text-nordic-highlight text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap"
@@ -113,10 +110,16 @@ export function DashboardShell({ user }: DashboardShellProps) {
          </div>
       )}
 
-      {/* 2. Header & Controls (Oförändrad nedanför) */}
+      {/* 2. NYTT: UPSELL WIDGET (Visas bara om kort saknas) */}
+      {!user.hasOrderedCard && (
+        <OrderCardWidget 
+          isPremium={user.isPremium} 
+          prices={prices} 
+        />
+      )}
+
+      {/* 3. Header & Controls */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-        
-        {/* Vänster: Titel */}
         <div>
           <h1 className="text-3xl font-bold text-nordic-secondary tracking-tight">Redigera Profil</h1>
           <p className="text-sm text-nordic-highlight mt-1">
@@ -124,10 +127,7 @@ export function DashboardShell({ user }: DashboardShellProps) {
           </p>
         </div>
 
-        {/* Höger: Tabbar & Tools */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            
-            {/* --- TABBAR --- */}
             <div className="flex p-1 bg-nordic-primary/70 border border-nordic-highlight/40 rounded-xl self-start sm:self-auto">
                 <button
                     onClick={() => setViewMode("SOCIAL")}
@@ -167,7 +167,6 @@ export function DashboardShell({ user }: DashboardShellProps) {
 
             <div className="h-6 w-px bg-slate-800 hidden sm:block"></div>
 
-            {/* --- ACTION KNAPPAR --- */}
             <div className="flex items-center gap-2">
                 {viewMode !== activeMode ? (
                   <button
@@ -210,6 +209,15 @@ export function DashboardShell({ user }: DashboardShellProps) {
         onClose={() => setIsPreviewOpen(false)} 
         username={user.username || ""} 
         mode={viewMode}
+      />
+
+      <OnboardingModal 
+          user={{
+              name: user.name,
+              isPremium: user.isPremium,
+              hasSeenOnboarding: user.hasSeenOnboarding
+          }} 
+          prices={prices}
       />
     </div>
   );
