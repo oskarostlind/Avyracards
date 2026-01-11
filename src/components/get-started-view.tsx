@@ -112,7 +112,7 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
             <span className="text-nordic-highlight text-sm line-through opacity-70">{bundleOriginalPrice} kr</span>
           </div>
           <p className="text-xs text-nordic-accent font-medium mb-8 bg-nordic-accent/10 inline-block px-2 py-1 rounded w-fit">
-            Startavgift (inkl. kort & 1 mån premium)
+            Engångsavgift (inkl. kort & 1 mån premium)
           </p>
 
           <div className="space-y-4 mb-8 flex-grow">

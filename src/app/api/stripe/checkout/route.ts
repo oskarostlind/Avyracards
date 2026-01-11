@@ -149,7 +149,7 @@ export async function POST(req: Request) {
     let successUrl = `${baseUrl}/verify-sent?session_id={CHECKOUT_SESSION_ID}`;
     
     if ((premiumOption !== "none" || hasSubscription) && userId) {
-        successUrl = `${baseUrl}/profile/settings?view=billing&success=true`;
+        successUrl = `${baseUrl}/dashboard?session_id={CHECKOUT_SESSION_ID}`;
     }
 
     const session = await stripe.checkout.sessions.create({

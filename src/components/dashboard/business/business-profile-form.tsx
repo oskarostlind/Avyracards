@@ -140,13 +140,13 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             </div>
             <div className="space-y-1.5 md:col-span-2">
             <label className="block text-xs font-medium text-slate-200">Kort headline</label>
-            <input value={businessHeadline} onChange={(e) => setBusinessHeadline(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="Kundansvarig inom IT-lösningar | Telia Company" />
+            <input value={businessHeadline} onChange={(e) => setBusinessHeadline(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="Kundansvarig inom IT-lösningar | Eriksson Company AB" />
             <p className="text-[10px] text-nordic-highlight">En kort 1-rads pitch som visas högst upp på din businessprofil.</p>
             </div>
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Kontakt & CTA" description="Telefon, e-post, bokningslänk och vCard." defaultOpen>
+      <CollapsibleSection title="Kontakt & CTA" description="Telefon, e-post, bokningslänk och vCard." defaultOpen={false}>
         <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1.5">
             <label className="block text-xs font-medium text-slate-200">Telefon (business)</label>

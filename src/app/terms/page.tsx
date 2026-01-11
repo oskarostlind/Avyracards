@@ -67,14 +67,14 @@ export default function TermsPage() {
             6. Ansvarsbegränsning
           </h2>
           <p className="mt-2">
-            Tjänsten erbjuds ƒ?osom den ärƒ??. AvyraCards ansvarar inte för indirekta
+            Tjänsten erbjuds eftersom den är sådan. AvyraCards ansvarar inte för indirekta
             skador, dataförlust eller avbrott i tjänsten.
           </p>
         </section>
 
         <section>
           <h2 className="text-xl font-semibold text-slate-100">
-            7. A,ndringar av villkor
+            7. Ändringar av villkor
           </h2>
           <p className="mt-2">
             Vi kan uppdatera användarvillkoren när som helst. Fortsatt användning

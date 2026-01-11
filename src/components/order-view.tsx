@@ -315,7 +315,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-bold text-sm flex items-center gap-2">
-                                    Startpaket + 1 mån Premium
+                                    1 mån Premium
                                     <span className="bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full">GRATIS</span>
                                 </span>
                                 <span className="text-xs text-nordic-highlight">Prova på utan kostnad</span>

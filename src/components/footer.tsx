@@ -30,11 +30,11 @@ export function Footer() {
                   FAQ
                 </Link>
               </li>
-              <li>
+              {/*<li>
                 <Link href="/dashboard" className="hover:text-nordic-accent">
                   Exempel-dashboard
                 </Link>
-              </li>
+              </li>*/}
             </ul>
           </div>
 
@@ -76,7 +76,7 @@ export function Footer() {
         </div>
 
         <div className="space-y-3 text-xs text-nordic-highlight md:text-sm md:text-right">
-          <div>Ac {new Date().getFullYear()} AvyraCards.</div>
+          <div>AvyraCards {new Date().getFullYear()}.</div>
           <div>
             Frågor?{" "}
             <a
