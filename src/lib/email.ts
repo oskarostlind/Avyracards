@@ -1,7 +1,6 @@
 import nodemailer from "nodemailer";
-import { Resend } from "resend";
 
-// --- KONFIGURATION FÖR SMTP (Verifiering) ---
+// --- KONFIGURATION FÖR SMTP (Strato) ---
 const host = process.env.SMTP_HOST;
 const port = Number(process.env.SMTP_PORT ?? "587");
 const secure = process.env.SMTP_SECURE === "true";
@@ -15,7 +14,7 @@ const from =
 
 if (!host || !user || !pass) {
   console.warn(
-    "[email] SMTP-konfiguration saknas (host/user/pass). Verifieringsmail kan inte skickas."
+    "[email] SMTP-konfiguration saknas (host/user/pass). Mail kan inte skickas."
   );
 }
 
@@ -26,6 +25,7 @@ const transporter = nodemailer.createTransport({
   auth: user && pass ? { user, pass } : undefined,
 });
 
+// Verifiera uppkoppling vid start (endast i dev/build)
 if (process.env.NODE_ENV !== "production") {
   transporter
     .verify()
@@ -37,11 +37,7 @@ if (process.env.NODE_ENV !== "production") {
     });
 }
 
-// --- KONFIGURATION FÖR RESEND (Lösenordsåterställning) ---
-const resend = new Resend(process.env.RESEND_API_KEY);
-
-
-// --- FUNKTION 1: VERIFIERINGSMAIL (Nodemailer) ---
+// --- FUNKTION 1: VERIFIERINGSMAIL ---
 export async function sendVerificationEmail(to: string, token: string) {
   if (!host || !user || !pass || !from) {
     throw new Error("SMTP-konfigurationen är inte komplett.");
@@ -58,44 +54,19 @@ export async function sendVerificationEmail(to: string, token: string) {
     from,
     to,
     subject: "✨ Välkommen till AvyraCards – Verifiera ditt konto",
-    text: `Hej!
-
-Tack för att du registrerat dig hos AvyraCards. 
-Klicka på länken nedan för att verifiera din e-postadress och aktivera ditt konto:
-
-${verifyUrl}
-
-Om du inte har skapat ett konto kan du ignorera detta meddelande.
-
-Vänliga hälsningar,
-Team AvyraCards
-    `,
+    text: `Välkommen! Verifiera ditt konto här: ${verifyUrl}`,
     html: `
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>Verifiera ditt konto</title>
-</head>
-<body style="font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 0; padding: 20px;">
+<head><meta charset="utf-8"><title>Verifiera ditt konto</title></head>
+<body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
   <div style="background-color: #ffffff; padding: 30px; border-radius: 8px; max-width: 600px; margin: 0 auto; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
     <h2 style="color:#4CAF50; margin-top:0;">Välkommen till AvyraCards 🎉</h2>
-    <p style="color:#333; line-height:1.6;">Tack för att du registrerat dig! Klicka på knappen nedan för att verifiera din e-postadress och aktivera ditt konto:</p>
-    
+    <p style="color:#333;">Tack för att du registrerat dig! Klicka nedan för att verifiera din e-post:</p>
     <p style="text-align:center; margin: 30px 0;">
-      <a href="${verifyUrl}" target="_blank" rel="noopener noreferrer"
-         style="display:inline-block; padding:12px 24px; background-color:#4CAF50; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold; font-size:16px;">
-        Verifiera mitt konto
-      </a>
+      <a href="${verifyUrl}" target="_blank" style="display:inline-block; padding:12px 24px; background-color:#4CAF50; color:#fff; text-decoration:none; border-radius:6px; font-weight:bold;">Verifiera mitt konto</a>
     </p>
-    
-    <p style="color:#555; font-size:14px; line-height:1.5;">Om du inte har skapat ett konto kan du ignorera detta meddelande.</p>
-    
-    <hr style="margin:30px 0; border:none; border-top:1px solid #eee;" />
-    
-    <p style="font-size:12px; color:#999; text-align:center;">
-      Detta är ett automatiskt utskick från AvyraCards. Går ej att svara på.
-    </p>
+    <p style="color:#555; font-size:14px;">Om du inte skapat ett konto kan du ignorera detta.</p>
   </div>
 </body>
 </html>
@@ -103,22 +74,26 @@ Team AvyraCards
   });
 
   if (process.env.NODE_ENV !== "production") {
-    console.log("[email] Mail skickat, server-respons:", info);
+    console.log("[email] Verifieringsmail skickat:", info.messageId);
   }
 }
 
-
-// --- FUNKTION 2: LÖSENORDSÅTERSTÄLLNING (Resend) ---
+// --- FUNKTION 2: LÖSENORDSÅTERSTÄLLNING (Nu via SMTP!) ---
 export async function sendPasswordResetEmail(email: string, resetLink: string) {
+  // Vi använder samma transporter och credentials som ovan
+  if (!host || !user || !pass || !from) {
+      console.error("SMTP config missing for reset email");
+      return { success: false, error: "SMTP config missing" };
+  }
+
   try {
-    // OBS: I produktion måste 'from' vara en verifierad domän i Resend (t.ex. support@avyracards.se)
-    // 'onboarding@resend.dev' fungerar bara om du skickar till din egen mailadress under testning.
-    await resend.emails.send({
-      from: 'AvyraCards <onboarding@resend.dev>', 
+    await transporter.sendMail({
+      from,
       to: email,
       subject: 'Återställ ditt lösenord - AvyraCards',
+      text: `Återställ ditt lösenord här: ${resetLink}`,
       html: `
-        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2>Återställ ditt lösenord</h2>
           <p>Vi har mottagit en begäran om att återställa lösenordet för ditt AvyraCards-konto.</p>
           <p>Klicka på knappen nedan för att välja ett nytt lösenord:</p>
@@ -133,7 +108,7 @@ export async function sendPasswordResetEmail(email: string, resetLink: string) {
     });
     return { success: true };
   } catch (error) {
-    console.error("Failed to send reset email:", error);
+    console.error("Failed to send reset email via SMTP:", error);
     return { success: false, error };
   }
 }
