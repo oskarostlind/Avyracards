@@ -1,6 +1,7 @@
-// src/lib/email.ts
 import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
+// --- KONFIGURATION FÖR SMTP (Verifiering) ---
 const host = process.env.SMTP_HOST;
 const port = Number(process.env.SMTP_PORT ?? "587");
 const secure = process.env.SMTP_SECURE === "true";
@@ -36,6 +37,11 @@ if (process.env.NODE_ENV !== "production") {
     });
 }
 
+// --- KONFIGURATION FÖR RESEND (Lösenordsåterställning) ---
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+
+// --- FUNKTION 1: VERIFIERINGSMAIL (Nodemailer) ---
 export async function sendVerificationEmail(to: string, token: string) {
   if (!host || !user || !pass || !from) {
     throw new Error("SMTP-konfigurationen är inte komplett.");
@@ -64,7 +70,6 @@ Om du inte har skapat ett konto kan du ignorera detta meddelande.
 Vänliga hälsningar,
 Team AvyraCards
     `,
-    // UPPDATERING: Fullständig HTML-struktur för bättre kompatibilitet
     html: `
 <!DOCTYPE html>
 <html>
@@ -99,5 +104,36 @@ Team AvyraCards
 
   if (process.env.NODE_ENV !== "production") {
     console.log("[email] Mail skickat, server-respons:", info);
+  }
+}
+
+
+// --- FUNKTION 2: LÖSENORDSÅTERSTÄLLNING (Resend) ---
+export async function sendPasswordResetEmail(email: string, resetLink: string) {
+  try {
+    // OBS: I produktion måste 'from' vara en verifierad domän i Resend (t.ex. support@avyracards.se)
+    // 'onboarding@resend.dev' fungerar bara om du skickar till din egen mailadress under testning.
+    await resend.emails.send({
+      from: 'AvyraCards <onboarding@resend.dev>', 
+      to: email,
+      subject: 'Återställ ditt lösenord - AvyraCards',
+      html: `
+        <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>Återställ ditt lösenord</h2>
+          <p>Vi har mottagit en begäran om att återställa lösenordet för ditt AvyraCards-konto.</p>
+          <p>Klicka på knappen nedan för att välja ett nytt lösenord:</p>
+          <a href="${resetLink}" style="display: inline-block; background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 10px;">
+            Återställ lösenord
+          </a>
+          <p style="margin-top: 20px; font-size: 14px; color: #666;">
+            Om du inte begärde detta kan du ignorera detta mail. Länken gäller i 1 timme.
+          </p>
+        </div>
+      `
+    });
+    return { success: true };
+  } catch (error) {
+    console.error("Failed to send reset email:", error);
+    return { success: false, error };
   }
 }
