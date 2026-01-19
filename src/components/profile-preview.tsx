@@ -3,40 +3,10 @@
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { User as UserIcon } from "lucide-react"; 
 import { SocialIcon } from "@/components/icons/social-icons"; 
-
-export interface PreviewLink {
-  id: string;
-  url: string;
-  title?: string | null;
-  label?: string | null;
-  icon?: string | null;
-  isVisible?: boolean;
-  mode?: "SOCIAL" | "BUSINESS";
-}
+import { MappedProfileData } from "@/lib/profile-mapper";
 
 export interface ProfilePreviewProps {
-  username: string;
-  name?: string | null;      
-  bio?: string | null;
-  avatarUrl?: string | null;
-  
-  profileMode?: "SOCIAL" | "BUSINESS";
-  jobTitle?: string | null;
-  companyName?: string | null;
-  location?: string | null;
-  
-  businessHeadline?: string | null;
-  
-  // BUSINESS Kontakt
-  businessEmail?: string | null;
-  businessPhone?: string | null;
-  companyWebsite?: string | null;
-
-  // SOCIAL Kontakt (NYA)
-  contactEmail?: string | null;
-  phoneNumber?: string | null;
-
-  links: PreviewLink[];
+  data: MappedProfileData;
   customSettings?: CustomThemeSettings;
   fullscreen?: boolean;
 }
@@ -51,26 +21,7 @@ const fontMap: Record<string, string> = {
 };
 
 export function ProfilePreview({
-  username,
-  name,
-  bio,
-  avatarUrl,
-  
-  profileMode = "SOCIAL",
-  jobTitle,
-  companyName,
-  location,
-  
-  businessHeadline, 
-  
-  businessEmail,
-  businessPhone,
-  companyWebsite,
-
-  contactEmail, // NY
-  phoneNumber,  // NY
-
-  links,
+  data,
   customSettings,
   fullscreen = false,
 }: ProfilePreviewProps) {
@@ -78,10 +29,7 @@ export function ProfilePreview({
   const settings = customSettings || defaultSettings;
   const currentFont = settings.font && fontMap[settings.font] ? fontMap[settings.font] : fontMap['inter'];
 
-  const visibleLinks = links.filter(link => {
-      const linkMode = link.mode || "SOCIAL";
-      return linkMode === profileMode;
-  });
+  const { image, displayName, headline, location, actions, links, mode, jobTitle, companyName } = data;
 
   // --- BAKGRUND ---
   let bgStyle: React.CSSProperties = {};
@@ -167,7 +115,7 @@ export function ProfilePreview({
 
   const cardStyle: React.CSSProperties = {
     color: settings.textColor || "#fff",
-    ...(profileMode === "BUSINESS" ? {
+    ...(mode === "BUSINESS" ? {
         backgroundColor: 'rgba(15, 23, 42, 0.6)',
         backdropFilter: 'blur(20px)',
         borderColor: 'rgba(255,255,255,0.1)',
@@ -179,9 +127,6 @@ export function ProfilePreview({
         borderColor: 'rgba(255,255,255,0.1)',
     })
   };
-
-  const textContent = profileMode === "BUSINESS" ? (businessHeadline || "") : (bio || "");
-  const displayText = (profileMode === "BUSINESS" && !textContent) ? "Din rubrik här..." : textContent;
 
   return (
     <div 
@@ -215,9 +160,9 @@ export function ProfilePreview({
             borderColor: settings.accentColor
           } : {}}
         >
-          {avatarUrl ? (
+          {image ? (
              // eslint-disable-next-line @next/next/no-img-element
-             <img src={avatarUrl} alt="Profil" className={`w-28 h-28 object-cover border-2 border-white/10 ${getFrameClass()}`} style={settings.frameStyle === 'ring' ? { borderRadius: '9999px' } : {}}/>
+             <img src={image} alt="Profil" className={`w-28 h-28 object-cover border-2 border-white/10 ${getFrameClass()}`} style={settings.frameStyle === 'ring' ? { borderRadius: '9999px' } : {}}/>
           ) : (
              <div className={`w-28 h-28 bg-white/10 flex items-center justify-center text-nordic-secondary/50 border-2 border-white/10 ${getFrameClass()}`}>
                <UserIcon size={40} />
@@ -227,9 +172,9 @@ export function ProfilePreview({
 
         {/* --- HEADER --- */}
         <div className="text-center space-y-2 mb-8 w-full">
-          <h1 className="text-2xl font-bold tracking-tight">{name || username || "Ditt Namn"}</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
           
-          {profileMode === "BUSINESS" && (
+          {mode === "BUSINESS" && (
             <div className="flex flex-col items-center gap-1 opacity-90">
                {(jobTitle || companyName) && (
                    <div className="flex flex-wrap justify-center gap-1 text-sm font-medium">
@@ -246,53 +191,36 @@ export function ProfilePreview({
             </div>
           )}
 
-          {displayText && (
-            <div className={`text-sm leading-relaxed whitespace-pre-line font-medium break-words mt-2 ${profileMode === "BUSINESS" ? "italic opacity-80 border-l-4 border-white/20 pl-3 bg-white/5 py-1 rounded-r-lg" : "opacity-80"}`}>
-              {displayText}
+          {headline && (
+            <div className={`text-sm leading-relaxed whitespace-pre-line font-medium break-words mt-2 ${mode === "BUSINESS" ? "italic opacity-80 border-l-4 border-white/20 pl-3 bg-white/5 py-1 rounded-r-lg" : "opacity-80"}`}>
+              {headline}
             </div>
           )}
         </div>
 
-        {/* --- SOCIAL KONTAKT-KNAPPAR (NYTT) --- */}
-        {profileMode === "SOCIAL" && (phoneNumber || contactEmail) && (
-             <div className="flex justify-center gap-3 mb-6">
-                {phoneNumber && (
-                   <div className="p-3 rounded-full bg-white/10 border border-white/10" title="Ring">
-                      <SocialIcon fallbackIcon="phone" size={20} />
-                   </div>
-                )}
-                {contactEmail && (
-                   <div className="p-3 rounded-full bg-white/10 border border-white/10" title="Maila">
-                      <SocialIcon fallbackIcon="email" size={20} />
-                   </div>
-                )}
+        {/* --- DYNAMISKA ACTIONS --- */}
+        {actions.length > 0 && (
+             <div className={`w-full mb-6 ${mode === "BUSINESS" ? "grid grid-cols-2 gap-3" : "flex justify-center gap-3"}`}>
+                {actions.map((action) => (
+                    <a 
+                        key={action.type}
+                        href={action.url}
+                        target={action.type === 'website' || action.type === 'booking' ? '_blank' : undefined}
+                        className={mode === "BUSINESS" ? (action.type === 'website' ? `col-span-2 ${getButtonClass()}` : getButtonClass()) : "p-3 rounded-full bg-white/10 border border-white/10"}
+                        style={mode === "BUSINESS" ? getButtonStyle() : {}}
+                        title={action.label}
+                    >
+                        {/* FIX: Vi använder 'as any' för att TypeScript ska godkänna strängen från mappern */}
+                        <SocialIcon fallbackIcon={action.iconKey as any} size={mode === "BUSINESS" ? 14 : 20} /> 
+                        {mode === "BUSINESS" && action.label}
+                    </a>
+                ))}
              </div>
-        )}
-
-        {/* --- BUSINESS KONTAKT-GRID --- */}
-        {profileMode === "BUSINESS" && (businessEmail || businessPhone || companyWebsite) && (
-            <div className="grid grid-cols-2 gap-3 w-full mb-4">
-                {businessPhone && (
-                    <a href="#" className={getButtonClass()} style={getButtonStyle()}>
-                        <SocialIcon fallbackIcon="phone" size={14} /> Ring
-                    </a>
-                )}
-                {businessEmail && (
-                    <a href="#" className={getButtonClass()} style={getButtonStyle()}>
-                        <SocialIcon fallbackIcon="email" size={14} /> Maila
-                    </a>
-                )}
-                {companyWebsite && (
-                    <a href="#" className={`col-span-2 ${getButtonClass()}`} style={getButtonStyle()}>
-                        <SocialIcon fallbackIcon="website" size={14} /> Besök Hemsida
-                    </a>
-                )}
-            </div>
         )}
 
         {/* --- LÄNKAR --- */}
         <div className="w-full space-y-3">
-          {visibleLinks.map((link) => (
+          {links.map((link) => (
             <a
               key={link.id}
               href={link.url}
@@ -302,13 +230,13 @@ export function ProfilePreview({
               style={getButtonStyle()}
             >
                <span className="opacity-80 absolute left-5">
-                 <SocialIcon url={link.url || link.title} size={18} />
+                 <SocialIcon url={link.url || link.title || ""} size={18} />
                </span>
-               <span className="flex-1 text-center truncate px-6">{link.title || link.label || link.url}</span>
+               <span className="flex-1 text-center truncate px-6">{link.title || link.url}</span>
             </a>
           ))}
           
-          {visibleLinks.length === 0 && (
+          {links.length === 0 && (
              <div className="p-6 border-2 border-dashed border-white/20 rounded-2xl text-center text-nordic-secondary/50 text-xs w-full">
                 Inga länkar för detta läge.
              </div>
@@ -317,7 +245,6 @@ export function ProfilePreview({
 
       </div>
 
-      {/* --- FOOTER --- */}
       <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity">
          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary drop-shadow-md">
            <span>Powered by AvyraCards</span>

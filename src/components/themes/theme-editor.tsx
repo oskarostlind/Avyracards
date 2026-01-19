@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 
 import { type CustomThemeSettings, defaultSettings, type ThemeMode } from "@/types/theme";
-import { ProfilePreview, type PreviewLink } from "@/components/profile-preview";
+import { ProfilePreview } from "@/components/profile-preview";
+import { getProfileData } from "@/lib/profile-mapper"; // NY IMPORT
 import { useRouter } from "next/navigation";
 import { UpgradeModal } from "@/components/themes/upgrade-modal"; 
 
@@ -27,52 +28,28 @@ import { ProfileTab } from "./tabs/profile-tab";
 interface ThemeEditorProps {
   initialSettings: CustomThemeSettings; 
   initialBusinessSettings: CustomThemeSettings;
-  
-  userData: {
-    username: string;
-    name: string;
-    bio: string;
-    avatarUrl: string;
-    links: PreviewLink[];
-    isPremium?: boolean;
-    
-    // Default mode
-    profileMode?: ThemeMode;
-    
-    // Business data
-    jobTitle?: string | null;
-    companyName?: string | null;
-    location?: string | null;
-    
-    businessHeadline?: string | null;
-    businessEmail?: string | null;
-    businessPhone?: string | null;
-    companyWebsite?: string | null;
-
-    // --- NYA SOCIALA FÄLT ---
-    contactEmail?: string | null;
-    phoneNumber?: string | null;
-  }
+  userData: any; // Förenklad typ för att slippa komplexitet, vi mappar den ändå
 }
 
 export function ThemeEditor({ initialSettings, initialBusinessSettings, userData }: ThemeEditorProps) {
   const router = useRouter();
   
-  // --- STATE ---
   const [mode, setMode] = useState<ThemeMode>(userData.profileMode || "SOCIAL");
   
   const [socialSettings, setSocialSettings] = useState<CustomThemeSettings>({ ...defaultSettings, ...initialSettings });
   const [businessSettings, setBusinessSettings] = useState<CustomThemeSettings>({ ...defaultSettings, ...initialBusinessSettings });
 
-  // UI State
   const [activeTab, setActiveTab] = useState<"templates" | "background" | "buttons" | "profile">("templates");
   const [isSaving, setIsSaving] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const isUserPremium = userData.isPremium || false;
 
-  // --- GETTERS & SETTERS ---
   const currentSettings = mode === "BUSINESS" ? businessSettings : socialSettings;
+
+  // --- MAPPA DATA LIVE ---
+  // Detta garanterar att previewn ser exakt ut som den publika profilen
+  const mappedProfileData = getProfileData(userData, mode);
 
   const updateSetting = (key: keyof CustomThemeSettings, value: any) => {
     if (mode === "BUSINESS") {
@@ -98,7 +75,6 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
       }
   };
 
-  // --- SAVE ---
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -133,46 +109,26 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
       
       <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
 
-      {/* --- LEFT: LIVE PREVIEW --- */}
+      {/* --- LIVE PREVIEW --- */}
       <div className="h-[45%] lg:h-full lg:flex-1 relative bg-[#050505] flex items-center justify-center p-4 overflow-hidden border-b lg:border-b-0 lg:border-r border-nordic-highlight/40">
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
-        {/* Toggle Overlay i Preview */}
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary shadow-lg">
-             {mode === "BUSINESS" ? "Business Mode" : "Social Mode"}
+              {mode === "BUSINESS" ? "Business Mode" : "Social Mode"}
         </div>
 
         <div className="transform scale-[0.55] sm:scale-[0.70] lg:scale-[0.85] xl:scale-100 transition-transform duration-500 w-[375px] h-[750px] border-[8px] border-nordic-highlight/40 rounded-[3rem] overflow-hidden shadow-2xl bg-nordic-primary ring-1 ring-white/10 relative z-10 shrink-0 origin-center">
+           {/* HÄR SKICKAR VI DEN MAPPADE DATAN */}
            <ProfilePreview 
-             username={userData.username}
-             name={userData.name}
-             bio={userData.bio}
-             avatarUrl={userData.avatarUrl}
-             links={userData.links} 
-             
+             data={mappedProfileData}
              customSettings={currentSettings} 
-             profileMode={mode}
-
-             jobTitle={userData.jobTitle}
-             companyName={userData.companyName}
-             location={userData.location}
-             
-             businessHeadline={userData.businessHeadline}
-             businessEmail={userData.businessEmail}
-             businessPhone={userData.businessPhone}
-             companyWebsite={userData.companyWebsite}
-
-             // NYA PROPS: Skickar med social kontaktdata till preview
-             contactEmail={userData.contactEmail}
-             phoneNumber={userData.phoneNumber}
            />
         </div>
       </div>
 
-      {/* --- RIGHT: EDITOR PANEL --- */}
+      {/* --- EDITOR PANEL --- */}
       <div className="h-[55%] lg:h-full lg:w-96 bg-nordic-primary flex flex-col z-20 shadow-2xl border-l border-nordic-highlight/20">
         
-        {/* --- TOP: MODE SWITCHER --- */}
         <div className="p-4 border-b border-nordic-highlight/40 bg-slate-900/50">
             <div className="flex bg-slate-950 p-1 rounded-xl border border-white/5">
                 <button
@@ -198,7 +154,6 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             </div>
         </div>
 
-        {/* Navigation Tabs */}
         <div className="grid grid-cols-4 border-b border-nordic-highlight/40 shrink-0 bg-nordic-primary">
           <TabButton active={activeTab === "templates"} onClick={() => setActiveTab("templates")} icon={LayoutTemplate} label="Mallar" />
           <TabButton active={activeTab === "background"} onClick={() => setActiveTab("background")} icon={ImageIcon} label="Bakgrund" />
@@ -206,7 +161,6 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
           <TabButton active={activeTab === "profile"} onClick={() => setActiveTab("profile")} icon={User} label="Profil" />
         </div>
 
-        {/* Content Area */}
         <div className="flex-1 p-5 overflow-y-auto custom-scrollbar relative">
           
           <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none">
@@ -249,7 +203,6 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
           </div>
         </div>
 
-        {/* Footer */}
         <div className="p-4 border-t border-nordic-highlight/40 bg-nordic-primary flex gap-3 shrink-0 z-30 relative">
           <button 
             onClick={handleReset}

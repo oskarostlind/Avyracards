@@ -19,6 +19,9 @@ export default async function ThemesPage() {
       bio: true,
       avatarUrl: true,
       
+      // NYTT: Hämta business-bilden
+      businessAvatarUrl: true,
+      
       profileMode: true,
       jobTitle: true,
       companyName: true,
@@ -28,6 +31,7 @@ export default async function ThemesPage() {
       businessEmail: true,
       businessPhone: true,
       companyWebsite: true,
+      bookingUrl: true, // Bra att ha med om du använder den
 
       // NYA FÄLT FÖR SOCIAL
       contactEmail: true,
@@ -35,7 +39,16 @@ export default async function ThemesPage() {
 
       links: {
         where: { isActive: true },
-        orderBy: { order: "asc" }
+        orderBy: { order: "asc" },
+        // VIKTIGT: Explicit select för att garantera att 'mode' kommer med
+        select: {
+            id: true,
+            title: true,
+            url: true,
+            icon: true,
+            mode: true, // <--- Fixar dubblett-felet i preview
+            isActive: true
+        }
       }
     }
   });
@@ -53,6 +66,8 @@ export default async function ThemesPage() {
     name: user.name || "",
     bio: user.bio || "",
     avatarUrl: user.avatarUrl || "",
+    // NYTT: Skicka med business-bilden
+    businessAvatarUrl: user.businessAvatarUrl || null,
     
     profileMode: user.profileMode as "SOCIAL" | "BUSINESS", 
     jobTitle: user.jobTitle,
@@ -63,6 +78,7 @@ export default async function ThemesPage() {
     businessEmail: user.businessEmail,
     businessPhone: user.businessPhone,
     companyWebsite: user.companyWebsite,
+    bookingUrl: (user as any).bookingUrl,
 
     // SKICKAR MED SOCIAL KONTAKTDATA
     contactEmail: user.contactEmail,
@@ -73,7 +89,8 @@ export default async function ThemesPage() {
       title: l.title,
       url: l.url,
       icon: l.icon || undefined,
-      mode: l.mode as "SOCIAL" | "BUSINESS"
+      mode: l.mode as "SOCIAL" | "BUSINESS", // Nu är detta värde korrekt från databasen
+      isActive: true
     })),
     isPremium: user.isPremium
   };

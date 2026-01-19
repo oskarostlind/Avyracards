@@ -58,13 +58,14 @@ const updateSchema = z.object({
 
   // Redirect-inställningar
   redirectEnabled: z.boolean().optional(),
-  redirectLinkId: z.string().nullable().optional(), // NYTT: Kan vara ett ID eller null
+  redirectLinkId: z.string().nullable().optional(), 
 
   theme: z.string().max(50).optional(),
   font: z.string().max(50).optional(),
   profileMode: z.enum(["SOCIAL", "BUSINESS"]).optional(),
 
   // Business-specifika fält
+  businessAvatarUrl: avatarSchema, // <--- NYTT: LÄGG TILL DETTA
   jobTitle: optionalString(120),
   companyName: optionalString(160),
   location: optionalString(160),
@@ -109,7 +110,7 @@ async function updateProfile(req: Request) {
   const parsed = updateSchema.safeParse(json);
 
   if (!parsed.success) {
-    console.log("Validation error:", parsed.error.format()); // Bra för debug
+    console.log("Validation error:", parsed.error.format()); 
     return NextResponse.json({ error: "Ogiltiga fält kontrollera formatet." }, { status: 400 });
   }
 
@@ -128,7 +129,7 @@ async function updateProfile(req: Request) {
       
       // Redirect
       redirectEnabled: data.redirectEnabled,
-      redirectLinkId: data.redirectLinkId, // NYTT: Sparar ID
+      redirectLinkId: data.redirectLinkId, 
 
       theme: data.theme,
       font: data.font,
@@ -136,6 +137,7 @@ async function updateProfile(req: Request) {
       profileMode: data.profileMode,
 
       // Business-fält
+      businessAvatarUrl: data.businessAvatarUrl, // <--- NYTT: UPPDATERA HÄR
       jobTitle: data.jobTitle,
       companyName: data.companyName,
       location: data.location,
@@ -155,15 +157,15 @@ async function updateProfile(req: Request) {
       companyWebsite: data.companyWebsite,
       careerPageUrl: data.careerPageUrl,
     },
-    // Vi returnerar det frontend behöver för att uppdatera statet direkt
     select: {
       id: true,
       username: true,
       name: true,
       avatarUrl: true, 
+      businessAvatarUrl: true, // <--- NYTT: Returnera detta så frontend kan uppdateras
       profileMode: true,
-      redirectEnabled: true, // NYTT
-      redirectLinkId: true,  // NYTT
+      redirectEnabled: true, 
+      redirectLinkId: true,
     },
   });
 
@@ -179,7 +181,6 @@ export async function GET() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    // Här hämtar vi ALLT som behövs för dashboarden
     select: {
       id: true,
       email: true,
@@ -191,12 +192,13 @@ export async function GET() {
       avatarUrl: true,
       
       redirectEnabled: true,
-      redirectLinkId: true, // NYTT: Skickar med detta till frontend
+      redirectLinkId: true, 
 
       theme: true,
       font: true,
       profileMode: true,
 
+      businessAvatarUrl: true, // <--- NYTT: HÄMTA DETTA VID GET
       jobTitle: true,
       companyName: true,
       location: true,
@@ -231,4 +233,4 @@ export async function PATCH(req: Request) {
 
 export async function POST(req: Request) {
   return updateProfile(req);
-}
+} 

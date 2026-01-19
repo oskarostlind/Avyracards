@@ -55,6 +55,7 @@ model User {
   companyName      String?
   location         String?
   businessHeadline String?
+  businessAvatarUrl String?
 
   // Kontaktblock
   businessPhone String?

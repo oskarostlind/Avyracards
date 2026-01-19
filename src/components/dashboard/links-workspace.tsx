@@ -18,10 +18,12 @@ export function LinksWorkspace({ initialLinks, mode, activeRedirectId: initialRe
 
   useEffect(() => {
     setLinks(initialLinks);
+    // Uppdatera redirect-ID när vi byter läge, så vi inte visar fel "aktiv" länk
     setActiveRedirectId(initialRedirectId ?? null);
   }, [initialLinks, initialRedirectId, mode]);
 
   const refresh = useCallback(async () => {
+    // VIKTIGT: Skicka med mode till API:et så vi bara får länkar för detta läge
     const response = await fetch(`/api/links?mode=${mode}`);
     if (!response.ok) return;
     const data = (await response.json()) as LinkItem[];
@@ -33,13 +35,10 @@ export function LinksWorkspace({ initialLinks, mode, activeRedirectId: initialRe
     await refresh();
   }, [refresh]);
 
-  // --- HÄR ÄR FIXEN ---
   const handleSetRedirect = useCallback(async (linkId: string) => {
-    // 1. Räkna ut logiken: Är vi på väg att aktivera eller avaktivera?
     const isActivating = linkId !== activeRedirectId;
     const newId = isActivating ? linkId : null;
     
-    // 2. Optimistisk UI-uppdatering
     setActiveRedirectId(newId);
 
     try {
@@ -48,18 +47,15 @@ export function LinksWorkspace({ initialLinks, mode, activeRedirectId: initialRe
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
             redirectLinkId: newId,
-            // FIX: Vi måste explicit slå på/av funktionen samtidigt!
             redirectEnabled: isActivating 
         }),
       });
       router.refresh(); 
     } catch (error) {
       console.error("Failed to set redirect", error);
-      // Rulla tillbaka vid fel
       setActiveRedirectId(activeRedirectId);
     }
   }, [activeRedirectId, router]);
-  // --------------------
 
   const handleEdit = useCallback(async (id: string, title: string, url: string) => {
     try {
@@ -76,6 +72,7 @@ export function LinksWorkspace({ initialLinks, mode, activeRedirectId: initialRe
 
   const handleReorder = useCallback(
     async (ids: string[]) => {
+      // Optimistisk uppdatering
       const reorderedLinks = ids.map(id => links.find(l => l.id === id)!).filter(Boolean);
       setLinks(reorderedLinks);
 
@@ -114,6 +111,7 @@ export function LinksWorkspace({ initialLinks, mode, activeRedirectId: initialRe
 
   return (
     <div className="space-y-6">
+      {/* Skicka vidare 'mode' till formuläret så nya länkar får rätt tagg */}
       <AddLinkForm onCreated={handleCreated} mode={mode} />
       
       <LinksList
