@@ -3,14 +3,17 @@
 import type React from "react";
 import { useMemo, useState } from "react";
 import type { ThemeName } from "@/utils/theme";
-import { ProfilePreview, type PreviewLink } from "@/components/profile-preview"; // Importera PreviewLink
-import { defaultSettings } from "@/types/theme"; // Importera default settings
+import { ProfilePreview } from "@/components/profile-preview";
+import { defaultSettings } from "@/types/theme";
+import { getProfileData } from "@/lib/profile-mapper"; // <--- 1. Importera mappern
 
+// Typen för länkar som kommer in via props
 type ProfileLink = {
   id: string;
   title: string;
   url: string;
   icon?: string | null;
+  mode?: string | null; // Kan finnas, annars defaultar vi
 };
 
 type ProfileMode = "SOCIAL" | "BUSINESS";
@@ -45,15 +48,10 @@ export function ProfileSettingsForm({
   const [phoneNumber, setPhoneNumber] = useState(initialPhoneNumber ?? "");
   const [contactEmail, setContactEmail] = useState(initialContactEmail ?? "");
   
-  // Konvertera links till rätt format för PreviewLink om det behövs
-  // Här antar vi att strukturen är kompatibel eller gör en enkel map
-  const [links] = useState<PreviewLink[]>(
-    (initialLinks ?? []).map(l => ({ ...l, icon: l.icon || undefined })) 
-  );
-  
   const [profileMode, setProfileMode] = useState<ProfileMode>(
     initialProfileMode ?? "SOCIAL"
   );
+  
   const [isSaving, setIsSaving] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
 
@@ -67,6 +65,46 @@ export function ProfileSettingsForm({
         return {};
     }
   }, [fontFamily]);
+
+  // --- 2. SKAPA LIVE-DATA FÖR PREVIEW ---
+  // Vi bygger ett objekt som liknar det databasen returnerar
+  const previewUser = {
+    username,
+    name: username, // Fallback för namn
+    bio,
+    avatarUrl: profileImage,
+    businessAvatarUrl: null, // Detta formulär redigerar inte business-bilden än
+    phoneNumber,
+    contactEmail,
+    
+    // Business-fält (Sätts till null då detta formulär inte redigerar dem)
+    jobTitle: null,
+    companyName: null,
+    location: null,
+    businessHeadline: null,
+    businessEmail: null,
+    businessPhone: null,
+    companyWebsite: null,
+    bookingUrl: null,
+
+    // Mappa länkarna till rätt struktur för mappern
+    links: (initialLinks ?? []).map(l => ({
+        id: l.id,
+        title: l.title,
+        url: l.url,
+        icon: l.icon || null,
+        mode: l.mode || "SOCIAL", // Default till SOCIAL om det saknas
+        isActive: true,
+        order: 0,
+        userId: "preview",
+        createdAt: new Date(),
+        updatedAt: new Date()
+    }))
+  };
+
+  // --- 3. MAPPA DATAN ---
+  // Detta genererar rätt struktur för ProfilePreview
+  const mappedData = getProfileData(previewUser, profileMode);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -293,15 +331,15 @@ export function ProfileSettingsForm({
         </p>
         <div className="flex justify-center">
           <div className="transform scale-[0.8] origin-top">
+            {/* 4. Skicka in Mapped Data */}
             <ProfilePreview
-              username={username}
-              name={username} // Eller använd display name om det finns
-              bio={bio}
-              avatarUrl={profileImage}
-              links={links}
-              // Använder defaultSettings här eftersom detta är en "innehålls-editor" 
-              // och inte "design-editor". Designen ställs in på en annan sida.
-              customSettings={defaultSettings} 
+              data={mappedData}
+              // Vi låter fonten uppdateras live i previewn
+              customSettings={{ 
+                ...defaultSettings, 
+                // @ts-ignore - enkel hack för att visa fonten live om du inte har strikta typer för alla fonter
+                font: fontFamily 
+              }} 
             />
           </div>
         </div>
