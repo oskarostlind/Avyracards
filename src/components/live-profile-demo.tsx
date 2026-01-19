@@ -1,48 +1,79 @@
 "use client";
 
-import { ProfilePreview, type PreviewLink } from "@/components/profile-preview";
-import { defaultSettings } from "@/types/theme"; // Vi importerar default-inställningarna
+import { ProfilePreview } from "@/components/profile-preview";
+import { defaultSettings } from "@/types/theme";
+import type { MappedProfileData } from "@/lib/profile-mapper"; 
 
-const MOCK_LINKS: PreviewLink[] = [
-  { 
-    id: "1", 
-    title: "Instagram", 
-    url: "https://instagram.com", 
-    icon: "instagram" 
-  },
-  { 
-    id: "2", 
-    title: "Min Hemsida", 
-    url: "https://example.com", 
-    icon: "globe" 
-  },
-  { 
-    id: "3", 
-    title: "Boka tid", 
-    url: "https://calendly.com", 
-    icon: "calendar" 
-  },
-];
+// Vi skapar mock-data som matchar den nya strukturen (MappedProfileData)
+const DEMO_DATA: MappedProfileData = {
+  mode: "SOCIAL",
+  displayName: "Oskar Östlind",
+  image: null, // Eller en URL till en demo-bild
+  headline: "Grundare av AvyraCards | Digital Kreatör",
+  location: "Luleå, Sverige",
+  
+  // Business-specifikt (kan vara null i demon)
+  jobTitle: null, 
+  companyName: null,
+  
+  actions: [], // Tom lista för demo, eller lägg till mock-actions om du vill
+  
+  // Vi mockar länkarna så att de ser ut som databas-objekt
+  links: [
+    {
+      id: "demo-1",
+      title: "Min Portfolio",
+      url: "https://avyracards.se",
+      icon: null,
+      mode: "SOCIAL",
+      isActive: true,
+      order: 0,
+      userId: "demo",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      id: "demo-2",
+      title: "Instagram",
+      url: "https://instagram.com",
+      icon: null,
+      mode: "SOCIAL",
+      isActive: true,
+      order: 1,
+      userId: "demo",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    },
+    {
+      id: "demo-3",
+      title: "LinkedIn",
+      url: "https://linkedin.com",
+      icon: null,
+      mode: "SOCIAL",
+      isActive: true,
+      order: 2,
+      userId: "demo",
+      createdAt: new Date(),
+      updatedAt: new Date()
+    }
+  ]
+};
 
 export function LiveProfileDemo() {
   return (
-    <div className="w-full h-full flex justify-center items-center bg-slate-900/50 rounded-3xl overflow-hidden border border-nordic-highlight/40 relative">
-      {/* Skala ner previewen lite så den får plats snyggt i demorutan */}
-      <div className="transform scale-[0.65] sm:scale-[0.8] origin-center h-[750px] w-[375px] pointer-events-none select-none border-[8px] border-nordic-highlight/40 rounded-[3rem] overflow-hidden bg-nordic-primary shadow-2xl">
+    <div className="w-full h-full flex items-center justify-center pointer-events-none select-none">
+      <div className="transform scale-[0.85]">
         <ProfilePreview 
-          username="Anna Andersson"
-          name="Anna Andersson"
-          bio="Digital Creator & Designer. Hjälper företag att synas online."
-          avatarUrl={null} // Eller en URL till en demobild om du har
-          links={MOCK_LINKS}
-          // HÄR ÄR FIXEN: Vi skickar in defaultSettings istället för 'theme="default"'
-          customSettings={defaultSettings}
-          // Vi tar bort 'profileMode' eftersom nya komponenten inte använder det propet längre
+          data={DEMO_DATA} // Vi skickar hela data-objektet nu
+          customSettings={{
+            ...defaultSettings,
+            // Du kan anpassa demo-temat här om du vill
+            gradientFrom: "#ec4899", // Pink-500
+            gradientTo: "#8b5cf6",   // Violet-500
+            backgroundType: "gradient"
+          }}
         />
       </div>
-      
-      {/* En overlay som gör att man inte kan klicka på länkarna i demot (valfritt) */}
-      <div className="absolute inset-0 z-20"></div>
     </div>
   );
 }
