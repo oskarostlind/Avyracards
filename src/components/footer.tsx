@@ -44,7 +44,7 @@ export function Footer() {
             </div>
             <ul className="space-y-1 text-xs text-nordic-highlight md:text-sm">
               <li>
-                <Link href="/#business" className="hover:text-nordic-accent">
+                <Link href="/business" className="hover:text-nordic-accent">
                   AvyraCards Business
                 </Link>
               </li>
