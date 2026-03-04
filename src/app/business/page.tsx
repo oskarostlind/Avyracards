@@ -219,7 +219,8 @@ export default function BusinessLandingPage() {
 
 
         {/* --- 4. DELA I ALLA SITUATIONER --- */}
-        <section id="how-it-works" className="py-12">
+        {/* FIX: Lade till scroll-mt-24 här */}
+        <section id="how-it-works" className="py-12 scroll-mt-24">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">Redo när mötet händer.</h2>
           </div>

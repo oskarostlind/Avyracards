@@ -37,7 +37,7 @@ export default function SocialLandingPage() {
                     Skapa gratis sida
                 </Link>
                 <Link
-                    href="#how-it-works"
+                    href="#how-it-works" 
                     className="inline-flex items-center rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 px-8 py-4 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-nordic-secondary transition"
                 >
                     Se hur det funkar <ArrowRight className="ml-2 h-4 w-4" />
@@ -80,7 +80,7 @@ export default function SocialLandingPage() {
                    
                    <h3 className="mt-3 text-xl font-bold text-nordic-secondary">Alex Music</h3>
                    <p className="text-sm text-nordic-highlight text-center mt-1 px-2 font-light">
-                     DJ & Producer from Stockholm. <br/> New mix out now! 👇
+                      DJ & Producer from Stockholm. <br/> New mix out now! 👇
                    </p>
                    
                    {/* Social Icons Row - FIXAT HÄR */}
@@ -219,7 +219,8 @@ export default function SocialLandingPage() {
 
 
         {/* --- 4. SÅ DELAR DU (TRE SÄTT) --- */}
-        <section id="how-it-works" className="py-12">
+        {/* FIX: Lade till scroll-mt-24 här */}
+        <section id="how-it-works" className="py-12 scroll-mt-24">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">Välj det som passar dig.</h2>
           </div>
