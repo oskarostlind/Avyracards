@@ -23,8 +23,8 @@ export function ColorPicker({ label, value, onChange }: { label: string; value?:
   );
 }
 
-// --- SEGMENTED CONTROL (Flik-väljare inuti tabs) ---
-export function SegmentedControl({ value, onChange, options }: { value: string; onChange: (v: any) => void; options: {value: string; label: string}[] }) {
+// --- SEGMENTED CONTROL ---
+export function SegmentedControl({ value, onChange, options }: { value: string; onChange: (v: string) => void; options: {value: string; label: string}[] }) {
   return (
     <div className="flex bg-slate-900 p-1 rounded-xl border border-nordic-highlight/40">
       {options.map((opt) => (
@@ -32,7 +32,7 @@ export function SegmentedControl({ value, onChange, options }: { value: string; 
           key={opt.value}
           onClick={() => onChange(opt.value)}
           className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
-             value === opt.value ? "bg-slate-800 text-nordic-secondary shadow-sm ring-1 ring-white/5" : "text-nordic-highlight hover:text-slate-300"
+              value === opt.value ? "bg-slate-800 text-nordic-secondary shadow-sm ring-1 ring-white/5" : "text-nordic-highlight hover:text-slate-300"
           }`}
         >
           {opt.label}
@@ -61,10 +61,10 @@ export function Slider({ label, value, min, max, unit, onChange }: { label: stri
 }
 
 // --- PREMIUM BADGE ---
-export function PremiumBadge({ isUnlocked }: { isUnlocked: boolean }) {
+export function PremiumBadge({ isUnlocked, className = "absolute top-2 right-2" }: { isUnlocked: boolean; className?: string }) {
   return (
     <div 
-        className={`absolute top-2 right-2 p-1 rounded-full shadow-lg flex items-center justify-center z-10 ${
+        className={`${className} p-1 rounded-full shadow-lg flex items-center justify-center z-10 ${
             isUnlocked 
             ? "bg-emerald-500 text-white" 
             : "bg-amber-500 text-slate-900" 

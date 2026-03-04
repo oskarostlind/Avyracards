@@ -15,11 +15,9 @@ export function TemplatesTab({ isPremium, onApply, mode }: TemplatesTabProps) {
   
   const templates = mode === "BUSINESS" ? BUSINESS_TEMPLATES : SOCIAL_TEMPLATES;
 
-  // Vi separerar Style (dynamiskt) och ClassName (statiskt) för att undvika Tailwind-build-fel
   const getPreviewData = (t: ThemeTemplate) => {
     const s = t.settings;
 
-    // 1. Om det är en BILD -> Använd inline style
     if (s.backgroundType === 'image' && s.backgroundImage) {
         return {
             className: "bg-cover bg-center",
@@ -27,7 +25,6 @@ export function TemplatesTab({ isPremium, onApply, mode }: TemplatesTabProps) {
         };
     }
 
-    // 2. Om det är GRADIENT -> Använd inline style
     if (s.backgroundType === 'gradient') {
         return {
             className: "",
@@ -37,9 +34,7 @@ export function TemplatesTab({ isPremium, onApply, mode }: TemplatesTabProps) {
         };
     }
 
-    // 3. Om det är SOLID FÄRG -> Matcha ID för specifika klasser/styles
     switch (t.id) {
-        // --- SOCIAL TEMPLATES ---
         case 'minimal-white': return { className: 'bg-white border border-slate-200', style: {} };
         case 'minimal-dark': return { className: 'bg-[#020617]', style: {} };
         case 'cocoa': return { className: 'bg-[#451a03]', style: {} };
@@ -49,9 +44,6 @@ export function TemplatesTab({ isPremium, onApply, mode }: TemplatesTabProps) {
         case 'cyberpunk': return { className: 'bg-[#050505] border-t-2 border-[#22d3ee] shadow-[0_0_15px_rgba(34,211,238,0.3)]', style: {} };
         case 'bottega': return { className: 'bg-[#064e3b]', style: {} };
         
-        // --- BUSINESS TEMPLATES (NYA) ---
-        
-        // Gratis
         case 'biz-trust-blue': return { className: '', style: { background: 'linear-gradient(to bottom right, #0f172a, #1e3a8a)' } };
         case 'biz-growth': return { className: 'bg-[#064e3b]', style: {} };
         case 'biz-modern-tech': return { className: 'bg-[#18181b]', style: {} };
@@ -61,7 +53,6 @@ export function TemplatesTab({ isPremium, onApply, mode }: TemplatesTabProps) {
         case 'biz-clinic': return { className: 'bg-[#f0f9ff]', style: {} };
         case 'biz-noir': return { className: 'bg-black border border-amber-500/30', style: {} };
 
-        // Premium (Bilder hanteras oftast av regeln högst upp, men vi lägger in fallback här för säkerhets skull)
         case 'biz-nyc': return { className: 'bg-cover bg-center', style: { backgroundImage: 'url(https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300)' } };
         case 'biz-nordic-office': return { className: 'bg-cover bg-center', style: { backgroundImage: 'url(https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=300)' } };
         case 'biz-innovator': return { className: 'bg-cover bg-center', style: { backgroundImage: 'url(https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300)' } };
@@ -74,14 +65,13 @@ export function TemplatesTab({ isPremium, onApply, mode }: TemplatesTabProps) {
   };
 
   const getTextColor = (id: string) => {
-    // Lista på teman som har ljus bakgrund och behöver mörk text
     const lightThemes = [
         'minimal-white', 
         'lavender', 
         'stone', 
         'biz-studio', 
         'biz-clinic',
-        'biz-paper' // om den finns kvar
+        'biz-paper' 
     ];
     return lightThemes.includes(id) ? 'text-slate-900' : 'text-white';
   };
@@ -105,7 +95,6 @@ export function TemplatesTab({ isPremium, onApply, mode }: TemplatesTabProps) {
               onClick={() => onApply(t)}
               className="group relative aspect-video rounded-xl border border-nordic-highlight/40 bg-slate-900 overflow-hidden hover:border-purple-500 transition-all text-left p-3 flex flex-col justify-end shadow-sm"
             >
-              {/* APPLICERA STILEN HÄR */}
               <div 
                 className={`absolute inset-0 opacity-80 transition-opacity group-hover:opacity-100 ${preview.className}`} 
                 style={preview.style}
@@ -115,8 +104,10 @@ export function TemplatesTab({ isPremium, onApply, mode }: TemplatesTabProps) {
                   <span className={`text-xs font-bold drop-shadow-md ${getTextColor(t.id)}`}>
                       {t.name}
                   </span>
-                  {t.isPremium && <PremiumBadge isUnlocked={isPremium} />}
               </div>
+              
+              {/* Flyttad Badge så att dess absolu-position kan fästa direkt i parent-button */}
+              {t.isPremium && <PremiumBadge isUnlocked={isPremium} />}
             </button>
           )
         })}

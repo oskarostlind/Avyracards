@@ -16,7 +16,7 @@ import {
 
 import { type CustomThemeSettings, defaultSettings, type ThemeMode } from "@/types/theme";
 import { ProfilePreview } from "@/components/profile-preview";
-import { getProfileData } from "@/lib/profile-mapper"; // NY IMPORT
+import { getProfileData } from "@/lib/profile-mapper";
 import { useRouter } from "next/navigation";
 import { UpgradeModal } from "@/components/themes/upgrade-modal"; 
 
@@ -25,10 +25,16 @@ import { BackgroundTab } from "./tabs/background-tab";
 import { ButtonsTab } from "./tabs/buttons-tab";
 import { ProfileTab } from "./tabs/profile-tab";
 
+interface UserThemeData {
+  profileMode?: ThemeMode;
+  isPremium?: boolean;
+  [key: string]: unknown;
+}
+
 interface ThemeEditorProps {
   initialSettings: CustomThemeSettings; 
   initialBusinessSettings: CustomThemeSettings;
-  userData: any; // Förenklad typ för att slippa komplexitet, vi mappar den ändå
+  userData: UserThemeData;
 }
 
 export function ThemeEditor({ initialSettings, initialBusinessSettings, userData }: ThemeEditorProps) {
@@ -47,11 +53,9 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
 
   const currentSettings = mode === "BUSINESS" ? businessSettings : socialSettings;
 
-  // --- MAPPA DATA LIVE ---
-  // Detta garanterar att previewn ser exakt ut som den publika profilen
   const mappedProfileData = getProfileData(userData, mode);
 
-  const updateSetting = (key: keyof CustomThemeSettings, value: any) => {
+  const updateSetting = (key: keyof CustomThemeSettings, value: string | number | boolean | undefined) => {
     if (mode === "BUSINESS") {
         setBusinessSettings(prev => ({ ...prev, [key]: value }));
     } else {
@@ -94,6 +98,20 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
       }
 
       if (res.ok) {
+          const json = await res.json();
+          
+          // 1. Uppdatera state med den rena datan från databasen så previewn nollställs
+          if (mode === "BUSINESS") {
+              setBusinessSettings({ ...defaultSettings, ...(json.data || {}) });
+          } else {
+              setSocialSettings({ ...defaultSettings, ...(json.data || {}) });
+          }
+
+          // 2. Visa popup om servern fick lov att sanera bort premium-funktioner
+          if (json.sanitized) {
+              setShowUpgradeModal(true);
+          }
+
           router.refresh();
       }
       
@@ -118,10 +136,10 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
         </div>
 
         <div className="transform scale-[0.55] sm:scale-[0.70] lg:scale-[0.85] xl:scale-100 transition-transform duration-500 w-[375px] h-[750px] border-[8px] border-nordic-highlight/40 rounded-[3rem] overflow-hidden shadow-2xl bg-nordic-primary ring-1 ring-white/10 relative z-10 shrink-0 origin-center">
-           {/* HÄR SKICKAR VI DEN MAPPADE DATAN */}
            <ProfilePreview 
              data={mappedProfileData}
              customSettings={currentSettings} 
+             isPremium={isUserPremium}
            />
         </div>
       </div>

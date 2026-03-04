@@ -9,6 +9,7 @@ export interface ProfilePreviewProps {
   data: MappedProfileData;
   customSettings?: CustomThemeSettings;
   fullscreen?: boolean;
+  isPremium?: boolean;
 }
 
 const fontMap: Record<string, string> = {
@@ -24,12 +25,16 @@ export function ProfilePreview({
   data,
   customSettings,
   fullscreen = false,
+  isPremium = false,
 }: ProfilePreviewProps) {
   
   const settings = customSettings || defaultSettings;
   const currentFont = settings.font && fontMap[settings.font] ? fontMap[settings.font] : fontMap['inter'];
 
   const { image, displayName, headline, location, actions, links, mode, jobTitle, companyName } = data;
+  
+  // Kontrollera om branding ska visas
+  const showBranding = !isPremium || !settings.hideBranding;
 
   // --- BAKGRUND ---
   let bgStyle: React.CSSProperties = {};
@@ -210,8 +215,8 @@ export function ProfilePreview({
                         style={mode === "BUSINESS" ? getButtonStyle() : {}}
                         title={action.label}
                     >
-                        {/* FIX: Vi använder 'as any' för att TypeScript ska godkänna strängen från mappern */}
-                        <SocialIcon fallbackIcon={action.iconKey as any} size={mode === "BUSINESS" ? 14 : 20} /> 
+                        {/* Vi tvingar fallbackIcon att vara en godkänd strängtyp enligt iconMap */}
+                        <SocialIcon fallbackIcon={action.iconKey as "website" | "booking" | "phone" | "email"} size={mode === "BUSINESS" ? 14 : 20} /> 
                         {mode === "BUSINESS" && action.label}
                     </a>
                 ))}
@@ -245,11 +250,14 @@ export function ProfilePreview({
 
       </div>
 
-      <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity">
-         <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary drop-shadow-md">
-           <span>Powered by AvyraCards</span>
-         </div>
-      </div>
+      {/* --- VILLKORLIG BRANDING --- */}
+      {showBranding && (
+          <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity">
+             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary drop-shadow-md">
+               <span>Powered by AvyraCards</span>
+             </div>
+          </div>
+      )}
 
     </div>
   );

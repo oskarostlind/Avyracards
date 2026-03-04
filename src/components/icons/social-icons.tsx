@@ -44,6 +44,7 @@ export const iconMap = {
   phone: Phone,
   mobile: Smartphone,
   website: Globe,
+  booking: Calendar, // <-- LÄGG TILL DENNA!
   calendar: Calendar,
   document: FileText,
   meeting: Video,

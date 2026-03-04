@@ -5,13 +5,12 @@ import { ColorPicker, PremiumBadge } from "@/components/themes/theme-controls";
 
 interface ButtonsTabProps {
   settings: CustomThemeSettings;
-  updateSetting: (key: keyof CustomThemeSettings, value: any) => void;
+  updateSetting: (key: keyof CustomThemeSettings, value: string | boolean) => void;
   isPremium: boolean;
 }
 
 export function ButtonsTab({ settings, updateSetting, isPremium }: ButtonsTabProps) {
   
-  // Visuella hjälpare för knapp-form
   const renderShapePreview = (style: ButtonStyle) => {
     const baseClass = "w-full h-8 bg-slate-700 transition-all group-hover:bg-purple-500/50";
     if (style === 'rounded') return <div className={`${baseClass} rounded-lg`} />;
@@ -54,14 +53,15 @@ export function ButtonsTab({ settings, updateSetting, isPremium }: ButtonsTabPro
                   <button 
                     key={variant}
                     onClick={() => updateSetting("buttonVariant", variant)}
-                    className={`relative py-3 px-4 text-xs uppercase font-bold border rounded-lg transition-all text-left flex justify-between items-center ${
+                    className={`relative py-3 px-4 text-xs uppercase font-bold border rounded-lg transition-all text-left flex justify-between items-center overflow-hidden ${
                       settings.buttonVariant === variant 
                       ? "border-purple-500 bg-purple-500/10 text-purple-400" 
                       : "border-nordic-highlight/40 text-nordic-highlight hover:border-slate-600"
                     }`}
                   >
                     <span>{variant}</span>
-                    {isPremiumVariant && <div className="scale-75"><PremiumBadge isUnlocked={isPremium} /></div>}
+                    {/* Använder specifikt anpassad styling för ikonen inuti knappar */}
+                    {isPremiumVariant && <PremiumBadge isUnlocked={isPremium} className="absolute top-1/2 -translate-y-1/2 right-2 scale-[0.65] origin-right" />}
                   </button>
                 )
             })}
