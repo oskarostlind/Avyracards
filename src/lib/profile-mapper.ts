@@ -1,5 +1,5 @@
 import { Link as LinkModel } from "@prisma/client";
-import { ThemeMode } from "@/types/theme";
+import { ThemeMode, CustomThemeSettings, defaultSettings } from "@/types/theme";
 
 // --- TYPER ---
 
@@ -13,22 +13,20 @@ export interface ProfileAction {
 }
 
 export interface MappedProfileData {
-  // Grundläggande
+  username: string; // NYTT: Behövs för vCard URL
   displayName: string;
   image: string | null;
   headline: string | null;
   location: string | null;
   
-  // Business specifikt (kan vara null i social)
   jobTitle: string | null;
   companyName: string | null;
   
-  // Listor
   actions: ProfileAction[]; 
   links: LinkModel[];
   
-  // Meta
   mode: ThemeMode;
+  showSaveContact: boolean; // NYTT: Skickar med toggle-status
 }
 
 // --- MAPPER FUNKTION ---
@@ -36,8 +34,11 @@ export function getProfileData(user: any, mode: ThemeMode): MappedProfileData {
   
   const isBusiness = mode === "BUSINESS";
 
-  // 1. BILD & TEXT
-  // Prioritera Business-bild om vi är i business-läge, annars fallback till vanlig
+  // Läs av tema-inställningar för att se om knappen ska visas
+  const savedSettings = isBusiness ? user.businessThemeSettings : user.themeSettings;
+  const themeConfig: CustomThemeSettings = { ...defaultSettings, ...(savedSettings || {}) };
+  const showSaveContact = themeConfig.showSaveContact !== false; // Default true
+
   const image = isBusiness 
     ? (user.businessAvatarUrl || user.avatarUrl) 
     : user.avatarUrl;
@@ -48,11 +49,21 @@ export function getProfileData(user: any, mode: ThemeMode): MappedProfileData {
     ? (user.businessHeadline || user.jobTitle) 
     : user.bio;
 
-  // 2. SKAPA ACTION-LISTAN
   const actions: ProfileAction[] = [];
 
+  // Lägg till vCard-knappen FÖRST om den är aktiverad (Hamnar överst)
+  if (showSaveContact) {
+      actions.push({
+          type: "vcard",
+          label: "Spara Kontakt",
+          value: "vcard",
+          url: `/api/vcard/${user.username}?mode=${mode.toLowerCase()}`, // Peka mot vår nya route
+          iconKey: "contact", // En ny ikon-nyckel, kanske bäst att mappa till typ Save/User-ikon i social-icons.tsx
+          primary: true
+      });
+  }
+
   if (isBusiness) {
-    // --- BUSINESS ACTIONS ---
     if (user.businessPhone) {
       actions.push({
         type: "phone",
@@ -78,7 +89,7 @@ export function getProfileData(user: any, mode: ThemeMode): MappedProfileData {
         value: user.bookingUrl,
         url: user.bookingUrl.startsWith("http") ? user.bookingUrl : `https://${user.bookingUrl}`,
         iconKey: "calendar",
-        primary: true
+        primary: false
       });
     }
     if (user.companyWebsite) {
@@ -90,14 +101,12 @@ export function getProfileData(user: any, mode: ThemeMode): MappedProfileData {
         iconKey: "website"
       });
     }
-    // Lägg till fler business-fält här i framtiden (t.ex. Landline)
 
   } else {
-    // --- SOCIAL ACTIONS ---
     if (user.phoneNumber) {
       actions.push({ 
         type: "phone", 
-        label: "", 
+        label: "Ring", 
         value: user.phoneNumber, 
         url: `tel:${user.phoneNumber}`, 
         iconKey: "phone" 
@@ -106,7 +115,7 @@ export function getProfileData(user: any, mode: ThemeMode): MappedProfileData {
     if (user.contactEmail) {
       actions.push({ 
         type: "email", 
-        label: "", 
+        label: "Maila", 
         value: user.contactEmail, 
         url: `mailto:${user.contactEmail}`, 
         iconKey: "email" 
@@ -114,15 +123,10 @@ export function getProfileData(user: any, mode: ThemeMode): MappedProfileData {
     }
   }
 
-  // 3. FILTRERA LÄNKAR
-  // Hanterar både råa Prisma-objekt och objekt från editorn
   const rawLinks = Array.isArray(user.links) ? user.links : [];
   
   const links = rawLinks.filter((l: any) => {
-      // Om 'mode' saknas på länken, anta SOCIAL (för bakåtkompatibilitet)
       const linkMode = l.mode || "SOCIAL";
-      // Filtrera även på isActive om egenskapen finns (från databas), 
-      // men i editorn (preview) vill vi kanske se alla
       const isActive = l.isActive !== false; 
       
       return linkMode === mode && isActive;
@@ -130,6 +134,7 @@ export function getProfileData(user: any, mode: ThemeMode): MappedProfileData {
 
   return {
     mode,
+    username: user.username,
     displayName,
     image: image || null,
     headline: headline || null,
@@ -137,6 +142,7 @@ export function getProfileData(user: any, mode: ThemeMode): MappedProfileData {
     jobTitle: user.jobTitle || null,
     companyName: user.companyName || null,
     actions,
-    links
+    links,
+    showSaveContact
   };
 }

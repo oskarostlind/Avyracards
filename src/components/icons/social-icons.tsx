@@ -17,8 +17,8 @@ import {
   Twitch,
   MessageCircle,
   Smartphone,
-  Briefcase
-  // LucideProps <-- BORTTAGEN (Orsakade felet)
+  Briefcase,
+  Save // <-- NY IMPORT
 } from "lucide-react";
 import React from "react";
 
@@ -44,12 +44,13 @@ export const iconMap = {
   phone: Phone,
   mobile: Smartphone,
   website: Globe,
-  booking: Calendar, // <-- LÄGG TILL DENNA!
   calendar: Calendar,
+  booking: Calendar,
   document: FileText,
   meeting: Video,
   location: MapPin,
   job: Briefcase,
+  contact: Save, // <-- NY IKON FÖR VCARD
   
   // Fallback
   default: LinkIcon,

@@ -1,7 +1,7 @@
 "use client";
 
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
-import { User as UserIcon } from "lucide-react"; 
+import { User as UserIcon, Save } from "lucide-react"; 
 import { SocialIcon } from "@/components/icons/social-icons"; 
 import { MappedProfileData } from "@/lib/profile-mapper";
 
@@ -33,7 +33,6 @@ export function ProfilePreview({
 
   const { image, displayName, headline, location, actions, links, mode, jobTitle, companyName } = data;
   
-  // Kontrollera om branding ska visas
   const showBranding = !isPremium || !settings.hideBranding;
 
   // --- BAKGRUND ---
@@ -56,7 +55,7 @@ export function ProfilePreview({
 
   // --- KNAPP STYLES ---
   const getButtonClass = () => {
-    let base = "w-full py-4 px-6 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-3 relative overflow-hidden group ";
+    let base = "w-full py-3 px-4 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden group ";
     
     if (settings.buttonStyle === "pill") base += "rounded-full ";
     else if (settings.buttonStyle === "rounded") base += "rounded-xl ";
@@ -68,42 +67,48 @@ export function ProfilePreview({
     return base;
   };
 
-  const getButtonStyle = (): React.CSSProperties => {
+  const getButtonStyle = (isPrimary: boolean = false): React.CSSProperties => {
     const accent = settings.accentColor || "#fff";
     const text = settings.textColor || "#000";
     const style: React.CSSProperties = {};
 
     style.color = text;
 
-    if (settings.buttonStyle === "brutal") {
-        style.border = `2px solid ${text}`; 
-    }
-    
-    if (settings.buttonVariant === "outline") {
-      style.border = `2px solid ${accent}`;
-      style.color = accent;
-      style.backgroundColor = "transparent";
-    }
-    else if (settings.buttonVariant === "soft") {
-      style.backgroundColor = accent;
-      style.opacity = 0.9;
-    } 
-    else if (settings.buttonVariant === "glass") {
-      style.backgroundColor = "rgba(255,255,255,0.15)";
-      style.backdropFilter = "blur(8px)";
-      style.border = "1px solid rgba(255,255,255,0.2)";
-    }
-    else if (settings.buttonVariant === "ghost") {
-      style.backgroundColor = "transparent";
-      style.border = "1px solid transparent";
-      style.color = settings.textColor;
-    }
-    else if (settings.buttonVariant === "shadow") {
-      style.backgroundColor = accent;
-      style.boxShadow = `0 10px 15px -3px ${accent}40`;
-    }
-    else {
-      style.backgroundColor = accent;
+    if (isPrimary) {
+        // Invertera färgerna för vCard-knappen
+        style.backgroundColor = text;
+        style.color = accent === '#ffffff' ? '#0f172a' : accent;
+    } else {
+        if (settings.buttonStyle === "brutal") {
+            style.border = `2px solid ${text}`; 
+        }
+        
+        if (settings.buttonVariant === "outline") {
+          style.border = `2px solid ${accent}`;
+          style.color = accent;
+          style.backgroundColor = "transparent";
+        }
+        else if (settings.buttonVariant === "soft") {
+          style.backgroundColor = accent;
+          style.opacity = 0.9;
+        } 
+        else if (settings.buttonVariant === "glass") {
+          style.backgroundColor = "rgba(255,255,255,0.15)";
+          style.backdropFilter = "blur(8px)";
+          style.border = "1px solid rgba(255,255,255,0.2)";
+        }
+        else if (settings.buttonVariant === "ghost") {
+          style.backgroundColor = "transparent";
+          style.border = "1px solid transparent";
+          style.color = settings.textColor;
+        }
+        else if (settings.buttonVariant === "shadow") {
+          style.backgroundColor = accent;
+          style.boxShadow = `0 10px 15px -3px ${accent}40`;
+        }
+        else {
+          style.backgroundColor = accent;
+        }
     }
     
     return style;
@@ -133,9 +138,13 @@ export function ProfilePreview({
     })
   };
 
+  // Separera vCard-knappen från övriga actions (Precis som i den riktiga profilen)
+  const primaryAction = actions.find(a => a.type === 'vcard');
+  const secondaryActions = actions.filter(a => a.type !== 'vcard');
+
   return (
     <div 
-      className={`w-full relative overflow-x-hidden flex flex-col items-center justify-center p-4 ${fullscreen ? 'min-h-screen py-16' : 'h-full overflow-y-auto py-10'}`}
+      className={`w-full relative overflow-x-hidden flex flex-col items-center justify-center p-4 ${fullscreen ? 'min-h-screen py-16' : 'h-full overflow-y-auto py-10 hide-scrollbar'}`}
       style={{ fontFamily: currentFont, ...bgStyle }}
     >
       
@@ -203,42 +212,51 @@ export function ProfilePreview({
           )}
         </div>
 
-        {/* --- DYNAMISKA ACTIONS --- */}
+        {/* --- DYNAMISKA ACTIONS (NY LAYOUT) --- */}
         {actions.length > 0 && (
-             <div className={`w-full mb-6 ${mode === "BUSINESS" ? "grid grid-cols-2 gap-3" : "flex justify-center gap-3"}`}>
-                {actions.map((action) => (
-                    <a 
-                        key={action.type}
-                        href={action.url}
-                        target={action.type === 'website' || action.type === 'booking' ? '_blank' : undefined}
-                        className={mode === "BUSINESS" ? (action.type === 'website' ? `col-span-2 ${getButtonClass()}` : getButtonClass()) : "p-3 rounded-full bg-white/10 border border-white/10"}
-                        style={mode === "BUSINESS" ? getButtonStyle() : {}}
-                        title={action.label}
+             <div className="w-full mb-6 space-y-3">
+                {/* Spara Kontakt - Fullbredd högst upp om den existerar */}
+                {primaryAction && (
+                    <div 
+                        className={`w-full pointer-events-none ${getButtonClass()}`}
+                        style={getButtonStyle(true)}
                     >
-                        {/* Vi tvingar fallbackIcon att vara en godkänd strängtyp enligt iconMap */}
-                        <SocialIcon fallbackIcon={action.iconKey as "website" | "booking" | "phone" | "email"} size={mode === "BUSINESS" ? 14 : 20} /> 
-                        {mode === "BUSINESS" && action.label}
-                    </a>
-                ))}
+                        <Save size={18} className="mr-1" />
+                        {primaryAction.label}
+                    </div>
+                )}
+
+                {/* Övriga actions under */}
+                {secondaryActions.length > 0 && (
+                    <div className={mode === "BUSINESS" ? "grid grid-cols-2 gap-3" : "flex flex-wrap justify-center gap-3"}>
+                        {secondaryActions.map((action) => (
+                            <div 
+                                key={action.type}
+                                className={mode === "BUSINESS" ? (action.type === 'website' ? `col-span-2 pointer-events-none ${getButtonClass()}` : `pointer-events-none ${getButtonClass()}`) : "p-3 rounded-full bg-white/10 border border-white/10"}
+                                style={mode === "BUSINESS" ? getButtonStyle(false) : (settings.accentColor ? { borderColor: settings.accentColor, color: settings.textColor } : {})}
+                            >
+                                <SocialIcon fallbackIcon={action.iconKey as any} size={mode === "BUSINESS" ? 14 : 20} /> 
+                                {mode === "BUSINESS" && action.label}
+                            </div>
+                        ))}
+                    </div>
+                )}
              </div>
         )}
 
         {/* --- LÄNKAR --- */}
         <div className="w-full space-y-3">
           {links.map((link) => (
-            <a
+            <div
               key={link.id}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={getButtonClass()}
-              style={getButtonStyle()}
+              className={`pointer-events-none ${getButtonClass()}`}
+              style={getButtonStyle(false)}
             >
                <span className="opacity-80 absolute left-5">
                  <SocialIcon url={link.url || link.title || ""} size={18} />
                </span>
                <span className="flex-1 text-center truncate px-6">{link.title || link.url}</span>
-            </a>
+            </div>
           ))}
           
           {links.length === 0 && (
@@ -252,7 +270,7 @@ export function ProfilePreview({
 
       {/* --- VILLKORLIG BRANDING --- */}
       {showBranding && (
-          <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity">
+          <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity pb-4">
              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary drop-shadow-md">
                <span>Powered by AvyraCards</span>
              </div>

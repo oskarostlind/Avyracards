@@ -8,6 +8,7 @@ import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
 import { MappedProfileData } from "@/lib/profile-mapper";
+import { Save } from "lucide-react"; // För vCard-knappen
 
 interface BusinessProfileProps {
   data: MappedProfileData;
@@ -59,39 +60,55 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
     return base;
   };
 
-  const getButtonStyle = (): React.CSSProperties => {
-    if (!hasCustomTheme) return {};
+  const getButtonStyle = (isPrimary: boolean = false): React.CSSProperties => {
+    if (!hasCustomTheme) {
+        // Fallback styling för icke-anpassade teman, särskilt för primärknappen
+        if (isPrimary) {
+            return { backgroundColor: '#f8fafc', color: '#0f172a' }; // Vit knapp med mörk text som på din bild
+        }
+        return {};
+    }
+    
     const accent = settings.accentColor || "#fff";
     const text = settings.textColor || "#000";
     const style: React.CSSProperties = {};
+    
     style.color = text; 
-    if (settings.buttonStyle === "brutal") style.border = `2px solid ${text}`; 
-    if (settings.buttonVariant === "outline") {
-      style.border = `2px solid ${accent}`;
-      style.color = accent;
-      style.backgroundColor = "transparent";
+
+    // Invertera färgerna för den Primära knappen (vCard) så den poppar ut mer
+    if (isPrimary) {
+        style.backgroundColor = text;
+        style.color = accent === '#ffffff' ? '#0f172a' : accent; // Säkra kontrasten
+    } else {
+        if (settings.buttonStyle === "brutal") style.border = `2px solid ${text}`; 
+        if (settings.buttonVariant === "outline") {
+        style.border = `2px solid ${accent}`;
+        style.color = accent;
+        style.backgroundColor = "transparent";
+        }
+        else if (settings.buttonVariant === "soft") {
+        style.backgroundColor = accent;
+        style.opacity = 0.9;
+        } 
+        else if (settings.buttonVariant === "glass") {
+        style.backgroundColor = "rgba(255,255,255,0.15)";
+        style.backdropFilter = "blur(8px)";
+        style.border = "1px solid rgba(255,255,255,0.2)";
+        }
+        else if (settings.buttonVariant === "ghost") {
+        style.backgroundColor = "transparent";
+        style.border = "1px solid transparent";
+        style.color = settings.textColor;
+        }
+        else if (settings.buttonVariant === "shadow") {
+        style.backgroundColor = accent;
+        style.boxShadow = `0 10px 15px -3px ${accent}40`;
+        }
+        else {
+        style.backgroundColor = accent;
+        }
     }
-    else if (settings.buttonVariant === "soft") {
-      style.backgroundColor = accent;
-      style.opacity = 0.9;
-    } 
-    else if (settings.buttonVariant === "glass") {
-      style.backgroundColor = "rgba(255,255,255,0.15)";
-      style.backdropFilter = "blur(8px)";
-      style.border = "1px solid rgba(255,255,255,0.2)";
-    }
-    else if (settings.buttonVariant === "ghost") {
-      style.backgroundColor = "transparent";
-      style.border = "1px solid transparent";
-      style.color = settings.textColor;
-    }
-    else if (settings.buttonVariant === "shadow") {
-      style.backgroundColor = accent;
-      style.boxShadow = `0 10px 15px -3px ${accent}40`;
-    }
-    else {
-      style.backgroundColor = accent;
-    }
+    
     return style;
   };
 
@@ -120,6 +137,10 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
   } : {};
   
   const cardClass = !hasCustomTheme ? `${tokens.card} backdrop-blur-md rounded-2xl` : '';
+
+  // Separera vCard-knappen från övriga actions
+  const primaryAction = actions.find(a => a.type === 'vcard');
+  const secondaryActions = actions.filter(a => a.type !== 'vcard');
 
   return (
     <main className={`min-h-screen font-sans ${bgClass} ${textClass}`} style={pageStyle}>
@@ -180,21 +201,39 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
             )}
           </div>
 
-          {/* --- CONTACT GRID --- */}
+          {/* --- CONTACT ACTIONS --- */}
           {actions.length > 0 && (
-             <div className="grid grid-cols-2 gap-3 p-6 border-b border-white/5">
-                {actions.map(action => (
+             <div className="p-6 border-b border-white/5 space-y-3">
+                {/* Spara Kontakt - Fullbredd högst upp */}
+                {primaryAction && (
                     <a 
-                        key={action.type}
-                        href={action.url}
-                        target={action.type === 'website' || action.type === 'booking' ? '_blank' : undefined}
-                        className={action.type === 'website' ? `col-span-2 ${getButtonClass()}` : getButtonClass()}
-                        style={getButtonStyle()}
+                        href={primaryAction.url}
+                        // Ladda ner fil istället för att öppna ny flik om det är ett vcard
+                        download={primaryAction.type === 'vcard' ? `${user.username}.vcf` : undefined}
+                        className={`w-full ${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-100 text-slate-900 rounded-xl' : ''}`}
+                        style={getButtonStyle(true)}
                     >
-                        {/* FIX: Använd 'as any' här också */}
-                        <SocialIcon fallbackIcon={action.iconKey as any} size={16} /> {action.label}
+                        {primaryAction.type === 'vcard' ? <Save size={18} className="mr-1" /> : <SocialIcon fallbackIcon={primaryAction.iconKey as any} size={16} />}
+                        {primaryAction.label}
                     </a>
-                ))}
+                )}
+                
+                {/* Övriga kontaktvägar i en grid under */}
+                {secondaryActions.length > 0 && (
+                    <div className="grid grid-cols-2 gap-3">
+                        {secondaryActions.map(action => (
+                            <a 
+                                key={action.type}
+                                href={action.url}
+                                target={action.type === 'website' || action.type === 'booking' ? '_blank' : undefined}
+                                className={`${action.type === 'website' ? 'col-span-2' : ''} ${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-800 text-slate-300 rounded-xl border border-white/10' : ''}`}
+                                style={getButtonStyle(false)}
+                            >
+                                <SocialIcon fallbackIcon={action.iconKey as any} size={16} /> {action.label}
+                            </a>
+                        ))}
+                    </div>
+                )}
              </div>
           )}
 
@@ -209,13 +248,13 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
                           linkId={link.id}
                           ownerId={user.id}
                           href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
-                          className={getButtonClass()}
-                          style={getButtonStyle()}
+                          className={`${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-800 text-slate-300 rounded-xl border border-white/10 justify-start' : ''}`}
+                          style={getButtonStyle(false)}
                       >
-                          <div className="absolute left-4 opacity-70">
+                          <div className={`absolute left-4 opacity-70 ${!hasCustomTheme ? 'relative left-0' : ''}`}>
                              <SocialIcon url={link.url || link.title || ""} size={20} />
                           </div>
-                          <span className="flex-1 text-center">{link.title || link.url}</span>
+                          <span className={`flex-1 text-center ${!hasCustomTheme ? 'text-left ml-3' : ''}`}>{link.title || link.url}</span>
                       </TrackedLink>
                    ))}
                 </div>

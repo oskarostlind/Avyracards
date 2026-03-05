@@ -5,13 +5,12 @@ import { PremiumBadge } from "@/components/themes/theme-controls";
 
 interface ProfileTabProps {
   settings: CustomThemeSettings;
-  updateSetting: (key: keyof CustomThemeSettings, value: any) => void;
+  updateSetting: (key: keyof CustomThemeSettings, value: string | boolean) => void;
   isPremium: boolean;
 }
 
 export function ProfileTab({ settings, updateSetting, isPremium }: ProfileTabProps) {
   
-  // Hjälpare för att visa fonten korrekt
   const getFontFamily = (font: string) => {
     switch(font) {
         case 'inter': return 'Inter, sans-serif';
@@ -41,7 +40,7 @@ export function ProfileTab({ settings, updateSetting, isPremium }: ProfileTabPro
                    : "border-nordic-highlight/40 bg-slate-900 text-nordic-highlight hover:bg-slate-800"
                  }`}
                >
-                  <span className="text-sm capitalize" style={{ fontFamily: getFontFamily(font) }}>{font}</span>
+                 <span className="text-sm capitalize" style={{ fontFamily: getFontFamily(font) }}>{font}</span>
                </button>
             ))}
          </div>
@@ -71,29 +70,47 @@ export function ProfileTab({ settings, updateSetting, isPremium }: ProfileTabPro
 
         <hr className="border-nordic-highlight/40"/>
 
-        {/* BRANDING (PREMIUM) */}
-        <div className="flex items-center justify-between p-4 border border-amber-500/20 rounded-xl bg-amber-500/5 relative overflow-hidden">
-            <div className="space-y-1">
-                <span className="text-xs font-bold text-nordic-secondary flex items-center gap-2">
-                    Dölj AvyraCards Logga 
-                    <div className="scale-75 origin-left">
-                        <PremiumBadge isUnlocked={isPremium} />
-                    </div>
-                </span>
-                {/* HÄR ÄR ÄNDRINGEN: Använder &quot; istället för " */}
-                <p className="text-[10px] text-nordic-highlight">Ta bort &quot;Powered by&quot; i sidfoten.</p>
+        {/* TOGGLES (Branding & vCard) */}
+        <div className="space-y-3">
+            {/* Branding Toggle */}
+            <div className="flex items-center justify-between p-4 border border-amber-500/20 rounded-xl bg-amber-500/5 relative overflow-hidden">
+                <div className="space-y-1">
+                    <span className="text-xs font-bold text-nordic-secondary flex items-center gap-2">
+                        Dölj AvyraCards Logga 
+                        <div className="scale-75 origin-left">
+                            <PremiumBadge isUnlocked={isPremium} />
+                        </div>
+                    </span>
+                    <p className="text-[10px] text-nordic-highlight">Ta bort &quot;Powered by&quot; i sidfoten.</p>
+                </div>
+                <button 
+                    onClick={() => {
+                        if(!isPremium) return; 
+                        updateSetting("hideBranding", !settings.hideBranding);
+                    }}
+                    className={`w-10 h-5 rounded-full transition-colors relative ${settings.hideBranding ? 'bg-emerald-500' : 'bg-slate-700'}`}
+                >
+                    <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${settings.hideBranding ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
             </div>
-            
-            <button 
-                onClick={() => {
-                    if(!isPremium) return; 
-                    updateSetting("hideBranding", !settings.hideBranding);
-                }}
-                className={`w-10 h-5 rounded-full transition-colors relative ${settings.hideBranding ? 'bg-emerald-500' : 'bg-slate-700'}`}
-            >
-                <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${settings.hideBranding ? 'translate-x-5' : 'translate-x-0'}`} />
-            </button>
+
+            {/* NY: Spara Kontakt Toggle */}
+            <div className="flex items-center justify-between p-4 border border-nordic-highlight/20 rounded-xl bg-slate-900/30">
+                <div className="space-y-1">
+                    <span className="text-xs font-bold text-nordic-secondary flex items-center gap-2">
+                        Visa &quot;Spara Kontakt&quot;
+                    </span>
+                    <p className="text-[10px] text-nordic-highlight">Låter besökare ladda ner dina uppgifter.</p>
+                </div>
+                <button 
+                    onClick={() => updateSetting("showSaveContact", settings.showSaveContact === false ? true : false)}
+                    className={`w-10 h-5 rounded-full transition-colors relative ${settings.showSaveContact !== false ? 'bg-purple-500' : 'bg-slate-700'}`}
+                >
+                    <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${settings.showSaveContact !== false ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+            </div>
         </div>
+
      </div>
   );
 }

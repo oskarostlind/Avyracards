@@ -7,15 +7,20 @@ import { TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
+import { Save } from "lucide-react";
 
 type UserWithLinks = User & { links: LinkModel[] };
 
+// Vi behöver föra in data från mappern här för att få actions (vCard)
+import { MappedProfileData } from "@/lib/profile-mapper";
+
 interface SocialProfileProps {
   user: UserWithLinks;
+  data: MappedProfileData; // LÄGG TILL MAPPER-DATA
   showAds: boolean;
 }
 
-export function SocialProfile({ user, showAds }: SocialProfileProps) {
+export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
   const useCustomTheme = !!user.themeSettings;
   const savedSettings = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
@@ -44,8 +49,11 @@ export function SocialProfile({ user, showAds }: SocialProfileProps) {
     color: settings.textColor,
   } : {};
 
-  const getLinkStyle = (): React.CSSProperties => {
-    if (!useCustomTheme) return {};
+  const getLinkStyle = (isPrimary: boolean = false): React.CSSProperties => {
+    if (!useCustomTheme) {
+        if (isPrimary) return { backgroundColor: '#f8fafc', color: '#0f172a' };
+        return {};
+    }
     const base: React.CSSProperties = { color: settings.textColor };
     
     if (settings.buttonStyle === 'pill') base.borderRadius = '9999px';
@@ -58,21 +66,27 @@ export function SocialProfile({ user, showAds }: SocialProfileProps) {
     }
 
     const accent = settings.accentColor || '#fff';
-    if (settings.buttonVariant === 'solid') base.backgroundColor = accent;
-    else if (settings.buttonVariant === 'outline') {
-        base.border = `2px solid ${accent}`;
-        base.color = accent;
-        base.backgroundColor = 'transparent';
-    } else if (settings.buttonVariant === 'soft') {
-        base.backgroundColor = accent;
-        base.opacity = 0.9;
-    } else if (settings.buttonVariant === 'glass') {
-        base.backgroundColor = 'rgba(255,255,255,0.15)';
-        base.backdropFilter = 'blur(10px)';
-        base.border = '1px solid rgba(255,255,255,0.2)';
-    } else if (settings.buttonVariant === 'shadow') {
-        base.backgroundColor = accent;
-        base.boxShadow = `0 10px 15px -3px ${accent}40`;
+    
+    if (isPrimary) {
+        base.backgroundColor = settings.textColor;
+        base.color = accent === '#ffffff' ? '#0f172a' : accent;
+    } else {
+        if (settings.buttonVariant === 'solid') base.backgroundColor = accent;
+        else if (settings.buttonVariant === 'outline') {
+            base.border = `2px solid ${accent}`;
+            base.color = accent;
+            base.backgroundColor = 'transparent';
+        } else if (settings.buttonVariant === 'soft') {
+            base.backgroundColor = accent;
+            base.opacity = 0.9;
+        } else if (settings.buttonVariant === 'glass') {
+            base.backgroundColor = 'rgba(255,255,255,0.15)';
+            base.backdropFilter = 'blur(10px)';
+            base.border = '1px solid rgba(255,255,255,0.2)';
+        } else if (settings.buttonVariant === 'shadow') {
+            base.backgroundColor = accent;
+            base.boxShadow = `0 10px 15px -3px ${accent}40`;
+        }
     }
 
     if (settings.buttonShadow && settings.buttonStyle !== 'brutal') {
@@ -82,6 +96,7 @@ export function SocialProfile({ user, showAds }: SocialProfileProps) {
   };
 
   const linkStyle = getLinkStyle();
+  const primaryStyle = getLinkStyle(true);
   const frameStyle = settings.frameStyle || 'circle';
   const accentColor = settings.accentColor || '#ffffff';
   
@@ -120,38 +135,32 @@ export function SocialProfile({ user, showAds }: SocialProfileProps) {
             </div>
           </div>
 
-          {/* NYTT: Kontaktknappar för Social Profil */}
-          {(user.phoneNumber || user.contactEmail) && (
-             <div className="flex justify-center gap-3 mt-6">
-                {user.phoneNumber && (
-                   <a 
-                     href={`tel:${user.phoneNumber}`} 
-                     className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"
-                     title="Ring"
-                   >
-                      <SocialIcon fallbackIcon="phone" size={20} />
-                   </a>
-                )}
-                {user.contactEmail && (
-                   <a 
-                     href={`mailto:${user.contactEmail}`} 
-                     className="p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"
-                     title="Maila"
-                   >
-                      <SocialIcon fallbackIcon="email" size={20} />
-                   </a>
-                )}
+          {/* Social Contact Actions */}
+          {data.actions.length > 0 && (
+             <div className="flex flex-wrap justify-center gap-3 mt-6">
+                {data.actions.map(action => (
+                    <a 
+                      key={action.type}
+                      href={action.url}
+                      download={action.type === 'vcard' ? `${user.username}.vcf` : undefined}
+                      className={action.type === 'vcard' ? `w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform hover:scale-[1.02] mb-2 ${!useCustomTheme ? 'bg-slate-100 text-slate-900' : ''}` : "p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"}
+                      style={action.type === 'vcard' ? primaryStyle : (useCustomTheme ? { borderColor: settings.accentColor, color: settings.textColor } : {})}
+                      title={action.label}
+                    >
+                       {action.type === 'vcard' ? <><Save size={16} /> {action.label}</> : <SocialIcon fallbackIcon={action.iconKey as any} size={20} />}
+                    </a>
+                ))}
              </div>
           )}
 
           <div className="mt-8 flex flex-col gap-4">
-            {user.links.map((link) => (
+            {data.links.map((link) => (
               <TrackedLink
                 key={link.id}
                 linkId={link.id}
                 ownerId={user.id}
                 href={normalizeUrl(link.url)}
-                className={`flex items-center justify-between px-5 py-4 text-sm font-medium transition-all hover:scale-[1.02] ${!useCustomTheme ? `${tokens.link} shadow-md` : ''}`}
+                className={`flex items-center justify-between px-5 py-4 text-sm font-medium transition-all hover:scale-[1.02] ${!useCustomTheme ? `${tokens.link} shadow-md rounded-xl` : ''}`}
                 style={linkStyle}
               >
                 <span className="flex items-center gap-3">
