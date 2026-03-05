@@ -7,6 +7,8 @@ import type { MappedProfileData } from "@/lib/profile-mapper";
 // Vi skapar mock-data som matchar den nya strukturen (MappedProfileData)
 const DEMO_DATA: MappedProfileData = {
   mode: "SOCIAL",
+  username: "oskar", // <-- LÄGG TILL DENNA
+   showSaveContact: true, // <-- LÄGG TILL DENNA
   displayName: "Oskar Östlind",
   image: null, // Eller en URL till en demo-bild
   headline: "Grundare av AvyraCards | Digital Kreatör",
