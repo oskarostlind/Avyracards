@@ -8,15 +8,13 @@ import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
 import { Save } from "lucide-react";
+import { MappedProfileData } from "@/lib/profile-mapper";
 
 type UserWithLinks = User & { links: LinkModel[] };
 
-// Vi behöver föra in data från mappern här för att få actions (vCard)
-import { MappedProfileData } from "@/lib/profile-mapper";
-
 interface SocialProfileProps {
   user: UserWithLinks;
-  data: MappedProfileData; // LÄGG TILL MAPPER-DATA
+  data: MappedProfileData; 
   showAds: boolean;
 }
 
@@ -111,6 +109,23 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
     boxShadow: frameStyle === 'glow' ? `0 0 30px ${accentColor}` : 'none',
   } : {};
 
+  // --- NYTT: Spårning av vCard nedladdning ---
+  const handleVcardClick = () => {
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const device = /mobile/i.test(ua) ? "Mobile" : /ipad|tablet/i.test(ua) ? "Tablet" : "Desktop";
+    
+    fetch("/api/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "CLICK",
+        profileOwnerId: user.id,
+        source: "vcard",
+        device
+      }),
+    }).catch(() => {});
+  };
+
   return (
     <main className={`min-h-screen ${!useCustomTheme ? (tokens.bg || 'bg-nordic-primary') : ''} ${!useCustomTheme ? (tokens.text || 'text-nordic-secondary') : ''}`} style={pageStyle}>
       {useCustomTheme && settings.backgroundType === "image" && (
@@ -143,6 +158,7 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
                       key={action.type}
                       href={action.url}
                       download={action.type === 'vcard' ? `${user.username}.vcf` : undefined}
+                      onClick={action.type === 'vcard' ? handleVcardClick : undefined}
                       className={action.type === 'vcard' ? `w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform hover:scale-[1.02] mb-2 ${!useCustomTheme ? 'bg-slate-100 text-slate-900' : ''}` : "p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"}
                       style={action.type === 'vcard' ? primaryStyle : (useCustomTheme ? { borderColor: settings.accentColor, color: settings.textColor } : {})}
                       title={action.label}

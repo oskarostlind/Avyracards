@@ -8,7 +8,7 @@ import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
 import { MappedProfileData } from "@/lib/profile-mapper";
-import { Save } from "lucide-react"; // För vCard-knappen
+import { Save } from "lucide-react";
 
 interface BusinessProfileProps {
   data: MappedProfileData;
@@ -62,9 +62,8 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
 
   const getButtonStyle = (isPrimary: boolean = false): React.CSSProperties => {
     if (!hasCustomTheme) {
-        // Fallback styling för icke-anpassade teman, särskilt för primärknappen
         if (isPrimary) {
-            return { backgroundColor: '#f8fafc', color: '#0f172a' }; // Vit knapp med mörk text som på din bild
+            return { backgroundColor: '#f8fafc', color: '#0f172a' }; 
         }
         return {};
     }
@@ -75,10 +74,9 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
     
     style.color = text; 
 
-    // Invertera färgerna för den Primära knappen (vCard) så den poppar ut mer
     if (isPrimary) {
         style.backgroundColor = text;
-        style.color = accent === '#ffffff' ? '#0f172a' : accent; // Säkra kontrasten
+        style.color = accent === '#ffffff' ? '#0f172a' : accent;
     } else {
         if (settings.buttonStyle === "brutal") style.border = `2px solid ${text}`; 
         if (settings.buttonVariant === "outline") {
@@ -138,9 +136,25 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
   
   const cardClass = !hasCustomTheme ? `${tokens.card} backdrop-blur-md rounded-2xl` : '';
 
-  // Separera vCard-knappen från övriga actions
   const primaryAction = actions.find(a => a.type === 'vcard');
   const secondaryActions = actions.filter(a => a.type !== 'vcard');
+
+  // --- NYTT: Spårning av vCard nedladdning ---
+  const handleVcardClick = () => {
+    const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+    const device = /mobile/i.test(ua) ? "Mobile" : /ipad|tablet/i.test(ua) ? "Tablet" : "Desktop";
+    
+    fetch("/api/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "CLICK",
+        profileOwnerId: user.id,
+        source: "vcard",
+        device
+      }),
+    }).catch(() => {});
+  };
 
   return (
     <main className={`min-h-screen font-sans ${bgClass} ${textClass}`} style={pageStyle}>
@@ -201,15 +215,13 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
             )}
           </div>
 
-          {/* --- CONTACT ACTIONS --- */}
           {actions.length > 0 && (
              <div className="p-6 border-b border-white/5 space-y-3">
-                {/* Spara Kontakt - Fullbredd högst upp */}
                 {primaryAction && (
                     <a 
                         href={primaryAction.url}
-                        // Ladda ner fil istället för att öppna ny flik om det är ett vcard
                         download={primaryAction.type === 'vcard' ? `${user.username}.vcf` : undefined}
+                        onClick={primaryAction.type === 'vcard' ? handleVcardClick : undefined}
                         className={`w-full ${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-100 text-slate-900 rounded-xl' : ''}`}
                         style={getButtonStyle(true)}
                     >
@@ -218,7 +230,6 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
                     </a>
                 )}
                 
-                {/* Övriga kontaktvägar i en grid under */}
                 {secondaryActions.length > 0 && (
                     <div className="grid grid-cols-2 gap-3">
                         {secondaryActions.map(action => (
@@ -237,7 +248,6 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
              </div>
           )}
 
-          {/* --- LINKS --- */}
           {links.length > 0 && (
              <div className="p-6 bg-black/10">
                 <h3 className="text-xs font-bold opacity-60 uppercase tracking-wider mb-4">Resurser & Länkar</h3>

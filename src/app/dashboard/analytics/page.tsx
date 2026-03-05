@@ -20,6 +20,7 @@ function getReadableSource(source: string | null, referrer: string | null): stri
     if (s === "email_signature") return "E-postsignatur";
     if (s === "link_bio" || s === "instagram") return "Instagram Bio";
     if (s === "linkedin") return "LinkedIn";
+    if (s === "vcard") return "Spara Kontakt-knappen"; // <-- Lägg till denna för tydlighet!
   }
 
   if (referrer) {
@@ -49,7 +50,6 @@ function getReadableSource(source: string | null, referrer: string | null): stri
   return "Direkt (Ingen data)";
 }
 
-// NYTT: Acceptera searchParams i en Server Component
 export default async function AnalyticsPage({
   searchParams,
 }: {
@@ -65,10 +65,7 @@ export default async function AnalyticsPage({
 
   if (!user) return redirect("/login");
 
-  // --- NY LOGIK FÖR TIDSFILTRERING ---
-  // Läs av '?days=' från URL, default till 30.
   const daysParam = typeof searchParams.days === 'string' ? parseInt(searchParams.days, 10) : 30;
-  // Fallback om någon skriver in ogiltig sträng i URL
   const selectedDays = isNaN(daysParam) ? 30 : daysParam; 
 
   const endDate = endOfDay(new Date());
@@ -102,8 +99,12 @@ export default async function AnalyticsPage({
   }
 
   const totalViews = events.filter((e) => e.type === "VIEW").length;
-  const totalClicks = events.filter((e) => e.type === "CLICK").length;
-  const ctr = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : "0.0";
+  // Klick = alla click som har ett riktigt linkId
+  const totalClicks = events.filter((e) => e.type === "CLICK" && e.linkId).length;
+  // vCard = klick som kom från vcard källan
+  const totalVcardDownloads = events.filter((e) => e.type === "CLICK" && e.source === "vcard").length;
+  
+  const ctr = totalViews > 0 ? (((totalClicks + totalVcardDownloads) / totalViews) * 100).toFixed(1) : "0.0";
 
   const linkClicks: Record<string, { title: string; url: string; clicks: number }> = {}; 
   events
@@ -151,6 +152,8 @@ export default async function AnalyticsPage({
     device: e.device,
     timeAgo: formatDistanceToNow(new Date(e.createdAt), { addSuffix: true, locale: sv }),
     source: getReadableSource(e.source, e.referrer),
+    // NYTT: Bättre läsbart namn för live-feeden
+    actionName: e.type === 'VIEW' ? 'Profilvisning' : (e.source === 'vcard' ? 'Sparade kontakt' : 'Länkklick'),
   }));
 
   return (
@@ -174,13 +177,13 @@ export default async function AnalyticsPage({
 
             <AnalyticsView
                 isPremium={user.isPremium}
-                stats={{ totalViews, totalClicks, ctr }}
+                stats={{ totalViews, totalClicks, ctr, totalVcardDownloads }}
                 chartData={chartData}
                 topLinks={topLinks}
                 trafficSources={trafficSources}
                 topCountries={topCountries}
                 recentActivity={recentActivity}
-                currentDays={selectedDays} // Skickar ner det valda värdet
+                currentDays={selectedDays} 
             />
         </div>
     </div>

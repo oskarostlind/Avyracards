@@ -4,20 +4,20 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell
 } from "recharts";
-import { MousePointerClick, Eye, TrendingUp, Lock, Globe as GlobeIcon, QrCode } from "lucide-react";
+import { MousePointerClick, Eye, TrendingUp, Lock, Globe as GlobeIcon, QrCode, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Globe } from "./globe"; 
 
 interface AnalyticsProps {
   isPremium: boolean;
-  stats: { totalViews: number; totalClicks: number; ctr: string };
+  stats: { totalViews: number; totalClicks: number; ctr: string; totalVcardDownloads: number };
   chartData: any[];
   topLinks: any[];
   trafficSources: any[];
   topCountries: any[];
   recentActivity: any[];
-  currentDays: number; // NYTT
+  currentDays: number;
 }
 
 export function AnalyticsView({ 
@@ -27,32 +27,29 @@ export function AnalyticsView({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Hanterar ändring av tidsperiod
   const handleDateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       const days = e.target.value;
-      // Använd URLSearchParams för att bygga den nya querysträngen
       const params = new URLSearchParams(searchParams.toString());
       params.set('days', days);
-      // Navigera tyst (skapar inte en ny sida i historiken) och triggar servern att hämta ny data
       router.push(`/dashboard/analytics?${params.toString()}`);
   };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       
-      {/* 1. KPIer */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      {/* 1. KPIer - Nu med 4 kolumner */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Profilvisningar" value={stats.totalViews} icon={<Eye className="h-5 w-5 text-blue-400" />} subtitle={`Senaste ${currentDays} dagarna`} />
-        <StatCard title="Länkklick" value={stats.totalClicks} icon={<MousePointerClick className="h-5 w-5 text-green-400" />} subtitle="Totalt antal klick perioden" />
+        {/* NYTT KORT */}
+        <StatCard title="Sparade kontakter" value={stats.totalVcardDownloads} icon={<Save className="h-5 w-5 text-emerald-400" />} subtitle={`Senaste ${currentDays} dagarna`} />
+        <StatCard title="Länkklick" value={stats.totalClicks} icon={<MousePointerClick className="h-5 w-5 text-sky-400" />} subtitle={`Senaste ${currentDays} dagarna`} />
         <StatCard title="Klickfrekvens (CTR)" value={`${stats.ctr}%`} icon={<TrendingUp className="h-5 w-5 text-purple-400" />} subtitle="Besökare som klickar" />
       </div>
 
-      {/* 2. Huvudgraf MED Date Picker */}
+      {/* 2. Huvudgraf */}
       <div className="rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h3 className="text-lg font-semibold text-slate-100">Aktivitet över tid</h3>
-            
-            {/* NY: Dropdown för tidsperiod */}
             <select 
                 value={currentDays}
                 onChange={handleDateChange}
@@ -151,11 +148,15 @@ export function AnalyticsView({
                     <div key={i} className="flex items-center justify-between border-b border-nordic-highlight/40/50 pb-3 last:border-0 last:pb-0">
                         <div className="flex items-center gap-3">
                             <div className="p-2 rounded-full bg-slate-800/50">
-                                {isPremium && item.type === 'CLICK' ? <MousePointerClick size={14} className="text-green-400"/> : <Eye size={14} className="text-blue-400"/>}
+                                {/* Visar olika ikoner baserat på handlingen */}
+                                {isPremium && item.actionName === 'Sparade kontakt' 
+                                  ? <Save size={14} className="text-emerald-400"/> 
+                                  : (item.type === 'CLICK' ? <MousePointerClick size={14} className="text-sky-400"/> : <Eye size={14} className="text-blue-400"/>)
+                                }
                             </div>
                             <div>
                                 <p className="text-xs text-slate-300 font-medium">
-                                    {isPremium ? (item.type === 'VIEW' ? 'Profilvisning' : 'Klick') : 'Besökare'}
+                                    {isPremium ? item.actionName : 'Besökare'}
                                 </p>
                                 <p className="text-[10px] text-nordic-highlight">
                                     {isPremium ? `${item.city || 'Okänd plats'}, ${item.country || ''}` : 'Stockholm, Sverige'}
