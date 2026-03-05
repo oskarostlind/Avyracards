@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Check, ArrowRight, Layers, Users, ShieldCheck, Zap } from "lucide-react";
+import { Check, ArrowRight, Layers, Users, ShieldCheck, Zap, ChevronDown } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -59,7 +60,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* HERO VISUAL (Din 3D-Telefon - något uppdaterad) */}
+          {/* HERO VISUAL (Din 3D-Telefon) */}
           <div className="relative mx-auto w-full max-w-[400px] lg:max-w-none perspective-1000 animate-in fade-in zoom-in duration-1000 delay-200">
             {/* Bakgrundsglöd */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-gradient-to-tr from-emerald-500/20 to-sky-500/20 blur-[80px] opacity-60 pointer-events-none" />
@@ -133,7 +134,7 @@ export default function HomePage() {
         </section>
 
 
-        {/* --- 2. PROBLEMET (IGENKÄNNING) -> NY DESIGN --- */}
+        {/* --- 2. PROBLEMET (IGENKÄNNING) --- */}
         <section className="py-24 md:py-32 border-t border-nordic-highlight/40/50">
           <div className="max-w-6xl mx-auto space-y-24">
             
@@ -147,7 +148,7 @@ export default function HomePage() {
                 </p>
             </div>
 
-            {/* Ny kort-grid baserad på feedback */}
+            {/* Kort-grid */}
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 px-4 relative z-10">
                 {[
                   { name: "LinkedIn", color: "sky", desc: "Professionella kontakter & CV", visual: "border-sky-500/30 bg-sky-950/20 text-sky-300" },
@@ -156,10 +157,8 @@ export default function HomePage() {
                   { name: "Fel version", color: "red", desc: "Och ibland delar du fel.", visual: "border-red-500/40 bg-red-950/30 text-red-300" }
                 ].map((item, i) => (
                   <div key={i} className={`relative p-8 rounded-[2rem] border overflow-hidden backdrop-blur-sm group hover:-translate-y-2 transition-transform duration-300 flex flex-col justify-end h-56 ${item.visual} ${i % 2 === 0 ? 'lg:translate-y-6' : ''}`}>
-                    {/* Abstrakt bakgrundseffekt inuti kortet */}
                     <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
                     
-                    {/* Grafiskt element inuti kortet */}
                     <div className={`absolute top-6 left-6 h-12 w-12 rounded-xl bg-nordic-primary/60 border border-white/5 flex items-center justify-center text-3xl shadow-inner shadow-white/5`}>
                       {i === 0 && <span className="bg-gradient-to-r from-sky-400 to-sky-600 bg-clip-text text-transparent font-black tracking-tight">in</span>}
                       {i === 1 && <span className="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent font-black tracking-tight">IG</span>}
@@ -176,7 +175,7 @@ export default function HomePage() {
                 ))}
             </div>
 
-            {/* Lösning Highlight - Ny design */}
+            {/* Lösning Highlight */}
             <div className="text-center animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300">
                 <div className="inline-flex relative items-center gap-3 px-8 py-4 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 shadow-2xl shadow-emerald-500/5">
                     <div className="absolute -inset-1 bg-emerald-500/10 blur-xl rounded-full" />
@@ -192,7 +191,6 @@ export default function HomePage() {
 
         {/* --- 3. KÄRNKONCEPTET (VISUAL SPLIT) --- */}
         <section className="bg-slate-900/30 rounded-[3rem] border border-nordic-highlight/40 p-8 md:p-16 overflow-hidden relative">
-            {/* Bakgrundseffekter */}
             <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-slate-800/30 via-transparent to-transparent opacity-50" />
             
             <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
@@ -208,7 +206,7 @@ export default function HomePage() {
                     <p className="text-lg text-nordic-highlight leading-relaxed max-w-md">
                         AVYRA är byggt för hur människor faktiskt nätverkar idag.
                         Ett ställe för allt – men aldrig allt på samma gång.
-                        Du bestämmer vad som visas. We see till att det känns rätt.
+                        Du bestämmer vad som visas. Vi ser till att det känns rätt.
                     </p>
                     
                     {/* Feature list */}
@@ -230,7 +228,7 @@ export default function HomePage() {
                     </div>
                 </div>
 
-                {/* VISUAL: Split Screen Mockup (Abstrakt UI) */}
+                {/* VISUAL: Split Screen Mockup */}
                 <div className="relative h-[400px] w-full flex items-center justify-center">
                     {/* Vänster kort (Social) */}
                     <div className="absolute left-0 top-8 w-64 h-80 bg-slate-900 border border-nordic-highlight/40 rounded-2xl shadow-2xl rotate-[-6deg] z-10 p-4 hover:z-30 hover:rotate-0 transition-all duration-300">
@@ -274,7 +272,7 @@ export default function HomePage() {
 
 
         {/* --- 4. HUR DET FUNKAR --- */}
-        <section id="how-it-works" className="py-12 scroll-mt-24">
+        <section id="how-it-works" className="scroll-mt-24">
           <div className="text-center mb-16 space-y-4">
             <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">Så enkelt är det.</h2>
             <p className="text-nordic-highlight">Ingen app krävs för den du möter.</p>
@@ -316,7 +314,39 @@ export default function HomePage() {
         </section>
 
 
-        {/* --- 5. HUVUD-CTA --- */}
+        {/* --- 5. FAQ (NY SEKTION) --- */}
+        <section id="faq" className="scroll-mt-24 max-w-3xl mx-auto w-full py-12">
+          <div className="text-center mb-12 space-y-4">
+            <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">Vanliga frågor.</h2>
+            <p className="text-nordic-highlight">Hittar du inte det du letar efter? Kontakta oss.</p>
+          </div>
+          
+          <div className="space-y-4">
+            <FaqItem 
+              question="Måste mottagaren ladda ner en app?" 
+              answer="Nej! Din profil öppnas direkt i webbläsaren hos den du delar den med. Oavsett om de skannar din QR-kod eller blippar ditt NFC-kort behövs ingen app." 
+            />
+            <FaqItem 
+              question="Kostar det något att använda AvyraCards?" 
+              answer="Att skapa en profil och använda dina digitala QR-koder och länkar är helt gratis. Vill du ta det till nästa nivå kan du köpa till ett fysiskt NFC-kort engångskostnad, eller uppgradera till premium för avancerade designmöjligheter." 
+            />
+            <FaqItem 
+              question="Hur fungerar NFC-kortet?" 
+              answer="Våra fysiska kort har ett inbyggt NFC-chip, likt det som används för blipp-betalningar. När någon håller sin smartphone mot ditt kort, dyker en notis upp på deras skärm som direkt leder till din Avyra-profil." 
+            />
+            <FaqItem 
+              question="Kan jag ha både en privat och en professionell profil?" 
+              answer="Absolut. Det är hela poängen med AvyraCards! Du har ett och samma konto, men kan bygga upp en Social-vy och en Business-vy. Du väljer själv vilken vy som ska vara aktiv när du delar din länk eller ditt kort." 
+            />
+            <FaqItem 
+              question="Kan jag ändra mina uppgifter i efterhand?" 
+              answer="Ja, när som helst. Eftersom ditt kort och din QR-kod pekar på din digitala profil, kan du uppdatera ditt telefonnummer, byta jobb eller lägga till nya länkar direkt i din dashboard utan att behöva byta ut ditt fysiska kort." 
+            />
+          </div>
+        </section>
+
+
+        {/* --- 6. HUVUD-CTA --- */}
         <section className="relative overflow-hidden rounded-[3rem] bg-gradient-to-b from-emerald-950 to-slate-950 border border-emerald-900/30 p-12 md:p-24 text-center">
           {/* Glow effect */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-64 bg-emerald-500/10 blur-[120px] rounded-full pointer-events-none" />
@@ -347,5 +377,36 @@ export default function HomePage() {
 
       </div>
     </main>
+  );
+}
+
+// --- SUB-KOMPONENT FÖR FAQ-ITEMS ---
+function FaqItem({ question, answer }: { question: string; answer: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="border border-nordic-highlight/20 bg-slate-900/20 rounded-2xl overflow-hidden transition-colors hover:bg-slate-900/40">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex w-full items-center justify-between p-6 text-left"
+      >
+        <span className="font-semibold text-nordic-secondary text-lg">{question}</span>
+        <ChevronDown 
+            className={`text-emerald-500 shrink-0 transition-transform duration-300 ml-4 ${isOpen ? 'rotate-180' : ''}`} 
+            size={20}
+        />
+      </button>
+      <div 
+        className={`grid transition-all duration-300 ease-in-out px-6 ${
+          isOpen ? "grid-rows-[1fr] pb-6 opacity-100" : "grid-rows-[0fr] opacity-0"
+        }`}
+      >
+        <div className="overflow-hidden">
+          <p className="text-nordic-highlight font-light leading-relaxed">
+            {answer}
+          </p>
+        </div>
+      </div>
+    </div>
   );
 }
