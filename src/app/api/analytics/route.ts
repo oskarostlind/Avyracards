@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server"; // <-- NY IMPORT AV NextRequest
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth"; // <--- Importera auth
+import { auth } from "@/auth"; 
 import { z } from "zod";
 
 const schema = z.object({
@@ -12,7 +12,7 @@ const schema = z.object({
   source: z.string().optional(),
 });
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) { // <-- BYT TILL NextRequest
   try {
     const body = await req.json();
     const result = schema.safeParse(body);
@@ -20,24 +20,26 @@ export async function POST(req: Request) {
     if (!result.success) return NextResponse.json({ error: "Invalid data" }, { status: 400 });
     const data = result.data;
 
-    // --- NY LOGIK: EXKLUDERA EGEN TRAFIK ---
+    // --- LOGIK: EXKLUDERA EGEN TRAFIK ---
     const session = await auth();
     
-    // Om användaren är inloggad OCH besöker sin egen profil -> Ignorera
     if (session?.user?.id === data.profileOwnerId) {
         console.log("🙈 Ignorerar egen trafik från profilägaren.");
         return NextResponse.json({ success: true, ignored: true });
     }
     // ----------------------------------------
 
-    // 1. Försök hämta från Vercel Headers först (Snabbast)
-    let country = req.headers.get("x-vercel-ip-country");
-    let city = req.headers.get("x-vercel-ip-city");
+    // --- NY GEODATA INHÄMTNING ---
+    // Vercel berikar requestet med geo-objekt för NextRequest
+    let country = req.geo?.country || req.headers.get("x-vercel-ip-country");
+    let city = req.geo?.city || req.headers.get("x-vercel-ip-city");
     
-    // Hämta IP för att kunna använda externt API
-    const ip = req.headers.get("x-forwarded-for")?.split(',')[0]; 
+    // Fallback: Försök läsa av Cloudflare/generell header om Vercel's saknas
+    if (!country) country = req.headers.get('cf-ipcountry');
 
-    // 2. FALLBACK: Om stad saknas (Hobby Plan) och vi har ett IP -> Fråga externt API
+    const ip = req.ip || req.headers.get("x-forwarded-for")?.split(',')[0]; 
+
+    // FALLBACK: Om stad saknas (och vi har ett giltigt IP) -> Fråga externt API
     if (!city && ip && ip !== "::1" && ip !== "127.0.0.1") {
       try {
         const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, { signal: AbortSignal.timeout(1500) });
@@ -49,7 +51,7 @@ export async function POST(req: Request) {
            }
         }
       } catch (e) {
-        // Tyst felhantering för geo-lookup
+        // Tyst felhantering
       }
     }
 

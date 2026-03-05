@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { format, subDays, isSameDay, formatDistanceToNow } from "date-fns";
+import { format, subDays, isSameDay, formatDistanceToNow, startOfDay, endOfDay } from "date-fns";
 import { sv } from "date-fns/locale";
 
 import { prisma } from "@/lib/prisma";
@@ -10,9 +10,7 @@ export const metadata = {
   title: "Statistik | AvyraCards",
 };
 
-// --- HJÄLPFUNKTION FÖR ATT SNYGGA TILL KÄLLOR ---
 function getReadableSource(source: string | null, referrer: string | null): string {
-  // 1. Prioritera "Hårdkodade" källor (via ?source= i URL)
   if (source) {
     const s = source.toLowerCase();
     if (s === "nfc") return "NFC-kort";
@@ -24,11 +22,8 @@ function getReadableSource(source: string | null, referrer: string | null): stri
     if (s === "linkedin") return "LinkedIn";
   }
 
-  // 2. Analysera Referrer (Var kom de ifrån?)
   if (referrer) {
     const r = referrer.toLowerCase();
-    
-    // Sociala Medier
     if (r.includes("instagram.com")) return "Instagram";
     if (r.includes("facebook.com") || r.includes("fb.com")) return "Facebook";
     if (r.includes("linkedin.com")) return "LinkedIn";
@@ -37,30 +32,29 @@ function getReadableSource(source: string | null, referrer: string | null): stri
     if (r.includes("youtube.com")) return "YouTube";
     if (r.includes("pinterest.com")) return "Pinterest";
     if (r.includes("snapchat.com")) return "Snapchat";
-
-    // Sökmotorer
     if (r.includes("google.")) return "Google Sök";
     if (r.includes("bing.com")) return "Bing";
     if (r.includes("yahoo.com")) return "Yahoo";
     if (r.includes("duckduckgo.com")) return "DuckDuckGo";
-
-    // Internt (Navigerat runt i din app)
     if (r.includes("avyracards.se") || r.includes("localhost")) return "Intern navigering";
 
-    // Övriga webbplatser (Städa bort https:// och www)
     try {
         const hostname = new URL(referrer).hostname.replace("www.", "");
-        return hostname; // Visar t.ex. "aftonbladet.se"
+        return hostname; 
     } catch {
         return "Okänd webbplats";
     }
   }
 
-  // 3. Fallback
   return "Direkt (Ingen data)";
 }
 
-export default async function AnalyticsPage() {
+// NYTT: Acceptera searchParams i en Server Component
+export default async function AnalyticsPage({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | string[] | undefined }
+}) {
   const session = await auth();
   if (!session?.user) return redirect("/login");
 
@@ -71,19 +65,27 @@ export default async function AnalyticsPage() {
 
   if (!user) return redirect("/login");
 
-  const endDate = new Date();
-  const startDate = subDays(endDate, 30);
+  // --- NY LOGIK FÖR TIDSFILTRERING ---
+  // Läs av '?days=' från URL, default till 30.
+  const daysParam = typeof searchParams.days === 'string' ? parseInt(searchParams.days, 10) : 30;
+  // Fallback om någon skriver in ogiltig sträng i URL
+  const selectedDays = isNaN(daysParam) ? 30 : daysParam; 
+
+  const endDate = endOfDay(new Date());
+  const startDate = startOfDay(subDays(endDate, selectedDays));
 
   const events = await prisma.analyticsEvent.findMany({
     where: {
       profileOwnerId: session.user.id,
-      createdAt: { gte: startDate },
+      createdAt: { 
+          gte: startDate,
+          lte: endDate 
+      },
     },
     include: { link: true },
     orderBy: { createdAt: "desc" },
   });
 
-  // --- 1. GRAF & TOTALER ---
   const chartData = [];
   let currentDate = startDate;
 
@@ -103,7 +105,6 @@ export default async function AnalyticsPage() {
   const totalClicks = events.filter((e) => e.type === "CLICK").length;
   const ctr = totalViews > 0 ? ((totalClicks / totalViews) * 100).toFixed(1) : "0.0";
 
-  // --- 2. TOPPLISTA LÄNKAR ---
   const linkClicks: Record<string, { title: string; url: string; clicks: number }> = {}; 
   events
     .filter((e) => e.type === "CLICK" && e.link)
@@ -121,20 +122,17 @@ export default async function AnalyticsPage() {
 
   const topLinks = Object.values(linkClicks).sort((a, b) => b.clicks - a.clicks).slice(0, 5);
 
-  // --- 3. TRAFIKKÄLLOR (UPPDATERAD LOGIK) ---
   const sourcesMap: Record<string, number> = {};
   
   events.filter(e => e.type === "VIEW").forEach(e => {
-    // Använd hjälpfunktionen här för att städa datan innan vi räknar
     const readableName = getReadableSource(e.source, e.referrer);
     sourcesMap[readableName] = (sourcesMap[readableName] || 0) + 1;
   });
   
   const trafficSources = Object.entries(sourcesMap)
-    .sort((a, b) => b[1] - a[1]) // Sortera störst först
+    .sort((a, b) => b[1] - a[1]) 
     .map(([name, value]) => ({ name, value }));
 
-  // --- 4. GEOGRAFI ---
   const countryMap: Record<string, number> = {};
   events.filter(e => e.type === "VIEW" && e.country).forEach(e => {
     const c = e.country!;
@@ -145,7 +143,6 @@ export default async function AnalyticsPage() {
     .slice(0, 5)
     .map(([code, count]) => ({ code, count }));
 
-  // --- 5. SENASTE AKTIVITET ---
   const recentActivity = events.slice(0, 5).map(e => ({
     id: e.id,
     type: e.type,
@@ -153,15 +150,12 @@ export default async function AnalyticsPage() {
     city: e.city,
     device: e.device,
     timeAgo: formatDistanceToNow(new Date(e.createdAt), { addSuffix: true, locale: sv }),
-    // Vi använder samma logik här för att visa källan snyggt i listan
     source: getReadableSource(e.source, e.referrer),
   }));
 
   return (
-    // FIXAD BAKGRUND: Wrapper med glow
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">
         
-        {/* Glow Effects */}
         <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
 
@@ -186,6 +180,7 @@ export default async function AnalyticsPage() {
                 trafficSources={trafficSources}
                 topCountries={topCountries}
                 recentActivity={recentActivity}
+                currentDays={selectedDays} // Skickar ner det valda värdet
             />
         </div>
     </div>

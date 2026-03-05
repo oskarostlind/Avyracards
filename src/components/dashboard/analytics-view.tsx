@@ -6,7 +6,8 @@ import {
 } from "recharts";
 import { MousePointerClick, Eye, TrendingUp, Lock, Globe as GlobeIcon, QrCode } from "lucide-react";
 import Link from "next/link";
-import { Globe } from "./globe"; // Importera globen
+import { useRouter, useSearchParams } from "next/navigation";
+import { Globe } from "./globe"; 
 
 interface AnalyticsProps {
   isPremium: boolean;
@@ -16,24 +17,55 @@ interface AnalyticsProps {
   trafficSources: any[];
   topCountries: any[];
   recentActivity: any[];
+  currentDays: number; // NYTT
 }
 
 export function AnalyticsView({ 
-  isPremium, stats, chartData, topLinks, trafficSources, topCountries, recentActivity 
+  isPremium, stats, chartData, topLinks, trafficSources, topCountries, recentActivity, currentDays 
 }: AnalyticsProps) {
+  
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Hanterar ändring av tidsperiod
+  const handleDateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const days = e.target.value;
+      // Använd URLSearchParams för att bygga den nya querysträngen
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('days', days);
+      // Navigera tyst (skapar inte en ny sida i historiken) och triggar servern att hämta ny data
+      router.push(`/dashboard/analytics?${params.toString()}`);
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      
       {/* 1. KPIer */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard title="Profilvisningar" value={stats.totalViews} icon={<Eye className="h-5 w-5 text-blue-400" />} subtitle="Senaste 30 dagarna" />
-        <StatCard title="Länkklick" value={stats.totalClicks} icon={<MousePointerClick className="h-5 w-5 text-green-400" />} subtitle="Totalt antal klick" />
+        <StatCard title="Profilvisningar" value={stats.totalViews} icon={<Eye className="h-5 w-5 text-blue-400" />} subtitle={`Senaste ${currentDays} dagarna`} />
+        <StatCard title="Länkklick" value={stats.totalClicks} icon={<MousePointerClick className="h-5 w-5 text-green-400" />} subtitle="Totalt antal klick perioden" />
         <StatCard title="Klickfrekvens (CTR)" value={`${stats.ctr}%`} icon={<TrendingUp className="h-5 w-5 text-purple-400" />} subtitle="Besökare som klickar" />
       </div>
 
-      {/* 2. Huvudgraf */}
+      {/* 2. Huvudgraf MED Date Picker */}
       <div className="rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
-        <h3 className="mb-6 text-lg font-semibold text-slate-100">Aktivitet över tid</h3>
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h3 className="text-lg font-semibold text-slate-100">Aktivitet över tid</h3>
+            
+            {/* NY: Dropdown för tidsperiod */}
+            <select 
+                value={currentDays}
+                onChange={handleDateChange}
+                className="bg-slate-800 text-sm text-slate-200 rounded-lg px-3 py-2 border border-nordic-highlight/40 outline-none cursor-pointer hover:border-emerald-500/50 transition-colors"
+            >
+                <option value={7}>Senaste 7 dagarna</option>
+                <option value={14}>Senaste 14 dagarna</option>
+                <option value={30}>Senaste 30 dagarna</option>
+                <option value={90}>Senaste 90 dagarna</option>
+                <option value={365}>Senaste året</option>
+            </select>
+        </div>
+
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={chartData}>
@@ -51,7 +83,7 @@ export function AnalyticsView({
       {/* 3. PREMIUM GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         
-        {/* GEOGRAFI & KARTA (Med 3D Glob) */}
+        {/* GEOGRAFI & KARTA */}
         <div className="relative flex flex-col rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl overflow-hidden min-h-[400px]">
           <div className="flex items-center justify-between mb-4 z-10">
             <h3 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
@@ -62,12 +94,10 @@ export function AnalyticsView({
 
               <PremiumLock isPremium={isPremium} title="Se var dina besökare finns">
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-50 md:opacity-100 mt-10">
-                    {/* HÄR ÄR ÄNDRINGEN: Globen renderas alltid */}
                     <Globe className="scale-125" /> 
                 </div>
                 
                 <div className="relative z-10 space-y-3 mt-4 bg-nordic-primary/30 p-4 rounded-xl backdrop-blur-sm border border-white/5 max-w-[250px]">
-                  {/* Om listan är tom, visa "Väntar på data" men låt globen vara kvar i bakgrunden */}
                   {(isPremium ? topCountries : [{code: "SE", count: 42}, {code: "US", count: 12}]).length === 0 ? (
                       <p className="text-xs text-nordic-highlight">Väntar på geodata...</p>
                   ) : (
@@ -109,8 +139,9 @@ export function AnalyticsView({
         </div>
       </div>
 
-      {/* 4. SENASTE AKTIVITET & TOPPLISTA (Som förut...) */}
+      {/* 4. SENASTE AKTIVITET & TOPPLISTA */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        
         {/* Live Feed */}
         <div className="relative rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
              <h3 className="mb-4 text-lg font-semibold text-slate-100">Live-aktivitet</h3>
@@ -158,7 +189,6 @@ export function AnalyticsView({
   );
 }
 
-// Hjälpkomponenter
 function PremiumLock({ isPremium, title, children }: { isPremium: boolean; title: string; children: React.ReactNode }) {
   if (isPremium) return <>{children}</>;
   return (
