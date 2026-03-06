@@ -27,29 +27,21 @@ export default async function OrderDetailPage({ params }: { params: { id: string
     );
   }
 
-  // --- LOGIK: Hämta adress från databasen istället för Stripe ---
-  // Vi kollar om första adressraden finns för att veta om vi har en adress
   const hasShippingAddress = !!order.shippingLine1;
-  
-  // Bestäm kundnamn: Leveransnamn > Företagsnamn > Fallback
   const customerName = order.shippingName || order.companyName || "Kund";
-
   const cardsGenerated = order.cards.length >= order.quantity;
 
   return (
     <div className="min-h-screen bg-nordic-primary p-4 md:p-8 text-nordic-secondary">
       
-      {/* DENNA SYNS BARA VID UTSKRIFT */}
       <PackingSlip orderId={order.id} customerName={customerName} cards={order.cards} />
 
       <div className="mx-auto max-w-5xl print:hidden">
         
-        {/* Navigering */}
         <Link href="/admin" className="mb-6 inline-flex items-center gap-2 text-sm text-nordic-highlight hover:text-nordic-secondary transition">
           <ArrowLeft size={16} /> Tillbaka till översikt
         </Link>
 
-        {/* Header */}
         <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-center md:justify-between rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6">
           <div>
             <div className="flex items-center gap-3 mb-1">
@@ -64,7 +56,6 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           </div>
           
           <div className="flex gap-2">
-             {/* Utskriftsknapp (Visuellt hjälpmedel, Ctrl+P gäller) */}
              {order.cards.length > 0 && (
                <div className="hidden sm:block"> 
                   <span className="flex items-center gap-2 bg-slate-800 text-slate-300 px-4 py-2 rounded-lg text-sm font-medium border border-nordic-highlight/40 opacity-50 cursor-default">
@@ -122,6 +113,27 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                           </span>
                         </div>
 
+                        {/* NYTT: Färg och Material! */}
+                        <div className="pl-3 mb-4 grid grid-cols-2 gap-2">
+                           <div>
+                              <p className="text-[10px] text-nordic-highlight uppercase tracking-widest">Material</p>
+                              <p className="text-sm font-medium capitalize text-slate-200">{card.material || "Ej angivet"}</p>
+                           </div>
+                           <div>
+                              <p className="text-[10px] text-nordic-highlight uppercase tracking-widest">Färg</p>
+                              <p className="text-sm font-medium capitalize text-slate-200">{card.colorOption || "Ej angivet"}</p>
+                           </div>
+                           {/* Visas bara om kunden har laddat upp en logotyp */}
+                           {card.printFileUrl && (
+                             <div className="col-span-2 mt-2">
+                               <p className="text-[10px] text-nordic-highlight uppercase tracking-widest mb-1">Custom Print Logotyp</p>
+                               <a href={card.printFileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-lg hover:bg-blue-500/20 transition">
+                                 <LinkIcon size={12} /> Ladda ner originalfil
+                               </a>
+                             </div>
+                           )}
+                        </div>
+
                         <div className="pl-3 p-3 bg-slate-900/80 rounded-lg border border-nordic-highlight/40 flex items-center justify-between gap-4">
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
@@ -144,7 +156,6 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           {/* Höger: KUND & ADRESS */}
           <div className="space-y-6">
             
-            {/* Adresskort (Nu hämtat direkt från DB) */}
             <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6">
                <h2 className="text-xs font-bold text-nordic-highlight uppercase tracking-widest mb-6">Leverans</h2>
                {hasShippingAddress ? (

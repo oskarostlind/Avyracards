@@ -62,34 +62,30 @@ export async function POST(req: Request) {
             return new NextResponse(null, { status: 200 });
         }
 
-        // Hämta detaljerade rader för att komma åt metadata på produkterna
         const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
             expand: ['data.price.product'],
         });
 
-        const shipping = (session as any).shipping_details?.address;
-        const shippingName = (session as any).shipping_details?.name;
+        // FIX: Stripe kan ibland lägga adressen under customer_details om shipping_details saknas
+        const shipping = (session as any).shipping_details?.address || session.customer_details?.address;
+        const shippingName = (session as any).shipping_details?.name || session.customer_details?.name;
         
-        // Förbered OrderItems (länk mellan Order och ProductVariant)
         const orderItemsToCreate = [];
         
         for (const item of lineItems.data) {
-             // @ts-ignore - Stripe types kan vara lite bråkiga med expand
+             // @ts-ignore
              const productMetadata = item.price?.product?.metadata || {};
-             // Hämta variantId som vi sparade i checkout-routen
              const variantId = productMetadata.variantId; 
 
-             // Om det är en produktvariant vi känner igen (inte Custom Print eller 0kr Premium)
              if (variantId) {
                  orderItemsToCreate.push({
                      productVariantId: variantId,
                      quantity: item.quantity || 1,
-                     price: item.amount_total // Sparar vad de faktiskt betalade
+                     price: item.amount_total 
                  });
              }
         }
 
-        // Skapa ordern med koppling till USER och ITEMS
         const order = await prisma.order.create({
             data: {
                 stripeSessionId: session.id,
@@ -99,16 +95,14 @@ export async function POST(req: Request) {
                 customerEmail: session.customer_details?.email || "",
                 customerType: "PRIVATE",
                 
-                // LÄNKA TILL ANVÄNDAREN
                 userId: userId || null, 
 
-                // LÄNKA TILL VARIANTERNA
                 items: {
                     create: orderItemsToCreate
                 },
                 
                 // Leveransinfo
-                shippingName: shippingName || session.customer_details?.name,
+                shippingName: shippingName,
                 shippingLine1: shipping?.line1,
                 shippingLine2: shipping?.line2,
                 shippingCity: shipping?.city,
@@ -119,7 +113,6 @@ export async function POST(req: Request) {
             },
         });
 
-        // Skapa korten (Cards) och läs in design-val från metadata
         const cardsToCreate = [];
         let hasPremiumProduct = false;
 
@@ -134,14 +127,12 @@ export async function POST(req: Request) {
             }
             if (isCustomPrint) continue;
 
-            // Hämta metadata från Stripe-produkten
             // @ts-ignore
             const productMetadata = item.price?.product?.metadata || {};
 
             if (productMetadata.variantId) {
                 const qty = item.quantity || 1;
                 for (let i = 0; i < qty; i++) {
-                     // HÄMTA DATAN FRÅN METADATA ISTÄLLET FÖR ATT GISSA!
                      const detectedMaterial = productMetadata.material || "plastic";
                      const detectedColor = productMetadata.color || "black";
                      const detectedDesign = productMetadata.design || "minimal";
@@ -155,7 +146,7 @@ export async function POST(req: Request) {
                         material: detectedMaterial,
                         colorOption: detectedColor,
                         designTemplate: detectedDesign,
-                        printFileUrl: printFileUrl, // Nu sparas loggan i databasen!
+                        printFileUrl: printFileUrl, 
                         assignedUserId: userId || null 
                     });
                 }
@@ -168,7 +159,6 @@ export async function POST(req: Request) {
             });
         }
 
-        // Aktivera Premium om tillämpligt
         if (userId && (premiumOption === "1mo" || premiumOption === "6mo" || hasPremiumProduct)) {
             console.log(`[Webhook] Activating Premium for User ${userId}.`);
             
