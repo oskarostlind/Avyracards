@@ -30,7 +30,14 @@ interface OrderViewProps {
 
 export default function OrderViewWrapper(props: OrderViewProps) {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#050505]"><Loader2 className="animate-spin text-white" /></div>}>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden">
+        {/* Glow Effects i laddningsskärmen */}
+        <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
+        <Loader2 className="animate-spin text-white relative z-10" />
+      </div>
+    }>
       <OrderViewContent {...props} />
     </Suspense>
   );
@@ -164,8 +171,6 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const activeVariants = material === "plastic" ? standardVariants : metalVariants;
   
   // Savings calculation
-  // Om 1mo är vald, sparar man värdet av en månad (t.ex. 69kr) eller bara ser det som en bonus.
-  // Vi kan räkna "ordinarie" pris som kort + eventuell custom print + värdet av premium.
   const premiumValue = premiumOption === "1mo" ? 69 : (premiumOption === "6mo" ? 474 : 0);
   const totalOriginalPrice = (compareAt || cardPrice) + customPrintCost + premiumValue;
   
@@ -174,14 +179,19 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const hasSavings = savings > 0;
 
   return (
-    <div className="min-h-screen bg-[#050505] text-nordic-secondary py-6 lg:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-      <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start">
+    <div className="min-h-screen bg-slate-950 text-nordic-secondary py-6 lg:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
+      
+      {/* Glow Effects - Samma som dashboard */}
+      <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+      {/* Z-10 så innehållet hamnar över glow-effekterna */}
+      <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start relative z-10">
         
         {/* LEFT: PREVIEWS */}
         <div className="lg:col-span-7 order-1 lg:order-2 flex flex-col gap-6 lg:sticky lg:top-24">
             <div className="flex flex-col items-center justify-center min-h-[400px] lg:min-h-[500px]">
                 <CardPreview3D material={material} color={colorCode} design={design} customImage={customImage} />
-                {/*<div className="text-center mt-4 space-y-1 text-nordic-highlight"><p className="text-xs">Dra för att rotera</p></div>*/}
             </div>
 
             {(premiumOption !== "none" || !isPremium) && (

@@ -2,7 +2,6 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
-// Vi behöver inte importera Stripe-typen explicit längre när vi kör "as any"
 
 // Komponenter
 import { SettingsTabs } from "@/components/profile/settings-tabs";
@@ -53,16 +52,11 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
       });
 
       if (subscriptions.data.length > 0) {
-        // FIX: Vi använder 'as any' för att tvinga TypeScript att acceptera objektet
-        // Detta kringgår felet att 'current_period_end' inte skulle finnas.
         const sub = subscriptions.data[0] as any;
         
         const priceItem = sub.items.data[0]?.price;
-
-        // Plocka fram nästa faktureringsdatum
         const nextBillingDate = sub.trial_end ? sub.trial_end : sub.current_period_end;
 
-        // Plocka fram kortinfo
         let paymentMethodBrand = "";
         let paymentMethodLast4 = "";
         
@@ -94,38 +88,46 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
   const hasPassword = !!user.passwordHash;
 
   return (
-    <div className="container mx-auto max-w-4xl px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-nordic-secondary">Inställningar</h1>
-        <p className="text-nordic-highlight">Hantera ditt konto, prenumeration och säkerhet.</p>
-      </div>
+    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
+      
+      {/* Glow Effects - Ger djup åt den mörka bakgrunden (samma som dashboard) */}
+      <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
+      <div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-      <SettingsTabs />
+      {/* Innehållet */}
+      <div className="relative z-10 container mx-auto max-w-4xl px-4 py-8">
+        <div className="mb-8">
+          <h1 className="text-2xl font-bold text-nordic-secondary">Inställningar</h1>
+          <p className="text-nordic-highlight">Hantera ditt konto, prenumeration och säkerhet.</p>
+        </div>
 
-      <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-        
-        {view === "account" && (
-          <AccountForm
-            email={user.email!}
-            username={user.username || ""}
-            hasPassword={hasPassword}
-            marketingConsent={user.marketingConsent}
-            productUpdates={user.productUpdates}
-            hideFromSearch={user.hideFromSearch}
-          />
-        )}
+        <SettingsTabs />
 
-        {view === "billing" && (
-          <BillingView 
-            isPremium={user.isPremium} 
-            subscription={subscriptionData}
-          />
-        )}
+        <div className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+          
+          {view === "account" && (
+            <AccountForm
+              email={user.email!}
+              username={user.username || ""}
+              hasPassword={hasPassword}
+              marketingConsent={user.marketingConsent}
+              productUpdates={user.productUpdates}
+              hideFromSearch={user.hideFromSearch}
+            />
+          )}
 
-        {view === "cards" && (
-          // @ts-ignore - Fixar ev. typ-mismatch
-          <CardsView cards={user.cards} />
-        )}
+          {view === "billing" && (
+            <BillingView 
+              isPremium={user.isPremium} 
+              subscription={subscriptionData}
+            />
+          )}
+
+          {view === "cards" && (
+            // @ts-ignore - Fixar ev. typ-mismatch
+            <CardsView cards={user.cards} />
+          )}
+        </div>
       </div>
     </div>
   );
