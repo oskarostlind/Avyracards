@@ -60,6 +60,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const [design] = useState<DesignType>("minimal"); 
   const [colorCode, setColorCode] = useState<string>(hasStandard ? defaultStandardColor : defaultMetalColor);
   const [customImage, setCustomImage] = useState<string | null>(null);
+  const [customFile, setCustomFile] = useState<File | null>(null); // NY STATE
   
   const [premiumOption, setPremiumOption] = useState<PremiumOption>("none");
 
@@ -103,17 +104,18 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const standardDisplay = getDisplayPriceForMaterial("plastic");
   const metalDisplay = getDisplayPriceForMaterial("metal");
 
-  // --- Handlers ---
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
+          setCustomFile(file); // Spara själva filen
           const url = URL.createObjectURL(file);
-          setCustomImage(url);
+          setCustomImage(url); // Spara preview-urlen
       }
   };
   
-  const clearImage = () => {
+const clearImage = () => {
       setCustomImage(null);
+      setCustomFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -127,21 +129,37 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
     }
   };
 
-  const handleCheckout = async () => {
+const handleCheckout = async () => {
       if (!selectedVariant) return alert("Ingen variant vald, eller så är produkten slut i lager.");
       
       try {
         setLoading(true);
+        let printFileUrl = null;
+
+        // 1. Ladda upp logotypen först (om den finns)
+        if (customFile && material === "metal") {
+            const formData = new FormData();
+            formData.append('file', customFile);
+            
+            const uploadRes = await fetch('/api/upload/print', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!uploadRes.ok) throw new Error("Kunde inte ladda upp bilden.");
+            const uploadData = await uploadRes.json();
+            printFileUrl = uploadData.url; // Här är den riktiga Blob-URL:en!
+        }
         
+        // 2. Skicka till Stripe
         const items = [];
-        
         items.push({
             variantId: selectedVariant.id,
             quantity: quantity,
             color: selectedVariant.name,
             design: design,
             material: material,
-            customImage: customImage ? "uploaded-image-reference" : null 
+            customPrintUrl: printFileUrl // Skicka med riktiga URL:en
         });
 
         const response = await fetch("/api/stripe/checkout", {
@@ -156,6 +174,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
       
       } catch (error) {
         console.error(error);
+        alert("Ett fel uppstod. Försök igen.");
         setLoading(false);
       }
   };

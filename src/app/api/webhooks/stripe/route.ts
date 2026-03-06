@@ -99,10 +99,10 @@ export async function POST(req: Request) {
                 customerEmail: session.customer_details?.email || "",
                 customerType: "PRIVATE",
                 
-                // LÄNKA TILL ANVÄNDAREN (FIXEN)
+                // LÄNKA TILL ANVÄNDAREN
                 userId: userId || null, 
 
-                // LÄNKA TILL VARIANTERNA (FIXEN)
+                // LÄNKA TILL VARIANTERNA
                 items: {
                     create: orderItemsToCreate
                 },
@@ -119,7 +119,7 @@ export async function POST(req: Request) {
             },
         });
 
-        // Skapa korten (Cards) - Samma logik som förut
+        // Skapa korten (Cards) och läs in design-val från metadata
         const cardsToCreate = [];
         let hasPremiumProduct = false;
 
@@ -134,15 +134,18 @@ export async function POST(req: Request) {
             }
             if (isCustomPrint) continue;
 
-            // Om det har ett variantId (är ett kort)
+            // Hämta metadata från Stripe-produkten
             // @ts-ignore
-            if (item.price?.product?.metadata?.variantId) {
+            const productMetadata = item.price?.product?.metadata || {};
+
+            if (productMetadata.variantId) {
                 const qty = item.quantity || 1;
                 for (let i = 0; i < qty; i++) {
-                     let detectedMaterial = "plastic";
-                     if (description.toLowerCase().includes("metal")) detectedMaterial = "metal";
-                     
-                     let detectedColor = "black"; 
+                     // HÄMTA DATAN FRÅN METADATA ISTÄLLET FÖR ATT GISSA!
+                     const detectedMaterial = productMetadata.material || "plastic";
+                     const detectedColor = productMetadata.color || "black";
+                     const detectedDesign = productMetadata.design || "minimal";
+                     const printFileUrl = productMetadata.printFileUrl || null;
 
                      cardsToCreate.push({
                         orderId: order.id,
@@ -151,8 +154,8 @@ export async function POST(req: Request) {
                         status: "UNCLAIMED" as const,
                         material: detectedMaterial,
                         colorOption: detectedColor,
-                        designTemplate: "minimal",
-                        // Tilldela kortet direkt till användaren om vi vet vem det är
+                        designTemplate: detectedDesign,
+                        printFileUrl: printFileUrl, // Nu sparas loggan i databasen!
                         assignedUserId: userId || null 
                     });
                 }

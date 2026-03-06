@@ -12,7 +12,7 @@ const cartItemSchema = z.object({
   color: z.string().optional(),
   design: z.string().optional(),
   material: z.string().optional(),
-  customImage: z.string().nullable().optional(), 
+  customPrintUrl: z.string().nullable().optional(), // Ändrat från customImage till customPrintUrl
 });
 
 const checkoutSchema = z.object({
@@ -23,6 +23,7 @@ const checkoutSchema = z.object({
   color: z.string().optional(),
   design: z.string().optional(),
   material: z.string().optional(),
+  customPrintUrl: z.string().nullable().optional(),
 });
 
 export async function POST(req: Request) {
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
             color: result.data.color,
             design: result.data.design,
             material: result.data.material,
-            customImage: null,
+            customPrintUrl: result.data.customPrintUrl || null,
         });
     } else {
         return new NextResponse("No items provided", { status: 400 });
@@ -84,13 +85,15 @@ export async function POST(req: Request) {
                     name: dbVariant.product.name,
                     description: `${dbVariant.name} (${item.material || "Standard"})`,
                     metadata: {
-                        // VIKTIGT: Vi sparar variantId här så webhooken kan skapa OrderItem
+                        // VIKTIGT: Vi sparar all order-specifik data i metadata här
                         variantId: dbVariant.id, 
                         color: item.color || "",
                         material: item.material || "",
-                        design: item.design || ""
+                        design: item.design || "",
+                        printFileUrl: item.customPrintUrl || "" // Sparar URL:en för Webhooken
                     },
-                    images: item.customImage ? [] : undefined 
+                    // Stripe stöder att visa bilden i kassan om vi skickar in URL:en som en array
+                    images: item.customPrintUrl ? [item.customPrintUrl] : undefined 
                 },
                 unit_amount: dbVariant.price,
                 recurring: dbVariant.type === "SUBSCRIPTION" ? { interval: "month" } : undefined,
@@ -98,7 +101,7 @@ export async function POST(req: Request) {
             quantity: item.quantity,
         });
 
-        if (item.customImage) {
+        if (item.customPrintUrl) {
             line_items.push({
                 price_data: {
                     currency: "sek",
@@ -106,7 +109,7 @@ export async function POST(req: Request) {
                         name: "Custom Print",
                         description: "Egen logotyp/design på kortet",
                     },
-                    unit_amount: 10000, 
+                    unit_amount: 10000, // 100 kr
                 },
                 quantity: item.quantity, 
             });
@@ -162,11 +165,11 @@ export async function POST(req: Request) {
         userId: userId, 
         type: "bundle_order",
         premiumOption: premiumOption,
-        hasCustomPrint: itemsToProcess.some(i => i.customImage) ? "true" : "false"
+        hasCustomPrint: itemsToProcess.some(i => i.customPrintUrl) ? "true" : "false"
       },
       
       shipping_address_collection: {
-        allowed_countries: ["SE", "NO", "DK", "FI", "DE", "US", "GB"], // La till fler för säkerhets skull
+        allowed_countries: ["SE", "NO", "DK", "FI", "DE", "US", "GB"], 
       },
       
       phone_number_collection: { enabled: true },
