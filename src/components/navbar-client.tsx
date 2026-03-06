@@ -28,6 +28,12 @@ const navLinks = [
     href: "/dashboard", 
     icon: LayoutDashboard,
     exact: true 
+  },  
+  { 
+    name: "Teman", 
+    href: "/profile/themes", 
+    icon: Palette,
+    exact: false
   },
   { 
     name: "Statistik", 
@@ -35,12 +41,7 @@ const navLinks = [
     icon: BarChart3,
     exact: false
   },
-  { 
-    name: "Teman", 
-    href: "/profile/themes", 
-    icon: Palette,
-    exact: false
-  },
+
   { 
     name: "Shop", 
     href: "/order", 
