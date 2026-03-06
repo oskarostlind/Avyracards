@@ -75,7 +75,6 @@ export function ProfilePreview({
     style.color = text;
 
     if (isPrimary) {
-        // Invertera färgerna för vCard-knappen
         style.backgroundColor = text;
         style.color = accent === '#ffffff' ? '#0f172a' : accent;
     } else {
@@ -138,9 +137,17 @@ export function ProfilePreview({
     })
   };
 
-  // Separera vCard-knappen från övriga actions (Precis som i den riktiga profilen)
-  const primaryAction = actions.find(a => a.type === 'vcard');
-  const secondaryActions = actions.filter(a => a.type !== 'vcard');
+  // --- REALTIDS-FILTRERING ---
+  // Vi filtrerar bort vcard-knappen om live-inställningen (settings) säger att den ska vara dold
+  const liveActions = actions.filter(a => {
+    if (a.type === 'vcard' && settings.showSaveContact === false) {
+        return false;
+    }
+    return true;
+  });
+
+  const primaryAction = liveActions.find(a => a.type === 'vcard');
+  const secondaryActions = liveActions.filter(a => a.type !== 'vcard');
 
   return (
     <div 
@@ -212,8 +219,8 @@ export function ProfilePreview({
           )}
         </div>
 
-        {/* --- DYNAMISKA ACTIONS (NY LAYOUT) --- */}
-        {actions.length > 0 && (
+        {/* --- DYNAMISKA ACTIONS --- */}
+        {liveActions.length > 0 && (
              <div className="w-full mb-6 space-y-3">
                 {/* Spara Kontakt - Fullbredd högst upp om den existerar */}
                 {primaryAction && (
