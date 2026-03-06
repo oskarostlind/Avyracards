@@ -32,7 +32,6 @@ export default function OrderViewWrapper(props: OrderViewProps) {
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-slate-950 relative overflow-hidden">
-        {/* Glow Effects i laddningsskärmen */}
         <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
         <Loader2 className="animate-spin text-white relative z-10" />
@@ -50,12 +49,18 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const defaultStandardColor = standardVariants[0]?.colorCode || "#1a1a1a";
   const defaultMetalColor = metalVariants[0]?.colorCode || "#171717";
 
-  const [material, setMaterial] = useState<MaterialType>("plastic");
+  // Lagersaldo-kontroll
+  const hasStandard = standardVariants && standardVariants.length > 0;
+  const hasMetal = metalVariants && metalVariants.length > 0;
+  
+  // Välj det första tillgängliga materialet som standard
+  const initialMaterial: MaterialType = hasStandard ? "plastic" : (hasMetal ? "metal" : "plastic");
+
+  const [material, setMaterial] = useState<MaterialType>(initialMaterial);
   const [design] = useState<DesignType>("minimal"); 
-  const [colorCode, setColorCode] = useState<string>(defaultStandardColor);
+  const [colorCode, setColorCode] = useState<string>(hasStandard ? defaultStandardColor : defaultMetalColor);
   const [customImage, setCustomImage] = useState<string | null>(null);
   
-  // Default: Om bundle, välj 1mo. Om isPremium, tvinga none.
   const [premiumOption, setPremiumOption] = useState<PremiumOption>("none");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,12 +68,14 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   // --- Effects ---
   useEffect(() => {
     const isBundle = searchParams.get("bundle") === "pro-bundle";
-    // Om bundle-länk och användaren INTE redan har premium -> Välj gratismånaden
     if (isBundle && !isPremium) {
       setPremiumOption("1mo"); 
-      setMaterial("plastic");
+      if (hasStandard) {
+        setMaterial("plastic");
+        setColorCode(defaultStandardColor);
+      }
     }
-  }, [searchParams, isPremium]);
+  }, [searchParams, isPremium, hasStandard, defaultStandardColor]);
 
   // --- Helpers ---
   const findSelectedVariant = () => {
@@ -121,7 +128,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   };
 
   const handleCheckout = async () => {
-      if (!selectedVariant) return alert("Ingen variant vald.");
+      if (!selectedVariant) return alert("Ingen variant vald, eller så är produkten slut i lager.");
       
       try {
         setLoading(true);
@@ -158,34 +165,30 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const compareAt = selectedVariant?.compareAtPrice ? (selectedVariant.compareAtPrice / 100) : null;
   const customPrintCost = (material === "metal" && customImage) ? 100 : 0; 
 
-  // Premium Costs Logic
   let premiumCost = 0;
-  
   if (premiumOption === "1mo") {
-    premiumCost = 0; // GRATIS NU (Var 100)
+    premiumCost = 0;
   } else if (premiumOption === "6mo") {
     premiumCost = 299;
   }
 
-  const total = ((cardPrice + customPrintCost) * quantity) + premiumCost;
+  const total = selectedVariant ? (((cardPrice + customPrintCost) * quantity) + premiumCost) : premiumCost;
   const activeVariants = material === "plastic" ? standardVariants : metalVariants;
   
-  // Savings calculation
   const premiumValue = premiumOption === "1mo" ? 69 : (premiumOption === "6mo" ? 474 : 0);
-  const totalOriginalPrice = (compareAt || cardPrice) + customPrintCost + premiumValue;
+  const totalOriginalPrice = selectedVariant ? ((compareAt || cardPrice) + customPrintCost + premiumValue) : premiumValue;
   
-  // Total besparing (om det finns rabatter på kortet ELLER premium)
   const savings = Math.round(totalOriginalPrice - total);
-  const hasSavings = savings > 0;
+  const hasSavings = savings > 0 && selectedVariant !== undefined;
+  
+  const isCompletelyOutOfStock = !hasStandard && !hasMetal;
 
   return (
     <div className="min-h-screen bg-slate-950 text-nordic-secondary py-6 lg:py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center relative overflow-hidden">
       
-      {/* Glow Effects - Samma som dashboard */}
       <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
       <div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-      {/* Z-10 så innehållet hamnar över glow-effekterna */}
       <div className="max-w-7xl w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-start relative z-10">
         
         {/* LEFT: PREVIEWS */}
@@ -221,29 +224,68 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
           <div className="space-y-3">
             <label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest ml-1">1. Material</label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <button onClick={() => selectMaterial("plastic")} className={`p-4 rounded-xl flex items-center gap-3 border transition-all ${material === "plastic" ? "border-blue-500 bg-blue-500/10 text-nordic-secondary" : "border-white/10 hover:border-white/20 text-nordic-highlight"}`}>
+              
+              <button 
+                disabled={!hasStandard}
+                onClick={() => selectMaterial("plastic")} 
+                className={`p-4 rounded-xl flex items-center gap-3 border transition-all ${
+                  !hasStandard 
+                    ? "border-white/5 opacity-50 cursor-not-allowed bg-white/5" 
+                    : material === "plastic" 
+                      ? "border-blue-500 bg-blue-500/10 text-nordic-secondary" 
+                      : "border-white/10 hover:border-white/20 text-nordic-highlight"
+                }`}
+              >
                 <div className="p-2 bg-white/5 rounded-lg"><Layers size={18} /></div>
-                <div className="text-left"><span className="block font-bold text-sm">Standard</span><span className="text-xs opacity-60">PVC Plast</span></div>
+                <div className="text-left">
+                  <span className="block font-bold text-sm">Standard</span>
+                  <span className="text-xs opacity-60">PVC Plast</span>
+                </div>
                 <div className="ml-auto text-right">
-                    {standardDisplay.compareAt && standardDisplay.compareAt > standardDisplay.price && (
-                        <div className="text-[10px] text-nordic-highlight line-through">{(standardDisplay.compareAt / 100).toFixed(0)} kr</div>
+                    {!hasStandard ? (
+                        <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest bg-red-500/10 px-2 py-1 rounded">Slut</span>
+                    ) : (
+                        <>
+                          {standardDisplay.compareAt && standardDisplay.compareAt > standardDisplay.price && (
+                              <div className="text-[10px] text-nordic-highlight line-through">{(standardDisplay.compareAt / 100).toFixed(0)} kr</div>
+                          )}
+                          <span className="text-xs font-medium bg-white/10 px-2 py-1 rounded block">
+                              {(standardDisplay.price / 100).toFixed(0)} kr
+                          </span>
+                        </>
                     )}
-                    <span className="text-xs font-medium bg-white/10 px-2 py-1 rounded block">
-                        {(standardDisplay.price / 100).toFixed(0)} kr
-                    </span>
                 </div>
               </button>
 
-              <button onClick={() => selectMaterial("metal")} className={`p-4 rounded-xl flex items-center gap-3 border transition-all ${material === "metal" ? "border-blue-500 bg-blue-500/10 text-nordic-secondary" : "border-white/10 hover:border-white/20 text-nordic-highlight"}`}>
+              <button 
+                disabled={!hasMetal}
+                onClick={() => selectMaterial("metal")} 
+                className={`p-4 rounded-xl flex items-center gap-3 border transition-all ${
+                  !hasMetal 
+                    ? "border-white/5 opacity-50 cursor-not-allowed bg-white/5" 
+                    : material === "metal" 
+                      ? "border-blue-500 bg-blue-500/10 text-nordic-secondary" 
+                      : "border-white/10 hover:border-white/20 text-nordic-highlight"
+                }`}
+              >
                 <div className="p-2 bg-white/5 rounded-lg"><CreditCard size={18} /></div>
-                <div className="text-left"><span className="block font-bold text-sm">Metal Hybrid</span><span className="text-xs opacity-60">Rostfritt stål</span></div>
+                <div className="text-left">
+                  <span className="block font-bold text-sm">Metal Hybrid</span>
+                  <span className="text-xs opacity-60">Rostfritt stål</span>
+                </div>
                  <div className="ml-auto text-right">
-                    {metalDisplay.compareAt && metalDisplay.compareAt > metalDisplay.price && (
-                        <div className="text-[10px] text-nordic-highlight line-through">{(metalDisplay.compareAt / 100).toFixed(0)} kr</div>
+                    {!hasMetal ? (
+                        <span className="text-[10px] font-bold text-red-400 uppercase tracking-widest bg-red-500/10 px-2 py-1 rounded">Slut</span>
+                    ) : (
+                        <>
+                          {metalDisplay.compareAt && metalDisplay.compareAt > metalDisplay.price && (
+                              <div className="text-[10px] text-nordic-highlight line-through">{(metalDisplay.compareAt / 100).toFixed(0)} kr</div>
+                          )}
+                          <span className="text-xs font-medium bg-white/10 px-2 py-1 rounded block">
+                              {(metalDisplay.price / 100).toFixed(0)} kr
+                          </span>
+                        </>
                     )}
-                    <span className="text-xs font-medium bg-white/10 px-2 py-1 rounded block">
-                        {(metalDisplay.price / 100).toFixed(0)} kr
-                    </span>
                 </div>
               </button>
             </div>
@@ -252,28 +294,32 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
           {/* 2. Color */}
           <div className="space-y-3">
             <label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest ml-1">2. Färg</label>
-            <div className="flex flex-wrap gap-3">
-              {activeVariants.map((variant) => {
-                const isSelected = colorCode === variant.colorCode;
-                const isWhite = variant.colorCode?.toLowerCase() === "#ffffff" || variant.colorCode?.toLowerCase() === "#f5f5f5";
-                return (
-                    <button 
-                        key={variant.id} 
-                        onClick={() => setColorCode(variant.colorCode || "")} 
-                        className={`group relative w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 transition-transform hover:scale-110 focus:outline-none ${isSelected ? "border-blue-500 scale-110" : "border-transparent"}`} 
-                        style={{ backgroundColor: variant.colorCode || "#000" }} 
-                        title={variant.name}
-                    >
-                        {isWhite && <span className="absolute inset-0 rounded-full border border-black/10"></span>}
-                        {isSelected && <span className={`absolute inset-0 flex items-center justify-center ${isWhite ? "text-nordic-secondary" : "text-nordic-secondary"}`}><Check size={16} strokeWidth={4} /></span>}
-                    </button>
-                );
-              })}
-            </div>
+            {activeVariants.length === 0 ? (
+                <div className="text-sm text-nordic-highlight py-2 ml-1">Inga färger tillgängliga för detta material.</div>
+            ) : (
+                <div className="flex flex-wrap gap-3">
+                  {activeVariants.map((variant) => {
+                    const isSelected = colorCode === variant.colorCode;
+                    const isWhite = variant.colorCode?.toLowerCase() === "#ffffff" || variant.colorCode?.toLowerCase() === "#f5f5f5";
+                    return (
+                        <button 
+                            key={variant.id} 
+                            onClick={() => setColorCode(variant.colorCode || "")} 
+                            className={`group relative w-10 h-10 lg:w-12 lg:h-12 rounded-full border-2 transition-transform hover:scale-110 focus:outline-none ${isSelected ? "border-blue-500 scale-110" : "border-transparent"}`} 
+                            style={{ backgroundColor: variant.colorCode || "#000" }} 
+                            title={variant.name}
+                        >
+                            {isWhite && <span className="absolute inset-0 rounded-full border border-black/10"></span>}
+                            {isSelected && <span className={`absolute inset-0 flex items-center justify-center ${isWhite ? "text-nordic-secondary" : "text-nordic-secondary"}`}><Check size={16} strokeWidth={4} /></span>}
+                        </button>
+                    );
+                  })}
+                </div>
+            )}
           </div>
 
           {/* 3. Custom Print (Metal Only) */}
-           {material === "metal" && (
+           {material === "metal" && hasMetal && (
              <div className="space-y-3 animate-in fade-in slide-in-from-top-4">
                 <div className="flex justify-between items-center ml-1"><label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest">3. Custom Print (+100 kr)</label><span className="text-[10px] bg-blue-500 text-nordic-secondary px-2 py-0.5 rounded-full">POPULÄRT</span></div>
                 {!customImage ? (
@@ -385,8 +431,16 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                 </div>
              )}
                 
-             <button onClick={handleCheckout} disabled={loading} className="w-full bg-nordic-secondary text-nordic-primary py-4 rounded-xl font-bold text-lg hover:bg-nordic-support transition-all shadow-lg flex items-center justify-center gap-2">
-                {loading ? <Loader2 className="animate-spin" /> : "Gå till kassan"}
+             <button 
+                onClick={handleCheckout} 
+                disabled={loading || isCompletelyOutOfStock} 
+                className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-2 ${
+                    isCompletelyOutOfStock 
+                    ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
+                    : "bg-nordic-secondary text-nordic-primary hover:bg-nordic-support"
+                }`}
+             >
+                {loading ? <Loader2 className="animate-spin" /> : (isCompletelyOutOfStock ? "Inga produkter tillgängliga" : "Gå till kassan")}
              </button>
              <p className="text-center text-xs text-gray-600">Leverans 2-4 arbetsdagar • Fri frakt över 500 kr</p>
           </div>
