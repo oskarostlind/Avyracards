@@ -1,41 +1,38 @@
 "use client";
 
-import Script from "next/script";
-import { useEffect } from "react";
-
-const PUB_ID = "ca-pub-2616665688666431";
-
-export function GoogleAdSenseScript() {
-  return (
-    <Script
-      async
-      src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${PUB_ID}`}
-      crossOrigin="anonymous"
-      strategy="afterInteractive"
-    />
-  );
-}
+import { useEffect, useRef } from "react";
 
 export function AdBanner() {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    try {
-      // @ts-ignore
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-    } catch (err) {
-      console.error("AdSense error", err);
+    // Vi kollar så att vi inte råkar ladda in scriptet två gånger om komponenten renderas om
+    const scriptId = "adsterra-script-707e5c";
+    
+    if (!document.getElementById(scriptId)) {
+      const script = document.createElement("script");
+      script.id = scriptId;
+      script.async = true;
+      script.dataset.cfasync = "false";
+      script.src = "https://pl28868469.effectivegatecpm.com/707e5c051ad988b5e9a9c87d8c4f685f/invoke.js";
+      
+      // Vi lägger till scriptet i webbläsaren
+      document.body.appendChild(script);
     }
+
+    // Cleanup: Valfritt, men bra för att städa upp om man navigerar iväg
+    return () => {
+      const existingScript = document.getElementById(scriptId);
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
   }, []);
 
   return (
-    <div className="my-6 flex justify-center overflow-hidden rounded-xl bg-nordic-primary/50 p-2">
-      <ins
-        className="adsbygoogle"
-        style={{ display: "block", minWidth: "300px", minHeight: "250px" }}
-        data-ad-client={PUB_ID}
-        data-ad-slot="auto" // Byt ut till specifikt slot-ID om du skapar en unit i AdSense
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      />
+    <div className="flex w-full items-center justify-center overflow-hidden py-2" ref={wrapperRef}>
+      {/* Här är den specifika ID-containern som Adsterra letar efter för att rita ut annonsen */}
+      <div id="container-707e5c051ad988b5e9a9c87d8c4f685f"></div>
     </div>
   );
 }
