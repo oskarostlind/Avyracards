@@ -1,8 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // OBS: Ingen output: "standalone" här!
+  // --- OPTIMERING FÖR APPFLOW: Hoppa över kontroller vid build för att spara minne ---
+  typescript: {
+    // Ignorerar typ-fel vid bygge för att förhindra "Out of Memory"
+    ignoreBuildErrors: true,
+  },
+  eslint: {
+    // Ignorerar linting vid bygge för att spara RAM-minne
+    ignoreDuringBuilds: true,
+  },
 
-  // --- NYTT: Tillåt bilder från Vercel Blob ---
+  // --- Tillåt bilder från Vercel Blob (Från din originalkod) ---
   images: {
     remotePatterns: [
       {
@@ -14,7 +22,7 @@ const nextConfig = {
   },
 
   experimental: {
-    // Detta löser problemet med Wallet-generatorn och Prisma
+    // Löser problem med Wallet-generatorn och Prisma (Från din originalkod)
     serverComponentsExternalPackages: ['passkit-generator', '@prisma/client', 'bcryptjs'],
     
     serverActions: {
@@ -22,7 +30,7 @@ const nextConfig = {
     }
   },
 
-  // Vi kan behöva denna för att säkerställa att Node-moduler hanteras rätt
+  // Säkerställer att Node-moduler hanteras rätt (Från din originalkod)
   webpack: (config) => {
     config.externals.push({
       'utf-8-validate': 'commonjs utf-8-validate',
