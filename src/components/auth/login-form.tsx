@@ -1,91 +1,165 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
-import { z } from "zod";
-
-const formSchema = z.object({
-  username: z.string().min(3).max(30),
-  password: z.string().min(6).max(128),
-});
-
-export function LoginForm() {
+export default function LoginForm() {
   const router = useRouter();
-  const [form, setForm] = useState({ username: "", password: "" });
-  const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  
+  const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const registered = searchParams.get("registered");
+  
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  
+  // State för att spåra vad användaren skriver i e-postfältet
+  const [emailInput, setEmailInput] = useState("");
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const parsed = formSchema.safeParse(form);
-    if (!parsed.success) {
-      setError("Kontrollera användarnamn och lösenord");
-      return;
-    }
-
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setLoading(true);
-    setError(null);
+    setError("");
 
-    const result = await signIn("credentials", {
-      username: parsed.data.username,
-      password: parsed.data.password,
-      redirect: false,
-    });
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
-    setLoading(false);
-
-    if (result?.error) {
-      setError("Felaktiga inloggningsuppgifter");
+    if (!email || !password) {
+      setError("Fyll i alla fält");
+      setLoading(false);
       return;
     }
 
-    router.push("/dashboard");
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        if (result.error.toLowerCase().includes("verifiera")) {
+             setError("Du måste verifiera din e-postadress innan du kan logga in.");
+        } else {
+             setError("Felaktig e-post eller lösenord");
+        }
+        setLoading(false);
+      } else {
+        router.push(callbackUrl);
+        router.refresh();
+      }
+    } catch (err) {
+      setError("Något gick fel. Försök igen.");
+      setLoading(false);
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mx-auto max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
-      <div className="space-y-2 text-center">
-        <h1 className="text-2xl font-semibold text-slate-900">Logga in</h1>
-        <p className="text-sm text-slate-500">Fyll i dina uppgifter för att komma åt din dashboard.</p>
+    // ÄNDRING HÄR: Bytte från bg-nordic-primary till bg-slate-900 för att matcha forgot-password
+    <div className="w-full max-w-md p-8 space-y-8 bg-slate-900 border border-nordic-highlight/20 rounded-2xl shadow-2xl">
+      
+      <div className="text-center space-y-2">
+        <h3 className="text-xs font-bold tracking-widest text-nordic-highlight uppercase">
+          AvyraCards
+        </h3>
+        <h1 className="text-3xl font-bold text-nordic-secondary tracking-tight">
+          Logga in
+        </h1>
+        <p className="text-nordic-highlight text-sm">
+          Logga in för att hantera din profil
+        </p>
       </div>
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-700" htmlFor="username">
-          Användarnamn
-        </label>
-        <input
-          id="username"
-          name="username"
-          type="text"
-          required
-          value={form.username}
-          onChange={(event) => setForm((prev) => ({ ...prev, username: event.target.value }))}
-          className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
-        />
-      </div>
-      <div className="space-y-1">
-        <label className="block text-sm font-medium text-slate-700" htmlFor="password">
-          Lösenord
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          value={form.password}
-          onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-          className="w-full rounded-xl border border-slate-300 px-4 py-2 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-200"
-        />
-      </div>
-      {error && <p className="text-sm text-rose-500">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-full bg-slate-900 px-4 py-2 text-white hover:bg-slate-700 disabled:opacity-60"
-      >
-        {loading ? "Loggar in..." : "Logga in"}
-      </button>
-    </form>
+
+      {registered && (
+        <div className="p-3 text-sm text-green-400 bg-green-500/10 border border-green-500/20 rounded-lg text-center">
+          Ditt konto har skapats! 
+          <br/>Vi har skickat ett verifieringsmail till dig.
+        </div>
+      )}
+
+      {error && (
+        <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg text-center flex flex-col gap-2">
+          <span>{error}</span>
+          <Link href={`/verify-resend?email=${encodeURIComponent(emailInput)}`} className="text-xs underline hover:text-red-300">
+            Fick du inget mail? Skicka igen
+          </Link>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="space-y-4">
+          
+          <div className="space-y-2">
+            <label 
+              htmlFor="email" 
+              className="text-sm font-medium text-nordic-secondary block"
+            >
+              E-post
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              disabled={loading}
+              placeholder="namn@exempel.se"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              className="w-full px-4 py-3 bg-nordic-primary border border-nordic-highlight/30 rounded-xl text-nordic-secondary placeholder:text-nordic-highlight/50 focus:outline-none focus:ring-2 focus:ring-nordic-accent/50 focus:border-nordic-accent transition-all"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label 
+                htmlFor="password" 
+                className="text-sm font-medium text-nordic-secondary block"
+              >
+                Lösenord
+              </label>
+              
+              <Link 
+                href={emailInput ? `/forgot-password?email=${encodeURIComponent(emailInput)}` : "/forgot-password"}
+                className="text-xs font-medium text-nordic-accent hover:text-nordic-accent/80 transition-colors"
+              >
+                Glömt lösenord?
+              </Link>
+
+            </div>
+            <input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              disabled={loading}
+              placeholder="••••••••"
+              className="w-full px-4 py-3 bg-nordic-primary border border-nordic-highlight/30 rounded-xl text-nordic-secondary placeholder:text-nordic-highlight/50 focus:outline-none focus:ring-2 focus:ring-nordic-accent/50 focus:border-nordic-accent transition-all"
+            />
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full py-3.5 px-4 bg-nordic-secondary hover:bg-nordic-support text-nordic-primary font-bold rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-white/5"
+        >
+          {loading ? "Loggar in..." : "Logga in"}
+        </button>
+
+        <div className="text-center space-y-4 pt-2">
+          <Link
+            href="/get-started"
+            className="block text-sm text-nordic-highlight hover:text-nordic-secondary transition-colors"
+          >
+            Har du inget konto? <span className="font-semibold text-nordic-secondary">Skapa konto</span>
+          </Link>
+        </div>
+      </form>
+    </div>
   );
 }

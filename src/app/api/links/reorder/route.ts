@@ -17,7 +17,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Ej behörig" }, { status: 401 });
   }
 
-  // ✔ TS-SAFE: session.user.id kan inte längre vara undefined
   const userId = session.user.id;
 
   const body = await req.json();

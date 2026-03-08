@@ -1,0 +1,16 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "bookingUrl" TEXT,
+ADD COLUMN     "businessEmail" TEXT,
+ADD COLUMN     "businessHeadline" TEXT,
+ADD COLUMN     "businessPhone" TEXT,
+ADD COLUMN     "businessRegion" TEXT,
+ADD COLUMN     "careerPageUrl" TEXT,
+ADD COLUMN     "companyDescription" TEXT,
+ADD COLUMN     "companyLogoUrl" TEXT,
+ADD COLUMN     "companyName" TEXT,
+ADD COLUMN     "companyWebsite" TEXT,
+ADD COLUMN     "expertiseTags" TEXT,
+ADD COLUMN     "jobTitle" TEXT,
+ADD COLUMN     "languages" TEXT,
+ADD COLUMN     "location" TEXT,
+ADD COLUMN     "vcardUrl" TEXT;

@@ -2,12 +2,17 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
-import { auth } from "../auth/[...nextauth]/auth";
+import { auth } from "@/auth";
 
 export const runtime = "nodejs";
 
 const settingsSchema = z.object({
   theme: z.string().min(2).max(20).optional(),
+  
+  // NYTT: Hantera JSON för färginställningar (Social + Business)
+  themeSettings: z.record(z.any()).optional(),
+  businessThemeSettings: z.record(z.any()).optional(),
+
   font: z.string().min(2).max(30).optional(),
   bio: z.string().max(280).optional(),
   avatarUrl: z.string().url().nullable().optional(),

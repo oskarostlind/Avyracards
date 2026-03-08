@@ -1,76 +1,116 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { prisma } from "./lib/prisma";
-import { verifyPassword } from "./lib/password";
+import { z } from "zod";
+import { type Role } from "@prisma/client"; 
+
+import { prisma } from "@/lib/prisma";
+import { verifyPassword } from "@/lib/password";
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  secret: process.env.NEXTAUTH_SECRET,
+  session: { strategy: "jwt" },
+  trustHost: true,
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
   providers: [
     Credentials({
-      id: "credentials",
-      name: "Användarnamn & lösenord",
+      name: "credentials",
       credentials: {
-        username: { label: "Användarnamn", type: "text" },
-        password: { label: "Lösenord", type: "password" }
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+        impersonateId: { label: "Impersonate Id", type: "text" },
+        adminSecret: { label: "Admin Secret", type: "text" },
       },
-      async authorize(credentials) {
-        const username = credentials?.username as string | undefined;
-        const password = credentials?.password as string | undefined;
+      authorize: async (credentials) => {
+        
+        // --- 1. IMPERSONATION LOGIN (Admin Only) ---
+        if (credentials?.impersonateId) {
+          
+          if (!credentials.adminSecret || credentials.adminSecret !== process.env.NEXTAUTH_SECRET) {
+            throw new Error("Unauthorized: Invalid admin secret or missing permissions");
+          }
 
-        if (!username || !password) {
-          throw new Error("Användarnamn och lösenord krävs");
+          const user = await prisma.user.findUnique({
+            where: { id: credentials.impersonateId as string },
+          });
+
+          if (!user) {
+            throw new Error("User not found for impersonation");
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.username,
+            username: user.username,
+            role: user.role,
+          };
         }
+
+
+        // --- 2. VANLIG LOGIN ---
+        const result = loginSchema.safeParse(credentials);
+
+        if (!result.success) {
+          throw new Error("Ogiltig e-post eller lösenord");
+        }
+
+        const email = result.data.email.toLowerCase();
+        const password = result.data.password;
 
         const user = await prisma.user.findUnique({
-          where: {
-            username: username.toLowerCase()
-          }
+          where: { email },
         });
 
-        if (!user) {
-          throw new Error("Felaktiga uppgifter");
+        if (!user || !user.passwordHash) {
+          throw new Error("Felaktig e-post eller lösenord");
         }
+
+        // BORTTAGET: Spärren för email-verifiering.
+        // Detta möjliggör "Lazy Verification" (användaren får logga in direkt).
+        /* if (!user.emailVerified) {
+          throw new Error("Du måste verifiera din e-postadress innan du kan logga in.");
+        }
+        */
 
         const isValid = await verifyPassword(password, user.passwordHash);
 
         if (!isValid) {
-          throw new Error("Felaktiga uppgifter");
+          throw new Error("Felaktig e-post eller lösenord");
         }
-
-        if (!user.emailVerified) {
-          throw new Error("Kontot är inte verifierat");
-        }
-
 
         return {
           id: user.id,
-          name: user.name ?? undefined,
           email: user.email,
-          username: user.username
+          name: user.username,
+          username: user.username,
+          role: user.role, 
         };
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
+    async session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
+        session.user.username = token.username as string;
+        session.user.role = token.role as Role; 
+      }
+      return session;
+    },
     async jwt({ token, user }) {
       if (user) {
-        return {
-          ...token,
-          id: (user as any).id,
-          username: (user as any).username
-        };
+        token.id = user.id!;
+        token.username = user.username;
+        token.role = user.role; 
       }
       return token;
     },
-    async session({ session, token }) {
-      if (token && session.user) {
-        (session.user as any).id = token.id;
-        (session.user as any).username = token.username;
-      }
-      return session;
-    }
   },
-  pages: {
-    signIn: "/login"
-  }
 });

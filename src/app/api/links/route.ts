@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { ProfileMode } from "@prisma/client"; // VIKTIGT: Importerar Enumen
 
 export const runtime = "nodejs";
 
 /**
- * GET /api/links
- * Hämtar alla länkar för inloggad användare.
+ * GET /api/links?mode=SOCIAL|BUSINESS
  */
-export async function GET() {
+export async function GET(req: Request) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -19,8 +18,18 @@ export async function GET() {
     );
   }
 
+  const { searchParams } = new URL(req.url);
+  const modeParam = searchParams.get("mode");
+
+  // Översätt sträng till Prisma Enum. Fallback till SOCIAL.
+  const mode: ProfileMode = 
+    modeParam === "BUSINESS" ? ProfileMode.BUSINESS : ProfileMode.SOCIAL;
+
   const links = await prisma.link.findMany({
-    where: { userId: session.user.id },
+    where: { 
+      userId: session.user.id,
+      mode: mode 
+    },
     orderBy: { order: "asc" },
   });
 
@@ -30,13 +39,13 @@ export async function GET() {
       label: link.title,
       url: link.url,
       isVisible: link.isActive,
+      mode: link.mode,
     }))
   );
 }
 
 /**
  * POST /api/links
- * Skapar en ny länk för inloggad användare.
  */
 export async function POST(req: Request) {
   const session = await auth();
@@ -59,30 +68,23 @@ export async function POST(req: Request) {
     );
   }
 
-  console.log("[links] Inkommande body:", body);
-
-  // Stöd både { label } och { title } från klienten
   const rawLabel = body.label ?? body.title;
   const rawUrl = body.url;
+  
+  // Översätt inkommande mode till Prisma Enum
+  const mode: ProfileMode = 
+    body.mode === "BUSINESS" ? ProfileMode.BUSINESS : ProfileMode.SOCIAL;
 
   const label = typeof rawLabel === "string" ? rawLabel.trim() : "";
   const url = typeof rawUrl === "string" ? rawUrl.trim() : "";
 
-  if (!label) {
+  if (!label || !url) {
     return NextResponse.json(
-      { error: "Länktitel saknas eller är tom." },
+      { error: "Titel och URL krävs." },
       { status: 400 }
     );
   }
 
-  if (!url) {
-    return NextResponse.json(
-      { error: "URL saknas eller är tom." },
-      { status: 400 }
-    );
-  }
-
-  // Superenkel URL-koll – vi struntar i strikt zod-url här
   if (!/^https?:\/\//i.test(url)) {
     return NextResponse.json(
       { error: "URL måste börja med http:// eller https://." },
@@ -92,7 +94,10 @@ export async function POST(req: Request) {
 
   try {
     const count = await prisma.link.count({
-      where: { userId: session.user.id },
+      where: { 
+        userId: session.user.id,
+        mode: mode 
+      },
     });
 
     const created = await prisma.link.create({
@@ -102,6 +107,7 @@ export async function POST(req: Request) {
         url,
         order: count,
         isActive: true,
+        mode: mode, // Nu vet TypeScript att detta fält finns
       },
     });
 
@@ -111,6 +117,7 @@ export async function POST(req: Request) {
         label,
         url,
         isVisible: created.isActive,
+        mode: created.mode,
       },
       { status: 201 }
     );

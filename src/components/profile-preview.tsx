@@ -1,87 +1,289 @@
 "use client";
 
-import Image from "next/image";
-import { getTheme, type ThemeName } from "@/utils/theme";
+import { CustomThemeSettings, defaultSettings } from "@/types/theme";
+import { User as UserIcon, Save } from "lucide-react"; 
+import { SocialIcon } from "@/components/icons/social-icons"; 
+import { MappedProfileData } from "@/lib/profile-mapper";
 
-export type ProfilePreviewLink = {
-  id: string;
-  title: string;
-  url: string;
-  icon?: string | null;
-};
-
-interface ProfilePreviewProps {
-  username: string;
-  bio: string;
-  profileImage?: string;
-  theme: ThemeName;
-  links: ProfilePreviewLink[];
+export interface ProfilePreviewProps {
+  data: MappedProfileData;
+  customSettings?: CustomThemeSettings;
+  fullscreen?: boolean;
+  isPremium?: boolean;
 }
 
+const fontMap: Record<string, string> = {
+  inter: "var(--font-inter), sans-serif",
+  playfair: "'Playfair Display', serif",
+  roboto: "'Roboto', sans-serif",
+  lora: "'Lora', serif",
+  space: "'Space Grotesk', sans-serif",
+  oswald: "'Oswald', sans-serif",
+};
+
 export function ProfilePreview({
-  username,
-  bio,
-  profileImage,
-  theme,
-  links,
+  data,
+  customSettings,
+  fullscreen = false,
+  isPremium = false,
 }: ProfilePreviewProps) {
-  const tokens = getTheme(theme);
+  
+  const settings = customSettings || defaultSettings;
+  const currentFont = settings.font && fontMap[settings.font] ? fontMap[settings.font] : fontMap['inter'];
+
+  const { image, displayName, headline, location, actions, links, mode, jobTitle, companyName } = data;
+  
+  const showBranding = !isPremium || !settings.hideBranding;
+
+  // --- BAKGRUND ---
+  let bgStyle: React.CSSProperties = {};
+  if (settings.backgroundType === "image" && settings.backgroundImage) {
+    bgStyle = {
+      backgroundImage: `url(${settings.backgroundImage})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundAttachment: fullscreen ? "fixed" : "scroll",
+    };
+  } else if (settings.backgroundType === "gradient") {
+    bgStyle = {
+      background: `linear-gradient(${settings.gradientDir || "to bottom right"}, ${settings.gradientFrom || "#000"}, ${settings.gradientTo || "#000"})`,
+      backgroundAttachment: fullscreen ? "fixed" : "scroll",
+    };
+  } else {
+    bgStyle = { backgroundColor: settings.backgroundColor || "#0f172a" };
+  }
+
+  // --- KNAPP STYLES ---
+  const getButtonClass = () => {
+    let base = "w-full py-3 px-4 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden group ";
+    
+    if (settings.buttonStyle === "pill") base += "rounded-full ";
+    else if (settings.buttonStyle === "rounded") base += "rounded-xl ";
+    else if (settings.buttonStyle === "sharp") base += "rounded-none ";
+    else if (settings.buttonStyle === "brutal") base += "rounded-sm shadow-[4px_4px_0px_0px_currentColor] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ";
+    
+    if (settings.buttonShadow && settings.buttonStyle !== "brutal") base += "shadow-lg hover:shadow-xl hover:-translate-y-0.5 ";
+
+    return base;
+  };
+
+  const getButtonStyle = (isPrimary: boolean = false): React.CSSProperties => {
+    const accent = settings.accentColor || "#fff";
+    const text = settings.textColor || "#000";
+    const style: React.CSSProperties = {};
+
+    style.color = text;
+
+    if (isPrimary) {
+        style.backgroundColor = text;
+        style.color = accent === '#ffffff' ? '#0f172a' : accent;
+    } else {
+        if (settings.buttonStyle === "brutal") {
+            style.border = `2px solid ${text}`; 
+        }
+        
+        if (settings.buttonVariant === "outline") {
+          style.border = `2px solid ${accent}`;
+          style.color = accent;
+          style.backgroundColor = "transparent";
+        }
+        else if (settings.buttonVariant === "soft") {
+          style.backgroundColor = accent;
+          style.opacity = 0.9;
+        } 
+        else if (settings.buttonVariant === "glass") {
+          style.backgroundColor = "rgba(255,255,255,0.15)";
+          style.backdropFilter = "blur(8px)";
+          style.border = "1px solid rgba(255,255,255,0.2)";
+        }
+        else if (settings.buttonVariant === "ghost") {
+          style.backgroundColor = "transparent";
+          style.border = "1px solid transparent";
+          style.color = settings.textColor;
+        }
+        else if (settings.buttonVariant === "shadow") {
+          style.backgroundColor = accent;
+          style.boxShadow = `0 10px 15px -3px ${accent}40`;
+        }
+        else {
+          style.backgroundColor = accent;
+        }
+    }
+    
+    return style;
+  };
+
+  const getFrameClass = () => {
+    if (settings.frameStyle === "circle") return "rounded-full";
+    if (settings.frameStyle === "rounded") return "rounded-3xl";
+    if (settings.frameStyle === "hexagon") return "hexagon-clip"; 
+    if (settings.frameStyle === "none") return "rounded-none";
+    if (settings.frameStyle === "ring") return "rounded-full ring-4 ring-offset-4 ring-offset-transparent";
+    return "rounded-full"; 
+  };
+
+  const cardStyle: React.CSSProperties = {
+    color: settings.textColor || "#fff",
+    ...(mode === "BUSINESS" ? {
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        backdropFilter: 'blur(20px)',
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: '1px',
+    } : {
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        backdropFilter: 'blur(16px)',
+        borderWidth: '1px',
+        borderColor: 'rgba(255,255,255,0.1)',
+    })
+  };
+
+  // --- REALTIDS-FILTRERING ---
+  // Vi filtrerar bort vcard-knappen om live-inställningen (settings) säger att den ska vara dold
+  const liveActions = actions.filter(a => {
+    if (a.type === 'vcard' && settings.showSaveContact === false) {
+        return false;
+    }
+    return true;
+  });
+
+  const primaryAction = liveActions.find(a => a.type === 'vcard');
+  const secondaryActions = liveActions.filter(a => a.type !== 'vcard');
 
   return (
-    <div
-      className={`relative mx-auto flex w-full max-w-sm flex-col items-center justify-start rounded-[32px] border border-white/10 bg-gradient-to-br from-slate-950/90 via-slate-900/80 to-slate-950/90 p-4 shadow-2xl ${tokens.container}`}
+    <div 
+      className={`w-full relative overflow-x-hidden flex flex-col items-center justify-center p-4 ${fullscreen ? 'min-h-screen py-16' : 'h-full overflow-y-auto py-10 hide-scrollbar'}`}
+      style={{ fontFamily: currentFont, ...bgStyle }}
     >
-      {/* Profilbild */}
-      <div className="mt-2 flex flex-col items-center gap-3">
-        <div className="relative h-24 w-24 overflow-hidden rounded-full border border-white/20 bg-black/40">
-          {profileImage ? (
-            <Image
-              src={profileImage}
-              alt={`${username}'s profile image`}
-              fill
-              className="object-cover"
-            />
+      
+      {settings.backgroundType === "image" && (
+        <div 
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{ 
+            backgroundColor: `rgba(0,0,0, ${settings.backgroundOverlay ? settings.backgroundOverlay / 100 : 0})`,
+            backdropFilter: `blur(${settings.backgroundBlur || 0}px)`,
+            position: fullscreen ? 'fixed' : 'absolute',
+            height: '100%',
+            width: '100%'
+          }}
+        />
+      )}
+
+      {/* --- CARD CONTAINER --- */}
+      <div className={`relative z-10 w-full max-w-[380px] flex flex-col items-center p-8 mb-6 rounded-[2.5rem] shadow-2xl`} style={cardStyle}>
+        
+        {/* Avatar */}
+        <div 
+          className={`relative mb-6 shrink-0 transition-transform hover:scale-105 duration-500 ${getFrameClass()}`}
+          style={settings.frameStyle === 'glow' ? { 
+            boxShadow: `0 0 30px ${settings.accentColor}`,
+            borderRadius: '9999px' 
+          } : settings.frameStyle === 'ring' ? {
+            borderColor: settings.accentColor
+          } : {}}
+        >
+          {image ? (
+             // eslint-disable-next-line @next/next/no-img-element
+             <img src={image} alt="Profil" className={`w-28 h-28 object-cover border-2 border-white/10 ${getFrameClass()}`} style={settings.frameStyle === 'ring' ? { borderRadius: '9999px' } : {}}/>
           ) : (
-            <div className="flex h-full w-full items-center justify-center text-3xl font-semibold text-white/80">
-              {username ? username.charAt(0).toUpperCase() : "?"}
+             <div className={`w-28 h-28 bg-white/10 flex items-center justify-center text-nordic-secondary/50 border-2 border-white/10 ${getFrameClass()}`}>
+               <UserIcon size={40} />
+             </div>
+          )}
+        </div>
+
+        {/* --- HEADER --- */}
+        <div className="text-center space-y-2 mb-8 w-full">
+          <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+          
+          {mode === "BUSINESS" && (
+            <div className="flex flex-col items-center gap-1 opacity-90">
+               {(jobTitle || companyName) && (
+                   <div className="flex flex-wrap justify-center gap-1 text-sm font-medium">
+                       {jobTitle && <span>{jobTitle}</span>}
+                       {jobTitle && companyName && <span>@</span>}
+                       {companyName && <span>{companyName}</span>}
+                   </div>
+               )}
+               {location && (
+                   <div className="flex items-center gap-1 text-xs opacity-70">
+                       <SocialIcon fallbackIcon="location" size={10} /> {location}
+                   </div>
+               )}
+            </div>
+          )}
+
+          {headline && (
+            <div className={`text-sm leading-relaxed whitespace-pre-line font-medium break-words mt-2 ${mode === "BUSINESS" ? "italic opacity-80 border-l-4 border-white/20 pl-3 bg-white/5 py-1 rounded-r-lg" : "opacity-80"}`}>
+              {headline}
             </div>
           )}
         </div>
 
-        {/* Namn + bio */}
-        <div className="text-center">
-          <h2 className={`text-lg font-semibold text-white`}>
-            {username || "Ditt namn"}
-          </h2>
-          <p className="mt-1 max-w-xs text-xs text-slate-300">
-            {bio || "Skriv en kort presentation om dig själv i formuläret till vänster."}
-          </p>
-        </div>
-      </div>
+        {/* --- DYNAMISKA ACTIONS --- */}
+        {liveActions.length > 0 && (
+             <div className="w-full mb-6 space-y-3">
+                {/* Spara Kontakt - Fullbredd högst upp om den existerar */}
+                {primaryAction && (
+                    <div 
+                        className={`w-full pointer-events-none ${getButtonClass()}`}
+                        style={getButtonStyle(true)}
+                    >
+                        <Save size={18} className="mr-1" />
+                        {primaryAction.label}
+                    </div>
+                )}
 
-      {/* Länkar */}
-      <div className="mt-5 flex w-full flex-col gap-3">
-        {links.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/20 px-4 py-3 text-center text-[11px] text-slate-300">
-            Lägg till länkar i din dashboard för att se dem här.
-          </div>
-        ) : (
-          links.map((link) => (
-            <button
-              key={link.id}
-              type="button"
-              className={`w-full rounded-full px-4 py-2 text-sm font-medium shadow-lg transition ${tokens.link}`}
-            >
-              {link.title || link.url}
-            </button>
-          ))
+                {/* Övriga actions under */}
+                {secondaryActions.length > 0 && (
+                    <div className={mode === "BUSINESS" ? "grid grid-cols-2 gap-3" : "flex flex-wrap justify-center gap-3"}>
+                        {secondaryActions.map((action) => (
+                            <div 
+                                key={action.type}
+                                className={mode === "BUSINESS" ? (action.type === 'website' ? `col-span-2 pointer-events-none ${getButtonClass()}` : `pointer-events-none ${getButtonClass()}`) : "p-3 rounded-full bg-white/10 border border-white/10"}
+                                style={mode === "BUSINESS" ? getButtonStyle(false) : (settings.accentColor ? { borderColor: settings.accentColor, color: settings.textColor } : {})}
+                            >
+                                <SocialIcon fallbackIcon={action.iconKey as any} size={mode === "BUSINESS" ? 14 : 20} /> 
+                                {mode === "BUSINESS" && action.label}
+                            </div>
+                        ))}
+                    </div>
+                )}
+             </div>
         )}
+
+        {/* --- LÄNKAR --- */}
+        <div className="w-full space-y-3">
+          {links.map((link) => (
+            <div
+              key={link.id}
+              className={`pointer-events-none ${getButtonClass()}`}
+              style={getButtonStyle(false)}
+            >
+               <span className="opacity-80 absolute left-5">
+                 <SocialIcon url={link.url || link.title || ""} size={18} />
+               </span>
+               <span className="flex-1 text-center truncate px-6">{link.title || link.url}</span>
+            </div>
+          ))}
+          
+          {links.length === 0 && (
+             <div className="p-6 border-2 border-dashed border-white/20 rounded-2xl text-center text-nordic-secondary/50 text-xs w-full">
+                Inga länkar för detta läge.
+             </div>
+          )}
+        </div>
+
       </div>
 
-      {/* Dekorativ bottenskugga */}
-      <div className="pointer-events-none absolute inset-x-6 bottom-4 h-10 rounded-full bg-gradient-to-r from-purple-500/20 via-cyan-400/20 to-purple-500/20 blur-2xl" />
+      {/* --- VILLKORLIG BRANDING --- */}
+      {showBranding && (
+          <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity pb-4">
+             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary drop-shadow-md">
+               <span>Powered by AvyraCards</span>
+             </div>
+          </div>
+      )}
+
     </div>
   );
 }
-
-export default ProfilePreview;

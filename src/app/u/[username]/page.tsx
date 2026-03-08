@@ -1,105 +1,141 @@
-/* eslint-disable @next/next/no-img-element */
+import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { ProfileViewTracker } from "@/components/analytics/trackers";
+import { SocialProfile } from "@/components/public-profile/social-profile";
+import { BusinessProfile } from "@/components/public-profile/business-profile";
+import { getProfileData } from "@/lib/profile-mapper"; 
+import { ThemeMode } from "@/types/theme";
 
-interface Props {
+type PageProps = {
   params: { username: string };
-}
+  searchParams: { [key: string]: string | string[] | undefined };
+};
 
-export default async function PublicProfilePage({ params }: Props) {
-  const username = params.username.toLowerCase();
+export const runtime = "nodejs";
+export const revalidate = 0;
 
+export default async function PublicProfilePage({ params, searchParams }: PageProps) {
+  const username = params.username;
+  
+  const isPreview = searchParams.preview === 'true';
+  const previewMode = typeof searchParams.mode === 'string' ? searchParams.mode : null;
+
+  // Vi använder select för att få med nya fält (businessAvatarUrl) och mode
   const user = await prisma.user.findUnique({
     where: { username },
-    include: {
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      bio: true,
+      avatarUrl: true,
+      businessAvatarUrl: true, // <--- Det nya fältet
+      isPremium: true,
+      profileMode: true,
+      theme: true,
+      themeSettings: true,
+      businessThemeSettings: true,
+      redirectEnabled: true,
+      redirectLinkId: true,
+      
+      // Business-fält
+      jobTitle: true,
+      companyName: true,
+      location: true,
+      businessHeadline: true,
+      businessEmail: true,
+      businessPhone: true,
+      companyWebsite: true,
+      bookingUrl: true,
+
+      // Social-fält
+      contactEmail: true,
+      phoneNumber: true,
+
+      // Vi hämtar ALLA länkar här, precis som du gjorde förut
       links: {
         where: { isActive: true },
         orderBy: { order: "asc" },
+        select: {
+            id: true,
+            title: true,
+            url: true,
+            icon: true,
+            mode: true, 
+            isActive: true,
+            order: true
+        }
       },
     },
   });
 
   if (!user) {
-    return (
-      <main className="mx-auto max-w-md p-6">
-        <div className="rounded-2xl bg-slate-900/60 p-6 text-center text-slate-300">
-          Ingen profil hittades.
-        </div>
-      </main>
-    );
+    notFound();
   }
 
-  // Dessa fält finns i din Prisma-modell och fylls från /dashboard
-  const profileImageUrl = (user as any).profileImageUrl ?? user.avatarUrl ?? null;
-  const contactEmail = (user as any).contactEmail as string | null;
-  const phoneNumber = (user as any).phoneNumber as string | null;
+  const displayMode: ThemeMode = (isPreview && previewMode) 
+    ? (previewMode === "BUSINESS" ? "BUSINESS" : "SOCIAL")
+    : (user.profileMode as ThemeMode);
 
-  const displayName = user.name || user.username;
+  // 1. ANVÄND DIN LOGIK FÖR ATT FILTRERA LÄNKAR
+  // Detta garanterar att userForDisplay ALDRIG innehåller fel länkar
+  const filteredLinks = user.links.filter(link => {
+    // Om mode är null/undefined, räkna det som SOCIAL (precis som din deployade kod)
+    const linkMode = link.mode || "SOCIAL";
+    return linkMode === displayMode;
+  });
+
+  // 2. SKAPA ETT "RENT" USER OBJEKT
+  // Vi skriver över links med den filtrerade listan
+  const userForDisplay = {
+    ...user,
+    links: filteredLinks 
+  };
+
+  // 3. KÖR MAPPERN (För att fixa bild, rubriker och kontaktknappar)
+  // Vi skickar in userForDisplay så mappern också ser rätt länkar
+  // @ts-ignore
+  const profileData = getProfileData(userForDisplay, displayMode);
+
+  // Redirect logic (Använd den filtrerade listan)
+  if (user.redirectEnabled && !isPreview) {
+    let targetUrl: string | null = null;
+    if (user.redirectLinkId) {
+      const targetLink = filteredLinks.find((l: any) => l.id === user.redirectLinkId);
+      if (targetLink) targetUrl = targetLink.url;
+    } 
+    else if (filteredLinks.length > 0) {
+      targetUrl = filteredLinks[0].url;
+    }
+    
+    if (targetUrl) {
+      const normalizeUrl = (u: string) => /^(https?:|mailto:|tel:)/i.test(u.trim()) ? u.trim() : `https://${u.trim()}`;
+      redirect(normalizeUrl(targetUrl));
+    }
+  }
+
+  const showAds = !user.isPremium;
+  const sourceParam = typeof searchParams.source === 'string' ? searchParams.source : undefined;
 
   return (
-    <main className="mx-auto max-w-md p-6">
-      <div className="rounded-2xl bg-slate-900/80 px-6 py-8 shadow-lg shadow-slate-900/40">
-        <header className="mb-6 text-center">
-          {profileImageUrl && (
-            <div className="mb-4 flex justify-center">
-              <img
-                src={profileImageUrl}
-                alt={`${displayName}'s avatar`}
-                className="h-24 w-24 rounded-full object-cover ring-2 ring-slate-700"
-              />
-            </div>
-          )}
-
-          <h1 className="text-2xl font-semibold text-slate-50">{displayName}</h1>
-          <p className="text-sm text-slate-400">@{user.username}</p>
-
-          {user.bio && (
-            <p className="mt-3 text-sm leading-relaxed text-slate-300">
-              {user.bio}
-            </p>
-          )}
-
-          {(contactEmail || phoneNumber) && (
-            <div className="mt-4 space-y-1 text-sm text-slate-300">
-              {contactEmail && (
-                <a
-                  href={`mailto:${contactEmail}`}
-                  className="block break-all text-slate-200 hover:text-white"
-                >
-                  {contactEmail}
-                </a>
-              )}
-              {phoneNumber && (
-                <a
-                  href={`tel:${phoneNumber}`}
-                  className="block text-slate-200 hover:text-white"
-                >
-                  {phoneNumber}
-                </a>
-              )}
-            </div>
-          )}
-        </header>
-
-        <section className="mt-6 flex flex-col gap-3">
-          {user.links.map((link) => (
-            <a
-              key={link.id}
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full rounded-full bg-slate-800 px-4 py-2 text-center text-sm font-medium text-slate-50 hover:bg-slate-700 transition"
-            >
-              {link.title}
-            </a>
-          ))}
-
-          {user.links.length === 0 && (
-            <p className="text-center text-xs text-slate-400">
-              Den här profilen har inga publika länkar ännu.
-            </p>
-          )}
-        </section>
-      </div>
-    </main>
+    <>
+      <ProfileViewTracker userId={user.id} sourceParam={sourceParam} />
+      {displayMode === "BUSINESS" ? (
+        <BusinessProfile 
+            data={profileData} 
+            user={userForDisplay as any} // Vi skickar det "rena" objektet
+            showAds={showAds} 
+        />
+      ) : (
+        <SocialProfile 
+            // Om SocialProfile inte är uppdaterad att ta emot 'data' än, 
+            // så funkar detta ändå för länkarna eftersom userForDisplay är städad.
+            // @ts-ignore
+            data={profileData}
+            user={userForDisplay as any} 
+            showAds={showAds} 
+        />
+      )}
+    </>
   );
 }

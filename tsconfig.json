@@ -41,7 +41,7 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts"
-  ],
+, "src/app/ads.tst"  ],
   "exclude": [
     "node_modules",
     "vitest.config.ts"

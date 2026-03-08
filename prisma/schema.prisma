@@ -3,47 +3,317 @@ generator client {
 }
 
 datasource db {
-  provider          = "postgresql"
-  url               = env("DATABASE_URL")
-  directUrl         = env("DIRECT_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  passwordHash  String
-  name          String?
-  username      String   @unique
-  bio           String?
-  theme         String   @default("default")
-  font          String   @default("inter")
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  username     String    @unique
+  bio          String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt @default(now())
+
+  resetPasswordToken       String?   @unique
+  resetPasswordTokenExpiry DateTime?
+
+  // Grundläggande utseende
+  font          String  @default("inter")
   avatarUrl     String?
   backgroundUrl String?
-  isPremium     Boolean  @default(false)
+
+  // PREMIUM STATUS
+  isPremium        Boolean        @default(false)
+  premiumSource    PremiumSource?
+  premiumGivenAt   DateTime?
+  premiumExpiresAt DateTime?
+
+  stripeCustomerId String?
 
   emailVerified     DateTime?
   verificationToken String?
 
-  phoneNumber   String?
-  contactEmail  String?
+  phoneNumber  String?
+  contactEmail String?
 
-  links         Link[]
+  // REDIRECT FUNKTIONALITET
+  redirectEnabled Boolean @default(true) // Är funktionen påslagen?
+  redirectLinkId  String? // NYTT: ID på länken vi ska skicka vidare till
 
+  links           Link[]
+  cards           Card[]
+  analyticsEvents AnalyticsEvent[]
+
+  profileMode ProfileMode @default(SOCIAL)
+
+  // Hero / Business
+  jobTitle         String?
+  companyName      String?
+  location         String?
+  businessHeadline String?
+  businessAvatarUrl String?
+
+  // Kontaktblock
+  businessPhone String?
+  businessEmail String?
+  vcardUrl      String?
+  bookingUrl    String?
+
+  // Nyckelinfo
+  expertiseTags  String?
+  languages      String?
+  businessRegion String?
+
+  // Företagssektion
+  companyLogoUrl     String?
+  companyDescription String?
+  companyWebsite     String?
+  careerPageUrl      String?
+
+  marketingConsent Boolean @default(false)
+  productUpdates   Boolean @default(true)
+  hideFromSearch   Boolean @default(false)
+
+  // THEME ENGINE
+  theme String @default("default")
+
+  // SOCIAL THEME (Standard)
+  themeSettings Json?
+
+  // BUSINESS THEME (Nytt fält)
+  businessThemeSettings Json?
+
+  // Admin-verktyg
+  adminNotes         String?
+  featureFlags       Json?     @default("{}")
+  lastImpersonatedAt DateTime?
+
+  hasSeenOnboarding Boolean @default(false)
+
+  role Role @default(USER)
+
+  // RELATIONER
+  orders Order[] // Viktigt: Denna möjliggör user.orders
+}
+
+enum ProfileMode {
+  SOCIAL
+  BUSINESS
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+// NYTT: Enum för premium-källa
+enum PremiumSource {
+  PAID // Köpt via Stripe
+  GIFT // Manuellt given av admin
+  TRIAL // Tidsbegränsad test
 }
 
 model Link {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  url       String
-  icon      String?
-  order     Int       @default(0)
-  isActive  Boolean   @default(true)
+  id       String  @id @default(cuid())
+  userId   String
+  title    String
+  url      String
+  icon     String?
+  order    Int     @default(0)
+  isActive Boolean @default(true)
 
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // FIXEN: Vi döper kolumnen till "link_mode" i databasen för att Postgres ska bli nöjd.
+  mode ProfileMode @default(SOCIAL) @map("link_mode")
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  analyticsEvents AnalyticsEvent[]
 
   @@index([userId, order])
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stripeSessionId String? @unique
+  amountTotal     Int
+  currency        String  @default("sek")
+
+  status OrderStatus @default(PENDING)
+
+  customerEmail String
+  customerType  CustomerType @default(PRIVATE)
+  companyName   String?
+
+  // KOPPLING TILL USER (Viktigt för att kunna göra user.orders)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  // KOPPLING TILL PRODUKTER (Viktigt för att kunna se vad ordern innehåller)
+  items OrderItem[]
+
+  quantity Int @default(1)
+
+  cards Card[]
+
+  shippingName       String?
+  shippingLine1      String?
+  shippingLine2      String?
+  shippingCity       String?
+  shippingPostalCode String?
+  shippingCountry    String?
+
+  @@index([status, createdAt])
+  @@index([userId, status, createdAt])
+}
+
+// NY MODELL: OrderItem (Kopplar en order till specifika produktvarianter)
+model OrderItem {
+  id String @id @default(cuid())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productVariantId String
+  productVariant   ProductVariant @relation(fields: [productVariantId], references: [id])
+
+  quantity Int @default(1)
+  price    Int // Priset vid köptillfället (viktigt för historik)
+}
+
+model Card {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
+
+  cardCode   String @unique
+  claimToken String @unique
+
+  status CardStatus @default(UNCLAIMED)
+
+  claimedAt DateTime?
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  assignedUserId String?
+  user           User?   @relation(fields: [assignedUserId], references: [id])
+
+  material       String?
+  designTemplate String?
+  colorOption    String?
+  printFileUrl   String?
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FAILED
+  SHIPPED
+}
+
+enum CustomerType {
+  PRIVATE
+  COMPANY
+}
+
+enum CardStatus {
+  UNCLAIMED
+  CLAIMED
+  DISABLED
+  LOST
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  profileOwnerId String
+  profileOwner   User   @relation(fields: [profileOwnerId], references: [id], onDelete: Cascade)
+
+  type EventType
+
+  linkId String?
+  link   Link?   @relation(fields: [linkId], references: [id], onDelete: SetNull)
+
+  referrer String?
+  source   String? // "nfc", "qr", "link", "direct"
+  country  String?
+  city     String?
+  device   String?
+
+  @@index([profileOwnerId, createdAt])
+}
+
+enum EventType {
+  VIEW
+  CLICK
+}
+
+// --- PRODUKTHANTERING (PIM) ---
+
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  slug        String   @unique
+  features    String[]
+  isActive    Boolean  @default(true)
+
+  variants  ProductVariant[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+}
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  name String
+  type String // "PHYSICAL" eller "SUBSCRIPTION"
+
+  // PRIS & KAMPANJ
+  price          Int // Det aktuella priset kunden betalar (t.ex. 39900)
+  compareAtPrice Int? // Det gamla "ordinarie" priset (t.ex. 49900)
+
+  currency      String  @default("sek")
+  stripePriceId String?
+
+  // UI & Lager
+  imageUrl  String?
+  colorCode String?
+  stock     Int     @default(100)
+  isActive  Boolean @default(true)
+
+  // RELATIONER
+  orderItems OrderItem[] // Gör att vi kan se vilka ordrar denna variant finns i
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// RABATTKODER
+model Discount {
+  id    String @id @default(cuid())
+  code  String @unique
+  type  String // "PERCENTAGE" eller "FIXED"
+  value Int
+
+  startsAt   DateTime?
+  expiresAt  DateTime?
+  usageLimit Int?
+  usedCount  Int       @default(0)
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt @default(now())
 }

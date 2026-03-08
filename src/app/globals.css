@@ -2,5 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Om du inte vill köra Tailwind ännu kan du lägga in enkel reset här.
-   Men jag utgår från att vi lägger till Tailwind i nästa steg om du vill. */
+/* Inga @apply-regler här för body.
+  Vi hanterar färgerna (bg-nordic-primary etc) direkt i layout.tsx 
+  för att undvika PostCSS-fel vid build.
+*/
