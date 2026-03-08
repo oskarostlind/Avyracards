@@ -283,3 +283,10 @@ SocialCard-Next.js
 └─ vitest.config.ts
 
 ```
+
+## Prestanda- och datatillgångsriktlinjer
+
+- **Undvik N+1-frågor**: Använd set-baserade Prisma-queries (`findMany` med `include`/`select`/`_count`) i stället för att göra databasanrop i loopar.
+- **Återanvänd helpers**: För återkommande datamönster (t.ex. dashboard-data) använd helpers i `src/lib` (t.ex. `getDashboardUserWithRecentOrders`) i stället för att skriva ad-hoc-queries i komponenter.
+- **Filtrera och begränsa**: Lägg alltid på relevanta `where`-villkor och `take`/pagination för listor som kan växa (ordrar, analytics-events).
+- **Indexmedvetenhet**: När du lägger till nya tunga queries, verifiera att motsvarande fält är indexerade i `prisma/schema.prisma` innan du går till produktion.

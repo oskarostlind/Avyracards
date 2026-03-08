@@ -1,13 +1,28 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, type RateLimitOptions } from "@/lib/rate-limit";
+
+const publicProfileRateLimitOptions: RateLimitOptions = {
+  windowMs: 60_000,
+  max: 60,
+};
 
 export const runtime = "nodejs";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: { username: string } }
 ) {
   const username = params.username.toLowerCase();
+
+  const ip =
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const rateKey = `public_profile:${ip}:${username}`;
+  const rate = consumeRateLimit(rateKey, publicProfileRateLimitOptions);
+
+  if (!rate.allowed) {
+    return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
+  }
 
   const user = await prisma.user.findUnique({
     where: { username },

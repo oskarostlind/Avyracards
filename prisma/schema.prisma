@@ -170,6 +170,9 @@ model Order {
   shippingCity       String?
   shippingPostalCode String?
   shippingCountry    String?
+
+  @@index([status, createdAt])
+  @@index([userId, status, createdAt])
 }
 
 // NY MODELL: OrderItem (Kopplar en order till specifika produktvarianter)
@@ -247,8 +250,7 @@ model AnalyticsEvent {
   city     String?
   device   String?
 
-  @@index([profileOwnerId])
-  @@index([createdAt])
+  @@index([profileOwnerId, createdAt])
 }
 
 enum EventType {

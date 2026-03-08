@@ -78,6 +78,7 @@ export default async function AdminPage() {
   const todoOrders = await prisma.order.findMany({
     where: { status: "PAID" },
     orderBy: { createdAt: "asc" }, // Äldsta först (FIFO)
+    take: 50,
   });
 
   // 2. Hämta de senaste ordrarna (för historik)

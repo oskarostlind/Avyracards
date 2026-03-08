@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, type RateLimitOptions } from "@/lib/rate-limit";
+
+const publicAvatarRateLimitOptions: RateLimitOptions = {
+  windowMs: 60_000,
+  max: 60,
+};
 
 export const dynamic = 'force-dynamic';
 
@@ -12,6 +18,17 @@ export async function GET(
 
     if (!username) {
       return new NextResponse("Missing username", { status: 400 });
+    }
+
+    const ip =
+      request.ip ||
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "unknown";
+    const rateKey = `public_avatar:${ip}:${username.toLowerCase()}`;
+    const rate = consumeRateLimit(rateKey, publicAvatarRateLimitOptions);
+
+    if (!rate.allowed) {
+      return new NextResponse("Too Many Requests", { status: 429 });
     }
 
     // 1. Hämta användaren (Bara avatarUrl, inget annat)

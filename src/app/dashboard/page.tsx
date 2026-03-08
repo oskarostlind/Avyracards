@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
-import { DashboardShell } from "@/components/dashboard/dashboard-shell"; 
-import { VARIANT_IDS } from "@/lib/constants"; 
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { VARIANT_IDS } from "@/lib/constants";
+import { getDashboardUserWithRecentOrders } from "@/lib/data-access";
 
 export const runtime = "nodejs";
 
@@ -13,33 +14,11 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // 1. Hämta användaren, ordrar OCH info om vad som köpts
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: {
-      links: { orderBy: { order: "asc" } },
-      orders: {
-        where: { status: "PAID" },
-        include: { 
-          items: {
-            include: {
-              productVariant: true // Vi måste veta om det är PHYSICAL
-            }
-          } 
-        },
-      },
-    },
-  });
+  const { user, hasOrderedCard } = await getDashboardUserWithRecentOrders(
+    session.user.id,
+  );
 
   if (!user) redirect("/login");
-
-  // 2. LOGIK: Har användaren köpt NÅGOT fysiskt kort?
-  // Detta gör att bannern försvinner oavsett färg/material
-  const hasOrderedCard = user.orders.some((order) => 
-    order.items.some((item) => 
-      item.productVariant.type === "PHYSICAL"
-    )
-  );
 
   // 3. Hämta priser för widgeten (för de som INTE köpt)
   const variants = await prisma.productVariant.findMany({
@@ -49,7 +28,9 @@ export default async function DashboardPage() {
   });
 
   const getPrice = (id: string) => {
-    const variant = variants.find(v => v.id === id);
+    const variant = variants.find(
+      (v: (typeof variants)[number]) => v.id === id,
+    );
     if (!variant) return "Ej tillgänglig";
     return new Intl.NumberFormat("sv-SE", {
       style: "currency",

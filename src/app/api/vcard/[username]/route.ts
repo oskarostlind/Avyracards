@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { consumeRateLimit, type RateLimitOptions } from "@/lib/rate-limit";
+
+const vcardRateLimitOptions: RateLimitOptions = {
+  windowMs: 60_000,
+  max: 60,
+};
 
 // --- HJÄLPFUNKTION: Hämta och konvertera bild till Base64 ---
 async function getBase64Image(url: string) {
@@ -32,6 +38,17 @@ export async function GET(
   try {
     const { username } = params;
     const mode = req.nextUrl.searchParams.get("mode") || "social";
+
+    const ip =
+      req.ip ||
+      req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "unknown";
+    const rateKey = `vcard:${ip}:${username.toLowerCase()}`;
+    const rate = consumeRateLimit(rateKey, vcardRateLimitOptions);
+
+    if (!rate.allowed) {
+      return new NextResponse("Too Many Requests", { status: 429 });
+    }
 
     // 1. Hämta användaren
     const user = await prisma.user.findUnique({

@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { format, subDays, isSameDay, formatDistanceToNow, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, formatDistanceToNow, startOfDay, endOfDay } from "date-fns";
 import { sv } from "date-fns/locale";
 
 import { prisma } from "@/lib/prisma";
@@ -65,8 +65,9 @@ export default async function AnalyticsPage({
 
   if (!user) return redirect("/login");
 
-  const daysParam = typeof searchParams.days === 'string' ? parseInt(searchParams.days, 10) : 30;
-  const selectedDays = isNaN(daysParam) ? 30 : daysParam; 
+  const daysParam = typeof searchParams.days === "string" ? parseInt(searchParams.days, 10) : 30;
+  const selectedDaysRaw = isNaN(daysParam) ? 30 : daysParam;
+  const selectedDays = Math.max(1, Math.min(selectedDaysRaw, 90));
 
   const endDate = endOfDay(new Date());
   const startDate = startOfDay(subDays(endDate, selectedDays));
@@ -83,18 +84,35 @@ export default async function AnalyticsPage({
     orderBy: { createdAt: "desc" },
   });
 
-  const chartData = [];
+  const eventsByDay = new Map<string, { views: number; clicks: number }>();
+
+  for (const event of events) {
+    const day = startOfDay(new Date(event.createdAt));
+    const key = day.toISOString();
+    const bucket = eventsByDay.get(key) ?? { views: 0, clicks: 0 };
+
+    if (event.type === "VIEW") {
+      bucket.views += 1;
+    } else if (event.type === "CLICK") {
+      bucket.clicks += 1;
+    }
+
+    eventsByDay.set(key, bucket);
+  }
+
+  const chartData: { date: string; views: number; clicks: number }[] = [];
   let currentDate = startDate;
 
   while (currentDate <= endDate) {
-    const dayEvents = events.filter((e) =>
-      isSameDay(new Date(e.createdAt), currentDate)
-    );
+    const key = startOfDay(currentDate).toISOString();
+    const bucket = eventsByDay.get(key);
+
     chartData.push({
-      date: format(currentDate, "d MMM", { locale: sv }), 
-      views: dayEvents.filter((e) => e.type === "VIEW").length,
-      clicks: dayEvents.filter((e) => e.type === "CLICK").length,
+      date: format(currentDate, "d MMM", { locale: sv }),
+      views: bucket?.views ?? 0,
+      clicks: bucket?.clicks ?? 0,
     });
+
     currentDate = new Date(currentDate.setDate(currentDate.getDate() + 1));
   }
 
@@ -183,7 +201,7 @@ export default async function AnalyticsPage({
                 trafficSources={trafficSources}
                 topCountries={topCountries}
                 recentActivity={recentActivity}
-                currentDays={selectedDays} 
+                currentDays={selectedDays}
             />
         </div>
     </div>

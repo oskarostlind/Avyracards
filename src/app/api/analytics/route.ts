@@ -12,6 +12,43 @@ const schema = z.object({
   source: z.string().optional(),
 });
 
+const IP_RATE_LIMIT_WINDOW_MS = 60_000; // 1 minut
+const IP_RATE_LIMIT_MAX = 60; // max ~60 events/IP/minut
+
+type RateEntry = {
+  windowStart: number;
+  count: number;
+};
+
+const ipRateLimitStore = new Map<string, RateEntry>();
+
+function consumeRateLimit(key: string) {
+  const now = Date.now();
+  const existing = ipRateLimitStore.get(key);
+
+  if (!existing || now - existing.windowStart > IP_RATE_LIMIT_WINDOW_MS) {
+    ipRateLimitStore.set(key, { windowStart: now, count: 1 });
+    return true;
+  }
+
+  if (existing.count >= IP_RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  existing.count += 1;
+  return true;
+}
+
+const GEO_CACHE_TTL_MS = 60 * 60 * 1000; // 1 timme
+
+type GeoEntry = {
+  country: string | null;
+  city: string | null;
+  expiresAt: number;
+};
+
+const geoCache = new Map<string, GeoEntry>();
+
 export async function POST(req: NextRequest) { // <-- BYT TILL NextRequest
   try {
     const body = await req.json();
@@ -37,7 +74,22 @@ export async function POST(req: NextRequest) { // <-- BYT TILL NextRequest
     // Fallback: Försök läsa av Cloudflare/generell header om Vercel's saknas
     if (!country) country = req.headers.get('cf-ipcountry');
 
-    const ip = req.ip || req.headers.get("x-forwarded-for")?.split(',')[0]; 
+    const ip = req.ip || req.headers.get("x-forwarded-for")?.split(",")[0] || undefined;
+
+    if (ip) {
+      const cached = geoCache.get(ip);
+      if (cached && cached.expiresAt > Date.now()) {
+        if (!city) city = cached.city || null;
+        if (!country) country = cached.country || null;
+      }
+    }
+
+    const rateKey = `${ip || "unknown"}:${data.profileOwnerId}`;
+    const allowed = consumeRateLimit(rateKey);
+
+    if (!allowed) {
+      return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
+    }
 
     // FALLBACK: Om stad saknas (och vi har ett giltigt IP) -> Fråga externt API
     if (!city && ip && ip !== "::1" && ip !== "127.0.0.1") {
@@ -48,6 +100,11 @@ export async function POST(req: NextRequest) { // <-- BYT TILL NextRequest
            if (geoData.city) {
              city = geoData.city; 
              if (!country) country = geoData.country_code; 
+              geoCache.set(ip, {
+                city: city || null,
+                country: country || null,
+                expiresAt: Date.now() + GEO_CACHE_TTL_MS,
+              });
            }
         }
       } catch (e) {
@@ -79,6 +136,14 @@ export async function POST(req: NextRequest) { // <-- BYT TILL NextRequest
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        type: "api_analytics_error",
+        message: "Failed to record analytics event",
+        error: String(error),
+      }),
+    );
     return NextResponse.json({ error: "Bad Request" }, { status: 400 });
   }
 }
