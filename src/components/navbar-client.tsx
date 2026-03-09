@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useIsApp } from "@/hooks/useIsApp";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import { 
@@ -59,6 +60,7 @@ const navLinks = [
 export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const isApp = useIsApp();
 
   const inSocial = pathname === "/" || pathname.startsWith("/social");
   const inBusiness = pathname.startsWith("/business");
@@ -72,7 +74,11 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-nordic-highlight/10 bg-nordic-primary/80 backdrop-blur-md">
+    <header
+      className={`sticky top-0 z-50 border-b border-nordic-highlight/10 bg-nordic-primary/80 backdrop-blur-md ${
+        isApp ? "pt-[env(safe-area-inset-top,20px)]" : ""
+      }`}
+    >
       <div className="mx-auto w-full max-w-7xl px-4 py-3 md:py-4">
         
         {/* === MOBILNAV (HEADER) === */}
