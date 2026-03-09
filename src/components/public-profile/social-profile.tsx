@@ -6,7 +6,9 @@ import { AdBanner } from "@/components/ads/google-adsense";
 import { TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
-import { SocialIcon } from "@/components/icons/social-icons";
+import { SocialIcon, type IconKey } from "@/components/icons/social-icons";
+import { useIsApp } from "@/hooks/useIsApp";
+import { Browser } from "@capacitor/browser";
 import { Save } from "lucide-react";
 import { MappedProfileData } from "@/lib/profile-mapper";
 
@@ -19,6 +21,7 @@ interface SocialProfileProps {
 }
 
 export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
+  const isApp = useIsApp();
   const useCustomTheme = !!user.themeSettings;
   const savedSettings = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
@@ -109,11 +112,9 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
     boxShadow: frameStyle === 'glow' ? `0 0 30px ${accentColor}` : 'none',
   } : {};
 
-  // --- NYTT: Spårning av vCard nedladdning ---
   const handleVcardClick = () => {
     const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
     const device = /mobile/i.test(ua) ? "Mobile" : /ipad|tablet/i.test(ua) ? "Tablet" : "Desktop";
-    
     fetch("/api/analytics", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -124,6 +125,14 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
         device
       }),
     }).catch(() => {});
+  };
+
+  const handleVcardAction = (e: React.MouseEvent, vcardUrl: string) => {
+    if (!isApp) return;
+    e.preventDefault();
+    handleVcardClick();
+    const fullUrl = typeof window !== "undefined" ? `${window.location.origin}${vcardUrl}` : vcardUrl;
+    Browser.open({ url: fullUrl }).catch(() => {});
   };
 
   return (
@@ -154,17 +163,30 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
           {data.actions.length > 0 && (
              <div className="flex flex-wrap justify-center gap-3 mt-6">
                 {data.actions.map(action => (
+                    action.type === "vcard" && isApp ? (
+                      <button
+                        key={action.type}
+                        type="button"
+                        onClick={(e) => handleVcardAction(e, action.url)}
+                        className={`w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform hover:scale-[1.02] mb-2 ${!useCustomTheme ? "bg-slate-100 text-slate-900" : ""}`}
+                        style={primaryStyle}
+                        title={action.label}
+                      >
+                        <Save size={16} /> {action.label}
+                      </button>
+                    ) : (
                     <a 
                       key={action.type}
                       href={action.url}
-                      download={action.type === 'vcard' ? `${user.username}.vcf` : undefined}
-                      onClick={action.type === 'vcard' ? handleVcardClick : undefined}
-                      className={action.type === 'vcard' ? `w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform hover:scale-[1.02] mb-2 ${!useCustomTheme ? 'bg-slate-100 text-slate-900' : ''}` : "p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"}
-                      style={action.type === 'vcard' ? primaryStyle : (useCustomTheme ? { borderColor: settings.accentColor, color: settings.textColor } : {})}
+                      download={action.type === "vcard" ? `${user.username}.vcf` : undefined}
+                      onClick={action.type === "vcard" ? handleVcardClick : undefined}
+                      className={action.type === "vcard" ? `w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform hover:scale-[1.02] mb-2 ${!useCustomTheme ? "bg-slate-100 text-slate-900" : ""}` : "p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"}
+                      style={action.type === "vcard" ? primaryStyle : (useCustomTheme ? { borderColor: settings.accentColor, color: settings.textColor } : {})}
                       title={action.label}
                     >
-                       {action.type === 'vcard' ? <><Save size={16} /> {action.label}</> : <SocialIcon fallbackIcon={action.iconKey as any} size={20} />}
+                       {action.type === "vcard" ? <><Save size={16} /> {action.label}</> : <SocialIcon fallbackIcon={action.iconKey as IconKey} size={20} />}
                     </a>
+                    )
                 ))}
              </div>
           )}

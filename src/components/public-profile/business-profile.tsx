@@ -6,8 +6,10 @@ import { AdBanner } from "@/components/ads/google-adsense";
 import { TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
-import { SocialIcon } from "@/components/icons/social-icons";
+import { SocialIcon, type IconKey } from "@/components/icons/social-icons";
 import { MappedProfileData } from "@/lib/profile-mapper";
+import { useIsApp } from "@/hooks/useIsApp";
+import { Browser } from "@capacitor/browser";
 import { Save } from "lucide-react";
 
 interface BusinessProfileProps {
@@ -26,6 +28,7 @@ const fontMap: Record<string, string> = {
 };
 
 export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
+  const isApp = useIsApp();
   const tokens = getTheme(user.theme); 
   const savedSettings = (user.businessThemeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
@@ -139,11 +142,10 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
   const primaryAction = actions.find(a => a.type === 'vcard');
   const secondaryActions = actions.filter(a => a.type !== 'vcard');
 
-  // --- NYTT: Spårning av vCard nedladdning ---
+  // --- Spårning av vCard nedladdning ---
   const handleVcardClick = () => {
     const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
     const device = /mobile/i.test(ua) ? "Mobile" : /ipad|tablet/i.test(ua) ? "Tablet" : "Desktop";
-    
     fetch("/api/analytics", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -154,6 +156,14 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
         device
       }),
     }).catch(() => {});
+  };
+
+  const handleVcardAction = (e: React.MouseEvent, vcardUrl: string) => {
+    if (!isApp) return;
+    e.preventDefault();
+    handleVcardClick();
+    const fullUrl = typeof window !== "undefined" ? `${window.location.origin}${vcardUrl}` : vcardUrl;
+    Browser.open({ url: fullUrl }).catch(() => {});
   };
 
   return (
@@ -218,16 +228,28 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
           {actions.length > 0 && (
              <div className="p-6 border-b border-white/5 space-y-3">
                 {primaryAction && (
+                    primaryAction.type === "vcard" && isApp ? (
+                      <button
+                        type="button"
+                        onClick={(e) => handleVcardAction(e, primaryAction.url)}
+                        className={`w-full ${getButtonClass()} ${!hasCustomTheme ? "bg-slate-100 text-slate-900 rounded-xl" : ""}`}
+                        style={getButtonStyle(true)}
+                      >
+                        <Save size={18} className="mr-1" />
+                        {primaryAction.label}
+                      </button>
+                    ) : (
                     <a 
                         href={primaryAction.url}
-                        download={primaryAction.type === 'vcard' ? `${user.username}.vcf` : undefined}
-                        onClick={primaryAction.type === 'vcard' ? handleVcardClick : undefined}
-                        className={`w-full ${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-100 text-slate-900 rounded-xl' : ''}`}
+                        download={primaryAction.type === "vcard" ? `${user.username}.vcf` : undefined}
+                        onClick={primaryAction.type === "vcard" ? handleVcardClick : undefined}
+                        className={`w-full ${getButtonClass()} ${!hasCustomTheme ? "bg-slate-100 text-slate-900 rounded-xl" : ""}`}
                         style={getButtonStyle(true)}
                     >
-                        {primaryAction.type === 'vcard' ? <Save size={18} className="mr-1" /> : <SocialIcon fallbackIcon={primaryAction.iconKey as any} size={16} />}
+                        {primaryAction.type === "vcard" ? <Save size={18} className="mr-1" /> : <SocialIcon fallbackIcon={primaryAction.iconKey as IconKey} size={16} />}
                         {primaryAction.label}
                     </a>
+                    )
                 )}
                 
                 {secondaryActions.length > 0 && (
@@ -240,7 +262,7 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
                                 className={`${action.type === 'website' ? 'col-span-2' : ''} ${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-800 text-slate-300 rounded-xl border border-white/10' : ''}`}
                                 style={getButtonStyle(false)}
                             >
-                                <SocialIcon fallbackIcon={action.iconKey as any} size={16} /> {action.label}
+                                <SocialIcon fallbackIcon={action.iconKey as IconKey} size={16} /> {action.label}
                             </a>
                         ))}
                     </div>
