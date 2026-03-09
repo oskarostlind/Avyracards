@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { ReactNode } from "react";
+import type { Viewport } from "next";
 import Script from "next/script";
 import { Manrope } from "next/font/google";
 import { Navbar } from "@/components/navbar";
@@ -16,6 +17,13 @@ const manrope = Manrope({
 export const metadata = {
   title: "AvyraCards",
   description: "Digital NFC-baserad visitkortslösning",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

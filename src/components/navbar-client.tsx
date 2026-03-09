@@ -76,20 +76,22 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
   return (
     <header
       className={`sticky top-0 z-50 border-b border-nordic-highlight/10 bg-nordic-primary/80 backdrop-blur-md ${
-        isApp ? "pt-[env(safe-area-inset-top,20px)]" : ""
+        isApp ? "pt-[max(env(safe-area-inset-top),1rem)]" : ""
       }`}
     >
       <div className="mx-auto w-full max-w-7xl px-4 py-3 md:py-4">
         
         {/* === MOBILNAV (HEADER) === */}
         <div className="flex items-center justify-between md:hidden">
-          <Link
-            href="/"
-            onClick={closeMenu}
-            className="text-base font-semibold tracking-tight text-nordic-secondary"
-          >
-            AvyraCards
-          </Link>
+          {!isApp && (
+            <Link
+              href="/"
+              onClick={closeMenu}
+              className="text-base font-semibold tracking-tight text-nordic-secondary"
+            >
+              AvyraCards
+            </Link>
+          )}
 
           <button
             onClick={() => setIsOpen(!isOpen)}
@@ -160,28 +162,32 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
         <div className="hidden items-center justify-between md:flex">
           {/* VÄNSTER SIDA */}
           <div className="flex items-center gap-8">
-            <Link
-              href="/"
-              className="text-lg font-bold tracking-tight text-nordic-secondary"
-            >
-              AvyraCards
-            </Link>
+            {!isApp && (
+              <Link
+                href="/"
+                className="text-lg font-bold tracking-tight text-nordic-secondary"
+              >
+                AvyraCards
+              </Link>
+            )}
 
             {/* Segment Switcher */}
-            <nav className="rounded-full border border-nordic-highlight/20 bg-white/5 p-1 text-xs">
-              <ul className="flex items-center gap-1">
-                <li>
-                  <Link href="/social" className={`rounded-full px-4 py-1.5 font-medium transition-all ${inSocial ? "bg-nordic-secondary text-nordic-primary shadow-sm" : "text-nordic-highlight hover:text-nordic-secondary"}`}>
-                    Socialt
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/business" className={`rounded-full px-4 py-1.5 font-medium transition-all ${inBusiness ? "bg-nordic-secondary text-nordic-primary shadow-sm" : "text-nordic-highlight hover:text-nordic-secondary"}`}>
-                    Business
-                  </Link>
-                </li>
-              </ul>
-            </nav>
+            {!isApp && (
+              <nav className="rounded-full border border-nordic-highlight/20 bg-white/5 p-1 text-xs">
+                <ul className="flex items-center gap-1">
+                  <li>
+                    <Link href="/social" className={`rounded-full px-4 py-1.5 font-medium transition-all ${inSocial ? "bg-nordic-secondary text-nordic-primary shadow-sm" : "text-nordic-highlight hover:text-nordic-secondary"}`}>
+                      Socialt
+                    </Link>
+                  </li>
+                  <li>
+                    <Link href="/business" className={`rounded-full px-4 py-1.5 font-medium transition-all ${inBusiness ? "bg-nordic-secondary text-nordic-primary shadow-sm" : "text-nordic-highlight hover:text-nordic-secondary"}`}>
+                      Business
+                    </Link>
+                  </li>
+                </ul>
+              </nav>
+            )}
           </div>
 
           {/* HÖGER SIDA (Menyn) */}
