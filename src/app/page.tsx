@@ -1,10 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
+import { useIsApp } from "@/hooks/useIsApp";
 import { Check, ArrowRight, Layers, Users, ShieldCheck, Zap, ChevronDown } from "lucide-react";
 
 export default function HomePage() {
+  const router = useRouter();
+  const { status } = useSession();
+  const isApp = useIsApp();
+
+  useEffect(() => {
+    if (!isApp) {
+      return;
+    }
+
+    if (status === "loading") {
+      return;
+    }
+
+    if (status === "authenticated") {
+      router.replace("/dashboard");
+      return;
+    }
+
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [isApp, status, router]);
+
   return (
     <main className="min-h-screen bg-nordic-primary text-nordic-secondary selection:bg-emerald-500/30 overflow-hidden">
       <div className="mx-auto flex max-w-6xl flex-col gap-24 px-4 pb-24 pt-24 md:px-8">
