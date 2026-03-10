@@ -155,15 +155,21 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
         source: "vcard",
         device
       }),
-    }).catch(() => {});
+    }).catch((error) => console.error("Analytics error", error));
   };
 
-  const handleVcardAction = (e: React.MouseEvent, vcardUrl: string) => {
+  const handleVcardAction = async (e: React.MouseEvent, vcardUrl: string) => {
     if (!isApp) return;
     e.preventDefault();
     handleVcardClick();
     const fullUrl = typeof window !== "undefined" ? `${window.location.origin}${vcardUrl}` : vcardUrl;
-    Browser.open({ url: fullUrl }).catch(() => {});
+    
+    try {
+      // _system tvingar appen att skicka filen till riktiga Safari/Kontakter
+      await Browser.open({ url: fullUrl, windowName: '_system' });
+    } catch (error) {
+      console.error("Failed to open vCard link", error);
+    }
   };
 
   return (

@@ -39,17 +39,24 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
         url: fullUrl,
         dialogTitle: "Dela profil",
       });
-    } catch {
-      // Användaren avbröt eller Share inte tillgänglig – fallback till kopiera
+    } catch (error) {
+      // Användaren avbröt eller plugin saknas – fallback till kopiera
+      console.warn("Share failed or cancelled, falling back to copy", error);
       copyToClipboard();
     }
   };
 
-  const handleAppleWalletClick = (e: React.MouseEvent) => {
+  const handleAppleWalletClick = async (e: React.MouseEvent) => {
     if (!isApp) return;
     e.preventDefault();
     const walletUrl = `${origin}/api/wallet/apple`;
-    Browser.open({ url: walletUrl }).catch(() => {});
+    
+    try {
+      // _system tvingar appen att skicka filen till riktiga Safari/Apple Wallet
+      await Browser.open({ url: walletUrl, windowName: '_system' });
+    } catch (error) {
+      console.error("Failed to open Apple Wallet link", error);
+    }
   };
 
   return (
