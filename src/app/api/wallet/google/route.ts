@@ -11,18 +11,52 @@ interface WalletClassResponse {
   [key: string]: unknown;
 }
 
-export async function GET(_req: NextRequest) {
+// NYTT: Skapa VIP-biljett för Google Wallet i iOS-appen
+export async function POST(_req: NextRequest) {
   try {
-    console.log('--- Starting Wallet Process (UI Update v6) ---');
-
-    // 1. Hämta session och användare
     const session = await auth();
     if (!session || !session.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    const secret = process.env.NEXTAUTH_SECRET || "fallback_secret";
+    const token = jwt.sign({ email: session.user.email }, secret, { expiresIn: '5m' });
+
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/wallet/google?token=${token}`;
+    return NextResponse.json({ url });
+  } catch (error) {
+    return new NextResponse("Failed to generate token", { status: 500 });
+  }
+}
+
+// UPPDATERAD: Accepterar antingen vanlig inloggning eller VIP-biljett
+export async function GET(req: NextRequest) {
+  try {
+    console.log('--- Starting Wallet Process (UI Update v6) ---');
+
+    const { searchParams } = new URL(req.url);
+    const urlToken = searchParams.get('token');
+    let userEmail = "";
+
+    // 1. Validera token eller session
+    if (urlToken) {
+      try {
+        const secret = process.env.NEXTAUTH_SECRET || "fallback_secret";
+        const decoded = jwt.verify(urlToken, secret) as { email: string };
+        userEmail = decoded.email;
+      } catch (e) {
+        return new NextResponse("Invalid or expired token", { status: 401 });
+      }
+    } else {
+      const session = await auth();
+      if (!session || !session.user?.email) {
+        return new NextResponse("Unauthorized", { status: 401 });
+      }
+      userEmail = session.user.email;
+    }
+
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { email: userEmail },
     });
 
     if (!user) {
@@ -74,7 +108,6 @@ export async function GET(_req: NextRequest) {
             classTemplateInfo: {
               cardTemplateOverride: {
                 cardRowTemplateInfos: [
-                  // RAD 1: Namn (Stacked)
                   {
                     oneItem: {
                       item: {
@@ -86,7 +119,6 @@ export async function GET(_req: NextRequest) {
                       }
                     }
                   },
-                  // RAD 2: Titel/Bio (Stacked)
                   {
                     oneItem: {
                       item: {
@@ -98,7 +130,6 @@ export async function GET(_req: NextRequest) {
                       }
                     }
                   },
-                  // RAD 3: Länk (Stacked)
                   {
                     oneItem: {
                       item: {
@@ -123,19 +154,12 @@ export async function GET(_req: NextRequest) {
     }
 
     // 4. Data Mapping & URL Fix
-    
-    // FIX PUNKT 1: Tvinga .se i URL:en
     let baseDomain = process.env.NEXT_PUBLIC_BASE_URL || 'https://avyracards.se';
-    baseDomain = baseDomain.replace('.com', '.se'); // Säkerställ att det blir .se
+    baseDomain = baseDomain.replace('.com', '.se'); 
     
-    // --- HÄR ÄR ÄNDRINGEN FÖR ANALYTICS ---
-    // Vi lägger till ?source=wallet här. Detta är länken QR-koden leder till.
     const profileUrl = `${baseDomain}/u/${user.username}?source=wallet`;
-    
-    // Visuell länk (utan ?source=wallet för att hålla det snyggt)
     const displayUrl = `avyracards.se/u/${user.username}`;
     
-    // FIX PUNKT 2: Google Image URL
     const logoUri = (user.avatarUrl && user.avatarUrl.startsWith('http')) 
       ? user.avatarUrl 
       : 'https://avyracards.se/wallet/logo.png';
@@ -156,11 +180,9 @@ export async function GET(_req: NextRequest) {
             cardTitle: {
               defaultValue: { language: 'en-US', value: 'AvyraCards' },
             },
-            // Värdena (Stor text där nere)
             header: {
               defaultValue: { language: 'en-US', value: user.name || user.username || "Användare" },
             },
-            // Etiketterna (Liten text där uppe)
             subheader: {
               defaultValue: { language: 'sv-SE', value: 'NAMN' },
             },
@@ -171,12 +193,12 @@ export async function GET(_req: NextRequest) {
               },
               {
                 header: "PROFIL",
-                body: displayUrl // Visar den snygga .se länken (utan tracking)
+                body: displayUrl 
               }
             ],
             barcode: {
               type: "QR_CODE",
-              value: profileUrl, // QR-koden innehåller tracking-länken
+              value: profileUrl, 
               alternateText: user.username || "Profil"
             },
             logo: {

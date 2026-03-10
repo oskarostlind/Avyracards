@@ -14,6 +14,8 @@ type PublicProfileCardProps = {
 export function PublicProfileCard({ username, className }: PublicProfileCardProps) {
   const [copied, setCopied] = useState(false);
   const [origin, setOrigin] = useState("https://avyracards.se");
+  const [isAppleLoading, setIsAppleLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const isApp = useIsApp();
 
   useEffect(() => {
@@ -40,7 +42,6 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
         dialogTitle: "Dela profil",
       });
     } catch (error) {
-      // Användaren avbröt eller plugin saknas – fallback till kopiera
       console.warn("Share failed or cancelled, falling back to copy", error);
       copyToClipboard();
     }
@@ -49,13 +50,38 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
   const handleAppleWalletClick = async (e: React.MouseEvent) => {
     if (!isApp) return;
     e.preventDefault();
-    const walletUrl = `${origin}/api/wallet/apple`;
+    setIsAppleLoading(true);
     
     try {
-      // _system tvingar appen att skicka filen till riktiga Safari/Apple Wallet
-      await Browser.open({ url: walletUrl, windowName: '_system' });
+      const res = await fetch('/api/wallet/apple', { method: 'POST' });
+      if (!res.ok) throw new Error("Kunde inte hämta säkerhets-token");
+      
+      const data = (await res.json()) as { url: string };
+      await Browser.open({ url: data.url, windowName: '_system' });
     } catch (error) {
       console.error("Failed to open Apple Wallet link", error);
+      alert("Något gick fel när vi försökte öppna din Apple Wallet. Försök igen.");
+    } finally {
+      setIsAppleLoading(false);
+    }
+  };
+
+  const handleGoogleWalletClick = async (e: React.MouseEvent) => {
+    if (!isApp) return;
+    e.preventDefault();
+    setIsGoogleLoading(true);
+    
+    try {
+      const res = await fetch('/api/wallet/google', { method: 'POST' });
+      if (!res.ok) throw new Error("Kunde inte hämta säkerhets-token");
+      
+      const data = (await res.json()) as { url: string };
+      await Browser.open({ url: data.url, windowName: '_system' });
+    } catch (error) {
+      console.error("Failed to open Google Wallet link", error);
+      alert("Något gick fel när vi försökte öppna din Google Wallet. Försök igen.");
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -112,10 +138,11 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
             <button
               type="button"
               onClick={handleAppleWalletClick}
-              className="flex items-center justify-center gap-2 bg-[#1C1C1E] text-nordic-secondary border border-white/10 px-4 py-3 rounded-xl hover:bg-[#2C2C2E] transition-all font-medium text-xs sm:text-sm shadow-lg"
+              disabled={isAppleLoading}
+              className="flex items-center justify-center gap-2 bg-[#1C1C1E] text-nordic-secondary border border-white/10 px-4 py-3 rounded-xl hover:bg-[#2C2C2E] transition-all font-medium text-xs sm:text-sm shadow-lg disabled:opacity-50"
             >
               <Wallet size={16} className="text-nordic-secondary" />
-              <span>Apple Wallet</span>
+              <span>{isAppleLoading ? "Laddar..." : "Apple Wallet"}</span>
             </button>
           ) : (
             <a
@@ -128,20 +155,37 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
           )}
 
           {/* Google Wallet */}
-          <a
-            href="/api/wallet/google"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 bg-nordic-secondary text-nordic-primary border border-nordic-support px-4 py-3 rounded-xl hover:bg-nordic-support transition-all font-medium text-xs sm:text-sm shadow-lg"
-          >
-            <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M21.75 9.75H13.5V21H21.75C22.5784 21 23.25 20.3284 23.25 19.5V11.25C23.25 10.4216 22.5784 9.75 21.75 9.75Z" fill="#FBBC04"/>
-              <path d="M12.75 21V9.75H4.5C3.67157 9.75 3 10.4216 3 11.25V19.5C3 20.3284 3.67157 21 4.5 21H12.75Z" fill="#EA4335"/>
-              <path d="M12.75 3V9.75H21.75C22.2575 9.75 22.708 9.87703 23.1075 10.1006L16.2075 3.20062C15.27 2.26312 14.025 1.75687 12.75 1.75687V3Z" fill="#4285F4"/>
-              <path d="M4.5 9.75H12.75V3L4.5 9.75Z" fill="#34A853"/>
-            </svg>
-            <span>Google Wallet</span>
-          </a>
+          {isApp ? (
+            <button
+              type="button"
+              onClick={handleGoogleWalletClick}
+              disabled={isGoogleLoading}
+              className="flex items-center justify-center gap-2 bg-nordic-secondary text-nordic-primary border border-nordic-support px-4 py-3 rounded-xl hover:bg-nordic-support transition-all font-medium text-xs sm:text-sm shadow-lg disabled:opacity-50"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21.75 9.75H13.5V21H21.75C22.5784 21 23.25 20.3284 23.25 19.5V11.25C23.25 10.4216 22.5784 9.75 21.75 9.75Z" fill="#FBBC04"/>
+                <path d="M12.75 21V9.75H4.5C3.67157 9.75 3 10.4216 3 11.25V19.5C3 20.3284 3.67157 21 4.5 21H12.75Z" fill="#EA4335"/>
+                <path d="M12.75 3V9.75H21.75C22.2575 9.75 22.708 9.87703 23.1075 10.1006L16.2075 3.20062C15.27 2.26312 14.025 1.75687 12.75 1.75687V3Z" fill="#4285F4"/>
+                <path d="M4.5 9.75H12.75V3L4.5 9.75Z" fill="#34A853"/>
+              </svg>
+              <span>{isGoogleLoading ? "Laddar..." : "Google Wallet"}</span>
+            </button>
+          ) : (
+            <a
+              href="/api/wallet/google"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 bg-nordic-secondary text-nordic-primary border border-nordic-support px-4 py-3 rounded-xl hover:bg-nordic-support transition-all font-medium text-xs sm:text-sm shadow-lg"
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21.75 9.75H13.5V21H21.75C22.5784 21 23.25 20.3284 23.25 19.5V11.25C23.25 10.4216 22.5784 9.75 21.75 9.75Z" fill="#FBBC04"/>
+                <path d="M12.75 21V9.75H4.5C3.67157 9.75 3 10.4216 3 11.25V19.5C3 20.3284 3.67157 21 4.5 21H12.75Z" fill="#EA4335"/>
+                <path d="M12.75 3V9.75H21.75C22.2575 9.75 22.708 9.87703 23.1075 10.1006L16.2075 3.20062C15.27 2.26312 14.025 1.75687 12.75 1.75687V3Z" fill="#4285F4"/>
+                <path d="M4.5 9.75H12.75V3L4.5 9.75Z" fill="#34A853"/>
+              </svg>
+              <span>Google Wallet</span>
+            </a>
+          )}
         </div>
       </div>
     </div>

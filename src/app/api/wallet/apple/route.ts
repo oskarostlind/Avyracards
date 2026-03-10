@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PKPass } from "passkit-generator";
 import path from "path";
 import fs from "fs/promises";
+import jwt from "jsonwebtoken";
 
 export const dynamic = 'force-dynamic';
 
-// Hjälpfunktion för att hämta bild från URL och göra om till Buffer
 async function fetchImageBuffer(url: string | null): Promise<Buffer | undefined> {
   if (!url) return undefined;
   try {
@@ -21,22 +21,57 @@ async function fetchImageBuffer(url: string | null): Promise<Buffer | undefined>
   }
 }
 
-export async function GET() {
+// NYTT: Denna skapar VIP-biljetten (token) inuti appen där vi vet vem användaren är
+export async function POST() {  
   try {
     const session = await auth();
     if (!session || !session.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    });
+    // Skapa en säker, tidsbegränsad token (giltig 5 minuter)
+    const secret = process.env.NEXTAUTH_SECRET || "fallback_secret";
+    const token = jwt.sign({ email: session.user.email }, secret, { expiresIn: '5m' });
 
-    if (!user) {
-      return new NextResponse("User not found", { status: 404 });
+    // Skicka tillbaka en URL med token i
+    const url = `${process.env.NEXT_PUBLIC_BASE_URL}/api/wallet/apple?token=${token}`;
+    return NextResponse.json({ url });
+  } catch (error) {
+    return new NextResponse("Failed to generate token", { status: 500 });
+  }
+}
+
+// UPPDATERAD: Accepterar antingen vanlig inloggning (desktop) ELLER vår VIP-biljett (från iOS Safari)
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const token = searchParams.get('token');
+    let userEmail = "";
+
+    // 1. Kolla om vi fick en VIP-biljett
+    if (token) {
+      try {
+        const secret = process.env.NEXTAUTH_SECRET || "fallback_secret";
+        const decoded = jwt.verify(token, secret) as { email: string };
+        userEmail = decoded.email;
+      } catch (e) {
+        return new NextResponse("Invalid or expired token", { status: 401 });
+      }
+    } else {
+      // 2. Om ingen biljett finns, kolla vanliga cookies (t.ex. vid datorn)
+      const session = await auth();
+      if (!session || !session.user?.email) {
+        return new NextResponse("Unauthorized. Not logged in.", { status: 401 });
+      }
+      userEmail = session.user.email;
     }
 
-    // 1. Läs in certifikat från MILJÖVARIABLER (Base64)
+    const user = await prisma.user.findUnique({
+      where: { email: userEmail },
+    });
+
+    if (!user) return new NextResponse("User not found", { status: 404 });
+
     const signerPem = Buffer.from(process.env.WALLET_SIGNER_PEM || '', 'base64');
     const privateKey = Buffer.from(process.env.WALLET_PRIVATE_KEY || '', 'base64');
     const wwdrPem = Buffer.from(process.env.WALLET_WWDR_PEM || '', 'base64');
@@ -45,18 +80,15 @@ export async function GET() {
         throw new Error("Missing wallet certificates in environment variables");
     }
 
-    // 2. Hämta profilbild (Thumbnail)
     const avatarUrl = user.avatarUrl;
     const thumbnailBuffer = await fetchImageBuffer(avatarUrl);
 
-    // 3. Läs in statiska ikoner från PUBLIC-mappen
     const publicDir = path.join(process.cwd(), 'public', 'wallet');
     const [iconBuffer, logoBuffer] = await Promise.all([
       fs.readFile(path.join(publicDir, "icon.png")),
       fs.readFile(path.join(publicDir, "logo.png")),
     ]);
 
-    // Skapa bild-objektet dynamiskt
     const passImages: Record<string, Buffer> = {
         "logo.png": logoBuffer,
         "icon.png": iconBuffer,
@@ -66,7 +98,6 @@ export async function GET() {
         passImages["thumbnail.png"] = thumbnailBuffer;
     }
 
-    // 4. Skapa Passet
     const pass = new PKPass(
       passImages,
       {
@@ -88,10 +119,8 @@ export async function GET() {
       }
     );
 
-    // --- HÄR ÄR ÄNDRINGEN FÖR ANALYTICS ---
     pass.setBarcodes({
       format: "PKBarcodeFormatQR",
-      // Vi lägger till ?source=wallet här
       message: `${process.env.NEXT_PUBLIC_BASE_URL}/u/${user.username}?source=wallet`,
       messageEncoding: "iso-8859-1",
       altText: user.username || "Profile"
@@ -114,7 +143,7 @@ export async function GET() {
     pass.auxiliaryFields.push({
       key: "url",
       label: "PROFIL",
-      value: `avyracards.com/u/${user.username}`, // Visas bara för användaren, behöver inte source
+      value: `avyracards.se/u/${user.username}`,
     });
     
     pass.backFields.push({
@@ -137,6 +166,6 @@ export async function GET() {
 
   } catch (error) {
     console.error("Wallet Error:", error);
-    return new NextResponse("Internal Server Error: " + (error as Error).message, { status: 500 });
+    return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
