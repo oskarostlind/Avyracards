@@ -18,7 +18,9 @@ import {
   MessageCircle,
   Smartphone,
   Briefcase,
-  Save // <-- NY IMPORT
+  Save,
+  Ghost,
+  Headphones
 } from "lucide-react";
 import React from "react";
 
@@ -34,9 +36,9 @@ export const iconMap = {
   youtube: Youtube,
   twitch: Twitch,
   tiktok: Music,
-  spotify: Music,
-  whatsapp: MessageCircle,
-  snapchat: MessageCircle,
+  spotify: Headphones,
+  whatsapp: Phone,
+  snapchat: Ghost,
   discord: MessageCircle,
 
   // Business & Kontakt
@@ -50,7 +52,7 @@ export const iconMap = {
   meeting: Video,
   location: MapPin,
   job: Briefcase,
-  contact: Save, // <-- NY IKON FÖR VCARD
+  contact: Save,
   
   // Fallback
   default: LinkIcon,
@@ -78,7 +80,8 @@ export function detectIconKey(urlOrTitle?: string | null): IconKey {
   if (lower.includes("twitch")) return "twitch";
   if (lower.includes("tiktok")) return "tiktok";
   if (lower.includes("spotify")) return "spotify";
-  if (lower.includes("whatsapp")) return "whatsapp";
+  if (lower.includes("whatsapp") || lower.includes("wa.me")) return "whatsapp";
+  if (lower.includes("snapchat")) return "snapchat";
   if (lower.includes("discord")) return "discord";
   
   // Business
@@ -105,5 +108,6 @@ export function SocialIcon({ url, fallbackIcon = "default", className, ...props 
   const iconKey = url ? detectIconKey(url) : fallbackIcon;
   const IconComponent = iconMap[iconKey];
 
-  return <IconComponent className={className} {...(props as any)} />;
+  // Använder React.ComponentProps<"svg"> istället för 'any' för strikt typning
+  return <IconComponent className={className} {...(props as React.ComponentProps<"svg">)} />;
 }

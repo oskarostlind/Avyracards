@@ -2,6 +2,53 @@
 ```
 SocialCard-Next.js
 ├─ .eslintrc.json
+├─ capacitor.config.ts
+├─ ios
+│  ├─ App
+│  │  ├─ App
+│  │  │  ├─ AppDelegate.swift
+│  │  │  ├─ Assets.xcassets
+│  │  │  │  ├─ AppIcon.appiconset
+│  │  │  │  │  ├─ AppIcon-512@2x.png
+│  │  │  │  │  └─ Contents.json
+│  │  │  │  ├─ Contents.json
+│  │  │  │  └─ Splash.imageset
+│  │  │  │     ├─ Contents.json
+│  │  │  │     ├─ splash-2732x2732-1.png
+│  │  │  │     ├─ splash-2732x2732-2.png
+│  │  │  │     └─ splash-2732x2732.png
+│  │  │  ├─ Base.lproj
+│  │  │  │  ├─ LaunchScreen.storyboard
+│  │  │  │  └─ Main.storyboard
+│  │  │  ├─ capacitor.config.json
+│  │  │  ├─ config.xml
+│  │  │  ├─ Info.plist
+│  │  │  └─ public
+│  │  │     ├─ ads.txt
+│  │  │     ├─ cordova.js
+│  │  │     ├─ cordova_plugins.js
+│  │  │     ├─ default-profile.png
+│  │  │     ├─ media
+│  │  │     │  └─ socialcard-demo.mp4
+│  │  │     └─ wallet
+│  │  │        ├─ icon.png
+│  │  │        └─ logo.png
+│  │  ├─ App.xcodeproj
+│  │  │  ├─ project.pbxproj
+│  │  │  └─ project.xcworkspace
+│  │  │     └─ xcshareddata
+│  │  │        └─ IDEWorkspaceChecks.plist
+│  │  └─ CapApp-SPM
+│  │     ├─ Package.swift
+│  │     ├─ README.md
+│  │     └─ Sources
+│  │        └─ CapApp-SPM
+│  │           └─ CapApp-SPM.swift
+│  ├─ capacitor-cordova-ios-plugins
+│  │  ├─ CordovaPluginsResources.podspec
+│  │  ├─ resources
+│  │  └─ sources
+│  └─ debug.xcconfig
 ├─ next-env.d.ts
 ├─ next.config.mjs
 ├─ package-lock.json
@@ -9,6 +56,7 @@ SocialCard-Next.js
 ├─ postcss.config.js
 ├─ postcss.config.mjs
 ├─ prisma
+│  ├─ cleanup-analytics.ts
 │  ├─ migrations
 │  │  ├─ 20251120214444_add_email_verification
 │  │  │  └─ migration.sql
@@ -26,6 +74,7 @@ SocialCard-Next.js
 ├─ public
 │  ├─ ads.txt
 │  ├─ default-profile.png
+│  ├─ index.html
 │  ├─ media
 │  │  └─ socialcard-demo.mp4
 │  └─ wallet
@@ -113,9 +162,14 @@ SocialCard-Next.js
 │  │  │  ├─ unsplash
 │  │  │  │  └─ route.ts
 │  │  │  ├─ upload
+│  │  │  │  ├─ print
+│  │  │  │  │  └─ route.ts
 │  │  │  │  ├─ profile-image
 │  │  │  │  │  └─ route.ts
 │  │  │  │  └─ route.ts
+│  │  │  ├─ vcard
+│  │  │  │  └─ [username]
+│  │  │  │     └─ route.ts
 │  │  │  ├─ wallet
 │  │  │  │  ├─ apple
 │  │  │  │  │  └─ route.ts
@@ -257,14 +311,18 @@ SocialCard-Next.js
 │  ├─ data
 │  │  ├─ theme-templates-business.ts
 │  │  └─ theme-templates-social.ts
+│  ├─ hooks
+│  │  └─ useIsApp.ts
 │  ├─ lib
 │  │  ├─ constants.ts
 │  │  ├─ crop-image.ts
+│  │  ├─ data-access.ts
 │  │  ├─ email.ts
 │  │  ├─ password.ts
 │  │  ├─ prisma.ts
 │  │  ├─ products.ts
 │  │  ├─ profile-mapper.ts
+│  │  ├─ rate-limit.ts
 │  │  ├─ session.ts
 │  │  └─ stripe.ts
 │  ├─ middleware.ts
@@ -283,10 +341,3 @@ SocialCard-Next.js
 └─ vitest.config.ts
 
 ```
-
-## Prestanda- och datatillgångsriktlinjer
-
-- **Undvik N+1-frågor**: Använd set-baserade Prisma-queries (`findMany` med `include`/`select`/`_count`) i stället för att göra databasanrop i loopar.
-- **Återanvänd helpers**: För återkommande datamönster (t.ex. dashboard-data) använd helpers i `src/lib` (t.ex. `getDashboardUserWithRecentOrders`) i stället för att skriva ad-hoc-queries i komponenter.
-- **Filtrera och begränsa**: Lägg alltid på relevanta `where`-villkor och `take`/pagination för listor som kan växa (ordrar, analytics-events).
-- **Indexmedvetenhet**: När du lägger till nya tunga queries, verifiera att motsvarande fält är indexerade i `prisma/schema.prisma` innan du går till produktion.
