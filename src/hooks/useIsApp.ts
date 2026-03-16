@@ -15,24 +15,9 @@ export function useIsApp(): boolean {
     }
 
     const appWindow = window as AppWindow;
-    const detected = typeof appWindow.Capacitor !== "undefined";
-    if (detected) {
+    if (typeof appWindow.Capacitor !== "undefined") {
       setIsApp(true);
     }
-    // #region agent log
-    fetch("/api/debug-log", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        sessionId: "1abe96",
-        location: "useIsApp.ts:effect",
-        message: "useIsApp Capacitor check",
-        data: { detected },
-        timestamp: Date.now(),
-        hypothesisId: "A",
-      }),
-    }).catch(() => {});
-    // #endregion
   }, []);
 
   return isApp;

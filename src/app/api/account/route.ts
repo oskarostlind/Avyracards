@@ -8,6 +8,9 @@ const accountSchema = z.object({
   marketingConsent: z.boolean().optional(),
   productUpdates: z.boolean().optional(),
   hideFromSearch: z.boolean().optional(),
+  notifyOnProfileView: z.boolean().optional(),
+  notifyOnLinkClick: z.boolean().optional(),
+  notifyOnContactSave: z.boolean().optional(),
   username: z
     .string()
     .min(3, "Minst 3 tecken")
@@ -34,11 +37,14 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const { 
-      currentPassword, 
-      newPassword, 
-      username, 
-      ...settings 
+    const {
+      currentPassword,
+      newPassword,
+      username,
+      notifyOnProfileView,
+      notifyOnLinkClick,
+      notifyOnContactSave,
+      ...settings
     } = result.data;
 
     // Hämta nuvarande användare för verifiering
@@ -50,7 +56,10 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "Användare hittades inte" }, { status: 404 });
     }
 
-    const updateData: any = { ...settings };
+    const updateData: Record<string, unknown> = { ...settings };
+    if (notifyOnProfileView !== undefined) updateData.notifyOnProfileView = notifyOnProfileView;
+    if (notifyOnLinkClick !== undefined) updateData.notifyOnLinkClick = notifyOnLinkClick;
+    if (notifyOnContactSave !== undefined) updateData.notifyOnContactSave = notifyOnContactSave;
 
     // --- 1. HANTERA ANVÄNDARNAMN ---
     if (username && username !== user.username) {

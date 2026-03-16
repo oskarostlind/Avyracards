@@ -8,6 +8,7 @@ import { SettingsTabs } from "@/components/profile/settings-tabs";
 import { AccountForm } from "@/components/profile/account-form";
 import { BillingView } from "@/components/profile/billing-view";
 import { CardsView } from "@/components/profile/cards-view";
+import { NotificationsForm } from "@/components/profile/notifications-form";
 
 type PageProps = {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -25,12 +26,16 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
     select: {
       email: true,
       username: true,
-      passwordHash: true, 
+      passwordHash: true,
       isPremium: true,
       stripeCustomerId: true,
       marketingConsent: true,
       productUpdates: true,
       hideFromSearch: true,
+      // @ts-expect-error - notifyOn* finns i schema; UserSelect inkluderas efter npx prisma generate
+      notifyOnProfileView: true,
+      notifyOnLinkClick: true,
+      notifyOnContactSave: true,
       cards: {
         orderBy: { createdAt: 'desc' }
       }
@@ -126,6 +131,20 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
           {view === "cards" && (
             // @ts-ignore - Fixar ev. typ-mismatch
             <CardsView cards={user.cards} />
+          )}
+
+          {view === "notifications" && (
+            <NotificationsForm
+              notifyOnProfileView={
+                (user as { notifyOnProfileView?: boolean }).notifyOnProfileView ?? true
+              }
+              notifyOnLinkClick={
+                (user as { notifyOnLinkClick?: boolean }).notifyOnLinkClick ?? false
+              }
+              notifyOnContactSave={
+                (user as { notifyOnContactSave?: boolean }).notifyOnContactSave ?? true
+              }
+            />
           )}
         </div>
       </div>

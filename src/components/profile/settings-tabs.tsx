@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Settings, CreditCard, Layers } from "lucide-react";
+import { Settings, CreditCard, Layers, Bell } from "lucide-react";
 
 export function SettingsTabs() {
   const searchParams = useSearchParams();
@@ -14,6 +14,7 @@ export function SettingsTabs() {
     { id: "account", label: "Konto & Integritet", icon: Settings },
     { id: "billing", label: "Prenumeration", icon: CreditCard },
     { id: "cards", label: "Mina Kort", icon: Layers },
+    { id: "notifications", label: "Notiferingar", icon: Bell },
   ];
 
   return (

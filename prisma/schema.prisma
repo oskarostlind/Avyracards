@@ -96,6 +96,10 @@ model User {
 
   pushToken String?
 
+  notifyOnProfileView  Boolean @default(true)
+  notifyOnLinkClick     Boolean @default(false)
+  notifyOnContactSave   Boolean @default(true)
+
   role Role @default(USER)
 
   // RELATIONER
