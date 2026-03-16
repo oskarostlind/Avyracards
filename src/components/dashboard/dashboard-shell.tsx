@@ -19,7 +19,8 @@ import { SocialView } from "@/components/dashboard/social/social-view";
 import { BusinessView } from "@/components/dashboard/business/business-view";
 import { ProfilePreviewModal } from "@/components/dashboard/profile-preview-modal";
 import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
-import { OrderCardWidget } from "@/components/dashboard/order-card-widget"; // <--- IMPORTERA
+import { OrderCardWidget } from "@/components/dashboard/order-card-widget";
+import { PushManager } from "@/components/dashboard/push-manager";
 
 type DashboardShellProps = {
   // Lägg till hasOrderedCard i typen
@@ -68,7 +69,7 @@ export function DashboardShell({ user, prices }: DashboardShellProps) {
 
   return (
     <div className="space-y-6">
-      
+      <PushManager />
       {/* 1. Verifierings-Banner */}
       {!user.emailVerified && (
          <div className="bg-blue-500/10 border border-blue-500/20 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between animate-in fade-in slide-in-from-top-2">

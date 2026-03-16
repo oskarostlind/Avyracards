@@ -94,6 +94,8 @@ model User {
 
   hasSeenOnboarding Boolean @default(false)
 
+  pushToken String?
+
   role Role @default(USER)
 
   // RELATIONER
