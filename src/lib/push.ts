@@ -13,7 +13,15 @@ export async function sendPushNotification(
 ): Promise<void> {
   if (!token?.trim()) return;
   const firebase = getFirebaseApp();
-  if (!firebase) return;
+  // #region agent log
+  if (!firebase) {
+    console.log(
+      JSON.stringify({ type: "push_debug", message: "Firebase app null, skip send", title })
+    );
+    return;
+  }
+  console.log(JSON.stringify({ type: "push_debug", message: "send_start", title }));
+  // #endregion
   try {
     await firebase.messaging().send({
       token: token.trim(),
@@ -24,14 +32,24 @@ export async function sendPushNotification(
         fcmOptions: {},
       },
     });
+    // #region agent log
+    console.log(JSON.stringify({ type: "push_debug", message: "send_ok", title }));
+    // #endregion
   } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
     console.error(
       JSON.stringify({
         level: "error",
         type: "push_send_error",
         message: "Firebase push send failed",
-        error: err instanceof Error ? err.message : String(err),
+        error: msg,
+        title,
       })
     );
+    // #region agent log
+    console.log(
+      JSON.stringify({ type: "push_debug", message: "send_failed", title, error: msg })
+    );
+    // #endregion
   }
 }

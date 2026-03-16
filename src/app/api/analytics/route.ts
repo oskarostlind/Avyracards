@@ -149,19 +149,40 @@ export async function POST(req: NextRequest) { // <-- BYT TILL NextRequest
       : null;
     const source = data.source || "direct";
     const isVcard = source.toLowerCase() === "vcard";
+    const hasToken = Boolean(owner?.pushToken?.trim());
     const shouldNotify =
-      owner?.pushToken &&
-      ((data.type === "VIEW" && owner.notifyOnProfileView) ||
-        (data.type === "CLICK" && isVcard && owner.notifyOnContactSave) ||
-        (data.type === "CLICK" && !isVcard && owner.notifyOnLinkClick));
-    if (shouldNotify && owner.pushToken) {
+      hasToken &&
+      ((data.type === "VIEW" && owner?.notifyOnProfileView) ||
+        (data.type === "CLICK" && isVcard && owner?.notifyOnContactSave) ||
+        (data.type === "CLICK" && !isVcard && owner?.notifyOnLinkClick));
+    // #region agent log
+    console.log(
+      JSON.stringify({
+        type: "push_debug",
+        eventType: data.type,
+        source,
+        isVcard,
+        hasOwner: Boolean(owner),
+        hasToken,
+        notifyOnProfileView: owner?.notifyOnProfileView,
+        notifyOnLinkClick: owner?.notifyOnLinkClick,
+        notifyOnContactSave: owner?.notifyOnContactSave,
+        shouldNotify,
+      })
+    );
+    // #endregion
+    const token = owner?.pushToken?.trim();
+    if (shouldNotify && token) {
       const [title, body] =
         data.type === "VIEW"
           ? ["Profilvisning", "Någon har öppnat din profil."]
           : isVcard
             ? ["Sparade kontakt", "Någon sparade ditt visitkort."]
             : ["Länkklick", "Någon klickade på en länk på din profil."];
-      void sendPushNotification(owner.pushToken, title, body);
+      // #region agent log
+      console.log(JSON.stringify({ type: "push_debug", action: "calling_send", title }));
+      // #endregion
+      void sendPushNotification(token, title, body);
     }
 
     return NextResponse.json({ success: true });
