@@ -1,7 +1,8 @@
-import { NextResponse, NextRequest } from "next/server"; // <-- NY IMPORT AV NextRequest
+import { NextResponse, NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { auth } from "@/auth"; 
+import { auth } from "@/auth";
 import { z } from "zod";
+import { sendPushNotification } from "@/lib/push";
 
 const schema = z.object({
   type: z.enum(["VIEW", "CLICK"]),
@@ -133,6 +134,35 @@ export async function POST(req: NextRequest) { // <-- BYT TILL NextRequest
         city: city || null,
       },
     });
+
+    // Push-notis om användaren har token och valt att få notis för denna händelsetyp
+    const ownerRow = await prisma.user.findUnique({
+      where: { id: data.profileOwnerId },
+    });
+    const owner = ownerRow
+      ? {
+          pushToken: (ownerRow as { pushToken?: string | null }).pushToken ?? null,
+          notifyOnProfileView: (ownerRow as { notifyOnProfileView?: boolean }).notifyOnProfileView ?? true,
+          notifyOnLinkClick: (ownerRow as { notifyOnLinkClick?: boolean }).notifyOnLinkClick ?? false,
+          notifyOnContactSave: (ownerRow as { notifyOnContactSave?: boolean }).notifyOnContactSave ?? true,
+        }
+      : null;
+    const source = data.source || "direct";
+    const isVcard = source.toLowerCase() === "vcard";
+    const shouldNotify =
+      owner?.pushToken &&
+      ((data.type === "VIEW" && owner.notifyOnProfileView) ||
+        (data.type === "CLICK" && isVcard && owner.notifyOnContactSave) ||
+        (data.type === "CLICK" && !isVcard && owner.notifyOnLinkClick));
+    if (shouldNotify && owner.pushToken) {
+      const [title, body] =
+        data.type === "VIEW"
+          ? ["Profilvisning", "Någon har öppnat din profil."]
+          : isVcard
+            ? ["Sparade kontakt", "Någon sparade ditt visitkort."]
+            : ["Länkklick", "Någon klickade på en länk på din profil."];
+      void sendPushNotification(owner.pushToken, title, body);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {
