@@ -18,15 +18,57 @@ export default function HomePage() {
     }
 
     if (status === "loading") {
+      // #region agent log
+      fetch("/api/debug-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: "1abe96",
+          location: "page.tsx:redirectEffect",
+          message: "App on /, session still loading",
+          data: { status },
+          timestamp: Date.now(),
+          hypothesisId: "C",
+        }),
+      }).catch(() => {});
+      // #endregion
       return;
     }
 
     if (status === "authenticated") {
+      // #region agent log
+      fetch("/api/debug-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: "1abe96",
+          location: "page.tsx:redirectEffect",
+          message: "App redirecting to /dashboard",
+          data: { status },
+          timestamp: Date.now(),
+          hypothesisId: "C",
+        }),
+      }).catch(() => {});
+      // #endregion
       router.replace("/dashboard");
       return;
     }
 
     if (status === "unauthenticated") {
+      // #region agent log
+      fetch("/api/debug-log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId: "1abe96",
+          location: "page.tsx:redirectEffect",
+          message: "App redirecting to /login",
+          data: { status },
+          timestamp: Date.now(),
+          hypothesisId: "C",
+        }),
+      }).catch(() => {});
+      // #endregion
       router.replace("/login");
     }
   }, [isApp, status, router]);
