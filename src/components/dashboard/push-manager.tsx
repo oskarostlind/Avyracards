@@ -17,6 +17,21 @@ async function sendFcmTokenToBackend(token: string): Promise<void> {
   }
 }
 
+async function tryGetFcmTokenAndSend(): Promise<boolean> {
+  try {
+    const { token } = await FCM.getToken();
+    if (token?.trim()) {
+      await sendFcmTokenToBackend(token.trim());
+      return true;
+    }
+  } catch (err) {
+    if (err instanceof Error) {
+      console.error("[PushManager] FCM getToken or send failed:", err.message);
+    }
+  }
+  return false;
+}
+
 export function PushManager() {
   const isApp = useIsApp();
 
@@ -36,19 +51,12 @@ export function PushManager() {
 
         registrationListener = await PushNotifications.addListener(
           "registration",
-          async () => {
-            try {
-              const { token } = await FCM.getToken();
-              if (token?.trim()) {
-                await sendFcmTokenToBackend(token.trim());
-              }
-            } catch (err) {
-              if (err instanceof Error) {
-                console.error("[PushManager] FCM getToken or send failed:", err.message);
-              }
-            }
+          () => {
+            void tryGetFcmTokenAndSend();
           }
         );
+
+        void tryGetFcmTokenAndSend();
       } catch (err) {
         if (err instanceof Error) {
           console.error("[PushManager] setup failed:", err.message);
