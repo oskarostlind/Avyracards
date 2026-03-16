@@ -6,7 +6,12 @@ const config: CapacitorConfig = {
   webDir: 'public',
   server: {
     url: 'https://avyracards.se'
-  }
+  },
+  plugins: {
+    SplashScreen: {
+      launchAutoHide: false,
+    },
+  },
 };
 
 export default config;

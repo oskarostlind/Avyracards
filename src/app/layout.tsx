@@ -7,6 +7,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import SessionProviderWrapper from "@/components/providers/session-provider";
 import CookieBanner from "@/components/cookie-banner";
+import { SplashScreenManager } from "@/components/splash-screen-manager";
 
 // Initiera Manrope-fonten
 const manrope = Manrope({
@@ -51,6 +52,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         )}
 
         <SessionProviderWrapper>
+          <SplashScreenManager />
           <div className="flex min-h-screen flex-col">
             <Navbar />
             <main className="flex-1">{children}</main>

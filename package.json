@@ -16,6 +16,7 @@
     "@capacitor/ios": "^8.2.0",
     "@capacitor/push-notifications": "^8.0.2",
     "@capacitor/share": "^8.0.1",
+    "@capacitor/splash-screen": "^8.0.1",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^5.19.1",
     "@vercel/blob": "^0.25.1",
