@@ -10,6 +10,17 @@ const pushTokenSchema = z.object({
 export async function POST(req: Request) {
   const session = await auth();
 
+  // #region agent log
+  console.log(
+    JSON.stringify({
+      type: "push_debug",
+      message: "push_token_endpoint_called",
+      hasSession: Boolean(session?.user?.id),
+      userId: session?.user?.id ?? null,
+    })
+  );
+  // #endregion
+
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -30,6 +41,16 @@ export async function POST(req: Request) {
     where: { id: session.user.id },
     data: { pushToken: token },
   });
+
+  // #region agent log
+  console.log(
+    JSON.stringify({
+      type: "push_debug",
+      message: "push_token_saved",
+      userId: session.user.id,
+    })
+  );
+  // #endregion
 
   return NextResponse.json({ ok: true });
 }
