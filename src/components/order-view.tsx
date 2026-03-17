@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect, Suspense } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Loader2, Layers, CreditCard, Upload, X, Check, Sparkles } from "lucide-react";
+import { Loader2, Layers, CreditCard, Upload, X, Check, Sparkles, ArrowRight } from "lucide-react";
 import { CardPreview3D } from "@/components/card-preview-3d"; 
 import { LiveProfileDemo } from "@/components/live-profile-demo";
 
@@ -358,6 +359,22 @@ const handleCheckout = async () => {
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload}/>
              </div>
           )}
+
+           {/* Enbart Premium – länk till /checkout/premium */}
+           {!isPremium && (
+            <div className="rounded-xl border border-purple-500/30 bg-purple-500/10 p-4 space-y-3">
+              <p className="text-sm text-slate-200">
+                Vill du bara uppgradera till Premium utan att beställa kort?
+              </p>
+              <Link
+                href="/checkout/premium"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-semibold text-sm transition-colors"
+              >
+                Gå till Premium
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+           )}
 
            {/* 4. PREMIUM SELECTION - Visas om ej premium */}
            {!isPremium && bundleVariant && (
