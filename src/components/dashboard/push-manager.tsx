@@ -28,26 +28,18 @@ export function PushManager() {
 
     const setupPush = async () => {
       try {
-        // #region agent log
-        try {
-          alert("Push: start");
-        } catch {
-          // ignore
-        }
-        // #endregion
-
         // 1) Permissions
         let permResult: { receive: string } | null = null;
         try {
           permResult = await PushNotifications.requestPermissions();
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          alert(`Push: requestPermissions failed: ${msg}`);
+          if (err instanceof Error) {
+            console.error("[PushManager] requestPermissions failed:", err.message);
+          }
           return;
         }
 
         if (permResult.receive !== "granted") {
-          alert(`Push: permissions not granted (${permResult.receive})`);
           return;
         }
 
@@ -74,18 +66,19 @@ export function PushManager() {
         try {
           await PushNotifications.register();
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          alert(`Push: register failed: ${msg}`);
+          if (err instanceof Error) {
+            console.error("[PushManager] register failed:", err.message);
+          }
           return;
         }
 
         // 4) Await registration event (or error)
         try {
           await registrationPromise;
-          alert("Push: registered");
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          alert(`Push: registrationError: ${msg}`);
+          if (err instanceof Error) {
+            console.error("[PushManager] registrationError:", err.message);
+          }
           return;
         }
 
@@ -95,24 +88,23 @@ export function PushManager() {
           const res = await FCM.getToken();
           fcmToken = (res?.token ?? "").trim() || null;
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          alert(`Push: FCM.getToken failed: ${msg}`);
+          if (err instanceof Error) {
+            console.error("[PushManager] FCM.getToken failed:", err.message);
+          }
           return;
         }
 
         if (!fcmToken) {
-          alert("Push: FCM token empty");
           return;
         }
 
         // 6) Send token to backend
         try {
           await sendTokenToBackend(fcmToken);
-          alert("Push: token saved");
         } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          alert(`Push: POST /api/user/push-token failed: ${msg}`);
-          return;
+          if (err instanceof Error) {
+            console.error("[PushManager] POST /api/user/push-token failed:", err.message);
+          }
         }
       } catch (err) {
         if (err instanceof Error) {
