@@ -3,15 +3,17 @@ import { getFirebaseApp } from "@/lib/firebase-admin";
 
 /**
  * Skickar en push-notis via Firebase Cloud Messaging.
- * Token ska vara FCM registration token (från t.ex. @capacitor-community/fcm getToken()).
- * Om Firebase inte är konfigurerad eller skickandet misslyckas loggas det utan att kasta.
+ * Token ska vara en FCM registration token (t.ex. från @capacitor-community/fcm `getToken()`).
+ * Firebase sköter sedan leveransen till APNs (via er .p8-konfiguration i Firebase Console).
  */
 export async function sendPushNotification(
   token: string,
   title: string,
   body: string
 ): Promise<void> {
-  if (!token?.trim()) return;
+  const t = token?.trim();
+  if (!t) return;
+
   const firebase = getFirebaseApp();
   // #region agent log
   if (!firebase) {
@@ -24,7 +26,7 @@ export async function sendPushNotification(
   // #endregion
   try {
     await firebase.messaging().send({
-      token: token.trim(),
+      token: t,
       notification: { title, body },
       android: { priority: "high" as const },
       apns: {
