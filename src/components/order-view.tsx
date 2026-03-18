@@ -4,8 +4,7 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, Layers, CreditCard, Upload, X, Check, Sparkles, ArrowRight } from "lucide-react";
-import { CardPreview3D } from "@/components/card-preview-3d";
-import { CustomPrintEditor, type CustomPrintEditorRef } from "@/components/custom-print-editor";
+import { CardPreview3D, type CardPreview3DRef } from "@/components/card-preview-3d";
 import { LiveProfileDemo } from "@/components/live-profile-demo";
 
 // --- Types ---
@@ -65,7 +64,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const [premiumOption, setPremiumOption] = useState<PremiumOption>("none");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const customPrintEditorRef = useRef<CustomPrintEditorRef>(null);
+  const cardPreviewRef = useRef<CardPreview3DRef>(null);
 
   // --- Effects ---
   useEffect(() => {
@@ -108,12 +107,18 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
 const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
-          setCustomImage(URL.createObjectURL(file));
+          setCustomImage((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return URL.createObjectURL(file);
+          });
       }
   };
 
   const clearImage = () => {
-      setCustomImage(null);
+      setCustomImage((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
       if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -134,13 +139,14 @@ const handleCheckout = async () => {
         setLoading(true);
         let printFileUrl = null;
 
-        // 1. Generera och ladda upp tryckfil (transparent PNG av kortytan med logotyp)
-        if (customImage && material === "metal" && customPrintEditorRef.current) {
+        // 1. Generera och ladda upp tryckfil (transparent PNG av kortytan med logotyp ovanpå custom image)
+        if (customImage && material === "metal" && cardPreviewRef.current) {
             let blob: Blob;
             try {
-              blob = await customPrintEditorRef.current.getExportBlob();
-            } catch {
-              alert("Slutför först beskärning och placering av logotypen (klicka på Fortsätt till placering och justera).");
+              blob = await cardPreviewRef.current.getExportBlob();
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : "Kunde inte exportera tryckfil";
+              alert(msg);
               setLoading(false);
               return;
             }
@@ -214,10 +220,10 @@ const handleCheckout = async () => {
         {/* LEFT: PREVIEWS */}
         <div className="lg:col-span-7 order-1 lg:order-2 flex flex-col gap-6 lg:sticky lg:top-24">
             <div className="flex flex-col items-center justify-center min-h-[400px] lg:min-h-[500px]">
-                <CardPreview3D material={material} color={colorCode} design={design} customImage={customImage} />
+                <CardPreview3D ref={cardPreviewRef} material={material} color={colorCode} design={design} customImage={customImage} />
             </div>
 
-            {(premiumOption !== "none" || !isPremium) && (
+            {(isPremium || premiumOption !== "none") && (
                <div className="animate-in slide-in-from-bottom-4 duration-500 bg-[#0A0F1C] border border-blue-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl shadow-blue-900/10">
                   <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
                       <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400"><Sparkles size={20}/></div>
@@ -341,22 +347,48 @@ const handleCheckout = async () => {
           {/* 3. Custom Print (Metal Only) */}
            {material === "metal" && hasMetal && (
              <div className="space-y-3 animate-in fade-in slide-in-from-top-4">
-                <div className="flex justify-between items-center ml-1"><label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest">3. Custom Print (+100 kr)</label><span className="text-[10px] bg-blue-500 text-nordic-secondary px-2 py-0.5 rounded-full">POPULÄRT</span></div>
+                <div className="flex justify-between items-center ml-1">
+                  <label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest">
+                    3. Custom Print (+100 kr)
+                  </label>
+                  <span className="text-[10px] bg-blue-500 text-nordic-secondary px-2 py-0.5 rounded-full">
+                    POPULÄRT
+                  </span>
+                </div>
+
                 {!customImage ? (
-                    <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-xl p-6 text-center cursor-pointer transition-all group">
-                        <Upload className="mx-auto mb-2 text-nordic-highlight group-hover:text-blue-400" size={20} />
-                        <p className="text-sm font-medium text-gray-300">Ladda upp logotyp</p>
-                    </div>
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-xl p-6 text-center cursor-pointer transition-all group"
+                  >
+                    <Upload className="mx-auto mb-2 text-nordic-highlight group-hover:text-blue-400" size={20} />
+                    <p className="text-sm font-medium text-gray-300">Ladda upp logotyp</p>
+                  </div>
                 ) : (
-                    <div className="space-y-3">
-                        <CustomPrintEditor ref={customPrintEditorRef} imageUrl={customImage} />
-                        <div className="flex gap-2">
-                            <button type="button" onClick={() => fileInputRef.current?.click()} className="flex-1 py-2 rounded-lg border border-white/20 text-sm font-medium hover:bg-white/5">Byt bild</button>
-                            <button type="button" onClick={clearImage} className="py-2 px-3 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30"><X size={16} /></button>
-                        </div>
-                    </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 py-2 rounded-lg border border-white/20 text-sm font-medium hover:bg-white/5"
+                    >
+                      Byt bild
+                    </button>
+                    <button
+                      type="button"
+                      onClick={clearImage}
+                      className="py-2 px-3 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
                 )}
-                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload}/>
+
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload} />
+                {customImage && (
+                  <p className="text-xs text-nordic-highlight">
+                    Dra och zooma din bild direkt på kortet (loggan ligger alltid ovanpå).
+                  </p>
+                )}
              </div>
           )}
 
