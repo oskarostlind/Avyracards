@@ -16,6 +16,7 @@ interface BusinessProfileProps {
   data: MappedProfileData;
   user: User;
   showAds: boolean;
+  isPreview?: boolean;
 }
 
 const fontMap: Record<string, string> = {
@@ -27,8 +28,9 @@ const fontMap: Record<string, string> = {
   oswald: "'Oswald', sans-serif",
 };
 
-export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
+export function BusinessProfile({ data, user, showAds, isPreview }: BusinessProfileProps) {
   const isApp = useIsApp();
+  const readOnly = isPreview === true;
   const tokens = getTheme(user.theme); 
   const savedSettings = (user.businessThemeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
@@ -237,8 +239,9 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
                     primaryAction.type === "vcard" && isApp ? (
                       <button
                         type="button"
-                        onClick={(e) => handleVcardAction(e, primaryAction.url)}
-                        className={`w-full ${getButtonClass()} ${!hasCustomTheme ? "bg-slate-100 text-slate-900 rounded-xl" : ""}`}
+                        onClick={readOnly ? undefined : (e) => handleVcardAction(e, primaryAction.url)}
+                        disabled={readOnly}
+                        className={`w-full ${getButtonClass()} ${!hasCustomTheme ? "bg-slate-100 text-slate-900 rounded-xl" : ""} ${readOnly ? "pointer-events-none opacity-60" : ""}`}
                         style={getButtonStyle(true)}
                       >
                         <Save size={18} className="mr-1" />
@@ -248,8 +251,20 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
                     <a 
                         href={primaryAction.url}
                         download={primaryAction.type === "vcard" ? `${user.username}.vcf` : undefined}
-                        onClick={primaryAction.type === "vcard" ? handleVcardClick : undefined}
-                        className={`w-full ${getButtonClass()} ${!hasCustomTheme ? "bg-slate-100 text-slate-900 rounded-xl" : ""}`}
+                      onClick={
+                        primaryAction.type === "vcard"
+                          ? readOnly
+                            ? (e) => {
+                                e.preventDefault();
+                              }
+                            : handleVcardClick
+                          : readOnly
+                            ? (e) => {
+                                e.preventDefault();
+                              }
+                            : undefined
+                      }
+                      className={`w-full ${getButtonClass()} ${!hasCustomTheme ? "bg-slate-100 text-slate-900 rounded-xl" : ""} ${readOnly ? "pointer-events-none opacity-60" : ""}`}
                         style={getButtonStyle(true)}
                     >
                         {primaryAction.type === "vcard" ? <Save size={18} className="mr-1" /> : <SocialIcon fallbackIcon={primaryAction.iconKey as IconKey} size={16} />}
@@ -265,7 +280,7 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
                                 key={action.type}
                                 href={action.url}
                                 target={action.type === 'website' || action.type === 'booking' ? '_blank' : undefined}
-                                className={`${action.type === 'website' ? 'col-span-2' : ''} ${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-800 text-slate-300 rounded-xl border border-white/10' : ''}`}
+                                className={`${action.type === 'website' ? 'col-span-2' : ''} ${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-800 text-slate-300 rounded-xl border border-white/10' : ''} ${readOnly ? "pointer-events-none opacity-60" : ""}`}
                                 style={getButtonStyle(false)}
                             >
                                 <SocialIcon fallbackIcon={action.iconKey as IconKey} size={16} /> {action.label}
@@ -286,7 +301,7 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
                           linkId={link.id}
                           ownerId={user.id}
                           href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
-                          className={`${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-800 text-slate-300 rounded-xl border border-white/10 justify-start' : ''}`}
+                          className={`${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-800 text-slate-300 rounded-xl border border-white/10 justify-start' : ''} ${readOnly ? "pointer-events-none opacity-60" : ""}`}
                           style={getButtonStyle(false)}
                       >
                           <div className={`absolute left-4 opacity-70 ${!hasCustomTheme ? 'relative left-0' : ''}`}>
@@ -309,7 +324,18 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
 
         {showBranding && (
            <div className="text-center mt-8">
-              <a href="/" className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-xs font-bold shadow-lg hover:bg-white/20 transition border border-white/10" style={{ color: settings.textColor }}>
+              <a
+                href="/"
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 text-xs font-bold shadow-lg hover:bg-white/20 transition border border-white/10 ${readOnly ? "pointer-events-none opacity-60" : ""}`}
+                onClick={
+                  readOnly
+                    ? (e) => {
+                        e.preventDefault();
+                      }
+                    : undefined
+                }
+                style={{ color: settings.textColor }}
+              >
                  <span className="text-blue-400">⚡</span> Skapa ditt eget AvyraCards
               </a>
            </div>

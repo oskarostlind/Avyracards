@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useIsApp } from "@/hooks/useIsApp";
 import { SignInButton } from "@/components/sign-in-button";
@@ -59,8 +59,12 @@ const navLinks = [
 
 export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
   const isApp = useIsApp();
+
+  const isPreview = searchParams.get("preview") === "true";
+  if (isPreview) return null;
 
   const inSocial = pathname === "/" || pathname.startsWith("/social");
   const inBusiness = pathname.startsWith("/business");

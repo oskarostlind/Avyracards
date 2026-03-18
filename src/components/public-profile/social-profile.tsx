@@ -18,14 +18,17 @@ interface SocialProfileProps {
   user: UserWithLinks;
   data: MappedProfileData; 
   showAds: boolean;
+  isPreview?: boolean;
 }
 
-export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
+export function SocialProfile({ user, data, showAds, isPreview }: SocialProfileProps) {
   const isApp = useIsApp();
   const useCustomTheme = !!user.themeSettings;
   const savedSettings = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
   
+  const readOnly = isPreview === true;
+
   const tokens = getTheme(user.theme);
   const displayName = user.name || user.username;
   const bio = user.bio;
@@ -173,8 +176,9 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
                       <button
                         key={action.type}
                         type="button"
-                        onClick={(e) => handleVcardAction(e, action.url)}
-                        className={`w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform hover:scale-[1.02] mb-2 ${!useCustomTheme ? "bg-slate-100 text-slate-900" : ""}`}
+                        onClick={readOnly ? undefined : (e) => handleVcardAction(e, action.url)}
+                        disabled={readOnly}
+                        className={`w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform hover:scale-[1.02] mb-2 ${!useCustomTheme ? "bg-slate-100 text-slate-900" : ""} ${readOnly ? "pointer-events-none opacity-60" : ""}`}
                         style={primaryStyle}
                         title={action.label}
                       >
@@ -185,8 +189,25 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
                       key={action.type}
                       href={action.url}
                       download={action.type === "vcard" ? `${user.username}.vcf` : undefined}
-                      onClick={action.type === "vcard" ? handleVcardClick : undefined}
-                      className={action.type === "vcard" ? `w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform hover:scale-[1.02] mb-2 ${!useCustomTheme ? "bg-slate-100 text-slate-900" : ""}` : "p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"}
+                      onClick={
+                        action.type === "vcard"
+                          ? readOnly
+                            ? (e) => {
+                                e.preventDefault();
+                              }
+                            : handleVcardClick
+                          : readOnly
+                            ? (e) => {
+                                e.preventDefault();
+                              }
+                            : undefined
+                      }
+                      className={
+                        (action.type === "vcard"
+                          ? `w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform hover:scale-[1.02] mb-2 ${!useCustomTheme ? "bg-slate-100 text-slate-900" : ""}`
+                          : "p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10") +
+                        (readOnly ? " pointer-events-none opacity-60" : "")
+                      }
                       style={action.type === "vcard" ? primaryStyle : (useCustomTheme ? { borderColor: settings.accentColor, color: settings.textColor } : {})}
                       title={action.label}
                     >
@@ -204,7 +225,7 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
                 linkId={link.id}
                 ownerId={user.id}
                 href={normalizeUrl(link.url)}
-                className={`flex items-center justify-between px-5 py-4 text-sm font-medium transition-all hover:scale-[1.02] ${!useCustomTheme ? `${tokens.link} shadow-md rounded-xl` : ''}`}
+                className={`flex items-center justify-between px-5 py-4 text-sm font-medium transition-all hover:scale-[1.02] ${!useCustomTheme ? `${tokens.link} shadow-md rounded-xl` : ''} ${readOnly ? "pointer-events-none opacity-60" : ""}`}
                 style={linkStyle}
               >
                 <span className="flex items-center gap-3">

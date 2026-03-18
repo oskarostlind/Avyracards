@@ -125,6 +125,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
             data={profileData} 
             user={userForDisplay as any} // Vi skickar det "rena" objektet
             showAds={showAds} 
+            isPreview={isPreview}
         />
       ) : (
         <SocialProfile 
@@ -134,6 +135,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
             data={profileData}
             user={userForDisplay as any} 
             showAds={showAds} 
+            isPreview={isPreview}
         />
       )}
     </>
