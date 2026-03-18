@@ -174,6 +174,17 @@ export default async function AnalyticsPage({
     actionName: e.type === 'VIEW' ? 'Profilvisning' : (e.source === 'vcard' ? 'Sparade kontakt' : 'Länkklick'),
   }));
 
+  const historyActivity = events.map(e => ({
+    id: e.id,
+    type: e.type,
+    country: e.country,
+    city: e.city,
+    device: e.device,
+    timeAgo: formatDistanceToNow(new Date(e.createdAt), { addSuffix: true, locale: sv }),
+    source: getReadableSource(e.source, e.referrer),
+    actionName: e.type === 'VIEW' ? 'Profilvisning' : (e.source === 'vcard' ? 'Sparade kontakt' : 'Länkklick'),
+  }));
+
   return (
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">
         
@@ -201,6 +212,7 @@ export default async function AnalyticsPage({
                 trafficSources={trafficSources}
                 topCountries={topCountries}
                 recentActivity={recentActivity}
+                historyActivity={historyActivity}
                 currentDays={selectedDays}
             />
         </div>

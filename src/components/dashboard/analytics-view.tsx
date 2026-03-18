@@ -4,35 +4,95 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell
 } from "recharts";
-import { MousePointerClick, Eye, TrendingUp, Lock, Globe as GlobeIcon, QrCode, Save } from "lucide-react";
+import { Info, MousePointerClick, Eye, TrendingUp, Lock, Globe as GlobeIcon, QrCode, Save, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Globe } from "./globe"; 
+import type { EventType } from "@prisma/client";
+import type { ChangeEvent } from "react";
+import { useMemo, useState } from "react";
 
-interface AnalyticsProps {
+type ChartDatum = { date: string; views: number; clicks: number };
+type TopLink = { title: string; url: string; clicks: number };
+type TrafficSource = { name: string; value: number };
+type TopCountry = { code: string; count: number };
+
+type RecentActivityItem = {
+  id: string;
+  type: EventType;
+  country: string | null;
+  city: string | null;
+  device: string | null;
+  timeAgo: string;
+  source: string;
+  actionName: string;
+};
+
+type RowsToShow = 10 | 25 | 50 | 100 | "all";
+
+type AnalyticsProps = {
   isPremium: boolean;
-  stats: { totalViews: number; totalClicks: number; ctr: string; totalVcardDownloads: number };
-  chartData: any[];
-  topLinks: any[];
-  trafficSources: any[];
-  topCountries: any[];
-  recentActivity: any[];
+  stats: {
+    totalViews: number;
+    totalClicks: number;
+    ctr: string;
+    totalVcardDownloads: number;
+  };
+  chartData: ChartDatum[];
+  topLinks: TopLink[];
+  trafficSources: TrafficSource[];
+  topCountries: TopCountry[];
+  recentActivity: RecentActivityItem[];
+  historyActivity: RecentActivityItem[];
   currentDays: number;
-}
+};
 
 export function AnalyticsView({ 
-  isPremium, stats, chartData, topLinks, trafficSources, topCountries, recentActivity, currentDays 
+  isPremium,
+  stats,
+  chartData,
+  topLinks,
+  trafficSources,
+  topCountries,
+  recentActivity,
+  historyActivity,
+  currentDays,
 }: AnalyticsProps) {
   
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [rowsToShow, setRowsToShow] = useState<RowsToShow>(10);
+
+  const visibleHistory = useMemo(() => {
+    if (rowsToShow === "all") return historyActivity;
+    return historyActivity.slice(0, rowsToShow);
+  }, [historyActivity, rowsToShow]);
+
+  const handleDateChange = (e: ChangeEvent<HTMLSelectElement>) => {
       const days = e.target.value;
       const params = new URLSearchParams(searchParams.toString());
       params.set('days', days);
       router.push(`/dashboard/analytics?${params.toString()}`);
   };
+
+  const fallbackCountries: TopCountry[] = [
+    { code: "SE", count: 42 },
+    { code: "US", count: 12 },
+  ];
+
+  const fallbackTrafficSources: TrafficSource[] = [
+    { name: "Instagram", value: 65 },
+    { name: "LinkedIn", value: 20 },
+    { name: "Direkt", value: 15 },
+  ];
+
+  const barData: TrafficSource[] = isPremium
+    ? trafficSources.length
+      ? trafficSources
+      : [{ name: "Ingen data", value: 0 }]
+    : fallbackTrafficSources;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -95,13 +155,13 @@ export function AnalyticsView({
                 </div>
                 
                 <div className="relative z-10 space-y-3 mt-4 bg-nordic-primary/30 p-4 rounded-xl backdrop-blur-sm border border-white/5 max-w-[250px]">
-                  {(isPremium ? topCountries : [{code: "SE", count: 42}, {code: "US", count: 12}]).length === 0 ? (
-                      <p className="text-xs text-nordic-highlight">Väntar på geodata...</p>
+                  {(isPremium ? topCountries : fallbackCountries).length === 0 ? (
+                    <p className="text-xs text-nordic-highlight">Väntar på geodata...</p>
                   ) : (
-                    (isPremium ? topCountries : [{code: "SE", count: 42}, {code: "US", count: 12}]).map((c: any, i: number) => (
+                    (isPremium ? topCountries : fallbackCountries).map((c, i) => (
                       <div key={i} className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
-                          <span>{getFlagEmoji(c.code)}</span> 
+                          <span>{getFlagEmoji(c.code)}</span>
                           <span className="text-slate-200">{getCountryName(c.code)}</span>
                         </div>
                         <span className="font-bold text-nordic-highlight">{c.count}</span>
@@ -120,12 +180,12 @@ export function AnalyticsView({
           <PremiumLock isPremium={isPremium} title="Se hur folk hittar dig">
             <div className="h-[250px] w-full">
                <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={isPremium ? (trafficSources.length ? trafficSources : [{name:'Ingen data', value:0}]) : [{name: 'Instagram', value: 65}, {name: 'LinkedIn', value: 20}, {name: 'Direkt', value: 15}]} layout="vertical" margin={{ left: 10 }}>
+                <BarChart data={barData} layout="vertical" margin={{ left: 10 }}>
                   <XAxis type="number" hide />
                   <YAxis dataKey="name" type="category" width={70} tick={{fill: '#94a3b8', fontSize: 12}} />
                   <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155" }} />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
-                    { (isPremium ? trafficSources : [{name: 'Instagram'}, {name: 'LinkedIn'}, {name: 'Direkt'}]).map((entry: any, index: number) => (
+                    {barData.map((_, index) => (
                       <Cell key={`cell-${index}`} fill={['#3b82f6', '#ec4899', '#8b5cf6', '#64748b'][index % 4]} />
                     ))}
                   </Bar>
@@ -144,33 +204,202 @@ export function AnalyticsView({
              <h3 className="mb-4 text-lg font-semibold text-slate-100">Live-aktivitet</h3>
              <PremiumLock isPremium={isPremium} title="Se vem som tittar just nu">
                 <div className="space-y-4">
-                    {(isPremium ? recentActivity : [1,2,3,4]).map((item: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between border-b border-nordic-highlight/40/50 pb-3 last:border-0 last:pb-0">
-                        <div className="flex items-center gap-3">
+                    {isPremium ? (
+                      recentActivity.length === 0 ? (
+                        <p className="text-sm text-nordic-highlight">Ingen aktivitet än.</p>
+                      ) : (
+                        recentActivity.map((item) => {
+                          const isUnknownPlace = item.city == null || item.city.trim() === "";
+                          return (
+                            <div key={item.id} className="flex items-center justify-between border-b border-nordic-highlight/40/50 pb-3 last:border-0 last:pb-0">
+                              <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-full bg-slate-800/50">
+                                  {item.actionName === "Sparade kontakt" ? (
+                                    <Save size={14} className="text-emerald-400" />
+                                  ) : item.type === "CLICK" ? (
+                                    <MousePointerClick size={14} className="text-sky-400" />
+                                  ) : (
+                                    <Eye size={14} className="text-blue-400" />
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-xs text-slate-300 font-medium">
+                                    {item.actionName}
+                                  </p>
+                                  <div className="flex items-start gap-2">
+                                    <p className="text-[10px] text-nordic-highlight">
+                                      {`${item.city || "Okänd plats"}, ${item.country || ""}`}
+                                    </p>
+                                    {isUnknownPlace && (
+                                      <div className="relative group z-[80]">
+                                        <Info size={14} className="mt-[-1px] text-muted-foreground" />
+                                        <div className="pointer-events-none absolute left-0 top-full mt-1 w-[280px] rounded-lg bg-slate-900/90 border border-nordic-highlight/20 p-3 text-[11px] text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity z-[90]">
+                                          <p className="font-medium mb-1">
+                                            Varför står det &apos;Okänd plats&apos;?
+                                          </p>
+                                          <p>
+                                            När besökare använder mobildata (4G/5G) eller integritetsfunktioner som Apple Private Relay, maskeras deras exakta stad. Vi kan då se vilket land de befinner sig i, men den exakta orten hålls dold för att skydda deras sekretess.
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="text-[10px] text-slate-600 font-mono">
+                                {item.timeAgo}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )
+                    ) : (
+                      Array.from({ length: 4 }, (_, i) => (
+                        <div key={`ph-${i}`} className="flex items-center justify-between border-b border-nordic-highlight/40/50 pb-3 last:border-0 last:pb-0">
+                          <div className="flex items-center gap-3">
                             <div className="p-2 rounded-full bg-slate-800/50">
-                                {/* Visar olika ikoner baserat på handlingen */}
-                                {isPremium && item.actionName === 'Sparade kontakt' 
-                                  ? <Save size={14} className="text-emerald-400"/> 
-                                  : (item.type === 'CLICK' ? <MousePointerClick size={14} className="text-sky-400"/> : <Eye size={14} className="text-blue-400"/>)
-                                }
+                              <Eye size={14} className="text-blue-400" />
                             </div>
                             <div>
-                                <p className="text-xs text-slate-300 font-medium">
-                                    {isPremium ? item.actionName : 'Besökare'}
-                                </p>
-                                <p className="text-[10px] text-nordic-highlight">
-                                    {isPremium ? `${item.city || 'Okänd plats'}, ${item.country || ''}` : 'Stockholm, Sverige'}
-                                </p>
+                              <p className="text-xs text-slate-300 font-medium">Besökare</p>
+                              <p className="text-[10px] text-nordic-highlight">Stockholm, Sverige</p>
                             </div>
+                          </div>
+                          <div className="text-[10px] text-slate-600 font-mono">
+                            Just nu
+                          </div>
                         </div>
-                        <div className="text-[10px] text-slate-600 font-mono">
-                           {isPremium ? item.timeAgo : 'Just nu'}
-                        </div>
-                    </div>
-                    ))}
-                    {isPremium && recentActivity.length === 0 && <p className="text-sm text-nordic-highlight">Ingen aktivitet än.</p>}
+                      ))
+                    )}
+                </div>
+
+                {/* Visa all historik */}
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setHistoryOpen(true);
+                      setRowsToShow(10);
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-nordic-secondary text-nordic-primary border border-nordic-highlight/10 hover:bg-nordic-support transition-colors disabled:opacity-60"
+                  >
+                    Visa all historik
+                  </button>
                 </div>
              </PremiumLock>
+
+              {isPremium && historyOpen && (
+                <div
+                  className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
+                  role="presentation"
+                  onClick={() => setHistoryOpen(false)}
+                >
+                  <div
+                    className="w-full max-w-3xl rounded-3xl bg-slate-900/95 border border-nordic-highlight/40 shadow-2xl overflow-hidden"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Historik"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="p-5 border-b border-nordic-highlight/20 flex items-center justify-between gap-3">
+                      <div>
+                        <h4 className="text-lg font-semibold text-slate-100">Historik</h4>
+                        <p className="text-xs text-nordic-highlight">
+                          Visa händelser för de valda dagarna
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setHistoryOpen(false)}
+                        className="p-2 rounded-full bg-slate-800/60 text-slate-300 hover:bg-slate-800 transition-colors border border-white/10"
+                        aria-label="Stäng modal"
+                      >
+                        <X size={18} />
+                      </button>
+                    </div>
+
+                    <div className="p-5 border-b border-nordic-highlight/20 flex items-center justify-between gap-3">
+                      <label className="text-xs text-nordic-highlight font-bold uppercase tracking-widest">
+                        Rader
+                      </label>
+                      <select
+                        value={rowsToShow}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (v === "all") setRowsToShow("all");
+                          if (v === "10") setRowsToShow(10);
+                          if (v === "25") setRowsToShow(25);
+                          if (v === "50") setRowsToShow(50);
+                          if (v === "100") setRowsToShow(100);
+                        }}
+                        className="bg-slate-800 text-sm text-slate-200 rounded-lg px-3 py-2 border border-nordic-highlight/40 outline-none cursor-pointer hover:border-emerald-500/50 transition-colors"
+                      >
+                        <option value={10}>10</option>
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value="all">Alla</option>
+                      </select>
+                    </div>
+
+                    <div className="p-5 max-h-[60vh] overflow-y-auto">
+                      {visibleHistory.length === 0 ? (
+                        <p className="text-sm text-nordic-highlight">Ingen historik än.</p>
+                      ) : (
+                        <div className="space-y-4">
+                          {visibleHistory.map((item) => {
+                            const isUnknownPlace = item.city == null || item.city.trim() === "";
+                            return (
+                              <div
+                                key={item.id}
+                                className="flex items-center justify-between border-b border-nordic-highlight/40/50 pb-3 last:border-0 last:pb-0"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="p-2 rounded-full bg-slate-800/50">
+                                    {item.actionName === "Sparade kontakt" ? (
+                                      <Save size={14} className="text-emerald-400" />
+                                    ) : item.type === "CLICK" ? (
+                                      <MousePointerClick size={14} className="text-sky-400" />
+                                    ) : (
+                                      <Eye size={14} className="text-blue-400" />
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-slate-300 font-medium">
+                                      {item.actionName}
+                                    </p>
+                                    <div className="flex items-start gap-2">
+                                      <p className="text-[10px] text-nordic-highlight">
+                                        {`${item.city || "Okänd plats"}, ${item.country || ""}`}
+                                      </p>
+                                      {isUnknownPlace && (
+                                        <div className="relative group z-[80]">
+                                          <Info size={14} className="mt-[-1px] text-muted-foreground" />
+                                          <div className="pointer-events-none absolute left-0 top-full mt-1 w-[280px] rounded-lg bg-slate-900/90 border border-nordic-highlight/20 p-3 text-[11px] text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity z-[90]">
+                                            <p className="font-medium mb-1">
+                                              Varför står det &apos;Okänd plats&apos;?
+                                            </p>
+                                            <p>
+                                              När besökare använder mobildata (4G/5G) eller integritetsfunktioner som Apple Private Relay, maskeras deras exakta stad. Vi kan då se vilket land de befinner sig i, men den exakta orten hålls dold för att skydda deras sekretess.
+                                            </p>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-[10px] text-slate-600 font-mono">
+                                  {item.timeAgo}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
         </div>
         
         {/* Topplista Länkar */}
@@ -210,7 +439,14 @@ function PremiumLock({ isPremium, title, children }: { isPremium: boolean; title
   );
 }
 
-function StatCard({ title, value, icon, subtitle }: any) {
+type StatCardProps = {
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
+  subtitle: string;
+};
+
+function StatCard({ title, value, icon, subtitle }: StatCardProps) {
   return (
     <div className="rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-lg">
       <div className="flex items-center justify-between">
