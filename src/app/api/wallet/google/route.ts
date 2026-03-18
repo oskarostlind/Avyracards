@@ -160,9 +160,9 @@ export async function GET(req: NextRequest) {
     const profileUrl = `${baseDomain}/u/${user.username}?source=wallet`;
     const displayUrl = `avyracards.se/u/${user.username}`;
     
-    const logoUri = (user.avatarUrl && user.avatarUrl.startsWith('http')) 
-      ? user.avatarUrl 
-      : 'https://avyracards.se/wallet/logo.png';
+    const logoUri = (user.avatarUrl && user.avatarUrl.startsWith('http'))
+      ? user.avatarUrl
+      : `${baseDomain}/avyra_transparent_v2.jpg`;
 
     // 5. Bygg Payload
     const walletPayload = {

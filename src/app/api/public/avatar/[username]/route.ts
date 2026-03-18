@@ -43,7 +43,7 @@ export async function GET(
 
     // Om ingen bild finns, redirecta till standardloggan
     if (!avatarData) {
-      return NextResponse.redirect(new URL("/wallet/logo.png", request.url));
+      return NextResponse.redirect(new URL("/icon.png", request.url));
     }
 
     // SCENARIO A: Det är redan en vanlig URL (t.ex. Google-profilbild eller UploadThing)
@@ -74,7 +74,7 @@ export async function GET(
     }
 
     // Fallback om datan är konstig
-    return NextResponse.redirect(new URL("/wallet/logo.png", request.url));
+    return NextResponse.redirect(new URL("/icon.png", request.url));
 
   } catch (error) {
     console.error("Avatar Proxy Error:", error);

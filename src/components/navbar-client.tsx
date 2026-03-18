@@ -6,6 +6,7 @@ import { useState } from "react";
 import { useIsApp } from "@/hooks/useIsApp";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignOutButton } from "@/components/sign-out-button";
+import Image from "next/image";
 import { 
   ShieldCheck, 
   ShoppingBag, 
@@ -91,9 +92,10 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
             <Link
               href="/"
               onClick={closeMenu}
-              className="text-base font-semibold tracking-tight text-nordic-secondary"
+              className="flex items-center gap-2 text-base font-semibold tracking-tight text-nordic-secondary"
             >
-              AvyraCards
+              <Image src="/icon.png" alt="AvyraCards" width={26} height={26} className="rounded" />
+              <span>AvyraCards</span>
             </Link>
           )}
 
@@ -169,9 +171,10 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
             {!isApp && (
               <Link
                 href="/"
-                className="text-lg font-bold tracking-tight text-nordic-secondary"
+                className="flex items-center gap-2 text-lg font-bold tracking-tight text-nordic-secondary"
               >
-                AvyraCards
+                <Image src="/icon.png" alt="AvyraCards" width={28} height={28} className="rounded" />
+                <span>AvyraCards</span>
               </Link>
             )}
 

@@ -83,14 +83,14 @@ export async function GET(req: NextRequest) {
     const avatarUrl = user.avatarUrl;
     const thumbnailBuffer = await fetchImageBuffer(avatarUrl);
 
-    const publicDir = path.join(process.cwd(), 'public', 'wallet');
+    const publicDir = path.join(process.cwd(), "public");
     const [iconBuffer, logoBuffer] = await Promise.all([
       fs.readFile(path.join(publicDir, "icon.png")),
-      fs.readFile(path.join(publicDir, "logo.png")),
+      fs.readFile(path.join(publicDir, "avyra_transparent_v2.jpg")),
     ]);
 
     const passImages: Record<string, Buffer> = {
-        "logo.png": logoBuffer,
+        "logo.jpg": logoBuffer,
         "icon.png": iconBuffer,
     };
 

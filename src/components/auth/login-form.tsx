@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -62,6 +63,9 @@ export default function LoginForm() {
     <div className="w-full max-w-md p-8 space-y-8 bg-slate-900 border border-nordic-highlight/20 rounded-2xl shadow-2xl">
       
       <div className="text-center space-y-2">
+          <div className="flex items-center justify-center gap-2">
+            <Image src="/icon.png" alt="AvyraCards" width={44} height={44} className="rounded" />
+          </div>
         <h3 className="text-xs font-bold tracking-widest text-nordic-highlight uppercase">
           AvyraCards
         </h3>

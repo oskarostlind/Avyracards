@@ -19,7 +19,7 @@ const CARD_ASPECT = 85.6 / 54;
 const CARD_WIDTH_PX = 856;
 const CARD_HEIGHT_PX = 540;
 
-const LOGO_URL = "/avyra_transparent_v2.png";
+const LOGO_URL = "/avyra_transparent_v2.jpg";
 
 // Metalls tryckyta (enligt backend): 82x51mm
 // Vi simulerar en otryckt metalram i UI genom att göra cropper+exportens "tryckyta"

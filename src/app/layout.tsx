@@ -2,6 +2,7 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import type { Viewport } from "next";
 import Script from "next/script";
+import type { Metadata } from "next";
 import { Manrope } from "next/font/google";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
@@ -15,9 +16,21 @@ const manrope = Manrope({
   display: "swap",
 });
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "AvyraCards",
   description: "Digital NFC-baserad visitkortslösning",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png",
+    shortcut: "/icon.png",
+    other: [{ rel: "apple-touch-icon", url: "/icon.png" }],
+  },
+  openGraph: {
+    images: ["/avyra_transparent_v2.jpg"],
+  },
+  appleWebApp: {
+    capable: true,
+  },
 };
 
 export const viewport: Viewport = {
