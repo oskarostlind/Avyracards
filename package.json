@@ -37,6 +37,7 @@
     "nodemailer": "^7.0.11",
     "openssl-nodejs": "^1.0.5",
     "passkit-generator": "^3.5.6",
+    "pdf-lib": "^1.17.1",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-card-flip": "^1.2.3",
@@ -45,6 +46,7 @@
     "react-hook-form": "^7.68.0",
     "recharts": "^3.5.1",
     "resend": "^6.7.0",
+    "sharp": "^0.34.5",
     "stripe": "^20.0.0",
     "zod": "^3.25.76"
   },

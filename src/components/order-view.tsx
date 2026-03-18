@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useRef, useEffect, Suspense } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Loader2, Layers, CreditCard, Upload, X, Check, Sparkles, ArrowRight } from "lucide-react";
-import { CardPreview3D } from "@/components/card-preview-3d"; 
+import { CardPreview3D } from "@/components/card-preview-3d";
+import { CustomPrintEditor, type CustomPrintEditorRef } from "@/components/custom-print-editor";
 import { LiveProfileDemo } from "@/components/live-profile-demo";
 
 // --- Types ---
@@ -61,11 +61,11 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const [design] = useState<DesignType>("minimal"); 
   const [colorCode, setColorCode] = useState<string>(hasStandard ? defaultStandardColor : defaultMetalColor);
   const [customImage, setCustomImage] = useState<string | null>(null);
-  const [customFile, setCustomFile] = useState<File | null>(null); // NY STATE
   
   const [premiumOption, setPremiumOption] = useState<PremiumOption>("none");
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const customPrintEditorRef = useRef<CustomPrintEditorRef>(null);
 
   // --- Effects ---
   useEffect(() => {
@@ -108,15 +108,12 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
 const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
-          setCustomFile(file); // Spara själva filen
-          const url = URL.createObjectURL(file);
-          setCustomImage(url); // Spara preview-urlen
+          setCustomImage(URL.createObjectURL(file));
       }
   };
-  
-const clearImage = () => {
+
+  const clearImage = () => {
       setCustomImage(null);
-      setCustomFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -137,19 +134,22 @@ const handleCheckout = async () => {
         setLoading(true);
         let printFileUrl = null;
 
-        // 1. Ladda upp logotypen först (om den finns)
-        if (customFile && material === "metal") {
+        // 1. Generera och ladda upp tryckfil (transparent PNG av kortytan med logotyp)
+        if (customImage && material === "metal" && customPrintEditorRef.current) {
+            let blob: Blob;
+            try {
+              blob = await customPrintEditorRef.current.getExportBlob();
+            } catch {
+              alert("Slutför först beskärning och placering av logotypen (klicka på Fortsätt till placering och justera).");
+              setLoading(false);
+              return;
+            }
             const formData = new FormData();
-            formData.append('file', customFile);
-            
-            const uploadRes = await fetch('/api/upload/print', {
-                method: 'POST',
-                body: formData
-            });
-            
+            formData.append("file", new File([blob], "print.png", { type: "image/png" }));
+            const uploadRes = await fetch("/api/upload/print", { method: "POST", body: formData });
             if (!uploadRes.ok) throw new Error("Kunde inte ladda upp bilden.");
-            const uploadData = await uploadRes.json();
-            printFileUrl = uploadData.url; // Här är den riktiga Blob-URL:en!
+            const uploadData = (await uploadRes.json()) as { url: string };
+            printFileUrl = uploadData.url;
         }
         
         // 2. Skicka till Stripe
@@ -348,11 +348,11 @@ const handleCheckout = async () => {
                         <p className="text-sm font-medium text-gray-300">Ladda upp logotyp</p>
                     </div>
                 ) : (
-                    <div className="relative rounded-xl overflow-hidden border border-white/20 group h-24 w-full">
-                        <Image src={customImage} alt="Upload" fill className="object-cover opacity-50" unoptimized />
-                        <div className="absolute inset-0 flex items-center justify-center gap-4 z-10">
-                             <button onClick={() => fileInputRef.current?.click()} className="bg-nordic-secondary text-nordic-primary px-3 py-1.5 rounded-lg text-xs font-bold">Byt</button>
-                             <button onClick={clearImage} className="bg-red-500/20 text-red-400 p-1.5 rounded-lg"><X size={16} /></button>
+                    <div className="space-y-3">
+                        <CustomPrintEditor ref={customPrintEditorRef} imageUrl={customImage} />
+                        <div className="flex gap-2">
+                            <button type="button" onClick={() => fileInputRef.current?.click()} className="flex-1 py-2 rounded-lg border border-white/20 text-sm font-medium hover:bg-white/5">Byt bild</button>
+                            <button type="button" onClick={clearImage} className="py-2 px-3 rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30"><X size={16} /></button>
                         </div>
                     </div>
                 )}

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { ArrowLeft, CreditCard, User, Mail, Link as LinkIcon, Wand2, MapPin, Printer } from "lucide-react";
 import { OrderStatus } from "@prisma/client";
 import { AdminOrderActions } from "@/components/admin/order-actions";
+import { DownloadPrintPdfButton } from "@/components/admin/download-print-pdf-button";
 import { PackingSlip } from "@/components/admin/packing-slip"; 
 
 export default async function OrderDetailPage({ params }: { params: { id: string } }) {
@@ -125,11 +126,12 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                            </div>
                            {/* Visas bara om kunden har laddat upp en logotyp */}
                            {card.printFileUrl && (
-                             <div className="col-span-2 mt-2">
-                               <p className="text-[10px] text-nordic-highlight uppercase tracking-widest mb-1">Custom Print Logotyp</p>
+                             <div className="col-span-2 mt-2 flex flex-wrap items-center gap-2">
+                               <p className="text-[10px] text-nordic-highlight uppercase tracking-widest w-full mb-0.5">Custom Print</p>
                                <a href={card.printFileUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs bg-blue-500/10 text-blue-400 border border-blue-500/20 px-3 py-1.5 rounded-lg hover:bg-blue-500/20 transition">
-                                 <LinkIcon size={12} /> Ladda ner originalfil
+                                 <LinkIcon size={12} /> Originalfil
                                </a>
+                               <DownloadPrintPdfButton cardId={card.id} />
                              </div>
                            )}
                         </div>
