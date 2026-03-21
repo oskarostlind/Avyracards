@@ -162,6 +162,18 @@ export default async function AnalyticsPage({
     .slice(0, 5)
     .map(([code, count]) => ({ code, count }));
 
+  const cityMap: Record<string, number> = {};
+  events
+    .filter((e) => e.type === "VIEW")
+    .forEach((e) => {
+      const key = e.city && e.city.trim() !== "" ? e.city.trim() : "Okänd ort";
+      cityMap[key] = (cityMap[key] || 0) + 1;
+    });
+  const topCities = Object.entries(cityMap)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count }));
+
   const recentActivity = events.slice(0, 5).map(e => ({
     id: e.id,
     type: e.type,
@@ -211,6 +223,7 @@ export default async function AnalyticsPage({
                 topLinks={topLinks}
                 trafficSources={trafficSources}
                 topCountries={topCountries}
+                topCities={topCities}
                 recentActivity={recentActivity}
                 historyActivity={historyActivity}
                 currentDays={selectedDays}

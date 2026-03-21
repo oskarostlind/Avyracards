@@ -10,12 +10,14 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Globe } from "./globe"; 
 import type { EventType } from "@prisma/client";
 import type { ChangeEvent } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 type ChartDatum = { date: string; views: number; clicks: number };
 type TopLink = { title: string; url: string; clicks: number };
 type TrafficSource = { name: string; value: number };
 type TopCountry = { code: string; count: number };
+type TopCity = { name: string; count: number };
 
 type RecentActivityItem = {
   id: string;
@@ -42,6 +44,7 @@ type AnalyticsProps = {
   topLinks: TopLink[];
   trafficSources: TrafficSource[];
   topCountries: TopCountry[];
+  topCities: TopCity[];
   recentActivity: RecentActivityItem[];
   historyActivity: RecentActivityItem[];
   currentDays: number;
@@ -54,6 +57,7 @@ export function AnalyticsView({
   topLinks,
   trafficSources,
   topCountries,
+  topCities,
   recentActivity,
   historyActivity,
   currentDays,
@@ -70,6 +74,30 @@ export function AnalyticsView({
     return historyActivity.slice(0, rowsToShow);
   }, [historyActivity, rowsToShow]);
 
+  useEffect(() => {
+    if (!isPremium || !historyOpen) return;
+    const html = document.documentElement;
+    const scrollbarWidth = Math.max(
+      0,
+      window.innerWidth - html.clientWidth
+    );
+    const prevHtmlOverflow = html.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevBodyPaddingRight = document.body.style.paddingRight;
+
+    html.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      html.style.overflow = prevHtmlOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+      document.body.style.paddingRight = prevBodyPaddingRight;
+    };
+  }, [isPremium, historyOpen]);
+
   const handleDateChange = (e: ChangeEvent<HTMLSelectElement>) => {
       const days = e.target.value;
       const params = new URLSearchParams(searchParams.toString());
@@ -80,6 +108,12 @@ export function AnalyticsView({
   const fallbackCountries: TopCountry[] = [
     { code: "SE", count: 42 },
     { code: "US", count: 12 },
+  ];
+
+  const fallbackCities: TopCity[] = [
+    { name: "Stockholm", count: 28 },
+    { name: "Göteborg", count: 9 },
+    { name: "Malmö", count: 5 },
   ];
 
   const fallbackTrafficSources: TrafficSource[] = [
@@ -154,20 +188,40 @@ export function AnalyticsView({
                     <Globe className="scale-125" /> 
                 </div>
                 
-                <div className="relative z-10 space-y-3 mt-4 bg-nordic-primary/30 p-4 rounded-xl backdrop-blur-sm border border-white/5 max-w-[250px]">
-                  {(isPremium ? topCountries : fallbackCountries).length === 0 ? (
-                    <p className="text-xs text-nordic-highlight">Väntar på geodata...</p>
-                  ) : (
-                    (isPremium ? topCountries : fallbackCountries).map((c, i) => (
-                      <div key={i} className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <span>{getFlagEmoji(c.code)}</span>
-                          <span className="text-slate-200">{getCountryName(c.code)}</span>
+                <div className="relative z-10 mt-4 grid w-full max-w-xl grid-cols-1 gap-4 sm:grid-cols-2">
+                  <div className="space-y-3 rounded-xl border border-white/5 bg-nordic-primary/30 p-4 backdrop-blur-sm">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-300">
+                      Länder
+                    </p>
+                    {(isPremium ? topCountries : fallbackCountries).length === 0 ? (
+                      <p className="text-xs text-nordic-highlight">Väntar på geodata...</p>
+                    ) : (
+                      (isPremium ? topCountries : fallbackCountries).map((c, i) => (
+                        <div key={i} className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="shrink-0">{getFlagEmoji(c.code)}</span>
+                            <span className="truncate text-slate-200">{getCountryName(c.code)}</span>
+                          </div>
+                          <span className="shrink-0 font-bold text-nordic-highlight">{c.count}</span>
                         </div>
-                        <span className="font-bold text-nordic-highlight">{c.count}</span>
-                      </div>
-                    ))
-                  )}
+                      ))
+                    )}
+                  </div>
+                  <div className="space-y-3 rounded-xl border border-white/5 bg-nordic-primary/30 p-4 backdrop-blur-sm">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-300">
+                      Städer
+                    </p>
+                    {(isPremium ? topCities : fallbackCities).length === 0 ? (
+                      <p className="text-xs text-nordic-highlight">Väntar på stadsdata...</p>
+                    ) : (
+                      (isPremium ? topCities : fallbackCities).map((c, i) => (
+                        <div key={i} className="flex items-center justify-between text-sm">
+                          <span className="min-w-0 truncate text-slate-200">{c.name}</span>
+                          <span className="shrink-0 font-bold text-nordic-highlight">{c.count}</span>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </PremiumLock>
         </div>
@@ -230,19 +284,7 @@ export function AnalyticsView({
                                     <p className="text-[10px] text-nordic-highlight">
                                       {`${item.city || "Okänd plats"}, ${item.country || ""}`}
                                     </p>
-                                    {isUnknownPlace && (
-                                      <div className="relative group z-[80]">
-                                        <Info size={14} className="mt-[-1px] text-muted-foreground" />
-                                        <div className="pointer-events-none absolute left-0 top-full mt-1 w-[280px] rounded-lg bg-slate-900/90 border border-nordic-highlight/20 p-3 text-[11px] text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity z-[90]">
-                                          <p className="font-medium mb-1">
-                                            Varför står det &apos;Okänd plats&apos;?
-                                          </p>
-                                          <p>
-                                            När besökare använder mobildata (4G/5G) eller integritetsfunktioner som Apple Private Relay, maskeras deras exakta stad. Vi kan då se vilket land de befinner sig i, men den exakta orten hålls dold för att skydda deras sekretess.
-                                          </p>
-                                        </div>
-                                      </div>
-                                    )}
+                                    {isUnknownPlace && <UnknownPlaceInfoTrigger />}
                                   </div>
                                 </div>
                               </div>
@@ -288,118 +330,111 @@ export function AnalyticsView({
                 </div>
              </PremiumLock>
 
-              {isPremium && historyOpen && (
-                <div
-                  className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-                  role="presentation"
-                  onClick={() => setHistoryOpen(false)}
-                >
+              {isPremium &&
+                historyOpen &&
+                typeof document !== "undefined" &&
+                createPortal(
                   <div
-                    className="w-full max-w-3xl rounded-3xl bg-slate-900/95 border border-nordic-highlight/40 shadow-2xl overflow-hidden"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Historik"
-                    onClick={(e) => e.stopPropagation()}
+                    className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
+                    role="presentation"
+                    onClick={() => setHistoryOpen(false)}
                   >
-                    <div className="p-5 border-b border-nordic-highlight/20 flex items-center justify-between gap-3">
-                      <div>
-                        <h4 className="text-lg font-semibold text-slate-100">Historik</h4>
-                        <p className="text-xs text-nordic-highlight">
-                          Visa händelser för de valda dagarna
-                        </p>
+                    <div
+                      role="dialog"
+                      aria-modal="true"
+                      aria-label="Historik"
+                      className="flex max-h-[85vh] w-[95vw] max-w-lg flex-col overflow-hidden rounded-3xl border border-nordic-highlight/40 bg-slate-900/95 shadow-2xl"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-nordic-highlight/20 p-5">
+                        <div>
+                          <h4 className="text-lg font-semibold text-slate-100">Historik</h4>
+                          <p className="text-xs text-nordic-highlight">
+                            Visa händelser för de valda dagarna
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setHistoryOpen(false)}
+                          className="rounded-full border border-white/10 bg-slate-800/60 p-2 text-slate-300 transition-colors hover:bg-slate-800"
+                          aria-label="Stäng modal"
+                        >
+                          <X size={18} />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setHistoryOpen(false)}
-                        className="p-2 rounded-full bg-slate-800/60 text-slate-300 hover:bg-slate-800 transition-colors border border-white/10"
-                        aria-label="Stäng modal"
-                      >
-                        <X size={18} />
-                      </button>
-                    </div>
 
-                    <div className="p-5 border-b border-nordic-highlight/20 flex items-center justify-between gap-3">
-                      <label className="text-xs text-nordic-highlight font-bold uppercase tracking-widest">
-                        Rader
-                      </label>
-                      <select
-                        value={rowsToShow}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          if (v === "all") setRowsToShow("all");
-                          if (v === "10") setRowsToShow(10);
-                          if (v === "25") setRowsToShow(25);
-                          if (v === "50") setRowsToShow(50);
-                          if (v === "100") setRowsToShow(100);
-                        }}
-                        className="bg-slate-800 text-sm text-slate-200 rounded-lg px-3 py-2 border border-nordic-highlight/40 outline-none cursor-pointer hover:border-emerald-500/50 transition-colors"
-                      >
-                        <option value={10}>10</option>
-                        <option value={25}>25</option>
-                        <option value={50}>50</option>
-                        <option value={100}>100</option>
-                        <option value="all">Alla</option>
-                      </select>
-                    </div>
+                      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-nordic-highlight/20 p-5">
+                        <label className="text-xs font-bold uppercase tracking-widest text-nordic-highlight">
+                          Rader
+                        </label>
+                        <select
+                          value={rowsToShow}
+                          onChange={(e) => {
+                            const v = e.target.value;
+                            if (v === "all") setRowsToShow("all");
+                            else if (v === "10") setRowsToShow(10);
+                            else if (v === "25") setRowsToShow(25);
+                            else if (v === "50") setRowsToShow(50);
+                            else if (v === "100") setRowsToShow(100);
+                          }}
+                          className="cursor-pointer rounded-lg border border-nordic-highlight/40 bg-slate-800 px-3 py-2 text-sm text-slate-200 outline-none transition-colors hover:border-emerald-500/50"
+                        >
+                          <option value={10}>10</option>
+                          <option value={25}>25</option>
+                          <option value={50}>50</option>
+                          <option value={100}>100</option>
+                          <option value="all">Alla</option>
+                        </select>
+                      </div>
 
-                    <div className="p-5 max-h-[60vh] overflow-y-auto">
-                      {visibleHistory.length === 0 ? (
-                        <p className="text-sm text-nordic-highlight">Ingen historik än.</p>
-                      ) : (
-                        <div className="space-y-4">
-                          {visibleHistory.map((item) => {
-                            const isUnknownPlace = item.city == null || item.city.trim() === "";
-                            return (
-                              <div
-                                key={item.id}
-                                className="flex items-center justify-between border-b border-nordic-highlight/40/50 pb-3 last:border-0 last:pb-0"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="p-2 rounded-full bg-slate-800/50">
-                                    {item.actionName === "Sparade kontakt" ? (
-                                      <Save size={14} className="text-emerald-400" />
-                                    ) : item.type === "CLICK" ? (
-                                      <MousePointerClick size={14} className="text-sky-400" />
-                                    ) : (
-                                      <Eye size={14} className="text-blue-400" />
-                                    )}
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-slate-300 font-medium">
-                                      {item.actionName}
-                                    </p>
-                                    <div className="flex items-start gap-2">
-                                      <p className="text-[10px] text-nordic-highlight">
-                                        {`${item.city || "Okänd plats"}, ${item.country || ""}`}
-                                      </p>
-                                      {isUnknownPlace && (
-                                        <div className="relative group z-[80]">
-                                          <Info size={14} className="mt-[-1px] text-muted-foreground" />
-                                          <div className="pointer-events-none absolute left-0 top-full mt-1 w-[280px] rounded-lg bg-slate-900/90 border border-nordic-highlight/20 p-3 text-[11px] text-slate-200 opacity-0 group-hover:opacity-100 transition-opacity z-[90]">
-                                            <p className="font-medium mb-1">
-                                              Varför står det &apos;Okänd plats&apos;?
-                                            </p>
-                                            <p>
-                                              När besökare använder mobildata (4G/5G) eller integritetsfunktioner som Apple Private Relay, maskeras deras exakta stad. Vi kan då se vilket land de befinner sig i, men den exakta orten hålls dold för att skydda deras sekretess.
-                                            </p>
-                                          </div>
-                                        </div>
+                      <div className="min-h-0 flex-1 overflow-y-auto p-5">
+                        {visibleHistory.length === 0 ? (
+                          <p className="text-sm text-nordic-highlight">Ingen historik än.</p>
+                        ) : (
+                          <div className="space-y-4">
+                            {visibleHistory.map((item) => {
+                              const isUnknownPlace =
+                                item.city == null || item.city.trim() === "";
+                              return (
+                                <div
+                                  key={item.id}
+                                  className="flex items-center justify-between border-b border-nordic-highlight/40/50 pb-3 last:border-0 last:pb-0"
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div className="rounded-full bg-slate-800/50 p-2">
+                                      {item.actionName === "Sparade kontakt" ? (
+                                        <Save size={14} className="text-emerald-400" />
+                                      ) : item.type === "CLICK" ? (
+                                        <MousePointerClick size={14} className="text-sky-400" />
+                                      ) : (
+                                        <Eye size={14} className="text-blue-400" />
                                       )}
                                     </div>
+                                    <div>
+                                      <p className="text-xs font-medium text-slate-300">
+                                        {item.actionName}
+                                      </p>
+                                      <div className="flex items-start gap-2">
+                                        <p className="text-[10px] text-nordic-highlight">
+                                          {`${item.city || "Okänd plats"}, ${item.country || ""}`}
+                                        </p>
+                                        {isUnknownPlace && <UnknownPlaceInfoTrigger />}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="font-mono text-[10px] text-slate-600">
+                                    {item.timeAgo}
                                   </div>
                                 </div>
-                                <div className="text-[10px] text-slate-600 font-mono">
-                                  {item.timeAgo}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                  </div>,
+                  document.body
+                )}
         </div>
         
         {/* Topplista Länkar */}
@@ -414,6 +449,25 @@ export function AnalyticsView({
             ))}
             </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function UnknownPlaceInfoTrigger() {
+  return (
+    <div className="relative z-50 group">
+      <Info
+        className="h-4 w-4 shrink-0 text-muted-foreground"
+        aria-hidden
+      />
+      <div className="pointer-events-none absolute left-0 top-full z-50 mt-1 max-w-[90vw] rounded-lg border border-nordic-highlight/20 bg-slate-900/90 p-3 text-sm text-slate-200 opacity-0 break-words transition-opacity group-hover:opacity-100 md:left-auto md:right-0 md:max-w-[300px]">
+        <p className="mb-1 font-medium">
+          Varför står det &apos;Okänd plats&apos;?
+        </p>
+        <p>
+          När besökare använder mobildata (4G/5G) eller integritetsfunktioner som Apple Private Relay, maskeras deras exakta stad. Vi kan då se vilket land de befinner sig i, men den exakta orten hålls dold för att skydda deras sekretess.
+        </p>
       </div>
     </div>
   );
