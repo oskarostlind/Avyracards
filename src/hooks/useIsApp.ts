@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 
 interface AppWindow extends Window {
-  Capacitor?: unknown;
+  Capacitor?: {
+    isNativePlatform?: () => boolean;
+  };
 }
 
 export function useIsApp(): boolean {
@@ -14,10 +16,11 @@ export function useIsApp(): boolean {
       return;
     }
 
-    const appWindow = window as AppWindow;
-    if (typeof appWindow.Capacitor !== "undefined") {
-      setIsApp(true);
-    }
+    // OBS: window.Capacitor finns även på webben eftersom plugins buntar in
+    // @capacitor/core. Vi måste därför använda isNativePlatform() för att
+    // korrekt skilja native-appen från en vanlig webbläsare.
+    const capacitor = (window as AppWindow).Capacitor;
+    setIsApp(capacitor?.isNativePlatform?.() === true);
   }, []);
 
   return isApp;

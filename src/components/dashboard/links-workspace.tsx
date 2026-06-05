@@ -38,11 +38,12 @@ export function LinksWorkspace({ initialLinks, mode, activeRedirectId: initialRe
   const handleSetRedirect = useCallback(async (linkId: string) => {
     const isActivating = linkId !== activeRedirectId;
     const newId = isActivating ? linkId : null;
+    const previousId = activeRedirectId;
     
     setActiveRedirectId(newId);
 
     try {
-      await fetch("/api/profile", {
+      const response = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ 
@@ -50,20 +51,25 @@ export function LinksWorkspace({ initialLinks, mode, activeRedirectId: initialRe
             redirectEnabled: isActivating 
         }),
       });
+      if (!response.ok) {
+        setActiveRedirectId(previousId);
+        return;
+      }
       router.refresh(); 
     } catch (error) {
       console.error("Failed to set redirect", error);
-      setActiveRedirectId(activeRedirectId);
+      setActiveRedirectId(previousId);
     }
   }, [activeRedirectId, router]);
 
   const handleEdit = useCallback(async (id: string, title: string, url: string) => {
     try {
-      await fetch(`/api/links/${id}`, {
+      const response = await fetch(`/api/links/${id}`, {
         method: "PATCH", 
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, url }),
+        body: JSON.stringify({ label: title, url }),
       });
+      if (!response.ok) return;
       await refresh();
     } catch (error) {
       console.error("Failed to edit link", error);
@@ -72,15 +78,21 @@ export function LinksWorkspace({ initialLinks, mode, activeRedirectId: initialRe
 
   const handleReorder = useCallback(
     async (ids: string[]) => {
-      // Optimistisk uppdatering
+      const previousLinks = links;
       const reorderedLinks = ids.map(id => links.find(l => l.id === id)!).filter(Boolean);
       setLinks(reorderedLinks);
 
-      await fetch("/api/links/reorder", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ order: ids }),
-      });
+      try {
+        const response = await fetch("/api/links/reorder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order: ids }),
+        });
+        if (!response.ok) setLinks(previousLinks);
+      } catch (error) {
+        console.error("Failed to reorder links", error);
+        setLinks(previousLinks);
+      }
     },
     [links]
   );
@@ -89,24 +101,45 @@ export function LinksWorkspace({ initialLinks, mode, activeRedirectId: initialRe
     async (id: string, next: boolean) => {
       setLinks(prev => prev.map(l => l.id === id ? { ...l, isVisible: next } : l));
       
-      await fetch(`/api/links/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isVisible: next }),
-      });
+      try {
+        const response = await fetch(`/api/links/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isVisible: next }),
+        });
+        if (!response.ok) {
+          setLinks(prev => prev.map(l => l.id === id ? { ...l, isVisible: !next } : l));
+        }
+      } catch (error) {
+        console.error("Failed to toggle link visibility", error);
+        setLinks(prev => prev.map(l => l.id === id ? { ...l, isVisible: !next } : l));
+      }
     },
     []
   );
 
   const handleDelete = useCallback(
     async (id: string) => {
+      const previousLinks = links;
+      const previousRedirectId = activeRedirectId;
       setLinks(prev => prev.filter(l => l.id !== id));
       if (activeRedirectId === id) setActiveRedirectId(null);
 
-      await fetch(`/api/links/${id}`, { method: "DELETE" });
-      await refresh();
+      try {
+        const response = await fetch(`/api/links/${id}`, { method: "DELETE" });
+        if (!response.ok) {
+          setLinks(previousLinks);
+          setActiveRedirectId(previousRedirectId);
+          return;
+        }
+        await refresh();
+      } catch (error) {
+        console.error("Failed to delete link", error);
+        setLinks(previousLinks);
+        setActiveRedirectId(previousRedirectId);
+      }
     },
-    [activeRedirectId, refresh]
+    [activeRedirectId, links, refresh]
   );
 
   return (

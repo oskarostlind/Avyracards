@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeHttpUrl } from "@/lib/url";
 
 export const runtime = "nodejs";
 
@@ -23,7 +24,12 @@ export async function PATCH(req: Request, { params }: Params) {
   }
 
   const json = await req.json();
-  const parsed = updateSchema.safeParse(json);
+  const normalized = {
+    ...json,
+    label: json.label ?? json.title,
+    url: typeof json.url === "string" ? normalizeHttpUrl(json.url) : json.url,
+  };
+  const parsed = updateSchema.safeParse(normalized);
 
   if (!parsed.success) {
     return NextResponse.json({ error: "Ogiltiga fält." }, { status: 400 });

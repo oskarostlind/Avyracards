@@ -50,16 +50,18 @@ export function DashboardShell({ user, prices }: DashboardShellProps) {
     if (viewMode === activeMode) return;
 
     startTransition(async () => {
+      const previousMode = activeMode;
       setActiveMode(viewMode); 
       try {
-        await fetch("/api/profile", {
+        const response = await fetch("/api/profile", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ profileMode: viewMode }),
         });
+        if (!response.ok) setActiveMode(previousMode);
       } catch (error) {
         console.error("Failed to activate profile mode", error);
-        setActiveMode(activeMode); 
+        setActiveMode(previousMode); 
       }
     });
   };

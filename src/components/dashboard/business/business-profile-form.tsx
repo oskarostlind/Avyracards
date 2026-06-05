@@ -5,6 +5,13 @@ import { useRouter } from "next/navigation";
 import type { User, Link } from "@prisma/client";
 import { CollapsibleSection } from "@/components/dashboard/accordion";
 import { AvatarUploader } from "@/components/avatar-uploader";
+import { normalizeHttpUrl } from "@/lib/url";
+
+function normalizeOptionalUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return normalizeHttpUrl(trimmed);
+}
 
 type BusinessProfileFormProps = {
   user: User & { links: Link[] };
@@ -87,17 +94,17 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
 
           businessPhone: businessPhone || null,
           businessEmail: businessEmail || null,
-          bookingUrl: bookingUrl || null,
-          vcardUrl: vcardUrl || null,
+          bookingUrl: normalizeOptionalUrl(bookingUrl),
+          vcardUrl: normalizeOptionalUrl(vcardUrl),
 
           expertiseTags: expertiseTags || null,
           languages: languages || null,
           businessRegion: businessRegion || null,
 
-          companyLogoUrl: companyLogoUrl || null,
+          companyLogoUrl: normalizeOptionalUrl(companyLogoUrl),
           companyDescription: companyDescription || null,
-          companyWebsite: companyWebsite || null,
-          careerPageUrl: careerPageUrl || null,
+          companyWebsite: normalizeOptionalUrl(companyWebsite),
+          careerPageUrl: normalizeOptionalUrl(careerPageUrl),
         }),
       });
 
