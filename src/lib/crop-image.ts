@@ -3,22 +3,54 @@ export const createImage = (url: string): Promise<HTMLImageElement> =>
     const image = new Image();
     image.addEventListener("load", () => resolve(image));
     image.addEventListener("error", (error) => reject(error));
-    image.setAttribute("crossOrigin", "anonymous"); // Behövs för att undvika CORS-problem
+    if (/^https?:\/\//.test(url)) {
+      image.setAttribute("crossOrigin", "anonymous");
+    }
     image.src = url;
   });
 
-export function getCroppedImg(
+const MAX_OUTPUT_SIZE = 1024;
+
+export async function getCroppedImg(
   imageSrc: string,
   pixelCrop: { x: number; y: number; width: number; height: number },
   rotation = 0
 ): Promise<Blob> {
-  return new Promise(async (resolve, reject) => {
-    const image = await createImage(imageSrc);
+  const image = await createImage(imageSrc);
+
+  return new Promise((resolve, reject) => {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
     if (!ctx) {
       return reject(new Error("No 2d context"));
+    }
+
+    if (rotation === 0) {
+      const scale = Math.min(1, MAX_OUTPUT_SIZE / Math.max(pixelCrop.width, pixelCrop.height));
+      canvas.width = Math.round(pixelCrop.width * scale);
+      canvas.height = Math.round(pixelCrop.height * scale);
+
+      ctx.drawImage(
+        image,
+        pixelCrop.x,
+        pixelCrop.y,
+        pixelCrop.width,
+        pixelCrop.height,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error("Canvas is empty"));
+          return;
+        }
+        resolve(blob);
+      }, "image/jpeg", 0.85);
+      return;
     }
 
     const rotRad = (rotation * Math.PI) / 180;
@@ -63,7 +95,7 @@ export function getCroppedImg(
         return;
       }
       resolve(blob);
-    }, "image/jpeg", 0.9); // Spara som JPEG med 90% kvalitet
+    }, "image/jpeg", 0.85);
   });
 }
 
