@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import Cropper from "react-easy-crop";
+import { useState, useCallback, useEffect, useRef } from "react";
+import Cropper, { type Area } from "react-easy-crop";
 import { Upload, X, Loader2, Image as ImageIcon, ZoomIn } from "lucide-react";
 import { getCroppedImg } from "@/lib/crop-image";
 
@@ -12,6 +12,57 @@ type AvatarUploaderProps = {
   onUploadEnd?: () => void;
   label?: string;
 };
+
+const MAX_SOURCE_IMAGE_BYTES = 12 * 1024 * 1024;
+const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const SUPPORTED_IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|gif)$/i;
+
+function validateImageFile(file: File) {
+  const hasSupportedType = SUPPORTED_IMAGE_TYPES.includes(file.type);
+  const hasSupportedExtension = SUPPORTED_IMAGE_EXTENSIONS.test(file.name);
+
+  if (!hasSupportedType && !hasSupportedExtension) {
+    return "Välj en JPG-, PNG-, WebP- eller GIF-bild. HEIC från iPhone stöds inte i webbläsaren ännu.";
+  }
+
+  if (file.size > MAX_SOURCE_IMAGE_BYTES) {
+    return "Bilden är för stor. Välj en bild under 12MB.";
+  }
+
+  return null;
+}
+
+function getAvatarFilename(fileName: string) {
+  const baseName = fileName
+    .replace(/\.[^/.]+$/, "")
+    .normalize("NFKD")
+    .replace(/[^\w-]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+
+  return `${baseName || "avatar"}-${Date.now()}.jpg`;
+}
+
+async function getUploadErrorMessage(response: Response) {
+  if (response.status === 401) {
+    return "Du verkar ha blivit utloggad. Logga in igen och försök ladda upp bilden på nytt.";
+  }
+
+  const fallback = "Kunde inte ladda upp bilden. Försök igen.";
+
+  try {
+    const contentType = response.headers.get("content-type") ?? "";
+    if (contentType.includes("application/json")) {
+      const data = await response.json();
+      return typeof data?.error === "string" ? data.error : fallback;
+    }
+
+    const text = await response.text();
+    return text || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 export function AvatarUploader({
   value,
@@ -24,57 +75,107 @@ export function AvatarUploader({
   const [filename, setFilename] = useState<string>("");
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
-  const [croppedAreaPixels, setCroppedAreaPixels] = useState<any>(null);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
+
+  const clearSelectedFile = useCallback(() => {
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current);
+      objectUrlRef.current = null;
+    }
+
+    setSelectedFile(null);
+    setFilename("");
+    setCrop({ x: 0, y: 0 });
+    setZoom(1);
+    setCroppedAreaPixels(null);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+      }
+    };
+  }, []);
 
   // När användaren väljer en fil från datorn
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      setFilename(file.name);
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        setSelectedFile(reader.result as string);
-      });
-      reader.readAsDataURL(file);
+      const validationError = validateImageFile(file);
+
+      if (validationError) {
+        clearSelectedFile();
+        setError(validationError);
+        e.target.value = "";
+        return;
+      }
+
+      setError(null);
+      setFilename(getAvatarFilename(file.name));
+
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+      }
+
+      const objectUrl = URL.createObjectURL(file);
+      objectUrlRef.current = objectUrl;
+      setSelectedFile(objectUrl);
     }
   };
 
-  const onCropComplete = useCallback((_: any, croppedAreaPixels: any) => {
+  const onCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
   // Spara och ladda upp till Vercel Blob
   const handleSave = async () => {
-    if (!selectedFile || !croppedAreaPixels) return;
+    if (!selectedFile || !croppedAreaPixels) {
+      setError("Vänta tills bilden har laddats klart och försök igen.");
+      return;
+    }
 
     try {
       setUploading(true);
+      setError(null);
       onUploadStart?.();
 
       // 1. Skapa en "ren" bild (blob) från crop-koordinaterna
       const croppedBlob = await getCroppedImg(selectedFile, croppedAreaPixels);
 
       // 2. Ladda upp till vårt API
-      const response = await fetch(`/api/upload?filename=${filename}`, {
+      const response = await fetch(`/api/upload?filename=${encodeURIComponent(filename)}`, {
         method: "POST",
+        headers: { "Content-Type": croppedBlob.type || "image/jpeg" },
         body: croppedBlob,
+        credentials: "include",
       });
 
       if (!response.ok) {
-        throw new Error("Upload failed");
+        throw new Error(await getUploadErrorMessage(response));
       }
 
       const newBlob = await response.json();
+
+      if (typeof newBlob?.url !== "string") {
+        throw new Error("Uppladdningen lyckades inte returnera en bild-URL.");
+      }
 
       // 3. Skicka tillbaka den nya URL:en (från Vercel) till formuläret
       onChange(newBlob.url);
       
       // Stäng modalen
-      setSelectedFile(null);
+      clearSelectedFile();
     } catch (error) {
       console.error("Failed to upload image", error);
-      alert("Kunde inte ladda upp bilden. Försök igen.");
+      const message = error instanceof Error && error.message
+        ? error.message
+        : "Kunde inte ladda upp bilden. Försök igen.";
+      setError(message);
+      alert(message);
     } finally {
       setUploading(false);
       onUploadEnd?.();
@@ -111,14 +212,19 @@ export function AvatarUploader({
             <span>Välj ny bild</span>
             <input
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/webp,image/gif"
               onChange={onFileChange}
               className="hidden"
             />
           </label>
           <p className="mt-2 text-[10px] text-nordic-highlight">
-            JPG, PNG eller GIF. Max 4MB.
+            JPG, PNG, WebP eller GIF. Max 12MB.
           </p>
+          {error && (
+            <p className="mt-2 max-w-xs text-[11px] text-red-300" aria-live="polite">
+              {error}
+            </p>
+          )}
         </div>
       </div>
 
@@ -131,7 +237,7 @@ export function AvatarUploader({
             <div className="flex items-center justify-between border-b border-nordic-highlight/40 px-4 py-3">
               <h3 className="text-sm font-semibold text-nordic-secondary">Justera bild</h3>
               <button
-                onClick={() => setSelectedFile(null)}
+                onClick={clearSelectedFile}
                 className="rounded-full p-1 text-nordic-highlight hover:bg-slate-800 hover:text-nordic-secondary"
               >
                 <X size={18} />
@@ -170,7 +276,7 @@ export function AvatarUploader({
 
               <div className="flex justify-end gap-2">
                 <button
-                  onClick={() => setSelectedFile(null)}
+                  onClick={clearSelectedFile}
                   disabled={uploading}
                   className="rounded-lg px-4 py-2 text-xs font-medium text-slate-300 hover:text-nordic-secondary"
                 >
