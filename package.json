@@ -15,6 +15,7 @@
     "@capacitor-community/stripe": "^8.1.1",
     "@capacitor/core": "^8.2.0",
     "@capacitor/ios": "^8.2.0",
+    "@capacitor/splash-screen": "^8.0.1",
     "@capgo/native-purchases": "^8.4.3",
     "@hookform/resolvers": "^5.2.2",
     "@prisma/client": "^5.19.1",

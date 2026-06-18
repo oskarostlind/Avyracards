@@ -1,6 +1,15 @@
+"use client";
+
 import Link from "next/link";
+import { useIsApp } from "@/hooks/useIsApp";
 
 export function Footer() {
+  const isApp = useIsApp();
+
+  if (isApp) {
+    return null;
+  }
+
   return (
     <footer className="border-t border-nordic-highlight/30 bg-nordic-primary">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 text-xs text-nordic-highlight md:flex-row md:justify-between md:text-sm">
@@ -30,11 +39,6 @@ export function Footer() {
                   FAQ
                 </Link>
               </li>
-              {/*<li>
-                <Link href="/dashboard" className="hover:text-nordic-accent">
-                  Exempel-dashboard
-                </Link>
-              </li>*/}
             </ul>
           </div>
 
