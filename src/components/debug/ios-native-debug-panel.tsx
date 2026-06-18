@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { Bug, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { App } from "@capacitor/app";
 import { useIsApp } from "@/hooks/useIsApp";
 import { isIosDebugEnabled, isIosNativePaymentsEnabled } from "@/lib/ios-native";
+import { MIN_IOS_BUILD_WITH_APPLE_SIGN_IN } from "@/lib/ios-native-debug";
 
 interface CapacitorWindow extends Window {
   Capacitor?: {
@@ -43,8 +45,12 @@ export function IosNativeDebugPanel() {
   const [report, setReport] = useState<DebugReport | null>(null);
   const [runtimeLogs, setRuntimeLogs] = useState<RuntimeLogEntry[]>([]);
   const [clientInfo, setClientInfo] = useState<string>("web");
+  const [deviceBuild, setDeviceBuild] = useState<string | null>(null);
 
   const enabled = isIosDebugEnabled() && isIosNativePaymentsEnabled();
+  const deviceBuildNumber = deviceBuild ? Number.parseInt(deviceBuild.replace(/.*\((\d+)\)/, "$1"), 10) : NaN;
+  const needsNewNativeBuild =
+    Number.isFinite(deviceBuildNumber) && deviceBuildNumber < MIN_IOS_BUILD_WITH_APPLE_SIGN_IN;
 
   const loadReport = useCallback(async () => {
     if (!enabled) {
@@ -80,6 +86,13 @@ export function IosNativeDebugPanel() {
     const capacitor = (window as CapacitorWindow).Capacitor;
     const platform = capacitor?.getPlatform?.() ?? (isApp ? "native" : "web");
     setClientInfo(platform);
+
+    if (isApp) {
+      void App.getInfo()
+        .then((info) => setDeviceBuild(`${info.version} (${info.build})`))
+        .catch(() => setDeviceBuild(null));
+    }
+
     void loadReport();
   }, [enabled, isApp, loadReport]);
 
@@ -115,12 +128,25 @@ export function IosNativeDebugPanel() {
 
           <div className="space-y-2">
             <Row label="Klient" value={`${clientInfo}${isApp ? " (isNativePlatform)" : ""}`} />
-            <Row label="Appversion" value={report ? `${report.appVersion} (${report.buildNumber})` : "—"} />
+            <Row
+              label="Enhetsbuild"
+              value={deviceBuild ?? (report ? `${report.appVersion} (${report.buildNumber})` : "—")}
+            />
             <Row label="Apple login" value={boolLabel(report?.signInWithApple.configured)} />
             <Row label="Apple Pay" value={boolLabel(report?.applePay.configured)} />
             <Row label="StoreKit IAP" value={boolLabel(report?.iap.configured)} />
             <Row label="TestFlight redo" value={boolLabel(report?.readyForTestFlight)} />
           </div>
+
+          {needsNewNativeBuild ? (
+            <div className="mt-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-amber-100">
+              <p className="font-bold text-amber-200">Gammal native-build</p>
+              <p className="mt-1">
+                Apple Sign-In kräver TestFlight-build {MIN_IOS_BUILD_WITH_APPLE_SIGN_IN} eller högre. Öppna
+                TestFlight och uppdatera appen.
+              </p>
+            </div>
+          ) : null}
 
           {report?.issues?.length ? (
             <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 p-3">

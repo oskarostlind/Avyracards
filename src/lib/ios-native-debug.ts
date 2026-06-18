@@ -24,6 +24,9 @@ function envPresent(name: string): boolean {
   return Boolean(value && value.trim().length > 0);
 }
 
+/** First iOS build with CODE_SIGN_ENTITLEMENTS linked (Sign in with Apple). */
+export const MIN_IOS_BUILD_WITH_APPLE_SIGN_IN = 15;
+
 export interface IosNativeDebugReport {
   generatedAt: string;
   appVersion: string;
@@ -96,6 +99,13 @@ export function getIosNativeDebugReport(): IosNativeDebugReport {
 
   if (legacyStoreKitVarsPresent) {
     issues.push("Legacy STOREKIT_* finns i .env men används inte — använd APPLE_IAP_* istället");
+  }
+
+  const configuredBuild = Number.parseInt(process.env.IOS_BUILD_NUMBER ?? "", 10);
+  if (!Number.isFinite(configuredBuild) || configuredBuild < MIN_IOS_BUILD_WITH_APPLE_SIGN_IN) {
+    issues.push(
+      `TestFlight-build måste vara ≥${MIN_IOS_BUILD_WITH_APPLE_SIGN_IN} (Sign in with Apple-entitlements). Uppdatera appen i TestFlight.`
+    );
   }
 
   const signInWithApple = isAppleSignInConfigured();
