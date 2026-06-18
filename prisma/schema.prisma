@@ -11,7 +11,10 @@ datasource db {
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
-  passwordHash String
+  passwordHash String?
+
+  appleId    String? @unique
+  appleEmail String?
   name         String?
   username     String    @unique
   bio          String?
@@ -97,7 +100,8 @@ model User {
   role Role @default(USER)
 
   // RELATIONER
-  orders Order[] // Viktigt: Denna möjliggör user.orders
+  orders              Order[]
+  appleIapTransactions AppleIapTransaction[]
 }
 
 enum ProfileMode {
@@ -115,6 +119,7 @@ enum PremiumSource {
   PAID // Köpt via Stripe
   GIFT // Manuellt given av admin
   TRIAL // Tidsbegränsad test
+  APPLE_IAP
 }
 
 model Link {
@@ -143,7 +148,9 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  stripeSessionId String? @unique
+  stripeSessionId       String? @unique
+  stripePaymentIntentId String? @unique
+  checkoutSource        String?
   amountTotal     Int
   currency        String  @default("sek")
 
@@ -173,6 +180,21 @@ model Order {
 
   @@index([status, createdAt])
   @@index([userId, status, createdAt])
+}
+
+model AppleIapTransaction {
+  id            String   @id @default(cuid())
+  transactionId String   @unique
+  productId     String
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  environment   String?
+  purchasedAt   DateTime
+  expiresAt     DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // NY MODELL: OrderItem (Kopplar en order till specifika produktvarianter)

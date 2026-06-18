@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { Loader2, Layers, CreditCard, Upload, X, Check, Sparkles } from "lucide-react";
 import { CardPreview3D } from "@/components/card-preview-3d"; 
 import { LiveProfileDemo } from "@/components/live-profile-demo";
+import { useIosNativePayments } from "@/hooks/useIosNativePayments";
+import { IosOrderCheckout } from "@/components/checkout/ios-order-checkout";
 
 // --- Types ---
 type MaterialType = "plastic" | "metal";
@@ -45,6 +47,15 @@ export default function OrderViewWrapper(props: OrderViewProps) {
 function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPremium }: OrderViewProps) {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const isIosCheckout = useIosNativePayments();
+  const [iosCheckoutItems, setIosCheckoutItems] = useState<Array<{
+    variantId: string;
+    quantity: number;
+    color?: string;
+    design?: string;
+    material?: string;
+    customPrintUrl?: string | null;
+  }> | null>(null);
   
   const defaultStandardColor = standardVariants[0]?.colorCode || "#1a1a1a";
   const defaultMetalColor = metalVariants[0]?.colorCode || "#171717";
@@ -136,7 +147,6 @@ const handleCheckout = async () => {
         setLoading(true);
         let printFileUrl = null;
 
-        // 1. Ladda upp logotypen först (om den finns)
         if (customFile && material === "metal") {
             const formData = new FormData();
             formData.append('file', customFile);
@@ -148,19 +158,23 @@ const handleCheckout = async () => {
             
             if (!uploadRes.ok) throw new Error("Kunde inte ladda upp bilden.");
             const uploadData = await uploadRes.json();
-            printFileUrl = uploadData.url; // Här är den riktiga Blob-URL:en!
+            printFileUrl = uploadData.url;
         }
         
-        // 2. Skicka till Stripe
-        const items = [];
-        items.push({
+        const items = [{
             variantId: selectedVariant.id,
             quantity: quantity,
             color: selectedVariant.name,
             design: design,
             material: material,
-            customPrintUrl: printFileUrl // Skicka med riktiga URL:en
-        });
+            customPrintUrl: printFileUrl
+        }];
+
+        if (isIosCheckout) {
+          setIosCheckoutItems(items);
+          setLoading(false);
+          return;
+        }
 
         const response = await fetch("/api/stripe/checkout", {
           method: "POST",
@@ -452,15 +466,23 @@ const handleCheckout = async () => {
                 
              <button 
                 onClick={handleCheckout} 
-                disabled={loading || isCompletelyOutOfStock} 
+                disabled={loading || isCompletelyOutOfStock || Boolean(iosCheckoutItems)} 
                 className={`w-full py-4 rounded-xl font-bold text-lg transition-all shadow-lg flex items-center justify-center gap-2 ${
                     isCompletelyOutOfStock 
                     ? "bg-slate-800 text-slate-500 cursor-not-allowed" 
                     : "bg-nordic-secondary text-nordic-primary hover:bg-nordic-support"
                 }`}
              >
-                {loading ? <Loader2 className="animate-spin" /> : (isCompletelyOutOfStock ? "Inga produkter tillgängliga" : "Gå till kassan")}
+                {loading ? <Loader2 className="animate-spin" /> : (isCompletelyOutOfStock ? "Inga produkter tillgängliga" : (isIosCheckout ? "Fortsätt till betalning" : "Gå till kassan"))}
              </button>
+
+             {iosCheckoutItems && (
+               <IosOrderCheckout
+                 items={iosCheckoutItems}
+                 premiumOption={premiumOption}
+                 isPremium={isPremium}
+               />
+             )}
              <p className="text-center text-xs text-gray-600">Leverans 2-4 arbetsdagar • Fri frakt över 500 kr</p>
           </div>
         </div>

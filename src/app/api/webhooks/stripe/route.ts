@@ -3,16 +3,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
-import crypto from "crypto";
-
-function generateShortCode(length = 6) {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; 
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return result;
-}
+import { fulfillPhysicalCardOrder, type PhysicalOrderItemInput } from "@/lib/stripe-order-fulfillment";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -26,9 +17,10 @@ export async function POST(req: Request) {
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
     );
-  } catch (error: any) {
-    console.error(`Webhook verification failed: ${error.message}`);
-    return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error(`Webhook verification failed: ${message}`);
+    return new NextResponse(`Webhook Error: ${message}`, { status: 400 });
   }
 
   if (event.type === "checkout.session.completed") {
@@ -53,123 +45,108 @@ export async function POST(req: Request) {
 
     // SCENARIO 2 & 3: Order & Bundle
     if (type === "card_order" || type === "bundle_order") {
-        
-        const existingOrder = await prisma.order.findUnique({
-            where: { stripeSessionId: session.id },
-        });
-
-        if (existingOrder) {
-            return new NextResponse(null, { status: 200 });
-        }
-
         const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
             expand: ['data.price.product'],
         });
 
-        // FIX: Stripe kan ibland lägga adressen under customer_details om shipping_details saknas
-        const shipping = (session as any).shipping_details?.address || session.customer_details?.address;
-        const shippingName = (session as any).shipping_details?.name || session.customer_details?.name;
+        const shipping = (session as Stripe.Checkout.Session & {
+          shipping_details?: { address?: Stripe.Address; name?: string };
+        }).shipping_details?.address || session.customer_details?.address;
+        const shippingName = (session as Stripe.Checkout.Session & {
+          shipping_details?: { address?: Stripe.Address; name?: string };
+        }).shipping_details?.name || session.customer_details?.name;
         
-        const orderItemsToCreate = [];
+        const orderItemsToCreate: PhysicalOrderItemInput[] = [];
         
         for (const item of lineItems.data) {
-             // @ts-ignore
-             const productMetadata = item.price?.product?.metadata || {};
+             const product = item.price?.product;
+             const productMetadata =
+               typeof product === "object" && product && "metadata" in product
+                 ? product.metadata
+                 : {};
              const variantId = productMetadata.variantId; 
 
              if (variantId) {
                  orderItemsToCreate.push({
-                     productVariantId: variantId,
+                     variantId,
                      quantity: item.quantity || 1,
-                     price: item.amount_total 
+                     price: item.amount_total ?? 0,
+                     material: productMetadata.material,
+                     color: productMetadata.color,
+                     design: productMetadata.design,
+                     customPrintUrl: productMetadata.printFileUrl ?? null,
                  });
              }
         }
 
-        const order = await prisma.order.create({
-            data: {
-                stripeSessionId: session.id,
-                amountTotal: session.amount_total || 0,
-                currency: session.currency || "sek",
-                status: "PAID",
-                customerEmail: session.customer_details?.email || "",
-                customerType: "PRIVATE",
-                
-                userId: userId || null, 
-
-                items: {
-                    create: orderItemsToCreate
-                },
-                
-                // Leveransinfo
-                shippingName: shippingName,
-                shippingLine1: shipping?.line1,
-                shippingLine2: shipping?.line2,
-                shippingCity: shipping?.city,
-                shippingPostalCode: shipping?.postal_code,
-                shippingCountry: shipping?.country,
-                
-                quantity: lineItems.data.length,
-            },
+        await fulfillPhysicalCardOrder({
+          userId: userId || null,
+          amountTotal: session.amount_total || 0,
+          currency: session.currency || "sek",
+          customerEmail: session.customer_details?.email || "",
+          checkoutSource: "web",
+          stripeSessionId: session.id,
+          premiumOption:
+            premiumOption === "1mo" || premiumOption === "6mo"
+              ? premiumOption
+              : "none",
+          items: orderItemsToCreate,
+          shipping: {
+            name: shippingName,
+            line1: shipping?.line1,
+            line2: shipping?.line2,
+            city: shipping?.city,
+            postalCode: shipping?.postal_code,
+            country: shipping?.country,
+          },
         });
+    }
+  }
 
-        const cardsToCreate = [];
-        let hasPremiumProduct = false;
+  if (event.type === "payment_intent.succeeded") {
+    const paymentIntent = event.data.object as Stripe.PaymentIntent;
+    if (paymentIntent.metadata?.type === "ios_card_order") {
+      const userId = paymentIntent.metadata.userId || null;
+      const premiumOption = paymentIntent.metadata.premiumOption as
+        | "none"
+        | "1mo"
+        | "6mo"
+        | undefined;
 
-        for (const item of lineItems.data) {
-            const description = item.description || "";
-            const isPremiumItem = description.toLowerCase().includes("premium");
-            const isCustomPrint = description.toLowerCase().includes("custom print");
+      let parsedItems: PhysicalOrderItemInput[] = [];
+      try {
+        parsedItems = JSON.parse(paymentIntent.metadata.items || "[]") as PhysicalOrderItemInput[];
+      } catch {
+        parsedItems = [];
+      }
 
-            if (isPremiumItem) {
-                hasPremiumProduct = true;
-                continue;
-            }
-            if (isCustomPrint) continue;
+      const shipping = paymentIntent.shipping;
+      const latestCharge = paymentIntent.latest_charge;
+      let customerEmail = paymentIntent.receipt_email ?? "";
 
-            // @ts-ignore
-            const productMetadata = item.price?.product?.metadata || {};
+      if (!customerEmail && typeof latestCharge === "string") {
+        const charge = await stripe.charges.retrieve(latestCharge);
+        customerEmail = charge.billing_details.email ?? "";
+      }
 
-            if (productMetadata.variantId) {
-                const qty = item.quantity || 1;
-                for (let i = 0; i < qty; i++) {
-                     const detectedMaterial = productMetadata.material || "plastic";
-                     const detectedColor = productMetadata.color || "black";
-                     const detectedDesign = productMetadata.design || "minimal";
-                     const printFileUrl = productMetadata.printFileUrl || null;
-
-                     cardsToCreate.push({
-                        orderId: order.id,
-                        cardCode: generateShortCode(),
-                        claimToken: crypto.randomBytes(32).toString("hex"),
-                        status: "UNCLAIMED" as const,
-                        material: detectedMaterial,
-                        colorOption: detectedColor,
-                        designTemplate: detectedDesign,
-                        printFileUrl: printFileUrl, 
-                        assignedUserId: userId || null 
-                    });
-                }
-            }
-        }
-
-        if (cardsToCreate.length > 0) {
-            await prisma.card.createMany({
-                data: cardsToCreate,
-            });
-        }
-
-        if (userId && (premiumOption === "1mo" || premiumOption === "6mo" || hasPremiumProduct)) {
-            console.log(`[Webhook] Activating Premium for User ${userId}.`);
-            
-            await prisma.user.update({
-                where: { id: userId },
-                data: {
-                    isPremium: true,
-                    stripeCustomerId: session.customer as string,
-                },
-            });
-        }
+      await fulfillPhysicalCardOrder({
+        userId,
+        amountTotal: paymentIntent.amount_received,
+        currency: paymentIntent.currency,
+        customerEmail,
+        checkoutSource: "ios",
+        stripePaymentIntentId: paymentIntent.id,
+        premiumOption: premiumOption ?? "none",
+        items: parsedItems,
+        shipping: {
+          name: shipping?.name,
+          line1: shipping?.address?.line1,
+          line2: shipping?.address?.line2,
+          city: shipping?.address?.city,
+          postalCode: shipping?.address?.postal_code,
+          country: shipping?.address?.country,
+        },
+      });
     }
   }
 

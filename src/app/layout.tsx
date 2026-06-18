@@ -6,6 +6,7 @@ import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import SessionProviderWrapper from "@/components/providers/session-provider";
 import CookieBanner from "@/components/cookie-banner";
+import { IosNativeDebugPanel } from "@/components/debug/ios-native-debug-panel";
 
 // Initiera Manrope-fonten
 const manrope = Manrope({
@@ -26,11 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="sv">
       {/* Ingen manuell <head> här. Metadata-exporten hanterar <head> automatiskt. */}
 
-      /<body
-        className={`${manrope.className} min-h-screen bg-nordic-primary text-nordic-secondary antialiased`}
-      >
-
-        <body className={`${manrope.className} min-h-screen bg-black text-white antialiased`}></body>
+      <body className={`${manrope.className} min-h-screen bg-black text-white antialiased`}>
         {/* Google AdSense Script - Laddas ENDAST om vi är i produktion */}
         {isProduction && (
           <Script
@@ -50,6 +47,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           </div>
 
           <CookieBanner />
+          <IosNativeDebugPanel />
         </SessionProviderWrapper>
       </body>
     </html>

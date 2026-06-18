@@ -26,9 +26,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
         impersonateId: { label: "Impersonate Id", type: "text" },
         adminSecret: { label: "Admin Secret", type: "text" },
+        appleLoginToken: { label: "Apple Login Token", type: "text" },
       },
       authorize: async (credentials) => {
         
+        // --- 0. APPLE LOGIN TOKEN ---
+        if (credentials?.appleLoginToken) {
+          const { verifyAppleLoginToken } = await import("@/lib/apple-auth");
+          const userId = await verifyAppleLoginToken(
+            credentials.appleLoginToken as string
+          );
+
+          const user = await prisma.user.findUnique({
+            where: { id: userId },
+          });
+
+          if (!user) {
+            throw new Error("User not found for Apple login");
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.username,
+            username: user.username,
+            role: user.role,
+          };
+        }
+
         // --- 1. IMPERSONATION LOGIN (Admin Only) ---
         if (credentials?.impersonateId) {
           

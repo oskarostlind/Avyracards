@@ -4,10 +4,15 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { AppleSignInButton } from "@/components/auth/apple-sign-in-button";
+import { useIsApp } from "@/hooks/useIsApp";
+import { isIosNativePaymentsEnabled } from "@/lib/ios-native";
 
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const isApp = useIsApp();
+  const showAppleOnly = isApp && isIosNativePaymentsEnabled();
   
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const registered = searchParams.get("registered");
@@ -90,6 +95,9 @@ export default function LoginForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {showAppleOnly ? (
+          <AppleSignInButton callbackUrl={callbackUrl} />
+        ) : (
         <div className="space-y-4">
           
           <div className="space-y-2">
@@ -142,7 +150,9 @@ export default function LoginForm() {
             />
           </div>
         </div>
+        )}
 
+        {!showAppleOnly && (
         <button
           type="submit"
           disabled={loading}
@@ -150,7 +160,9 @@ export default function LoginForm() {
         >
           {loading ? "Loggar in..." : "Logga in"}
         </button>
+        )}
 
+        {!showAppleOnly && (
         <div className="text-center space-y-4 pt-2">
           <Link
             href="/get-started"
@@ -159,6 +171,7 @@ export default function LoginForm() {
             Har du inget konto? <span className="font-semibold text-nordic-secondary">Skapa konto</span>
           </Link>
         </div>
+        )}
       </form>
     </div>
   );

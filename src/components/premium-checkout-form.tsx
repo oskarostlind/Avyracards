@@ -5,6 +5,8 @@ import { Check, ArrowRight, CreditCard, Sparkles, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { LiveProfileDemo } from "@/components/live-profile-demo";
 import { formatPrice } from "@/lib/products";
+import { useIosNativePayments } from "@/hooks/useIosNativePayments";
+import { IosIapPremiumButton } from "@/components/checkout/ios-iap-premium-button";
 
 interface PremiumCheckoutProps {
   productName: string;
@@ -18,6 +20,7 @@ export function PremiumCheckoutForm({
   variantId, 
 }: PremiumCheckoutProps) {
   const [loading, setLoading] = useState(false);
+  const isIosCheckout = useIosNativePayments();
 
   const formattedPrice = formatPrice(price);
 
@@ -102,6 +105,21 @@ export function PremiumCheckoutForm({
              </div>
 
              <form onSubmit={handleCheckout} className="space-y-4">
+                 {isIosCheckout ? (
+                   <>
+                     <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
+                       <div className="mt-0.5 min-w-[16px]"><Check size={16} className="text-blue-400"/></div>
+                       <p className="text-sm text-blue-200/80 leading-relaxed">
+                         Premium köps via App Store i iOS-appen.
+                       </p>
+                     </div>
+                     <IosIapPremiumButton
+                       productKey="monthly"
+                       label={`Köp ${productName} via App Store`}
+                     />
+                   </>
+                 ) : (
+                   <>
                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
                     <div className="mt-0.5 min-w-[16px]"><Check size={16} className="text-blue-400"/></div>
                     <p className="text-sm text-blue-200/80 leading-relaxed">
@@ -117,6 +135,8 @@ export function PremiumCheckoutForm({
                     {loading ? <Loader2 className="animate-spin" /> : "Gå till betalning"}
                     {!loading && <ArrowRight size={18} />}
                  </button>
+                 </>
+                 )}
              </form>
            </div>
            

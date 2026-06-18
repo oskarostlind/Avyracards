@@ -1,0 +1,147 @@
+"use client";
+
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { SignInWithApple } from "@capacitor-community/apple-sign-in";
+import { useIsApp } from "@/hooks/useIsApp";
+import { isIosNativePaymentsEnabled } from "@/lib/ios-native";
+import { LinkAppleAccountForm } from "@/components/auth/link-apple-account-form";
+import { logIosDebug } from "@/lib/ios-native-client-debug";
+
+interface AppleSignInButtonProps {
+  callbackUrl?: string;
+}
+
+interface AppleAuthResponse {
+  loginToken?: string;
+  needsLink?: boolean;
+  email?: string;
+  message?: string;
+  error?: string;
+}
+
+export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInButtonProps) {
+  const router = useRouter();
+  const isApp = useIsApp();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [linkState, setLinkState] = useState<{
+    identityToken: string;
+    email?: string;
+    message?: string;
+  } | null>(null);
+
+  if (!isApp || !isIosNativePaymentsEnabled()) {
+    return null;
+  }
+
+  const completeLogin = async (loginToken: string) => {
+    const result = await signIn("credentials", {
+      appleLoginToken: loginToken,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      throw new Error("Kunde inte skapa session");
+    }
+
+    router.push(callbackUrl);
+    router.refresh();
+  };
+
+  const handleAppleSignIn = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const appleResult = await SignInWithApple.authorize({
+        clientId: "se.avyracards.app",
+        redirectURI: "https://avyracards.se",
+        scopes: "email name",
+      });
+
+      const response = await fetch("/api/auth/apple", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          identityToken: appleResult.response.identityToken,
+          email: appleResult.response.email,
+          givenName: appleResult.response.givenName,
+          familyName: appleResult.response.familyName,
+        }),
+      });
+
+      const data = (await response.json()) as AppleAuthResponse;
+      logIosDebug("APPLE_SIGN_IN", "Auth API response", {
+        ok: response.ok,
+        needsLink: data.needsLink,
+        hasLoginToken: Boolean(data.loginToken),
+      });
+      if (!response.ok) {
+        throw new Error(data.error ?? "Apple-inloggning misslyckades");
+      }
+
+      if (data.needsLink) {
+        setLinkState({
+          identityToken: appleResult.response.identityToken,
+          email: data.email,
+          message: data.message,
+        });
+        setLoading(false);
+        return;
+      }
+
+      if (!data.loginToken) {
+        throw new Error("Saknar login-token");
+      }
+
+      await completeLogin(data.loginToken);
+    } catch (err) {
+      console.error(err);
+      setError("Kunde inte logga in med Apple. Försök igen.");
+      setLoading(false);
+    }
+  };
+
+  if (linkState) {
+    return (
+      <LinkAppleAccountForm
+        identityToken={linkState.identityToken}
+        suggestedEmail={linkState.email}
+        message={linkState.message}
+        onSuccess={async (loginToken) => {
+          await completeLogin(loginToken);
+        }}
+        onCancel={() => setLinkState(null)}
+      />
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {error && (
+        <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg text-center">
+          {error}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={handleAppleSignIn}
+        disabled={loading}
+        className="w-full py-3.5 px-4 bg-black hover:bg-zinc-900 text-white font-bold rounded-xl transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed border border-white/10 flex items-center justify-center gap-2"
+      >
+        {loading ? (
+          <Loader2 className="animate-spin" size={18} />
+        ) : (
+          <>
+            <span aria-hidden="true"></span>
+            Fortsätt med Apple
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
