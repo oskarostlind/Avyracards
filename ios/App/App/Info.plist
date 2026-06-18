@@ -47,5 +47,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>AvyraCards använder kameran när du tar en profilbild eller lägger till tryck på ditt kort.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AvyraCards behöver åtkomst till dina foton för att välja profilbilder och kortdesign.</string>
 </dict>
 </plist>
