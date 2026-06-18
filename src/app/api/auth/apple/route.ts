@@ -11,6 +11,7 @@ import {
   linkAppleWithCredentials,
 } from "@/lib/apple-user";
 import { isAppleSignInConfigured } from "@/lib/ios-native";
+import { logIosNativeServer } from "@/lib/ios-native-server-debug";
 
 const appleAuthSchema = z.object({
   identityToken: z.string().min(1),
@@ -23,7 +24,19 @@ const appleAuthSchema = z.object({
 
 export async function POST(req: Request) {
   try {
-    if (!isAppleSignInConfigured()) {
+    const configured = isAppleSignInConfigured();
+    logIosNativeServer("APPLE_SIGN_IN", "api/auth/apple:POST", "Request received", {
+      configured,
+    });
+
+    if (!configured) {
+      logIosNativeServer(
+        "APPLE_SIGN_IN",
+        "api/auth/apple:POST",
+        "Not configured — missing APPLE_AUTH_* env",
+        {},
+        "error"
+      );
       return NextResponse.json(
         { error: "Sign in with Apple är inte konfigurerat ännu" },
         { status: 503 }
@@ -37,6 +50,10 @@ export async function POST(req: Request) {
     }
 
     const claims = await verifyAppleIdentityToken(parsed.data.identityToken);
+    logIosNativeServer("APPLE_SIGN_IN", "api/auth/apple:verify", "Token verified", {
+      hasEmail: Boolean(claims.email),
+      subPrefix: claims.sub?.slice(0, 8),
+    });
     const appleId = claims.sub;
     const tokenEmail =
       typeof claims.email === "string" ? claims.email.toLowerCase() : null;
@@ -105,6 +122,14 @@ export async function POST(req: Request) {
     const loginToken = await createAppleLoginToken(user.id);
     return NextResponse.json({ loginToken, user });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logIosNativeServer(
+      "APPLE_SIGN_IN",
+      "api/auth/apple:catch",
+      "Apple auth failed",
+      { error: message },
+      "error"
+    );
     console.error("[APPLE_AUTH]", error);
     return NextResponse.json(
       { error: "Kunde inte logga in med Apple" },

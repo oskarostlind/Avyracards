@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "ios:bump": "node scripts/bump-ios-build.mjs",
+    "ios:release": "node scripts/bump-ios-build.mjs && npx cap sync ios",
     "postinstall": "prisma generate && node scripts/patch-capacitor-plugins-spm.mjs"
   },
   "dependencies": {

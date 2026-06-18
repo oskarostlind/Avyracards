@@ -8,6 +8,7 @@ import {
   resolvePremiumExpiry,
 } from "@/lib/apple-iap";
 import { isAppleIapConfigured } from "@/lib/ios-native";
+import { logIosNativeServer } from "@/lib/ios-native-server-debug";
 
 const verifySchema = z.object({
   transactionId: z.string().min(1),
@@ -60,12 +61,21 @@ export async function POST(req: Request) {
       expiresAt,
     });
 
+    logIosNativeServer("IAP", "api/apple/iap/verify:POST", "IAP verified", {
+      productId: transaction.productId,
+      userId: session.user.id,
+    });
+
     return NextResponse.json({
       success: true,
       productId: transaction.productId,
       expiresAt,
     });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    logIosNativeServer("IAP", "api/apple/iap/verify:catch", "IAP verify failed", {
+      error: message,
+    }, "error");
     console.error("[APPLE_IAP_VERIFY]", error);
     return NextResponse.json(
       { error: "Kunde inte verifiera köpet" },

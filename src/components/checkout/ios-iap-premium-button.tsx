@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { NativePurchases, PURCHASE_TYPE } from "@capgo/native-purchases";
 import type { IosPremiumProductKey } from "@/lib/ios-native";
+import { isIosDebugEnabled } from "@/lib/ios-native";
+import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
 
 interface IosIapPremiumButtonProps {
   productKey: IosPremiumProductKey;
@@ -24,6 +26,13 @@ export function IosIapPremiumButton({
     setError("");
 
     try {
+      logIosNativeRuntime({
+        scope: "IAP",
+        location: "ios-iap-premium-button.tsx:start",
+        message: "Starting IAP purchase",
+        data: { productKey },
+      });
+
       const configResponse = await fetch("/api/apple/iap/config");
       const config = (await configResponse.json()) as {
         products: { monthly: string | null; sixMonths: string | null };
@@ -54,11 +63,28 @@ export function IosIapPremiumButton({
         throw new Error("Kunde inte verifiera köpet");
       }
 
+      logIosNativeRuntime({
+        scope: "IAP",
+        location: "ios-iap-premium-button.tsx:success",
+        message: "IAP purchase verified",
+        data: { productId, transactionId: transaction.transactionId },
+      });
+
       onSuccess?.();
       window.location.href = "/dashboard";
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logIosNativeRuntime({
+        scope: "IAP",
+        location: "ios-iap-premium-button.tsx:catch",
+        message: "IAP purchase failed",
+        data: { error: message, productKey },
+        level: "error",
+      });
       console.error(err);
-      setError("Köpet kunde inte slutföras. Försök igen.");
+      setError(
+        isIosDebugEnabled() ? `IAP: ${message}` : "Köpet kunde inte slutföras. Försök igen."
+      );
       setLoading(false);
     }
   };

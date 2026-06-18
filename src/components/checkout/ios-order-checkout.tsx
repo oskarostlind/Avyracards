@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { NativePurchases, PURCHASE_TYPE } from "@capgo/native-purchases";
 import { IosApplePayCheckout } from "@/components/checkout/ios-apple-pay-checkout";
+import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
+import { isIosDebugEnabled } from "@/lib/ios-native";
 
 interface OrderItemPayload {
   variantId: string;
@@ -36,6 +38,12 @@ export function IosOrderCheckout({
     setError("");
 
     try {
+      logIosNativeRuntime({
+        scope: "IAP_ORDER",
+        location: "ios-order-checkout.tsx:premium",
+        message: "Starting 6mo premium IAP before Apple Pay",
+      });
+
       const configResponse = await fetch("/api/apple/iap/config");
       const config = (await configResponse.json()) as {
         products: { sixMonths: string | null };
@@ -64,9 +72,22 @@ export function IosOrderCheckout({
       }
 
       setIapCompleted(true);
+      logIosNativeRuntime({
+        scope: "IAP_ORDER",
+        location: "ios-order-checkout.tsx:premium",
+        message: "6mo premium IAP completed",
+      });
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logIosNativeRuntime({
+        scope: "IAP_ORDER",
+        location: "ios-order-checkout.tsx:catch",
+        message: "Premium IAP failed",
+        data: { error: message },
+        level: "error",
+      });
       console.error(err);
-      setError("Premiumköpet kunde inte slutföras.");
+      setError(isIosDebugEnabled() ? message : "Premiumköpet kunde inte slutföras.");
     } finally {
       setLoading(false);
     }

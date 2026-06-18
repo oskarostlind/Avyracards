@@ -27,11 +27,21 @@ interface DebugReport {
   buildNumber: string;
 }
 
+interface RuntimeLogEntry {
+  scope: string;
+  location: string;
+  message: string;
+  level?: string;
+  data?: Record<string, unknown>;
+  timestamp: number;
+}
+
 export function IosNativeDebugPanel() {
   const isApp = useIsApp();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [report, setReport] = useState<DebugReport | null>(null);
+  const [runtimeLogs, setRuntimeLogs] = useState<RuntimeLogEntry[]>([]);
   const [clientInfo, setClientInfo] = useState<string>("web");
 
   const enabled = isIosDebugEnabled() && isIosNativePaymentsEnabled();
@@ -43,10 +53,19 @@ export function IosNativeDebugPanel() {
 
     setLoading(true);
     try {
-      const response = await fetch("/api/debug/ios-native", { cache: "no-store" });
-      if (response.ok) {
-        const data = (await response.json()) as DebugReport;
+      const [configRes, logsRes] = await Promise.all([
+        fetch("/api/debug/ios-native", { cache: "no-store" }),
+        fetch("/api/debug/ios-native-log?limit=20", { cache: "no-store" }),
+      ]);
+
+      if (configRes.ok) {
+        const data = (await configRes.json()) as DebugReport;
         setReport(data);
+      }
+
+      if (logsRes.ok) {
+        const logs = (await logsRes.json()) as { entries: RuntimeLogEntry[] };
+        setRuntimeLogs(logs.entries ?? []);
       }
     } finally {
       setLoading(false);
@@ -81,7 +100,7 @@ export function IosNativeDebugPanel() {
       </button>
 
       {open && (
-        <div className="mt-2 rounded-2xl border border-amber-500/30 bg-slate-950/95 p-4 text-xs text-slate-200 shadow-2xl backdrop-blur">
+        <div className="mt-2 max-h-[70vh] overflow-y-auto rounded-2xl border border-amber-500/30 bg-slate-950/95 p-4 text-xs text-slate-200 shadow-2xl backdrop-blur">
           <div className="mb-3 flex items-center justify-between">
             <span className="font-bold text-amber-300">Native payments debug</span>
             <button
@@ -105,7 +124,7 @@ export function IosNativeDebugPanel() {
 
           {report?.issues?.length ? (
             <div className="mt-3 rounded-xl border border-red-500/20 bg-red-500/10 p-3">
-              <p className="mb-1 font-bold text-red-300">Problem</p>
+              <p className="mb-1 font-bold text-red-300">Konfigurationsproblem</p>
               <ul className="list-disc space-y-1 pl-4 text-red-200">
                 {report.issues.map((issue) => (
                   <li key={issue}>{issue}</li>
@@ -115,6 +134,35 @@ export function IosNativeDebugPanel() {
           ) : (
             <p className="mt-3 text-green-300">Inga kända konfigurationsproblem.</p>
           )}
+
+          <div className="mt-3 rounded-xl border border-white/10 bg-black/30 p-3">
+            <p className="mb-2 font-bold text-amber-200">Senaste runtime-loggar</p>
+            {runtimeLogs.length === 0 ? (
+              <p className="text-slate-400">Inga loggar ännu. Testa Apple login, IAP, push m.m.</p>
+            ) : (
+              <ul className="space-y-2">
+                {runtimeLogs
+                  .slice()
+                  .reverse()
+                  .map((entry, index) => (
+                    <li
+                      key={`${entry.timestamp}-${index}`}
+                      className={`rounded-lg border px-2 py-1.5 ${
+                        entry.level === "error"
+                          ? "border-red-500/30 bg-red-500/10 text-red-200"
+                          : "border-white/10 bg-white/5"
+                      }`}
+                    >
+                      <div className="font-mono text-[10px] text-amber-300">{entry.scope}</div>
+                      <div>{entry.message}</div>
+                      {entry.data?.error ? (
+                        <div className="mt-0.5 text-[10px] opacity-80">{String(entry.data.error)}</div>
+                      ) : null}
+                    </li>
+                  ))}
+              </ul>
+            )}
+          </div>
         </div>
       )}
     </div>

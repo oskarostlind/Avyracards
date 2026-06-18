@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { Stripe, ApplePayEventsEnum } from "@capacitor-community/stripe";
-import { logIosDebug } from "@/lib/ios-native-client-debug";
+import { isIosDebugEnabled } from "@/lib/ios-native";
+import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
 
 interface SummaryItem {
   label: string;
@@ -36,6 +37,13 @@ export function IosApplePayCheckout({
     setError("");
 
     try {
+      logIosNativeRuntime({
+        scope: "APPLE_PAY",
+        location: "ios-apple-pay-checkout.tsx:start",
+        message: "Starting Apple Pay flow",
+        data: { itemCount: items.length, premiumOption },
+      });
+
       const configResponse = await fetch("/api/apple/iap/config");
       const config = (await configResponse.json()) as {
         publishableKey: string | null;
@@ -65,9 +73,14 @@ export function IosApplePayCheckout({
         summaryItems: SummaryItem[];
       };
 
-      logIosDebug("APPLE_PAY", "PaymentIntent created", {
-        amountTotal: paymentIntent.amountTotal,
-        summaryCount: paymentIntent.summaryItems.length,
+      logIosNativeRuntime({
+        scope: "APPLE_PAY",
+        location: "ios-apple-pay-checkout.tsx:paymentIntent",
+        message: "PaymentIntent created",
+        data: {
+          amountTotal: paymentIntent.amountTotal,
+          summaryCount: paymentIntent.summaryItems.length,
+        },
       });
 
       const paymentSummaryItems = paymentIntent.summaryItems.map((item) => ({
@@ -100,12 +113,30 @@ export function IosApplePayCheckout({
         throw new Error("Betalningen avbröts");
       }
 
+      logIosNativeRuntime({
+        scope: "APPLE_PAY",
+        location: "ios-apple-pay-checkout.tsx:success",
+        message: "Apple Pay completed",
+      });
+
       onSuccess?.();
       window.location.href = "/dashboard?order=success";
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logIosNativeRuntime({
+        scope: "APPLE_PAY",
+        location: "ios-apple-pay-checkout.tsx:catch",
+        message: "Apple Pay failed",
+        data: { error: message },
+        level: "error",
+      });
       console.error(err);
       setError(
-        err instanceof Error ? err.message : "Apple Pay misslyckades. Försök igen."
+        isIosDebugEnabled()
+          ? message
+          : err instanceof Error
+            ? err.message
+            : "Apple Pay misslyckades. Försök igen."
       );
       setLoading(false);
     }

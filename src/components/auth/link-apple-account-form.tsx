@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { isIosDebugEnabled } from "@/lib/ios-native";
+import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
 
 interface LinkAppleAccountFormProps {
   identityToken: string;
@@ -34,6 +36,13 @@ export function LinkAppleAccountForm({
     setError("");
 
     try {
+      logIosNativeRuntime({
+        scope: "APPLE_LINK",
+        location: "link-apple-account-form.tsx:submit",
+        message: "Linking Apple account",
+        data: { hasEmail: Boolean(email) },
+      });
+
       const response = await fetch("/api/auth/apple", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -45,14 +54,35 @@ export function LinkAppleAccountForm({
       });
 
       const data = (await response.json()) as LinkResponse;
+
+      logIosNativeRuntime({
+        scope: "APPLE_LINK",
+        location: "link-apple-account-form.tsx:response",
+        message: "Link API response",
+        data: { status: response.status, ok: response.ok, hasLoginToken: Boolean(data.loginToken) },
+        level: response.ok ? "info" : "error",
+      });
+
       if (!response.ok || !data.loginToken) {
         throw new Error(data.error ?? "Kunde inte koppla kontot");
       }
 
       await onSuccess(data.loginToken);
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logIosNativeRuntime({
+        scope: "APPLE_LINK",
+        location: "link-apple-account-form.tsx:catch",
+        message: "Link failed",
+        data: { error: message },
+        level: "error",
+      });
       console.error(err);
-      setError("Kunde inte koppla Apple-ID till kontot. Kontrollera uppgifterna.");
+      setError(
+        isIosDebugEnabled()
+          ? `Koppling misslyckades: ${message}`
+          : "Kunde inte koppla Apple-ID till kontot. Kontrollera uppgifterna."
+      );
       setLoading(false);
     }
   };

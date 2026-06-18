@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { PushNotifications } from "@capacitor/push-notifications";
 import { FCM } from "@capacitor-community/fcm";
 import { useIsApp } from "@/hooks/useIsApp";
+import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
 
 async function sendTokenToBackend(token: string): Promise<void> {
   const res = await fetch("/api/user/push-token", {
@@ -27,23 +28,39 @@ export function PushManager() {
     let registrationErrorListener: { remove: () => Promise<void> } | null = null;
 
     const setupPush = async () => {
+      logIosNativeRuntime({
+        scope: "PUSH",
+        location: "push-manager.tsx:setup",
+        message: "Starting push setup",
+      });
+
       try {
-        // 1) Permissions
         let permResult: { receive: string } | null = null;
         try {
           permResult = await PushNotifications.requestPermissions();
         } catch (err) {
-          if (err instanceof Error) {
-            console.error("[PushManager] requestPermissions failed:", err.message);
-          }
+          const message = err instanceof Error ? err.message : String(err);
+          logIosNativeRuntime({
+            scope: "PUSH",
+            location: "push-manager.tsx:permissions",
+            message: "requestPermissions failed",
+            data: { error: message },
+            level: "error",
+          });
           return;
         }
+
+        logIosNativeRuntime({
+          scope: "PUSH",
+          location: "push-manager.tsx:permissions",
+          message: "Permission result",
+          data: { receive: permResult.receive },
+        });
 
         if (permResult.receive !== "granted") {
           return;
         }
 
-        // 2) Set listeners BEFORE register to avoid missing events
         const registrationPromise = new Promise<void>((resolve, reject) => {
           void PushNotifications.addListener("registration", () => {
             resolve();
@@ -62,54 +79,87 @@ export function PushManager() {
           });
         });
 
-        // 3) Register
         try {
           await PushNotifications.register();
         } catch (err) {
-          if (err instanceof Error) {
-            console.error("[PushManager] register failed:", err.message);
-          }
+          const message = err instanceof Error ? err.message : String(err);
+          logIosNativeRuntime({
+            scope: "PUSH",
+            location: "push-manager.tsx:register",
+            message: "register failed",
+            data: { error: message },
+            level: "error",
+          });
           return;
         }
 
-        // 4) Await registration event (or error)
         try {
           await registrationPromise;
         } catch (err) {
-          if (err instanceof Error) {
-            console.error("[PushManager] registrationError:", err.message);
-          }
+          const message = err instanceof Error ? err.message : String(err);
+          logIosNativeRuntime({
+            scope: "PUSH",
+            location: "push-manager.tsx:registration",
+            message: "registrationError",
+            data: { error: message },
+            level: "error",
+          });
           return;
         }
 
-        // 5) Get FCM token
         let fcmToken: string | null = null;
         try {
           const res = await FCM.getToken();
           fcmToken = (res?.token ?? "").trim() || null;
         } catch (err) {
-          if (err instanceof Error) {
-            console.error("[PushManager] FCM.getToken failed:", err.message);
-          }
+          const message = err instanceof Error ? err.message : String(err);
+          logIosNativeRuntime({
+            scope: "PUSH",
+            location: "push-manager.tsx:fcm",
+            message: "FCM.getToken failed",
+            data: { error: message },
+            level: "error",
+          });
           return;
         }
 
         if (!fcmToken) {
+          logIosNativeRuntime({
+            scope: "PUSH",
+            location: "push-manager.tsx:fcm",
+            message: "FCM token empty",
+            level: "error",
+          });
           return;
         }
 
-        // 6) Send token to backend
         try {
           await sendTokenToBackend(fcmToken);
+          logIosNativeRuntime({
+            scope: "PUSH",
+            location: "push-manager.tsx:backend",
+            message: "Push token saved",
+            data: { tokenLength: fcmToken.length },
+          });
         } catch (err) {
-          if (err instanceof Error) {
-            console.error("[PushManager] POST /api/user/push-token failed:", err.message);
-          }
+          const message = err instanceof Error ? err.message : String(err);
+          logIosNativeRuntime({
+            scope: "PUSH",
+            location: "push-manager.tsx:backend",
+            message: "POST push-token failed",
+            data: { error: message },
+            level: "error",
+          });
         }
       } catch (err) {
-        if (err instanceof Error) {
-          console.error("[PushManager] setup failed:", err.message);
-        }
+        const message = err instanceof Error ? err.message : String(err);
+        logIosNativeRuntime({
+          scope: "PUSH",
+          location: "push-manager.tsx:catch",
+          message: "setup failed",
+          data: { error: message },
+          level: "error",
+        });
       }
     };
 

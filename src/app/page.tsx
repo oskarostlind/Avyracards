@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useIsApp } from "@/hooks/useIsApp";
+import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
 import { Check, ArrowRight, Layers, Users, ShieldCheck, Zap, ChevronDown } from "lucide-react";
 
 export default function HomePage() {
@@ -18,10 +19,22 @@ export default function HomePage() {
     }
 
     if (status === "authenticated") {
+      logIosNativeRuntime({
+        scope: "APP_SHELL",
+        location: "page.tsx:redirect",
+        message: "App redirect to dashboard",
+        data: { status },
+      });
       router.replace("/dashboard");
       return;
     }
 
+    logIosNativeRuntime({
+      scope: "APP_SHELL",
+      location: "page.tsx:redirect",
+      message: "App redirect to login",
+      data: { status },
+    });
     router.replace("/login");
   }, [isApp, status, router]);
 

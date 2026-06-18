@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { SignInWithApple } from "@capacitor-community/apple-sign-in";
 import { useIsApp } from "@/hooks/useIsApp";
-import { isIosNativePaymentsEnabled } from "@/lib/ios-native";
+import { isIosDebugEnabled, isIosNativePaymentsEnabled } from "@/lib/ios-native";
 import { LinkAppleAccountForm } from "@/components/auth/link-apple-account-form";
-import { logIosDebug } from "@/lib/ios-native-client-debug";
+import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
 
 interface AppleSignInButtonProps {
   callbackUrl?: string;
@@ -38,14 +38,35 @@ export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInBut
   }
 
   const completeLogin = async (loginToken: string) => {
+    logIosNativeRuntime({
+      scope: "APPLE_SIGN_IN",
+      location: "apple-sign-in-button.tsx:completeLogin",
+      message: "Creating session via credentials",
+    });
+
     const result = await signIn("credentials", {
       appleLoginToken: loginToken,
       redirect: false,
     });
 
     if (result?.error) {
+      logIosNativeRuntime({
+        scope: "APPLE_SIGN_IN",
+        location: "apple-sign-in-button.tsx:completeLogin",
+        message: "signIn credentials failed",
+        data: { error: result.error },
+        level: "error",
+        hypothesisId: "D",
+      });
       throw new Error("Kunde inte skapa session");
     }
+
+    logIosNativeRuntime({
+      scope: "APPLE_SIGN_IN",
+      location: "apple-sign-in-button.tsx:completeLogin",
+      message: "Session created, redirecting",
+      data: { callbackUrl },
+    });
 
     router.push(callbackUrl);
     router.refresh();
@@ -55,11 +76,29 @@ export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInBut
     setLoading(true);
     setError("");
 
+    logIosNativeRuntime({
+      scope: "APPLE_SIGN_IN",
+      location: "apple-sign-in-button.tsx:handleAppleSignIn",
+      message: "Starting native authorize",
+      hypothesisId: "A",
+    });
+
     try {
       const appleResult = await SignInWithApple.authorize({
         clientId: "se.avyracards.app",
         redirectURI: "https://avyracards.se",
         scopes: "email name",
+      });
+
+      logIosNativeRuntime({
+        scope: "APPLE_SIGN_IN",
+        location: "apple-sign-in-button.tsx:nativeAuthorize",
+        message: "Native authorize succeeded",
+        data: {
+          hasIdentityToken: Boolean(appleResult.response.identityToken),
+          hasEmail: Boolean(appleResult.response.email),
+        },
+        hypothesisId: "A",
       });
 
       const response = await fetch("/api/auth/apple", {
@@ -74,11 +113,22 @@ export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInBut
       });
 
       const data = (await response.json()) as AppleAuthResponse;
-      logIosDebug("APPLE_SIGN_IN", "Auth API response", {
-        ok: response.ok,
-        needsLink: data.needsLink,
-        hasLoginToken: Boolean(data.loginToken),
+
+      logIosNativeRuntime({
+        scope: "APPLE_SIGN_IN",
+        location: "apple-sign-in-button.tsx:apiResponse",
+        message: "Auth API response",
+        data: {
+          status: response.status,
+          ok: response.ok,
+          needsLink: data.needsLink,
+          hasLoginToken: Boolean(data.loginToken),
+          error: data.error,
+        },
+        hypothesisId: response.ok ? "C" : "B",
+        level: response.ok ? "info" : "error",
       });
+
       if (!response.ok) {
         throw new Error(data.error ?? "Apple-inloggning misslyckades");
       }
@@ -99,8 +149,20 @@ export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInBut
 
       await completeLogin(data.loginToken);
     } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      logIosNativeRuntime({
+        scope: "APPLE_SIGN_IN",
+        location: "apple-sign-in-button.tsx:catch",
+        message: "Apple sign-in failed",
+        data: { error: message },
+        level: "error",
+      });
       console.error(err);
-      setError("Kunde inte logga in med Apple. Försök igen.");
+      setError(
+        isIosDebugEnabled()
+          ? `Apple-inloggning misslyckades: ${message}`
+          : "Kunde inte logga in med Apple. Försök igen."
+      );
       setLoading(false);
     }
   };

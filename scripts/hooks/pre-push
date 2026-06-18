@@ -1,0 +1,33 @@
+#!/bin/sh
+# Auto-bump iOS build number on push so Appflow/TestFlight always gets a higher
+# CFBundleVersion. A commit created inside pre-push is NOT part of the current
+# push, so we bump + commit and then ask you to push again (the second push
+# includes the bump). The marker check prevents re-bumping / infinite loops.
+
+BUMP_MARKER="chore(ios): auto-bump build"
+
+last_msg=$(git log -1 --pretty=%s 2>/dev/null)
+case "$last_msg" in
+  "$BUMP_MARKER"*)
+    # HEAD is already a bump commit -> nothing to do, allow this push.
+    exit 0
+    ;;
+esac
+
+out=$(node scripts/bump-ios-build.mjs)
+status=$?
+if [ $status -ne 0 ]; then
+  echo "$out"
+  echo "[pre-push] iOS build bump failed; aborting push."
+  exit 1
+fi
+echo "$out"
+
+new=$(echo "$out" | sed -n 's/.*-> \([0-9]*\).*/\1/p')
+
+git commit ios/App/App.xcodeproj/project.pbxproj -m "$BUMP_MARKER to ${new}" >/dev/null 2>&1
+
+echo ""
+echo "[pre-push] iOS build number bumped to ${new} and committed."
+echo "[pre-push] Run 'git push' again to upload this build."
+exit 1
