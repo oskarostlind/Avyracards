@@ -8,6 +8,7 @@ import { SettingsTabs } from "@/components/profile/settings-tabs";
 import { AccountForm } from "@/components/profile/account-form";
 import { BillingView } from "@/components/profile/billing-view";
 import { CardsView } from "@/components/profile/cards-view";
+import { NotificationsForm } from "@/components/profile/notifications-form";
 
 type PageProps = {
   searchParams: { [key: string]: string | string[] | undefined };
@@ -31,6 +32,9 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
       marketingConsent: true,
       productUpdates: true,
       hideFromSearch: true,
+      notifyOnProfileView: true,
+      notifyOnLinkClick: true,
+      notifyOnContactSave: true,
       cards: {
         orderBy: { createdAt: 'desc' }
       }
@@ -113,6 +117,14 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
               marketingConsent={user.marketingConsent}
               productUpdates={user.productUpdates}
               hideFromSearch={user.hideFromSearch}
+            />
+          )}
+
+          {view === "notifications" && (
+            <NotificationsForm
+              notifyOnProfileView={user.notifyOnProfileView ?? true}
+              notifyOnLinkClick={user.notifyOnLinkClick ?? false}
+              notifyOnContactSave={user.notifyOnContactSave ?? true}
             />
           )}
 

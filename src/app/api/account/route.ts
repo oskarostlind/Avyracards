@@ -8,6 +8,9 @@ const accountSchema = z.object({
   marketingConsent: z.boolean().optional(),
   productUpdates: z.boolean().optional(),
   hideFromSearch: z.boolean().optional(),
+  notifyOnProfileView: z.boolean().optional(),
+  notifyOnLinkClick: z.boolean().optional(),
+  notifyOnContactSave: z.boolean().optional(),
   username: z
     .string()
     .min(3, "Minst 3 tecken")

@@ -2,6 +2,7 @@ import { NextResponse, NextRequest } from "next/server"; // <-- NY IMPORT AV Nex
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth"; 
 import { z } from "zod";
+import { sendPushNotification } from "@/lib/push";
 
 const schema = z.object({
   type: z.enum(["VIEW", "CLICK"]),
@@ -133,6 +134,35 @@ export async function POST(req: NextRequest) { // <-- BYT TILL NextRequest
         city: city || null,
       },
     });
+
+    // Push-notis om profilägaren har en token och valt att få notis för denna händelsetyp
+    const ownerRow = await prisma.user.findUnique({
+      where: { id: data.profileOwnerId },
+      select: {
+        pushToken: true,
+        notifyOnProfileView: true,
+        notifyOnLinkClick: true,
+        notifyOnContactSave: true,
+      },
+    });
+    const source = data.source || "direct";
+    const isVcard = source.toLowerCase() === "vcard";
+    const token = ownerRow?.pushToken?.trim();
+    const shouldNotify =
+      Boolean(token) &&
+      ((data.type === "VIEW" && ownerRow?.notifyOnProfileView) ||
+        (data.type === "CLICK" && isVcard && ownerRow?.notifyOnContactSave) ||
+        (data.type === "CLICK" && !isVcard && ownerRow?.notifyOnLinkClick));
+
+    if (shouldNotify && token) {
+      const [title, body] =
+        data.type === "VIEW"
+          ? ["Profilvisning", "Någon har öppnat din profil."]
+          : isVcard
+            ? ["Sparade kontakt", "Någon sparade ditt visitkort."]
+            : ["Länkklick", "Någon klickade på en länk på din profil."];
+      void sendPushNotification(token, title, body);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -81,6 +81,12 @@ model User {
   productUpdates   Boolean @default(true)
   hideFromSearch   Boolean @default(false)
 
+  // PUSH-NOTISER (iOS app)
+  pushToken           String?
+  notifyOnProfileView Boolean @default(true)
+  notifyOnLinkClick   Boolean @default(false)
+  notifyOnContactSave Boolean @default(true)
+
   // THEME ENGINE
   theme String @default("default")
 
