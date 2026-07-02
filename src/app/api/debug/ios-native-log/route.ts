@@ -6,16 +6,9 @@ import {
   type IosNativeDebugEntry,
 } from "@/lib/ios-native-debug-store";
 
-function isAllowed(req: Request): boolean {
-  if (isIosDebugEnabled()) {
-    return true;
-  }
-  return req.headers.get("X-Debug-Session-Id") === "390123";
-}
-
 export async function POST(req: Request) {
-  if (!isAllowed(req)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!isIosDebugEnabled()) {
+    return NextResponse.json({ error: "IOS debug är avstängt" }, { status: 404 });
   }
 
   const body = (await req.json()) as Omit<IosNativeDebugEntry, "timestamp"> & {
@@ -33,8 +26,8 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-  if (!isAllowed(req)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (!isIosDebugEnabled()) {
+    return NextResponse.json({ error: "IOS debug är avstängt" }, { status: 404 });
   }
 
   const sessionId = req.nextUrl.searchParams.get("sessionId") ?? undefined;

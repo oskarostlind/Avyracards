@@ -2,7 +2,6 @@ import { isIosDebugEnabled } from "@/lib/ios-native";
 import type { IosNativeDebugScope } from "@/lib/ios-native-debug-store";
 
 const DEBUG_SESSION = "390123";
-const INGEST_URL = "http://127.0.0.1:7665/ingest/a7907b0a-f055-41d8-b442-796d3604f2be";
 
 export type IosNativeRuntimeDebugPayload = {
   scope: IosNativeDebugScope;
@@ -41,16 +40,6 @@ export function logIosNativeRuntime(payload: IosNativeRuntimeDebugPayload): void
     return;
   }
 
-  // #region agent log
-  fetch(INGEST_URL, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Debug-Session-Id": DEBUG_SESSION,
-    },
-    body: JSON.stringify(body),
-  }).catch(() => {});
-
   fetch("/api/debug/ios-native-log", {
     method: "POST",
     headers: {
@@ -59,5 +48,4 @@ export function logIosNativeRuntime(payload: IosNativeRuntimeDebugPayload): void
     },
     body: JSON.stringify(body),
   }).catch(() => {});
-  // #endregion
 }
