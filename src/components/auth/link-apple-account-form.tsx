@@ -30,8 +30,12 @@ export function LinkAppleAccountForm({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async () => {
+    if (!email || !password) {
+      setError("Fyll i både e-post och lösenord.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
@@ -103,7 +107,7 @@ export function LinkAppleAccountForm({
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <div className="space-y-3">
         <input
           type="email"
           required
@@ -117,18 +121,25 @@ export function LinkAppleAccountForm({
           required
           value={password}
           onChange={(event) => setPassword(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              void handleSubmit();
+            }
+          }}
           placeholder="Lösenord"
           className="w-full px-4 py-3 bg-nordic-primary border border-nordic-highlight/30 rounded-xl text-nordic-secondary"
         />
 
         <button
-          type="submit"
+          type="button"
+          onClick={() => void handleSubmit()}
           disabled={loading}
           className="w-full py-3 rounded-xl bg-nordic-secondary text-nordic-primary font-bold disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 className="animate-spin" size={18} /> : "Koppla konto"}
         </button>
-      </form>
+      </div>
 
       <button
         type="button"
