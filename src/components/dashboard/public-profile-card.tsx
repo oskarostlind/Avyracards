@@ -67,8 +67,9 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
         {/* Rad 2: Plånböcker */}
         <div className="grid grid-cols-2 gap-2">
            {/* Apple Wallet */}
-           <a 
+           <a
              href="/api/wallet/apple"
+             target="_blank"
              className="flex items-center justify-center gap-2 bg-[#1C1C1E] text-nordic-secondary border border-white/10 px-4 py-3 rounded-xl hover:bg-[#2C2C2E] transition-all font-medium text-xs sm:text-sm shadow-lg"
            >
              <Wallet size={16} className="text-nordic-secondary" />
