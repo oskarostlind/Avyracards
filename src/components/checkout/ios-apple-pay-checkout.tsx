@@ -69,6 +69,7 @@ export function IosApplePayCheckout({
 
       const paymentIntent = (await paymentIntentResponse.json()) as {
         clientSecret: string;
+        paymentIntentId: string;
         amountTotal: number;
         summaryItems: SummaryItem[];
       };
@@ -125,7 +126,7 @@ export function IosApplePayCheckout({
       });
 
       onSuccess?.();
-      window.location.href = "/dashboard?order=success";
+      window.location.href = `/verify-sent?session_id=${encodeURIComponent(paymentIntent.paymentIntentId)}`;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       logIosNativeRuntime({
