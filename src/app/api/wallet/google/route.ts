@@ -3,6 +3,7 @@ import { google } from 'googleapis';
 import jwt from 'jsonwebtoken';
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { verifyWalletAccessToken } from "@/lib/wallet-auth";
 
 export const dynamic = 'force-dynamic';
 
@@ -11,18 +12,40 @@ interface WalletClassResponse {
   [key: string]: unknown;
 }
 
-export async function GET(_req: NextRequest) {
+export async function GET(req: NextRequest) {
   try {
     console.log('--- Starting Wallet Process (UI Update v6) ---');
 
-    // 1. Hämta session och användare
-    const session = await auth();
-    if (!session || !session.user?.email) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    // 1. Hämta session och användare. Passet öppnas via target="_blank" i
+    // systemwebbläsaren, som inte delar Capacitor-WebViewens sessionscookie,
+    // så tillåt även en kortlivad access-token i query-strängen.
+    const accessToken = req.nextUrl.searchParams.get("token");
+
+    let userId: string | undefined;
+
+    if (accessToken) {
+      try {
+        userId = await verifyWalletAccessToken(accessToken);
+      } catch {
+        return new NextResponse("Unauthorized", { status: 401 });
+      }
+    } else {
+      const session = await auth();
+      if (!session || !session.user?.email) {
+        return new NextResponse("Unauthorized", { status: 401 });
+      }
+      const sessionUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true },
+      });
+      if (!sessionUser) {
+        return new NextResponse("User not found", { status: 404 });
+      }
+      userId = sessionUser.id;
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: userId },
     });
 
     if (!user) {

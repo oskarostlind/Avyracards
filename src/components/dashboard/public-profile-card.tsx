@@ -10,6 +10,7 @@ type PublicProfileCardProps = {
 
 export function PublicProfileCard({ username, className }: PublicProfileCardProps) {
   const [copied, setCopied] = useState(false);
+  const [walletLoading, setWalletLoading] = useState<"apple" | "google" | null>(null);
   // Vi sätter ett startvärde som är säkert för servern (undviker hydration error)
   const [origin, setOrigin] = useState("https://avyracards.se");
 
@@ -19,7 +20,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
       setOrigin(window.location.origin);
     }
   }, []);
-  
+
   const publicPath = `/u/${username}`;
   const fullUrl = `${origin}${publicPath}`;
 
@@ -27,6 +28,27 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
     navigator.clipboard.writeText(fullUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Passen öppnas i systemwebbläsaren (target="_blank") för att PassKit/Google
+  // Wallet-hanteringen ska triggas korrekt, men den delar inte Capacitor-
+  // WebViewens sessionscookie. Hämta därför en kortlivad access-token via ett
+  // fetch-anrop (som fortfarande har cookien) innan vi öppnar länken.
+  const openWallet = async (kind: "apple" | "google") => {
+    setWalletLoading(kind);
+    try {
+      const res = await fetch("/api/wallet/token");
+      const data = (await res.json()) as { token?: string };
+      const url = data.token
+        ? `/api/wallet/${kind}?token=${encodeURIComponent(data.token)}`
+        : `/api/wallet/${kind}`;
+      window.open(url, "_blank");
+    } catch (err) {
+      console.error("Kunde inte öppna plånbok", err);
+      window.open(`/api/wallet/${kind}`, "_blank");
+    } finally {
+      setWalletLoading(null);
+    }
   };
 
   return (
@@ -67,20 +89,22 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
         {/* Rad 2: Plånböcker */}
         <div className="grid grid-cols-2 gap-2">
            {/* Apple Wallet */}
-           <a
-             href="/api/wallet/apple"
-             target="_blank"
-             className="flex items-center justify-center gap-2 bg-[#1C1C1E] text-nordic-secondary border border-white/10 px-4 py-3 rounded-xl hover:bg-[#2C2C2E] transition-all font-medium text-xs sm:text-sm shadow-lg"
+           <button
+             type="button"
+             onClick={() => void openWallet("apple")}
+             disabled={walletLoading === "apple"}
+             className="flex items-center justify-center gap-2 bg-[#1C1C1E] text-nordic-secondary border border-white/10 px-4 py-3 rounded-xl hover:bg-[#2C2C2E] transition-all font-medium text-xs sm:text-sm shadow-lg disabled:opacity-50"
            >
              <Wallet size={16} className="text-nordic-secondary" />
              <span>Apple Wallet</span>
-           </a>
+           </button>
 
            {/* Google Wallet */}
-           <a 
-             href="/api/wallet/google"
-             target="_blank"
-             className="flex items-center justify-center gap-2 bg-nordic-secondary text-nordic-primary border border-nordic-support px-4 py-3 rounded-xl hover:bg-nordic-support transition-all font-medium text-xs sm:text-sm shadow-lg"
+           <button
+             type="button"
+             onClick={() => void openWallet("google")}
+             disabled={walletLoading === "google"}
+             className="flex items-center justify-center gap-2 bg-nordic-secondary text-nordic-primary border border-nordic-support px-4 py-3 rounded-xl hover:bg-nordic-support transition-all font-medium text-xs sm:text-sm shadow-lg disabled:opacity-50"
            >
              {/* Google Wallet Icon SVG */}
              <svg viewBox="0 0 24 24" className="w-4 h-4 sm:w-5 sm:h-5" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -90,7 +114,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
                <path d="M4.5 9.75H12.75V3L4.5 9.75Z" fill="#34A853"/>
              </svg>
              <span>Google Wallet</span>
-           </a>
+           </button>
         </div>
       </div>
     </div>

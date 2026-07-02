@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { verifyWalletAccessToken } from "@/lib/wallet-auth";
 import { PKPass } from "passkit-generator";
 import path from "path";
 import fs from "fs/promises";
@@ -21,15 +22,38 @@ async function fetchImageBuffer(url: string | null): Promise<Buffer | undefined>
   }
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const session = await auth();
-    if (!session || !session.user?.email) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    // Passen öppnas ofta via target="_blank" i systemwebbläsaren (för att
+    // PassKit-hanteringen ska triggas), som inte delar Capacitor-WebViewens
+    // sessionscookie. Tillåt därför även en kortlivad token i query-strängen.
+    const token = new URL(req.url).searchParams.get("token");
+
+    let userId: string | undefined;
+
+    if (token) {
+      try {
+        userId = await verifyWalletAccessToken(token);
+      } catch {
+        return new NextResponse("Unauthorized", { status: 401 });
+      }
+    } else {
+      const session = await auth();
+      if (!session || !session.user?.email) {
+        return new NextResponse("Unauthorized", { status: 401 });
+      }
+      const sessionUser = await prisma.user.findUnique({
+        where: { email: session.user.email },
+        select: { id: true },
+      });
+      if (!sessionUser) {
+        return new NextResponse("User not found", { status: 404 });
+      }
+      userId = sessionUser.id;
     }
 
     const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
+      where: { id: userId },
     });
 
     if (!user) {
