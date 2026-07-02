@@ -95,7 +95,12 @@ export function IosApplePayCheckout({
         countryCode: "SE",
         currency: "SEK",
         requiredShippingContactFields: ["emailAddress", "phoneNumber", "postalAddress", "name"],
-        allowedCountries: ["SE", "NO", "DK", "FI", "DE"],
+        // @capacitor-community/stripe's native iOS check lowercases the
+        // entered address's ISO country code before comparing it against
+        // this list, but never lowercases the list itself — so uppercase
+        // codes here (the ISO 3166-1 convention) never match anything,
+        // rejecting every country including the ones meant to be allowed.
+        allowedCountries: ["se", "no", "dk", "fi", "de"],
       });
 
       const cancelListener = await Stripe.addListener(
