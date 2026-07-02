@@ -4,8 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Bug, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { App } from "@capacitor/app";
 import { useIsApp } from "@/hooks/useIsApp";
-import { isIosDebugEnabled, isIosNativePaymentsEnabled } from "@/lib/ios-native";
-import { MIN_IOS_BUILD_WITH_APPLE_SIGN_IN } from "@/lib/ios-native-debug";
+import {
+  isIosDebugEnabled,
+  isIosNativePaymentsEnabled,
+  MIN_IOS_BUILD_WITH_APPLE_SIGN_IN,
+} from "@/lib/ios-native";
 
 interface CapacitorWindow extends Window {
   Capacitor?: {

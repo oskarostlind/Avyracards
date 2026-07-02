@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import {
   getAppleClientId,
   getAppleMerchantId,
@@ -7,6 +9,7 @@ import {
   isAppleSignInConfigured,
   isIosDebugEnabled,
   isIosNativePaymentsEnabled,
+  MIN_IOS_BUILD_WITH_APPLE_SIGN_IN,
 } from "@/lib/ios-native";
 
 function maskSecret(value: string | undefined | null, visibleTail = 4): string | null {
@@ -24,8 +27,42 @@ function envPresent(name: string): boolean {
   return Boolean(value && value.trim().length > 0);
 }
 
-/** First iOS build with CODE_SIGN_ENTITLEMENTS linked (Sign in with Apple). */
-export const MIN_IOS_BUILD_WITH_APPLE_SIGN_IN = 15;
+const PBXPROJ_PATH = path.join(
+  process.cwd(),
+  "ios",
+  "App",
+  "App.xcodeproj",
+  "project.pbxproj"
+);
+
+let cachedBuildNumber: string | null = null;
+
+/**
+ * Reads CURRENT_PROJECT_VERSION straight from the Xcode project instead of a
+ * manually-set IOS_BUILD_NUMBER env var, so this can't drift out of sync with
+ * the actual native build (scripts/bump-ios-build.mjs bumps this file on
+ * every push, but nobody was updating the Vercel env var to match).
+ */
+function getIosBuildNumber(): string {
+  if (cachedBuildNumber) {
+    return cachedBuildNumber;
+  }
+
+  try {
+    const contents = readFileSync(PBXPROJ_PATH, "utf8");
+    const matches = [...contents.matchAll(/CURRENT_PROJECT_VERSION = (\d+);/g)];
+    if (matches.length > 0) {
+      const highest = Math.max(...matches.map((match) => Number(match[1])));
+      cachedBuildNumber = String(highest);
+      return cachedBuildNumber;
+    }
+  } catch {
+    // Fall back below — e.g. local dev without the ios/ folder tracked in the bundle.
+  }
+
+  cachedBuildNumber = process.env.IOS_BUILD_NUMBER ?? "12";
+  return cachedBuildNumber;
+}
 
 export interface IosNativeDebugReport {
   generatedAt: string;
@@ -101,7 +138,8 @@ export function getIosNativeDebugReport(): IosNativeDebugReport {
     issues.push("Legacy STOREKIT_* finns i .env men används inte — använd APPLE_IAP_* istället");
   }
 
-  const configuredBuild = Number.parseInt(process.env.IOS_BUILD_NUMBER ?? "", 10);
+  const buildNumber = getIosBuildNumber();
+  const configuredBuild = Number.parseInt(buildNumber, 10);
   if (!Number.isFinite(configuredBuild) || configuredBuild < MIN_IOS_BUILD_WITH_APPLE_SIGN_IN) {
     issues.push(
       `TestFlight-build måste vara ≥${MIN_IOS_BUILD_WITH_APPLE_SIGN_IN} (Sign in with Apple-entitlements). Uppdatera appen i TestFlight.`
@@ -115,7 +153,7 @@ export function getIosNativeDebugReport(): IosNativeDebugReport {
   return {
     generatedAt: new Date().toISOString(),
     appVersion: process.env.IOS_APP_VERSION ?? "2.0",
-    buildNumber: process.env.IOS_BUILD_NUMBER ?? "12",
+    buildNumber,
     flags: {
       iosNativePayments: isIosNativePaymentsEnabled(),
       iosDebug: isIosDebugEnabled(),

@@ -1,3 +1,6 @@
+/** First iOS build with CODE_SIGN_ENTITLEMENTS linked (Sign in with Apple). */
+export const MIN_IOS_BUILD_WITH_APPLE_SIGN_IN = 15;
+
 export type IosPremiumProductKey = "monthly" | "sixMonths";
 
 export interface IosIapProductConfig {
