@@ -117,10 +117,28 @@ export function SocialProfileForm({ user }: ProfileFormProps) {
       </div>
 
       {/* NY BILDHANTERARE */}
-      <AvatarUploader 
+      {/* FIX (ClickUp 86c9nv6uw): spara profilbilden direkt vid uppladdning i
+          stället för att kräva ett extra klick på "Spara ändringar" — flera
+          användare missade det steget och trodde att bytet misslyckats. */}
+      <AvatarUploader
         label="Profilbild"
         value={avatarUrl}
-        onChange={(url) => setAvatarUrl(url)}
+        onChange={async (url) => {
+          setAvatarUrl(url);
+          try {
+            const res = await fetch("/api/profile", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ avatarUrl: url }),
+            });
+            if (!res.ok) throw new Error("Failed to save avatar");
+            setStatus("✔ Profilbilden är uppdaterad.");
+            router.refresh();
+          } catch (err) {
+            console.error(err);
+            setStatus("⚠ Kunde inte spara profilbilden. Försök igen.");
+          }
+        }}
         onUploadStart={() => setSaving(true)}
         onUploadEnd={() => setSaving(false)}
       />

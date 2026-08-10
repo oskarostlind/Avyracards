@@ -291,5 +291,62 @@ export const BUSINESS_TEMPLATES: ThemeTemplate[] = [
       frameStyle: "none",
       buttonShadow: false,
     }
+  },
+
+  // ========================================================================
+  // NYA FÄRDIGA PREMIUM-MALLAR (ClickUp 86c74tjrn)
+  // ========================================================================
+  {
+    id: "biz-executive-navy",
+    name: "Executive",
+    isPremium: true,
+    category: "BUSINESS",
+    settings: {
+      backgroundType: "gradient",
+      gradientFrom: "#0c1c3d",
+      gradientTo: "#020617",
+      gradientDir: "to bottom",
+      textColor: "#e2e8f0",
+      accentColor: "#38bdf8",
+      buttonStyle: "rounded",
+      buttonVariant: "soft",
+      font: "inter",
+      frameStyle: "ring",
+      buttonShadow: true,
+    }
+  },
+  {
+    id: "biz-champagne",
+    name: "Champagne",
+    isPremium: true,
+    category: "BUSINESS",
+    settings: {
+      backgroundType: "solid",
+      backgroundColor: "#1c1917",
+      textColor: "#fafaf9",
+      accentColor: "#d6b370",
+      buttonStyle: "sharp",
+      buttonVariant: "outline",
+      font: "playfair",
+      frameStyle: "square",
+      buttonShadow: false,
+    }
+  },
+  {
+    id: "biz-slate-modern",
+    name: "Slate Modern",
+    isPremium: true,
+    category: "BUSINESS",
+    settings: {
+      backgroundType: "solid",
+      backgroundColor: "#111827",
+      textColor: "#f9fafb",
+      accentColor: "#10b981",
+      buttonStyle: "pill",
+      buttonVariant: "glass",
+      font: "roboto",
+      frameStyle: "shadow",
+      buttonShadow: true,
+    }
   }
 ];

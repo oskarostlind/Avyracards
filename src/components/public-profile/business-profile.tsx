@@ -117,12 +117,18 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
     if (settings.frameStyle === "hexagon") return "hexagon-clip"; 
     if (settings.frameStyle === "none") return "rounded-none";
     if (settings.frameStyle === "ring") return "rounded-full ring-4 ring-offset-4 ring-offset-transparent";
-    return "rounded-full"; 
+    if (settings.frameStyle === "square") return "rounded-none";
+    if (settings.frameStyle === "shadow") return "rounded-full";
+    return "rounded-full";
   };
 
   const avatarStyle: React.CSSProperties = hasCustomTheme ? {
-     boxShadow: settings.frameStyle === 'glow' ? `0 0 30px ${settings.accentColor}` : 'none',
-     borderColor: settings.frameStyle === 'ring' ? settings.accentColor : 'transparent',
+     boxShadow: settings.frameStyle === 'glow'
+       ? `0 0 30px ${settings.accentColor}`
+       : settings.frameStyle === 'shadow'
+         ? `8px 8px 0 ${settings.accentColor}`
+         : 'none',
+     borderColor: (settings.frameStyle === 'ring' || settings.frameStyle === 'square') ? settings.accentColor : 'transparent',
   } : {};
 
   const cardStyle: React.CSSProperties = hasCustomTheme ? {

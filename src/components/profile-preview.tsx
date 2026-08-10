@@ -116,10 +116,12 @@ export function ProfilePreview({
   const getFrameClass = () => {
     if (settings.frameStyle === "circle") return "rounded-full";
     if (settings.frameStyle === "rounded") return "rounded-3xl";
-    if (settings.frameStyle === "hexagon") return "hexagon-clip"; 
+    if (settings.frameStyle === "hexagon") return "hexagon-clip";
     if (settings.frameStyle === "none") return "rounded-none";
     if (settings.frameStyle === "ring") return "rounded-full ring-4 ring-offset-4 ring-offset-transparent";
-    return "rounded-full"; 
+    if (settings.frameStyle === "square") return "rounded-none border-4";
+    if (settings.frameStyle === "shadow") return "rounded-full";
+    return "rounded-full";
   };
 
   const cardStyle: React.CSSProperties = {
@@ -174,11 +176,14 @@ export function ProfilePreview({
         {/* Avatar */}
         <div 
           className={`relative mb-6 shrink-0 transition-transform hover:scale-105 duration-500 ${getFrameClass()}`}
-          style={settings.frameStyle === 'glow' ? { 
+          style={settings.frameStyle === 'glow' ? {
             boxShadow: `0 0 30px ${settings.accentColor}`,
-            borderRadius: '9999px' 
-          } : settings.frameStyle === 'ring' ? {
+            borderRadius: '9999px'
+          } : (settings.frameStyle === 'ring' || settings.frameStyle === 'square') ? {
             borderColor: settings.accentColor
+          } : settings.frameStyle === 'shadow' ? {
+            boxShadow: `8px 8px 0 ${settings.accentColor}`,
+            borderRadius: '9999px'
           } : {}}
         >
           {image ? (

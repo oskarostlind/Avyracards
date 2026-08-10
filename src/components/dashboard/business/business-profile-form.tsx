@@ -67,6 +67,25 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
     return () => window.removeEventListener("beforeunload", handleBeforeUnload);
   }, [hasChanges]);
 
+  // FIX (ClickUp 86c9nv6uw): spara bilder direkt vid uppladdning i stället för
+  // att kräva ett extra klick på "Spara ändringar" — användare missade steget
+  // och trodde att bytet av profilbild misslyckats.
+  const saveImageField = async (field: "businessAvatarUrl" | "companyLogoUrl", url: string) => {
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: url || null }),
+      });
+      if (!res.ok) throw new Error("Failed to save image");
+      setStatus("✔ Bilden är uppdaterad.");
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      setStatus("⚠ Kunde inte spara bilden. Försök igen.");
+    }
+  };
+
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
     if (!hasChanges) return;
@@ -128,10 +147,13 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             
             {/* NYTT: UPLOADER FÖR BUSINESS AVATAR */}
             <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5">
-                <AvatarUploader 
-                    label="Profilbild för Business-läge" 
-                    value={businessAvatarUrl} 
-                    onChange={(url) => setBusinessAvatarUrl(url)}
+                <AvatarUploader
+                    label="Profilbild för Business-läge"
+                    value={businessAvatarUrl}
+                    onChange={(url) => {
+                      setBusinessAvatarUrl(url);
+                      void saveImageField("businessAvatarUrl", url);
+                    }}
                     onUploadStart={() => setIsSaving(true)}
                     onUploadEnd={() => setIsSaving(false)}
                 />
@@ -206,7 +228,16 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
       <CollapsibleSection title="Företagssektion" description="Logo, kort beskrivning och länkar till hemsida/karriär." defaultOpen={false}>
         <div className="space-y-3">
             <div className="space-y-1.5">
-                <AvatarUploader label="Företagslogo" value={companyLogoUrl} onChange={(url) => setCompanyLogoUrl(url)} onUploadStart={() => setIsSaving(true)} onUploadEnd={() => setIsSaving(false)} />
+                <AvatarUploader
+                  label="Företagslogo"
+                  value={companyLogoUrl}
+                  onChange={(url) => {
+                    setCompanyLogoUrl(url);
+                    void saveImageField("companyLogoUrl", url);
+                  }}
+                  onUploadStart={() => setIsSaving(true)}
+                  onUploadEnd={() => setIsSaving(false)}
+                />
             </div>
             <div className="space-y-1.5">
             <label className="block text-xs font-medium text-slate-200">Kort text om företaget</label>

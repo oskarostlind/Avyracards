@@ -163,58 +163,98 @@ export async function GET(req: NextRequest) {
       ? user.avatarUrl 
       : 'https://avyracards.se/wallet/logo.png';
 
-    // 5. Bygg Payload
+    // 5. Bygg pass-objektet
+    const genericObject = {
+      id: OBJECT_ID,
+      classId: CLASS_ID,
+      state: 'ACTIVE',
+      cardTitle: {
+        defaultValue: { language: 'en-US', value: 'AvyraCards' },
+      },
+      // Värdena (Stor text där nere)
+      header: {
+        defaultValue: { language: 'en-US', value: user.name || user.username || "Användare" },
+      },
+      // Etiketterna (Liten text där uppe)
+      subheader: {
+        defaultValue: { language: 'sv-SE', value: 'NAMN' },
+      },
+      textModulesData: [
+        {
+          header: "TITEL",
+          body: user.bio || "Digital Profil"
+        },
+        {
+          header: "PROFIL",
+          body: displayUrl // Visar den snygga .se länken (utan tracking)
+        }
+      ],
+      barcode: {
+        type: "QR_CODE",
+        value: profileUrl, // QR-koden innehåller tracking-länken
+        alternateText: user.username || "Profil"
+      },
+      logo: {
+        sourceUri: { uri: logoUri },
+        contentDescription: {
+          defaultValue: { language: 'en-US', value: 'Profile Image' },
+        },
+      },
+      hexBackgroundColor: '#000000',
+    };
+
+    // 6. Skapa/uppdatera objektet via Wallet-API:t och signera en "tunn" JWT.
+    //
+    // FIX (Android, ClickUp 86ca6yh4y): tidigare låg HELA objektet i JWT:n,
+    // vilket gav en save-URL på flera tusen tecken. Google rekommenderar att
+    // JWT:n hålls under ~1800 tecken eftersom långa URL:er misslyckas i vissa
+    // miljöer — i praktiken just Android ("Något gick fel" i Google Wallet).
+    // Genom att skapa objektet server-side kan JWT:n bara innehålla
+    // id + classId, vilket ger en kort URL som fungerar överallt.
+    // Bonus: passet uppdateras med senaste namn/bio/bild vid varje tryck.
+    let jwtObjectPayload: Record<string, unknown> = { id: OBJECT_ID, classId: CLASS_ID };
+
+    try {
+      const objectUrl = `${baseUrl}/genericObject/${encodeURIComponent(OBJECT_ID)}`;
+      const checkObjectRes = await httpClient.request<WalletClassResponse>({
+        url: objectUrl,
+        method: 'GET',
+        validateStatus: (status) => status === 200 || status === 404,
+      });
+
+      if (checkObjectRes.status === 404) {
+        await httpClient.request({
+          url: `${baseUrl}/genericObject`,
+          method: 'POST',
+          data: genericObject,
+        });
+        console.log('✅ Wallet object created via API.');
+      } else {
+        await httpClient.request({
+          url: objectUrl,
+          method: 'PUT',
+          data: genericObject,
+        });
+        console.log('✅ Wallet object updated via API.');
+      }
+    } catch (error) {
+      // Fallback: om API-anropet misslyckas, skicka hela objektet i JWT:n
+      // (gamla beteendet). Fungerar oftast på desktop/iOS.
+      console.warn('Object insert/update failed, falling back to fat JWT:', error);
+      jwtObjectPayload = genericObject;
+    }
+
     const walletPayload = {
       iss: clientEmail,
       aud: 'google',
       typ: 'savetowallet',
       iat: Math.floor(Date.now() / 1000),
-      origins: [], 
+      origins: [],
       payload: {
-        genericObjects: [
-          {
-            id: OBJECT_ID,
-            classId: CLASS_ID,
-            state: 'ACTIVE',
-            cardTitle: {
-              defaultValue: { language: 'en-US', value: 'AvyraCards' },
-            },
-            // Värdena (Stor text där nere)
-            header: {
-              defaultValue: { language: 'en-US', value: user.name || user.username || "Användare" },
-            },
-            // Etiketterna (Liten text där uppe)
-            subheader: {
-              defaultValue: { language: 'sv-SE', value: 'NAMN' },
-            },
-            textModulesData: [
-              {
-                header: "TITEL",
-                body: user.bio || "Digital Profil"
-              },
-              {
-                header: "PROFIL",
-                body: displayUrl // Visar den snygga .se länken (utan tracking)
-              }
-            ],
-            barcode: {
-              type: "QR_CODE",
-              value: profileUrl, // QR-koden innehåller tracking-länken
-              alternateText: user.username || "Profil"
-            },
-            logo: {
-              sourceUri: { uri: logoUri },
-              contentDescription: {
-                defaultValue: { language: 'en-US', value: 'Profile Image' },
-              },
-            },
-            hexBackgroundColor: '#000000', 
-          },
-        ],
+        genericObjects: [jwtObjectPayload],
       },
     };
 
-    // 6. Signera och Redirecta
     const token = jwt.sign(walletPayload, privateKey, {
       algorithm: 'RS256',
     });

@@ -230,13 +230,14 @@ const handleCheckout = async () => {
                 <CardPreview3D material={material} color={colorCode} design={design} customImage={customImage} />
             </div>
 
-            {(premiumOption !== "none" || !isPremium) && (
+            {/* Premium preview visas aldrig för användare som redan har premium (ClickUp 86ca6yck3) */}
+            {!isPremium && (
                <div className="animate-in slide-in-from-bottom-4 duration-500 bg-[#0A0F1C] border border-blue-500/30 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-2xl shadow-blue-900/10">
                   <div className="flex items-center gap-3 mb-6 border-b border-white/5 pb-4">
                       <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400"><Sparkles size={20}/></div>
                       <div>
                         <h3 className="font-bold text-base text-nordic-secondary">
-                            {isPremium ? "Du har Premium Profil" : "Ingår: Premium Profil"}
+                            {premiumOption !== "none" ? "Ingår: Premium Profil" : "Uppgradera: Premium Profil"}
                         </h3>
                         <p className="text-xs text-nordic-highlight">Detta ser folk när de blippar ditt kort</p>
                       </div>
@@ -483,6 +484,13 @@ const handleCheckout = async () => {
                  isPremium={isPremium}
                />
              )}
+             {/* Köpvillkor (ClickUp 86ca6yfmy) */}
+             <p className="text-center text-xs text-gray-500">
+                Genom att gå till kassan godkänner du våra{" "}
+                <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">köpvillkor</a>
+                {" "}och{" "}
+                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">integritetspolicy</a>.
+             </p>
              <p className="text-center text-xs text-gray-600">Leverans 2-4 arbetsdagar • Fri frakt över 500 kr</p>
           </div>
         </div>

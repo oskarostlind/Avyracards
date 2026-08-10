@@ -257,5 +257,81 @@ export const SOCIAL_TEMPLATES: ThemeTemplate[] = [
       frameStyle: "rounded",
       buttonShadow: false,
     }
+  },
+
+  // ========================================================================
+  // NYA FÄRDIGA PREMIUM-MALLAR (ClickUp 86c74tjrn)
+  // ========================================================================
+  {
+    id: "aurora",
+    name: "Aurora",
+    isPremium: true,
+    category: "SOCIAL",
+    settings: {
+      backgroundType: "gradient",
+      gradientFrom: "#0f766e",
+      gradientTo: "#4c1d95",
+      gradientDir: "to bottom right",
+      textColor: "#f0fdfa",
+      accentColor: "#2dd4bf",
+      buttonStyle: "pill",
+      buttonVariant: "glass",
+      font: "space",
+      frameStyle: "glow",
+      buttonShadow: true,
+    }
+  },
+  {
+    id: "sunset-gold",
+    name: "Golden Hour",
+    isPremium: true,
+    category: "SOCIAL",
+    settings: {
+      backgroundType: "gradient",
+      gradientFrom: "#b45309",
+      gradientTo: "#881337",
+      gradientDir: "to bottom",
+      textColor: "#fffbeb",
+      accentColor: "#fbbf24",
+      buttonStyle: "pill",
+      buttonVariant: "soft",
+      font: "playfair",
+      frameStyle: "ring",
+      buttonShadow: true,
+    }
+  },
+  {
+    id: "royal-purple",
+    name: "Royal",
+    isPremium: true,
+    category: "SOCIAL",
+    settings: {
+      backgroundType: "solid",
+      backgroundColor: "#1e1b4b",
+      textColor: "#ede9fe",
+      accentColor: "#c4b5fd",
+      buttonStyle: "rounded",
+      buttonVariant: "outline",
+      font: "lora",
+      frameStyle: "shadow",
+      buttonShadow: false,
+    }
+  },
+  {
+    id: "carbon-red",
+    name: "Carbon",
+    isPremium: true,
+    category: "SOCIAL",
+    settings: {
+      backgroundType: "solid",
+      backgroundColor: "#0a0a0a",
+      textColor: "#fafafa",
+      accentColor: "#ef4444",
+      buttonStyle: "brutal",
+      buttonVariant: "solid",
+      font: "oswald",
+      frameStyle: "square",
+      buttonShadow: false,
+    }
   }
 ];

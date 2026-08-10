@@ -98,15 +98,20 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
   const frameStyle = settings.frameStyle || 'circle';
   const accentColor = settings.accentColor || '#ffffff';
   
-  let borderRadius = '50%'; 
+  let borderRadius = '50%';
   if (frameStyle === 'rounded') borderRadius = '20%';
   if (frameStyle === 'none') borderRadius = '0';
-  if (frameStyle === 'hexagon') borderRadius = '0'; 
+  if (frameStyle === 'hexagon') borderRadius = '0';
+  if (frameStyle === 'square') borderRadius = '0';
 
   const avatarStyle: React.CSSProperties = useCustomTheme ? {
-    borderColor: frameStyle === 'ring' ? accentColor : 'rgba(255,255,255,0.1)',
+    borderColor: (frameStyle === 'ring' || frameStyle === 'square') ? accentColor : 'rgba(255,255,255,0.1)',
     borderRadius: borderRadius,
-    boxShadow: frameStyle === 'glow' ? `0 0 30px ${accentColor}` : 'none',
+    boxShadow: frameStyle === 'glow'
+      ? `0 0 30px ${accentColor}`
+      : frameStyle === 'shadow'
+        ? `8px 8px 0 ${accentColor}`
+        : 'none',
   } : {};
 
   // --- NYTT: Spårning av vCard nedladdning ---
