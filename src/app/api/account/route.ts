@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { hashPassword, verifyPassword } from "@/lib/password"; // Antar att dessa finns baserat på tidigare kod
+import { hashPassword, verifyPassword } from "@/lib/password";
+import { generateClaimToken } from "@/lib/card-claim";
 
 const accountSchema = z.object({
   marketingConsent: z.boolean().optional(),
@@ -123,9 +124,35 @@ export async function DELETE() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.user.delete({
-      where: { id: session.user.id },
+    const userId = session.user.id;
+
+    // Fysiska kort ska kunna återanvändas efter att ägaren raderat sitt konto.
+    // Utan detta blir kortet kvar som CLAIMED med assignedUserId = null (Prisma
+    // sätter den till null eftersom relationen är valfri) och går aldrig att
+    // claima igen — kortet blir permanent obrukbart.
+    const ownedCards = await prisma.card.findMany({
+      where: { assignedUserId: userId },
+      select: { id: true },
     });
+
+    await prisma.$transaction([
+      // Ny claimToken per kort, annars skulle den gamla ägarens sparade
+      // aktiveringslänk fungera igen efter att kortet frigjorts.
+      ...ownedCards.map((card) =>
+        prisma.card.update({
+          where: { id: card.id },
+          data: {
+            status: "UNCLAIMED",
+            assignedUserId: null,
+            claimedAt: null,
+            claimToken: generateClaimToken(),
+          },
+        })
+      ),
+      prisma.user.delete({
+        where: { id: userId },
+      }),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

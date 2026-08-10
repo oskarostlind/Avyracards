@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { claimCard } from "@/lib/card-claim";
 import Link from "next/link";
 import { CheckCircle, XCircle, ArrowRight } from "lucide-react";
 
@@ -16,44 +16,35 @@ export const metadata = {
 };
 
 export default async function ConfirmActivationPage({ searchParams }: Props) {
+  const cardCode = searchParams.code;
+  const claimToken = searchParams.token;
+
   const session = await auth();
   if (!session?.user?.id) {
-    return redirect(`/activate?code=${searchParams.code || ""}`);
+    // Behåll token genom inloggningen — annars blir länken oanvändbar efteråt.
+    const params = new URLSearchParams();
+    if (cardCode) params.set("code", cardCode);
+    if (claimToken) params.set("token", claimToken);
+    return redirect(`/activate?${params.toString()}`);
   }
 
-  const cardCode = searchParams.code;
-
-  if (!cardCode) {
-    return <ErrorState message="Ingen kortkod hittades." />;
-  }
-
-  const card = await prisma.card.findUnique({
-    where: { cardCode: cardCode },
-  });
-
-  if (!card) {
-    return <ErrorState message="Ogiltig kortkod. Kontrollera vad som står på kortet." />;
-  }
-
-  if (card.status !== "UNCLAIMED") {
-    if (card.assignedUserId === session.user.id) {
-      redirect("/profile/settings");
-    }
-    return <ErrorState message="Detta kort är redan aktiverat av en annan användare." />;
-  }
-
+  let result;
   try {
-    await prisma.card.update({
-      where: { id: card.id },
-      data: {
-        assignedUserId: session.user.id,
-        status: "CLAIMED",
-        claimedAt: new Date(),
-      },
+    result = await claimCard({
+      cardCode,
+      claimToken,
+      userId: session.user.id,
     });
   } catch (error) {
     console.error("Activation error:", error);
     return <ErrorState message="Ett tekniskt fel uppstod vid aktiveringen." />;
+  }
+
+  if (!result.ok) {
+    if (result.reason === "already_claimed_by_user") {
+      redirect("/profile/settings");
+    }
+    return <ErrorState message={result.message} />;
   }
 
   return (
