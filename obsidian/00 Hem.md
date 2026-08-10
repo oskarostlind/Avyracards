@@ -15,6 +15,8 @@ Projektvault för **AvyraCards** — digital visitkorts-/link-in-bio-plattform m
 - [[04 Apple-krav & risker]] — App Review-checklista och kända risker
 - [[05 Lanseringsplan]] — juridik, ekonomi, marknadsföring
 - [[06 Beslutslogg]] — beslut och varför
+- [[07 Bygglogg]] — logg över autonoma byggsessioner
+- [[08 Testchecklista]] — manuellt regressionstest före submission
 
 ## Snabbstatus (2026-08-10)
 
@@ -25,6 +27,7 @@ Projektvault för **AvyraCards** — digital visitkorts-/link-in-bio-plattform m
 | App Store-submission | **Aldrig gjord — nästa mål** |
 | Native IAP (premium) | Byggd, klarmarkerad i ClickUp |
 | Öppna ClickUp-tasks | ~30 (mest marknad/juridik, få tekniska) |
+| Automatiska tester | `npm test` — 22 Vitest-tester, gröna |
 
 ## Länkar
 
