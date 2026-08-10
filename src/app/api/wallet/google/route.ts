@@ -12,6 +12,55 @@ interface WalletClassResponse {
   [key: string]: unknown;
 }
 
+/**
+ * googleapis-fel packar in det intressanta (Googles felmeddelande om vilket
+ * fält som är ogiltigt) djupt i response.data. Utan detta loggas bara
+ * "Request failed with status code 400", vilket inte går att felsöka på.
+ */
+function describeGoogleError(error: unknown): string {
+  const err = error as {
+    message?: string;
+    response?: { status?: number; data?: unknown };
+  };
+
+  const status = err?.response?.status;
+  const data = err?.response?.data;
+
+  if (data !== undefined) {
+    let body: string;
+    try {
+      body = typeof data === "string" ? data : JSON.stringify(data);
+    } catch {
+      body = String(data);
+    }
+    return `HTTP ${status ?? "?"}: ${body.slice(0, 2000)}`;
+  }
+
+  return err?.message ?? String(error);
+}
+
+/**
+ * Passet öppnas med window.open i en ny flik, så ett JSON-svar skulle visas
+ * som rå text för användaren. Returnera en läsbar sida i stället.
+ */
+function walletErrorPage(message: string, status: number) {
+  const safe = message.replace(/[<>&]/g, (c) =>
+    c === "<" ? "&lt;" : c === ">" ? "&gt;" : "&amp;"
+  );
+
+  return new NextResponse(
+    `<!doctype html><html lang="sv"><head><meta charset="utf-8">` +
+      `<meta name="viewport" content="width=device-width,initial-scale=1">` +
+      `<title>Wallet – AvyraCards</title>` +
+      `<style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;` +
+      `background:#030712;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px}` +
+      `div{max-width:22rem;text-align:center}h1{font-size:1.1rem;margin:0 0 .5rem}` +
+      `p{color:#94a3b8;font-size:.9rem;line-height:1.5;margin:0}</style></head>` +
+      `<body><div><h1>Kortet kunde inte sparas</h1><p>${safe}</p></div></body></html>`,
+    { status, headers: { "Content-Type": "text/html; charset=utf-8" } }
+  );
+}
+
 export async function GET(req: NextRequest) {
   try {
     console.log('--- Starting Wallet Process (UI Update v6) ---');
@@ -57,7 +106,8 @@ export async function GET(req: NextRequest) {
     let privateKey = process.env.GOOGLE_PRIVATE_KEY;
 
     if (!clientEmail || !privateKey) {
-      return NextResponse.json({ error: 'Server config error: Missing credentials' }, { status: 500 });
+      console.error('Google Wallet: GOOGLE_CLIENT_EMAIL eller GOOGLE_PRIVATE_KEY saknas');
+      return walletErrorPage('Google Wallet är inte konfigurerat på servern.', 500);
     }
 
     if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
@@ -67,8 +117,10 @@ export async function GET(req: NextRequest) {
 
     const ISSUER_ID = '3388000000023044854';
     
-    const CLASS_ID = `${ISSUER_ID}.standard_card_v6`; 
-    const OBJECT_ID = `${ISSUER_ID}.user-${user.id}`; 
+    // v7: v6-klassen kunde aldrig skapas eftersom payloaden var ogiltig
+    // (se kommentaren vid klasskapandet nedan). Ny id ger en ren start.
+    const CLASS_ID = `${ISSUER_ID}.standard_card_v7`;
+    const OBJECT_ID = `${ISSUER_ID}.user-${user.id}`;
 
     const authClient = new google.auth.GoogleAuth({
       credentials: { client_email: clientEmail, private_key: privateKey },
@@ -78,7 +130,23 @@ export async function GET(req: NextRequest) {
     const httpClient = await authClient.getClient();
     const baseUrl = 'https://walletobjects.googleapis.com/walletobjects/v1';
 
-    // 3. SKAPA DEN NYA MALLEN (Class v6 - Stacked Layout)
+    // 3. SKAPA MALLEN (Class v7)
+    //
+    // FIX (ClickUp 86ca6yh4y): v6-payloaden var ogiltig på tre punkter och
+    // avvisades av Wallet-API:t med 400 varje gång, vilket doldes av
+    // catch-blocket nedan ("non-fatal"). Följdeffekten var att klassen aldrig
+    // fanns, objektet därför inte kunde skapas, och koden föll tillbaka på att
+    // stoppa HELA objektet i JWT:n — en save-URL på flera tusen tecken, som är
+    // just det Google Wallet på Android inte klarar.
+    //
+    // De tre felen:
+    //  1. `reviewStatus` finns inte på GenericClass (bara på t.ex. LoyaltyClass).
+    //  2. `predefinedItem` är en ENUM (FREQUENT_FLYER_...), inte ett objekt.
+    //     Rätt sätt att få label-över-värde är `item.firstValue` som pekar på
+    //     en textModulesData-post — Wallet renderar header som label och body
+    //     som värde automatiskt.
+    //  3. textModulesData refereras med id, inte index:
+    //     object.textModulesData['titel'] — inte object.textModulesData[0].body
     try {
       const checkClassRes = await httpClient.request<WalletClassResponse>({
         url: `${baseUrl}/genericClass/${CLASS_ID}`,
@@ -87,70 +155,70 @@ export async function GET(req: NextRequest) {
       });
 
       if (checkClassRes.status === 404) {
-        console.log('⚠️ Class v6 not found. Creating new "STACKED" layout template...');
-        
+        console.log('⚠️ Class v7 not found. Creating template...');
+
         await httpClient.request({
           url: `${baseUrl}/genericClass`,
           method: 'POST',
           data: {
             id: CLASS_ID,
+            // Passet ska kunna ligga på flera enheter samtidigt.
+            multipleDevicesAndHoldersAllowedStatus: 'MULTIPLE_HOLDERS',
             classTemplateInfo: {
               cardTemplateOverride: {
                 cardRowTemplateInfos: [
-                  // RAD 1: Namn (Stacked)
+                  // Namnet renderas redan av object.header/subheader högst upp,
+                  // så raderna används till titel och profil-länk.
                   {
                     oneItem: {
                       item: {
-                        predefinedItem: {
-                          type: "STACKED",
-                          firstValue: { fields: [{ fieldPath: "object.subheader" }] }, 
-                          secondValue: { fields: [{ fieldPath: "object.header" }] }   
-                        }
-                      }
-                    }
+                        firstValue: {
+                          fields: [{ fieldPath: "object.textModulesData['titel']" }],
+                        },
+                      },
+                    },
                   },
-                  // RAD 2: Titel/Bio (Stacked)
                   {
                     oneItem: {
                       item: {
-                        predefinedItem: {
-                          type: "STACKED",
-                          firstValue: { fields: [{ fieldPath: "object.textModulesData[0].header" }] },
-                          secondValue: { fields: [{ fieldPath: "object.textModulesData[0].body" }] }
-                        }
-                      }
-                    }
+                        firstValue: {
+                          fields: [{ fieldPath: "object.textModulesData['profil']" }],
+                        },
+                      },
+                    },
                   },
-                  // RAD 3: Länk (Stacked)
-                  {
-                    oneItem: {
-                      item: {
-                        predefinedItem: {
-                          type: "STACKED",
-                          firstValue: { fields: [{ fieldPath: "object.textModulesData[1].header" }] },
-                          secondValue: { fields: [{ fieldPath: "object.textModulesData[1].body" }] }
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
+                ],
+              },
             },
-            reviewStatus: "UNDER_REVIEW", 
           },
         });
-        console.log('✅ Class v6 (Stacked) created successfully.');
+        console.log('✅ Class v7 created successfully.');
       }
     } catch (error) {
-      console.warn('Class check warning (non-fatal):', error);
+      // Tidigare svaldes det här tyst, vilket är exakt varför buggen kunde
+      // ligga kvar. Logga hela API-svaret och avbryt — utan klass blir passet
+      // ändå trasigt, och det är bättre att felet syns.
+      console.error('Google Wallet class create/check failed:', describeGoogleError(error));
+      return walletErrorPage(
+        'Kunde inte förbereda Wallet-passet just nu. Försök igen om en stund.',
+        502
+      );
     }
 
     // 4. Data Mapping & URL Fix
-    
+
+    // Ett pass utan användarnamn skulle ge en QR-kod som pekar på /u/null.
+    if (!user.username) {
+      return walletErrorPage(
+        'Du måste välja ett användarnamn innan du kan spara kortet i Wallet.',
+        400
+      );
+    }
+
     // FIX PUNKT 1: Tvinga .se i URL:en
     let baseDomain = process.env.NEXT_PUBLIC_BASE_URL || 'https://avyracards.se';
-    baseDomain = baseDomain.replace('.com', '.se'); // Säkerställ att det blir .se
-    
+    baseDomain = baseDomain.replace('avyracards.com', 'avyracards.se');
+
     // --- HÄR ÄR ÄNDRINGEN FÖR ANALYTICS ---
     // Vi lägger till ?source=wallet här. Detta är länken QR-koden leder till.
     const profileUrl = `${baseDomain}/u/${user.username}?source=wallet`;
@@ -179,12 +247,15 @@ export async function GET(req: NextRequest) {
       subheader: {
         defaultValue: { language: 'sv-SE', value: 'NAMN' },
       },
+      // id:na måste matcha fieldPath i klassmallen ovan.
       textModulesData: [
         {
+          id: "titel",
           header: "TITEL",
-          body: user.bio || "Digital Profil"
+          body: user.jobTitle || user.bio || "Digital Profil"
         },
         {
+          id: "profil",
           header: "PROFIL",
           body: displayUrl // Visar den snygga .se länken (utan tracking)
         }
@@ -192,7 +263,7 @@ export async function GET(req: NextRequest) {
       barcode: {
         type: "QR_CODE",
         value: profileUrl, // QR-koden innehåller tracking-länken
-        alternateText: user.username || "Profil"
+        alternateText: user.username
       },
       logo: {
         sourceUri: { uri: logoUri },
@@ -212,7 +283,7 @@ export async function GET(req: NextRequest) {
     // Genom att skapa objektet server-side kan JWT:n bara innehålla
     // id + classId, vilket ger en kort URL som fungerar överallt.
     // Bonus: passet uppdateras med senaste namn/bio/bild vid varje tryck.
-    let jwtObjectPayload: Record<string, unknown> = { id: OBJECT_ID, classId: CLASS_ID };
+    const jwtObjectPayload: Record<string, unknown> = { id: OBJECT_ID, classId: CLASS_ID };
 
     try {
       const objectUrl = `${baseUrl}/genericObject/${encodeURIComponent(OBJECT_ID)}`;
@@ -238,10 +309,14 @@ export async function GET(req: NextRequest) {
         console.log('✅ Wallet object updated via API.');
       }
     } catch (error) {
-      // Fallback: om API-anropet misslyckas, skicka hela objektet i JWT:n
-      // (gamla beteendet). Fungerar oftast på desktop/iOS.
-      console.warn('Object insert/update failed, falling back to fat JWT:', error);
-      jwtObjectPayload = genericObject;
+      // Ingen fat-JWT-fallback längre: den gav en save-URL på flera tusen
+      // tecken, vilket är precis det som gör att Android misslyckas. Bättre
+      // att felet syns än att Android-användare får "Något gick fel".
+      console.error('Google Wallet object insert/update failed:', describeGoogleError(error));
+      return walletErrorPage(
+        'Kunde inte skapa Wallet-passet just nu. Försök igen om en stund.',
+        502
+      );
     }
 
     const walletPayload = {
