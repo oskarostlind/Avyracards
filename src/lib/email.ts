@@ -1,45 +1,14 @@
-import nodemailer from "nodemailer";
+import { isMailerConfigured, sendMail } from "@/lib/mailer";
 
-// --- KONFIGURATION FÖR SMTP (Strato) ---
-const host = process.env.SMTP_HOST;
-const port = Number(process.env.SMTP_PORT ?? "587");
-const secure = process.env.SMTP_SECURE === "true";
-
-const user = process.env.SMTP_USER ?? process.env.STRATO_SMTP_USER;
-const pass = process.env.SMTP_PASS ?? process.env.STRATO_SMTP_PASS;
-
-const from =
-  process.env.SMTP_FROM ??
-  (user ? `AvyraCards <${user}>` : undefined);
-
-if (!host || !user || !pass) {
-  console.warn(
-    "[email] SMTP-konfiguration saknas (host/user/pass). Mail kan inte skickas."
-  );
-}
-
-const transporter = nodemailer.createTransport({
-  host,
-  port,
-  secure,
-  auth: user && pass ? { user, pass } : undefined,
-});
-
-// Verifiera uppkoppling vid start (endast i dev/build)
-if (process.env.NODE_ENV !== "production") {
-  transporter
-    .verify()
-    .then(() => {
-      console.log(`[email] SMTP OK (${host}:${port}, secure=${secure})`);
-    })
-    .catch((err: unknown) => {
-      console.error("[email] SMTP verify failed:", err);
-    });
-}
+/**
+ * Auth-relaterade mail. SMTP-konfigurationen ligger i `@/lib/mailer` så att
+ * systemnotifikationer (se `@/lib/notifications`) och de här delar samma
+ * transport och samma env-variabler.
+ */
 
 // --- FUNKTION 1: VERIFIERINGSMAIL ---
 export async function sendVerificationEmail(to: string, token: string) {
-  if (!host || !user || !pass || !from) {
+  if (!isMailerConfigured()) {
     throw new Error("SMTP-konfigurationen är inte komplett.");
   }
 
@@ -50,8 +19,7 @@ export async function sendVerificationEmail(to: string, token: string) {
 
   const verifyUrl = `${baseUrl}/verify?token=${encodeURIComponent(token)}`;
 
-  const info = await transporter.sendMail({
-    from,
+  await sendMail({
     to,
     subject: "✨ Välkommen till AvyraCards – Verifiera ditt konto",
     text: `Välkommen! Verifiera ditt konto här: ${verifyUrl}`,
@@ -72,25 +40,19 @@ export async function sendVerificationEmail(to: string, token: string) {
 </html>
     `,
   });
-
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[email] Verifieringsmail skickat:", info.messageId);
-  }
 }
 
-// --- FUNKTION 2: LÖSENORDSÅTERSTÄLLNING (Nu via SMTP!) ---
+// --- FUNKTION 2: LÖSENORDSÅTERSTÄLLNING ---
 export async function sendPasswordResetEmail(email: string, resetLink: string) {
-  // Vi använder samma transporter och credentials som ovan
-  if (!host || !user || !pass || !from) {
-      console.error("SMTP config missing for reset email");
-      return { success: false, error: "SMTP config missing" };
+  if (!isMailerConfigured()) {
+    console.error("SMTP config missing for reset email");
+    return { success: false, error: "SMTP config missing" };
   }
 
   try {
-    await transporter.sendMail({
-      from,
+    await sendMail({
       to: email,
-      subject: 'Återställ ditt lösenord - AvyraCards',
+      subject: "Återställ ditt lösenord - AvyraCards",
       text: `Återställ ditt lösenord här: ${resetLink}`,
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -104,7 +66,7 @@ export async function sendPasswordResetEmail(email: string, resetLink: string) {
             Om du inte begärde detta kan du ignorera detta mail. Länken gäller i 1 timme.
           </p>
         </div>
-      `
+      `,
     });
     return { success: true };
   } catch (error) {

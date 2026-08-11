@@ -4,6 +4,7 @@ import { auth, signIn } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Role, PremiumSource, Prisma } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { sendSystemNotification } from "@/lib/notifications";
 
 // Hjälpfunktion för att säkra att bara admins kommer åt detta
 async function requireAdmin() {
@@ -118,16 +119,33 @@ export async function toggleUserPremium(
   const adminSession = await requireAdmin();
 
   if (shouldBePremium) {
+    // Läs före skrivningen så att bara en faktisk aktivering ger mail — en
+    // admin som klickar "ge premium" på ett konto som redan har det ska inte
+    // mejla användaren igen.
+    const before = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isPremium: true, email: true, name: true },
+    });
+
     await prisma.user.update({
       where: { id: userId },
       data: {
         isPremium: true,
         premiumSource: source,
         premiumGivenAt: new Date(),
-        premiumExpiresAt: null, 
+        premiumExpiresAt: null,
         adminNotes: `Premium gifted by admin (${adminSession.user.email}) at ${new Date().toISOString()}`,
       },
     });
+
+    if (before && !before.isPremium) {
+      await sendSystemNotification({
+        type: "premium_activated",
+        to: before.email,
+        name: before.name,
+        source: "gift",
+      });
+    }
   } else {
     await prisma.user.update({
       where: { id: userId },

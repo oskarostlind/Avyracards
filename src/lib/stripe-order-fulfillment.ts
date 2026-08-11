@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
+import { sendSystemNotification } from "@/lib/notifications";
 
 // Kortkoden trycks på kortet och används som uppslagsnyckel i /c/<code>.
 // Math.random() är förutsägbar — använd CSPRNG så att koder i samma batch
@@ -114,13 +115,48 @@ export async function fulfillPhysicalCardOrder(
     await prisma.card.createMany({ data: cardsToCreate });
   }
 
+  let premiumWasActivated = false;
+  let recipientName: string | null = input.shipping?.name ?? null;
+
   if (
     input.userId &&
     (input.premiumOption === "1mo" || input.premiumOption === "6mo")
   ) {
+    // Läs före skrivningen: bara en faktisk övergång av → på ska ge ett
+    // "Premium är aktiverat"-mail. Annars mailar vi den som redan har premium
+    // varje gång de beställer ett kort till.
+    const before = await prisma.user.findUnique({
+      where: { id: input.userId },
+      select: { isPremium: true, name: true },
+    });
+
     await prisma.user.update({
       where: { id: input.userId },
       data: { isPremium: true },
+    });
+
+    premiumWasActivated = before?.isPremium === false;
+    recipientName = before?.name ?? recipientName;
+  }
+
+  // Mail skickas sist och kan aldrig kasta — ordern är redan skapad i databasen
+  // och får inte rullas tillbaka för att SMTP strular.
+  await sendSystemNotification({
+    type: "card_order_confirmed",
+    to: input.customerEmail,
+    name: recipientName,
+    orderId: order.id,
+    quantity: order.quantity,
+    amountTotal: input.amountTotal,
+    currency: input.currency,
+  });
+
+  if (premiumWasActivated) {
+    await sendSystemNotification({
+      type: "premium_activated",
+      to: input.customerEmail,
+      name: recipientName,
+      source: "card_order",
     });
   }
 
