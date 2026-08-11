@@ -5,50 +5,11 @@ import { sv } from "date-fns/locale";
 
 import { prisma } from "@/lib/prisma";
 import { AnalyticsView } from "@/components/dashboard/analytics-view";
+import { getReadableSource } from "@/lib/analytics/events";
 
 export const metadata = {
   title: "Statistik | AvyraCards",
 };
-
-function getReadableSource(source: string | null, referrer: string | null): string {
-  if (source) {
-    const s = source.toLowerCase();
-    if (s === "nfc") return "NFC-kort";
-    if (s === "qr") return "QR-kod";
-    if (s === "wallet" || s === "apple_wallet" || s === "google_wallet") return "Digital Plånbok";
-    if (s === "ios_widget") return "Hem-skärm Widget";
-    if (s === "email_signature") return "E-postsignatur";
-    if (s === "link_bio" || s === "instagram") return "Instagram Bio";
-    if (s === "linkedin") return "LinkedIn";
-    if (s === "vcard") return "Spara Kontakt-knappen"; // <-- Lägg till denna för tydlighet!
-  }
-
-  if (referrer) {
-    const r = referrer.toLowerCase();
-    if (r.includes("instagram.com")) return "Instagram";
-    if (r.includes("facebook.com") || r.includes("fb.com")) return "Facebook";
-    if (r.includes("linkedin.com")) return "LinkedIn";
-    if (r.includes("t.co") || r.includes("twitter.com") || r.includes("x.com")) return "X (Twitter)";
-    if (r.includes("tiktok.com")) return "TikTok";
-    if (r.includes("youtube.com")) return "YouTube";
-    if (r.includes("pinterest.com")) return "Pinterest";
-    if (r.includes("snapchat.com")) return "Snapchat";
-    if (r.includes("google.")) return "Google Sök";
-    if (r.includes("bing.com")) return "Bing";
-    if (r.includes("yahoo.com")) return "Yahoo";
-    if (r.includes("duckduckgo.com")) return "DuckDuckGo";
-    if (r.includes("avyracards.se") || r.includes("localhost")) return "Intern navigering";
-
-    try {
-        const hostname = new URL(referrer).hostname.replace("www.", "");
-        return hostname; 
-    } catch {
-        return "Okänd webbplats";
-    }
-  }
-
-  return "Direkt (Ingen data)";
-}
 
 export default async function AnalyticsPage({
   searchParams,
