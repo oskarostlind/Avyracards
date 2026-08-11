@@ -10,7 +10,8 @@ import {
   ChevronRight,
   Search,
   Tag, // <-- NY IMPORT
-  Users
+  Users,
+  Activity
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import type { OrderStatus } from "@prisma/client";
@@ -114,6 +115,14 @@ export default async function AdminPage() {
             className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-nordic-secondary hover:bg-purple-500 transition shadow-lg shadow-purple-500/20"
           >
             <Tag size={16} /> Hantera Produkter
+          </Link>
+
+        {/* --- SYSTEMSTATUS (konfigurationskontroll) --- */}
+        <Link
+            href="/admin/system"
+            className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition"
+          >
+            <Activity size={16} /> Systemstatus
           </Link>
 
         <button className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition">
