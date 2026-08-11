@@ -215,7 +215,14 @@ tas bort ur Vercel när Resend är verifierat.
 
 **4. nodemailer avinstallerat.** Inga användningar kvar i koden.
 
-**Tester:** 8 nya (totalt 122, alla gröna). Resend-klienten mockas, så testerna
+**5. `/admin/system` uppdaterad.** Session 7 byggde en systemstatussida som kontrollerade
+SMTP-variablerna. Den kontrollerar nu `RESEND_API_KEY` i stället, plus avsändardomänen
+(varnar om `MAIL_FROM` pekar på något annat än avyracards.se, eftersom Resend då avvisar
+utskicket) och `MAIL_REPLY_TO`. Utan den ändringen hade sidan visat grönt på en
+mailkonfiguration som inte längre används.
+
+**Tester:** 8 nya för mailen + 3 omskrivna för systemstatussidan (totalt 145, alla
+gröna). Resend-klienten mockas, så testerna
 verifierar avsändare, `replyTo`, att `error`-svaret behandlas som fel, att nätverksfel
 inte kastar vidare, och att inget anrop görs alls vid ogiltig mottagare.
 `npm run lint` OK, `npx tsc --noEmit` OK, `npm run build` OK.

@@ -210,30 +210,39 @@ export function buildConfigReport(env: EnvSource = process.env): ConfigReport {
     ],
   });
 
-  // --- Systemmail ---
-  const smtpHost = env.SMTP_HOST;
-  const smtpUser = env.SMTP_USER ?? env.STRATO_SMTP_USER;
-  const smtpPass = env.SMTP_PASS ?? env.STRATO_SMTP_PASS;
-  const smtpOk = present(smtpHost) && present(smtpUser) && present(smtpPass);
+  // --- Systemmail (Resend) ---
+  const resendOk = present(env.RESEND_API_KEY);
+  // MAIL_FROM med SMTP_FROM som fallback — samma kedja som src/lib/mailer.ts.
+  const mailFrom = env.MAIL_FROM ?? env.SMTP_FROM;
+  const fromDomain = mailFrom?.match(/@([^\s>]+)/)?.[1]?.toLowerCase() ?? null;
+  const fromOnVerifiedDomain = fromDomain === null || fromDomain === "avyracards.se";
   groups.push({
     id: "mail",
-    title: "Systemmail",
+    title: "Systemmail (Resend)",
     checks: [
       {
-        id: "smtp",
-        label: "SMTP",
-        status: smtpOk ? "ok" : prod ? "error" : "off",
-        detail: smtpOk
-          ? "Host, användare och lösenord är satta."
-          : "Ofullständig SMTP-konfiguration — verifieringsmail, orderbekräftelser och premiumkvittenser skickas inte.",
+        id: "resend",
+        label: "RESEND_API_KEY",
+        status: resendOk ? "ok" : prod ? "error" : "off",
+        detail: resendOk
+          ? "Satt. All utgående e-post går via Resend."
+          : "Saknas — verifieringsmail, orderbekräftelser och premiumkvittenser skickas inte.",
       },
       {
-        id: "smtp-from",
-        label: "SMTP_FROM",
-        status: present(env.SMTP_FROM) ? "ok" : "off",
-        detail: present(env.SMTP_FROM)
-          ? "Satt."
-          : "Inte satt — avsändaradressen härleds från SMTP-användaren.",
+        id: "mail-from",
+        label: "Avsändare",
+        status: fromOnVerifiedDomain ? "ok" : "warn",
+        detail: fromOnVerifiedDomain
+          ? `Skickas som ${mailFrom ?? "no-reply@avyracards.se (standard)"}. Domänen måste vara verifierad i Resend, annars avvisas utskicket.`
+          : `Avsändardomänen (${fromDomain}) är inte avyracards.se — Resend avvisar utskick från overifierade domäner.`,
+      },
+      {
+        id: "mail-reply-to",
+        label: "MAIL_REPLY_TO",
+        status: present(env.MAIL_REPLY_TO) ? "ok" : "off",
+        detail: present(env.MAIL_REPLY_TO)
+          ? "Satt — svar på systemmail går till den adressen."
+          : "Inte satt — svar går till no-reply-adressen och försvinner.",
       },
     ],
   });

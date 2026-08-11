@@ -26,9 +26,8 @@ function healthyProdEnv(): EnvSource {
     APPLE_IAP_KEY_ID: "k",
     APPLE_IAP_ISSUER_ID: "i",
     APPLE_IAP_PRIVATE_KEY: "p",
-    SMTP_HOST: "smtp.strato.de",
-    SMTP_USER: "u",
-    SMTP_PASS: "p",
+    RESEND_API_KEY: "re_live_abc",
+    MAIL_FROM: "AvyraCards <no-reply@avyracards.se>",
   };
 }
 
@@ -128,27 +127,39 @@ describe("buildConfigReport", () => {
     expect(findCheck(env, "base-url").status).toBe("error");
   });
 
-  it("larmar på saknad SMTP i produktion men inte lokalt", () => {
+  it("larmar på saknad RESEND_API_KEY i produktion men inte lokalt", () => {
     const prod = healthyProdEnv();
-    delete prod.SMTP_HOST;
-    expect(findCheck(prod, "smtp").status).toBe("error");
+    delete prod.RESEND_API_KEY;
+    expect(findCheck(prod, "resend").status).toBe("error");
 
     const dev: EnvSource = {
       ...healthyProdEnv(),
       VERCEL_ENV: "development",
       NODE_ENV: "development",
     };
-    delete dev.SMTP_HOST;
-    expect(findCheck(dev, "smtp").status).toBe("off");
+    delete dev.RESEND_API_KEY;
+    expect(findCheck(dev, "resend").status).toBe("off");
   });
 
-  it("accepterar STRATO_-varianterna av SMTP-uppgifterna", () => {
+  it("varnar när avsändaren ligger på en domän som inte är verifierad i Resend", () => {
     const env = healthyProdEnv();
-    delete env.SMTP_USER;
-    delete env.SMTP_PASS;
-    env.STRATO_SMTP_USER = "u";
-    env.STRATO_SMTP_PASS = "p";
-    expect(findCheck(env, "smtp").status).toBe("ok");
+    env.MAIL_FROM = "AvyraCards <no-reply@avyracards.com>";
+    expect(findCheck(env, "mail-from").status).toBe("warn");
+  });
+
+  it("godtar standardavsändaren när MAIL_FROM inte är satt", () => {
+    const env = healthyProdEnv();
+    delete env.MAIL_FROM;
+    expect(findCheck(env, "mail-from").status).toBe("ok");
+  });
+
+  it("faller tillbaka på SMTP_FROM, samma kedja som mailer.ts", () => {
+    const env = healthyProdEnv();
+    delete env.MAIL_FROM;
+    env.SMTP_FROM = "AvyraCards <gammal@avyracards.se>";
+    const check = findCheck(env, "mail-from");
+    expect(check.status).toBe("ok");
+    expect(check.detail).toContain("gammal@avyracards.se");
   });
 
   it("läcker aldrig ett hemligt värde till rapporten", () => {
@@ -156,7 +167,7 @@ describe("buildConfigReport", () => {
       ...healthyProdEnv(),
       STRIPE_SECRET_KEY: "sk_live_SUPERHEMLIGT",
       NEXTAUTH_SECRET: "SUPERHEMLIGT",
-      SMTP_PASS: "SUPERHEMLIGT",
+      RESEND_API_KEY: "re_SUPERHEMLIGT",
     };
     const text = JSON.stringify(buildConfigReport(env));
     expect(text).not.toContain("SUPERHEMLIGT");
