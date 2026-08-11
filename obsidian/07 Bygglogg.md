@@ -1,11 +1,66 @@
 ---
 skapad: 2026-08-10
-uppdaterad: 2026-08-10
+uppdaterad: 2026-08-11
 ---
 
 # Bygglogg
 
 Logg över autonoma byggsessioner. Nyast överst.
+
+---
+
+## 2026-08-11 — Session 3 (autonom)
+
+### Gjort
+
+**1. Premium-mallarna var i praktiken gratis — stängt (ClickUp 86c74tjrn / 86c7m20w3)**
+
+Det här hittades när jag gick in i temasystemet för "engångsköps-mallar + ramar". Bakgrunden: 19 av 38 mallar är märkta `isPremium: true`, men
+
+- `templates-tab.tsx` anropade `onApply(t)` för **alla** mallar oavsett `isPremium` — hänglåset var enbart en badge ovanpå knappen,
+- `/api/themes/save` sanerade bara tre saker: bakgrundsbild, `hideBranding` och knappstilen `glass`.
+
+En premium-mall som bygger på gradient eller solid färg (majoriteten) gick alltså rakt igenom både klient och server och sparades permanent på ett gratiskonto. Det är en ren intäktsläcka, inte bara ett kosmetiskt fel.
+
+**2. Central feature-gating (ClickUp 86c777p5w, punkt 4 i arkitektur-backloggen)**
+
+Ny modul `src/lib/feature-access.ts` som nu är enda stället som svarar på "får den här användaren göra X?":
+
+- `FEATURES` — deklarativ config, `free` / `premium` / `admin` per feature.
+- `canAccess(feature, user)` — admin har alltid tillgång, vilket också är den tänkta vägen för gift-/beta-konton utan att man rör `isPremium`.
+- `sanitizeThemeSettings(settings, mode, user)` — en källa till sanning för vad servern tvättar bort. Returnerar `removed: FeatureKey[]` så UI:t kan bli specifikt senare ("du behöver premium för bakgrundsbild") i stället för dagens generella modal.
+- `matchesLockedTemplate()` — servern jämför inkommande settings mot premium-mallarnas egna fält och känner igen en mall som postas direkt mot API:t. UI-lås är inget skydd; det här är det som faktiskt stoppar en curl mot `/api/themes/save`.
+
+Inkopplat på tre ställen: API-routen (ersatte sin egna ad hoc-logik), `TemplatesTab` (låsta mallar får dämpad preview och öppnar uppgraderingsmodalen i stället för att appliceras) och `themes/page.tsx` (hämtar `role` så admin-overriden funkar hela vägen ner).
+
+**Viktigt: inga befintliga gränser flyttades.** Det som var gratis igår är gratis idag — den enda beteendeändringen är att premium-mallar nu faktiskt kräver premium.
+
+**3. Tester**
+
+15 nya Vitest-tester i `src/lib/__tests__/feature-access.test.ts`, inklusive ett explicit regressionsskydd för läckan (spara en premium-malls settings som gratiskonto → ska inte längre matcha mallen efteråt). Totalt nu 48 tester, alla gröna.
+
+Kvalitetsgrindar före push: `npm run lint` ✔, `npx tsc --noEmit` ✔ (noll fel), `npx vitest run` ✔ (48/48).
+
+### Efterhandslogg: session 2 (loggades aldrig)
+
+Session 2 pushade två commits utan att uppdatera byggloggen — för spårbarhetens skull:
+
+- `a9ed39f` **fix(security)** — kortaktivering kunde kringgås helt. `/activate/confirm` kontrollerade ingen token alls, och `/api/cards/claim` kontrollerade bara om anroparen råkade skicka med fältet. Den som kände till kortkoden (6 tecken, tryckt på kortet) kunde alltså aktivera ett kort som låg oöppnat hos kunden. Ny delad modul `src/lib/card-claim.ts`: token krävs alltid, timing-safe jämförelse, atomisk claim, token roteras vid aktivering.
+- `3815432` **fix(wallet)** — Google Wallet på Android (ClickUp 86ca6yh4y). Rotorsak: `genericClass`-payloaden var ogiltig och avvisades med 400, men felet svaldes av ett catch märkt "non-fatal". Utan klass lades hela objektet i JWT:n → save-URL på flera tusen tecken, vilket Android inte klarar. Tre fel rättade mot Googles referensdokumentation.
+
+### Återstår / nästa session
+
+1. **Kör igenom [[08 Testchecklista]]** — fortfarande inget av kodfixarna verifierat live. Särskilt B (profilbild), H (premium i iOS-appen) och nu även: gratiskonto ska inte kunna välja en låst mall.
+2. **Google Wallet-fixen är inte verifierad på riktig Android-enhet** — koden är rättad mot dokumentationen, men det behöver testas skarpt.
+3. **Ramar (frames)** — mekaniken finns (`PREMIUM_FRAME_STYLES` i `feature-access.ts`), men listan är medvetet tom. Se fråga nedan.
+4. **Engångsköps-mallar** — ClickUp-tasken har tom beskrivning. Se fråga nedan.
+5. **Arkitektur-backloggen** (86c777p5w): punkt 4 är nu grundlagd. Kvarstår punkt 1 (analytics-lager / event-schema), punkt 2 (rate limiting — delvis gjord i session 1), punkt 5 (wallet lifecycle).
+
+### Frågor till Oskar
+
+- **Vilka ramar ska vara premium?** Alla åtta (`none, circle, rounded, ring, glow, hexagon, square, shadow`) är gratis idag. Jag lade INTE någon bakom betalväggen på eget bevåg, eftersom befintliga användare som redan valt t.ex. `glow` då skulle få den nedgraderad nästa gång de sparar. Säg vilka du vill låsa så är det en enradsändring i `PREMIUM_FRAME_STYLES`. Mitt förslag: `glow`, `hexagon`, `shadow` som premium — resten gratis.
+- **"Engångsköps-mallar" (86c74tjrn) — vad menas konkret?** Tasken har tom beskrivning. Är det (a) mallar som säljs styckvis utanför premium-abonnemanget, eller (b) bara "det ska finnas färdiga mallar att välja mellan" (vilket i så fall redan är gjort — 38 st)? Om (a) krävs ny datamodell (ägda mallar per användare) + Stripe-produkter, och det är för stort att göra blint.
+- Frågorna från session 1 står kvar obesvarade: `NEXT_PUBLIC_IOS_NATIVE_PAYMENTS` i produktion, död kod (`/api/upload/profile-image`, `ProfileSettingsForm`), samt om kort ska sättas tillbaka till `UNCLAIMED` vid kontoradering.
 
 ---
 

@@ -96,3 +96,21 @@ Markera med datum + byggnummer när listan körts igenom.
 - [ ] Ny användare kan registrera sig
 - [ ] `/privacy` och `/terms` laddar (Apple länkar publikt hit)
 - [ ] Inga nya runtime-fel i Vercel-loggen första 15 minuterna
+
+## L. Premium-mallar & feature-gating (nytt 2026-08-11)
+
+Testas med ett **gratiskonto** (isPremium = false, role = USER):
+
+- [ ] Gå till Profil → Teman → fliken Mallar. Premium-mallarna ska ha hänglås och dämpad förhandsvisning.
+- [ ] Klicka på en låst mall → uppgraderingsmodalen ska öppnas, och förhandsvisningen till vänster ska **inte** ändras.
+- [ ] Klicka på en gratismall → ska appliceras som vanligt.
+- [ ] Spara → sparas utan varning.
+- [ ] Direktanrop mot API:t (t.ex. via devtools console) med en premium-malls settings ska komma tillbaka sanerat: `sanitized: true` och `removed` innehåller `theme_premium_templates`.
+
+Med **premiumkonto**:
+
+- [ ] Alla mallar har krona (upplåst) och går att applicera och spara oförändrade.
+
+Med **adminkonto utan premium**:
+
+- [ ] Premium-mallar går att applicera (admin-override).
