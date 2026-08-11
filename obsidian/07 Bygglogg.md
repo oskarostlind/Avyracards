@@ -9,6 +9,103 @@ Logg över autonoma byggsessioner. Nyast överst.
 
 ---
 
+## 2026-08-11 — Session 8 (autonom körning: db-migrering + verifiering)
+
+Kördes från Cowork med mountad repo-mapp, Chrome-tillgång och Vercel-MCP.
+Uppgiften: köra den orörda migreringen mot produktion, merga, och verifiera
+tre saker live.
+
+**Databasmigreringen — klar.**
+
+`feat/db-versioning-och-org` var en ren fast-forward ovanpå main och
+migrationsfilen var genomgången rad för rad innan körning: bara ADD COLUMN och
+CREATE TABLE, inga DROP, inga typändringar.
+
+- Före: `prisma migrate status` → 7 av 8 migreringar applicerade, ingen drift.
+- `prisma migrate deploy` → `20260811200000_profile_versioning_and_org` applicerad.
+- Efter: "Database schema is up to date!"
+- Verifierat direkt mot Neon: `User.profileVersion` (int NOT NULL default 1),
+  `User.organizationId` (text null), `Order.organizationId` (text null),
+  tabellen `ProfileRevision` med båda indexen, unique(userId, version) och
+  FK ON DELETE CASCADE. 16 användare orörda, alla profileVersion = 1.
+
+Prisma valde den direkta (unpooled) endpointen av sig själv eftersom
+`schema.prisma` har `directUrl = env("DIRECT_URL")` — ingen manuell
+connection string behövdes. Codex-boten påpekade samma sak i PR #8: kommandot i
+`MIGRATION_README.md` sätter bara `DATABASE_URL`, vilket inte räcker i ett rent
+skal. **Att göra:** rätta det kommandot i README:n.
+
+**Kvalitetsgrindar — gröna.** `next lint` rent, `tsc --noEmit` 0 fel,
+`vitest` 145/145. Not: både lint och tsc dör med heap OOM på default
+Node-heap i en 3 GB-miljö; kördes med `NODE_OPTIONS=--max-old-space-size=2400`.
+
+**Merge och deploy.** Mergat till main och synkat till
+`codex/create-next.js-project-skeleton`. Träden är identiska på båda
+brancherna. Produktionsdeployen blev READY.
+
+*Avvikelse från instruktionen:* sandboxen har inga git-credentials (GitHub
+Desktop-inloggningen ligger på Windows-sidan), så `git push` gick inte. Mergen
+gjordes i stället via PR #8, #9 och #10 i GitHub-webben. Samma innehåll, men
+brancherna får merge-commits i stället för fast-forward.
+
+**Verifiering live (inloggad som admin).**
+
+- `/admin/system`: 1 fel, 1 varning.
+  - 🔴 `STRIPE_SECRET_KEY` — **testnyckel i produktion (läge: test)**. Riktiga
+    betalningar registreras inte. **Inte åtgärdat** — stoppregeln säger att inte
+    röra Stripes live-konfiguration, och jag hanterar inte hemligheter. Kvarstår
+    till Oskar.
+  - 🟠 `NEXT_PUBLIC_IOS_DEBUG` — debugläget är på i produktion; den orange
+    "iOS Debug"-badgen syns på live-sajten. Bör av före App Review.
+  - ⚪ `MAIL_REPLY_TO` inte satt — svar går till no-reply och försvinner.
+  - 🟢 `NEXT_PUBLIC_IOS_NATIVE_PAYMENTS` grön (App Store 3.1.1 är alltså inte
+    blockerad), `RESEND_API_KEY` + avsändardomän gröna, Apple/Google
+    Wallet-konfig grön, Stripe webhook grön.
+- **Wallet.** Dator: båda knapparna. Google Wallet öppnar Googles spara-sida med
+  korrekt kortförhandsvisning (kort JWT, bara id + classId — inte fat-JWT:n som
+  brukade döda Android). User agent-emulering: iPhone → bara Apple Wallet,
+  Pixel/Android → bara Google Wallet. Apple-passet hämtat och inspekterat:
+  giltig zip, `application/vnd.apple.pkpass`, innehåller pass.json, icon.png,
+  logo.png, thumbnail.png, manifest.json och signature. QR:en pekar på
+  `https://avyracards.se/u/oskar?source=wallet` — den gamla `/u/?source=wallet`-buggen
+  är alltså borta. Passet är 957 kB, vilket är i tyngsta laget.
+- **Profilbild.** Uppladdning → crop-dialogen "Justera bild" → "Spara bild"
+  skriver direkt till databasen och slår igenom på `/u/oskar` **utan** att man
+  rör formulärets "Spara". Buggen är verifierat fixad. Testbilden är återställd
+  till originalavataren efteråt. En liten reservation: första anropet av
+  `/u/oskar` visade tom avatarcirkel och rätt bild kom först vid en
+  cache-bustad omladdning — värt att titta på om användare rapporterar fördröjning.
+
+**Logotypen saknades på webben (upptäckt under sessionen, åtgärdad).**
+
+Oskar såg att logotypen var borta i headern. Rotorsak: commit `27861c1`
+(2026-06-18) bytte textlogotypen i `navbar-client.tsx` mot
+`<Image src="/icon.png">`, och `layout.tsx` pekar sina icon/apple-touch-icon/
+shortcut-taggar på samma fil — men `public/icon.png` committades aldrig till
+main. Filen finns bara på `cursor-experiments` (commit `ecb106b`, aldrig mergad).
+Live gav `/icon.png` 404. Samma sak för OG-bilden `/avyra_transparent_v2.jpg`,
+som aldrig funnits i repot över huvud taget.
+
+Åtgärd: `public/icon.png` återställd från `cursor-experiments` (1024×1024,
+samma design som iOS-appikonen), och `public/avyra_transparent_v2.jpg` skapad
+från den befintliga `public/wallet/logo.png`. Båda ligger nu på main och på
+iOS-bygg-branchen. Live: 200 på båda, logotypen renderas i headern igen.
+
+**iOS-assets är kompletta** — `AppIcon-512@2x.png` finns, och
+`Splash.imageset` har alla sex bilder som `Contents.json` refererar. Inget
+saknas där. iOS-buildnumret är inte rört.
+
+**Kvar / frågor till Oskar:**
+
+1. `STRIPE_SECRET_KEY` måste bytas till live-nyckeln i Vercel Production.
+2. `NEXT_PUBLIC_IOS_DEBUG` bör stängas av i produktion.
+3. `MAIL_REPLY_TO` — vill du ha en riktig svarsadress?
+4. Rätta deploy-kommandot i `MIGRATION_README.md` (behöver `DIRECT_URL`).
+5. Nästa steg enligt README: koppla in `ProfileRevision` i `PATCH /api/profile`
+   och lägg en ångra-knapp i inställningarna.
+
+---
+
 ## 2026-08-11 — Session 7b (uppföljning på fråga från Oskar)
 
 Oskar frågade: fungerar wallet för Apple och Google, i appen och på webben?
