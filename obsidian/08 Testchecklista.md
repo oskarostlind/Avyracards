@@ -114,3 +114,15 @@ Med **premiumkonto**:
 Med **adminkonto utan premium**:
 
 - [ ] Premium-mallar går att applicera (admin-override).
+
+## M. Analytics-lagret (nytt 2026-08-11)
+
+- [ ] Öppna en profil från Instagram-bion → statistiken visar "Instagram", inte "Instagram Bio"
+- [ ] Öppna samma profil två gånger inom 10 sekunder → bara EN visning registreras
+- [ ] Vänta >10 sekunder och öppna igen → nu registreras en till visning
+- [ ] Skicka profillänken i WhatsApp/Messenger → förhandsvisningen ska INTE ge en visning
+- [ ] Skanna NFC/QR (`?source=nfc` / `?source=qr`) → visas som "NFC-kort" / "QR-kod"
+- [ ] Öppna på Android-platta → enheten redovisas som "Tablet", inte "Desktop"
+- [ ] Klicka en länk och spara kontakt → "Länkklick" resp. "Spara Kontakt-knappen" som tidigare
+- [ ] Historiska events (före 2026-08-11) visas fortfarande korrekt i listan
+- [ ] Push-notiser för visning/klick/kontakt fungerar som förut

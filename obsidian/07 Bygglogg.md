@@ -9,6 +9,89 @@ Logg över autonoma byggsessioner. Nyast överst.
 
 ---
 
+## 2026-08-11 — Session 4 (autonom)
+
+### Gjort
+
+**Centralt analytics-lager (ClickUp 86c777p5w, punkt 1 + resten av punkt 2)**
+
+Alla tekniska lanseringsbuggar i prioritetslistan är avklarade i kod, så den här
+sessionen tog nästa punkt i arkitektur-backloggen: event- och analyticsarkitekturen.
+
+Rotproblemet var att *klienten* bestämde vad statistiken skulle innehålla.
+`trackers.tsx` gissade källa ur `document.referrer` och enhet ur `navigator.userAgent`,
+skickade resultatet till `/api/analytics`, och routen sparade det rakt av. Dashboarden
+hade i sin tur en egen, delvis annorlunda, översättningstabell. Tre ställen som kunde
+glida isär — och en öppen väg för vem som helst att posta godtyckliga källnamn.
+
+Ny modul `src/lib/analytics/events.ts`:
+
+- **Versionerat event-schema** — `ANALYTICS_SCHEMA_VERSION = 1` plus zod-validering av
+  inkommande payload. Höjs när formatet ändras på ett sätt som kräver backfill.
+- **All normalisering på servern** — källa och enhet härleds ur referrer och user-agent
+  i backend. Klienten skickar bara rådata. Äldre klientbyggen som fortfarande skickar
+  härledda värden fungerar oförändrat (bakåtkompatibel passlista).
+- **Bot-filter** — länkförhandsvisare (facebookexternalhit, WhatsApp, Slackbot, Discord,
+  Telegram m.fl.) och crawlers lagras inte längre som profilvisningar. Varje gång någon
+  klistrade in sin profillänk i en chatt fick de tidigare en falsk visning.
+- **Dedup** — samma besökare, samma event, inom 10 sekunder räknas en gång. Skyddar mot
+  refresh-spam. *Begränsning:* dedup-fönstret ligger i minnet per instans, precis som
+  rate-limitern, så i serverless kan enstaka dubbletter slinka igenom när trafiken
+  sprids över flera instanser. Fullt skydd kräver delad lagring (Redis/Upstash) — se
+  fråga nedan.
+- **Skräpskydd** — godtycklig text i `source` kastas nu i stället för att lagras. Förut
+  kunde vem som helst posta valfri sträng som "trafikkälla".
+- **Delad läs- och skrivväg** — `getReadableSource` bor i samma modul och används av
+  dashboarden. Fungerar även på historiska rader.
+
+Två buggar rättade på köpet:
+
+1. Android-plattor klassades som "Desktop" (user-agenten saknar "Mobile", och det gamla
+   `/ipad|tablet/`-testet matchade inte).
+2. All Instagram-trafik redovisades som "Instagram Bio", eftersom dashboarden mappade
+   `instagram` till samma etikett som `link_bio`. Nu skiljs bio-länken från delade länkar.
+
+Analytics-routen använder nu den delade rate-limitern i `src/lib/rate-limit.ts` i stället
+för en egen kopia av samma logik, och bot-/dedup-kontrollen körs *före* det externa
+geo-anropet så att vi inte betalar för trafik som ändå kastas.
+
+**Ingen databasmigrering.** Schemat är orört med flit: en migrering som inte är körd mot
+produktion skulle ta ner sajten vid deploy, eftersom bygget inte kör `migrate deploy`.
+Bot-trafik kastas därför i stället för att lagras med en `isBot`-flagga.
+
+**Tester:** 25 nya Vitest-tester i `src/lib/__tests__/analytics-events.test.ts`. Totalt 73,
+alla gröna. `npm run lint` OK, `npx tsc --noEmit` OK (noll fel).
+
+Manuell testchecklista utökad med avsnitt M i [[08 Testchecklista]].
+
+### Återstår / nästa session
+
+1. **[[08 Testchecklista]] är fortfarande inte körd** — nu 13 avsnitt (A–M). Ingen av
+   kodfixarna från session 1–4 är verifierad live. Det här är den enskilt största
+   återstående risken inför lansering.
+2. **Google Wallet-fixen är inte verifierad på riktig Android-enhet.**
+3. **Arkitektur-backloggen (86c777p5w):** punkt 1, 2 och 4 är nu gjorda. Kvar: punkt 5
+   (wallet lifecycle), punkt 3 (profilversionering), punkt 6 (systemmail), punkt 7
+   (miljöseparation), punkt 8 (B2B-datamodell). Nästa i tur enligt beskrivningens
+   ordning: punkt 5, wallet lifecycle.
+4. **Ramar och engångsköps-mallar** (86c74tjrn) — blockerat på frågorna nedan.
+
+### Frågor till Oskar
+
+- **Ska dedup och rate limiting flyttas till delad lagring?** Båda ligger i minnet per
+  serverless-instans idag, vilket ger ett hyggligt men inte vattentätt skydd. Upstash
+  Redis är gratis upp till en bra bit över nuvarande trafik och är en halvdagsinsats.
+  Jag gör det inte utan besked eftersom det kräver ett nytt konto och nya env-variabler.
+- **Vill du kunna se bortfiltrerad bot-trafik?** Just nu kastas den helt. Att i stället
+  spara den med en flagga kräver en databasmigrering — och migreringar körs inte
+  automatiskt vid deploy idag, så det behöver göras manuellt av dig.
+- Frågorna från session 1–3 står kvar obesvarade: `NEXT_PUBLIC_IOS_NATIVE_PAYMENTS` i
+  produktion, vilka ramar som ska vara premium, vad "engångsköps-mallar" konkret betyder,
+  död kod (`/api/upload/profile-image`, `ProfileSettingsForm`), samt om kort ska sättas
+  tillbaka till `UNCLAIMED` vid kontoradering.
+
+---
+
 ## 2026-08-11 — Session 3 (autonom)
 
 ### Gjort
