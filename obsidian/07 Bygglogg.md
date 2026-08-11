@@ -9,6 +9,48 @@ Logg över autonoma byggsessioner. Nyast överst.
 
 ---
 
+## 2026-08-11 — Session 8b (Resend på avyracards.se — klar)
+
+Uppföljning samma kväll. Systemmailen gick tidigare ut från en overifierad
+avsändardomän; nu är `avyracards.se` **verified** i Resend (eu-west-1).
+
+**DNS i Strato (alla verifierade):**
+
+| Typ | Namn | Värde |
+| --- | --- | --- |
+| TXT | `resend._domainkey` | DKIM-nyckeln från Resend |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` |
+| MX | `send` | `10 feedback-smtp.eu-west-1.amazonses.com` |
+
+**Fallgropen med Strato:** deras MX-editor sätter bara *domänens primära
+e-postserver* — det går inte att lägga en MX på en subdomän därifrån. `send`
+måste först skapas som subdomän under Webbserver → Skapa subdomän, och får då
+en egen DNS-vy där MX:en kan sättas. Så är även jjbyggboden.se löst. Missar man
+det pekar man i stället om hela domänens mail och slår sönder Strato-mailen.
+
+**Kontrollerat efteråt:**
+
+- Apex-MX är orörd (`5 smtp.rzone.de`) — vanliga mailen på avyracards.se
+  påverkas inte.
+- DMARC ligger på `p=reject` (Stratos standardregel). Det är okej: Resend
+  DKIM-signerar med `d=avyracards.se`, så DKIM aligns och DMARC passerar.
+  Samma uppsättning som jjbyggboden.se, som redan fungerar.
+- Skarpt testutskick från `no-reply@avyracards.se` → status **delivered**
+  (Resend-id `d9940235`).
+
+Orderbekräftelser och premiumkvittenser går alltså ut på riktigt nu.
+
+**Fortfarande kvar (oförändrat sedan session 8):**
+
+1. `STRIPE_SECRET_KEY` är testnyckel i produktion — riktiga betalningar
+   registreras inte.
+2. `NEXT_PUBLIC_IOS_DEBUG` är på i produktion; bör av före App Review.
+3. `MAIL_REPLY_TO` inte satt — svar på systemmail går till no-reply och
+   försvinner. Nu när domänen är verifierad är det en enkel vinst.
+4. Deploy-kommandot i `MIGRATION_README.md` behöver `DIRECT_URL`.
+
+---
+
 ## 2026-08-11 — Session 8 (autonom körning: db-migrering + verifiering)
 
 Kördes från Cowork med mountad repo-mapp, Chrome-tillgång och Vercel-MCP.
