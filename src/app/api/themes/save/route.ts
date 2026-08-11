@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/auth"; 
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { ThemeMode, CustomThemeSettings } from "@/types/theme"; 
+import { ThemeMode, CustomThemeSettings } from "@/types/theme";
+import { sanitizeThemeSettings } from "@/lib/feature-access";
 
 export async function POST(req: Request) {
   try {
@@ -12,64 +13,48 @@ export async function POST(req: Request) {
     }
 
     const { settings, mode } = await req.json();
-    const targetMode: ThemeMode = mode || "SOCIAL";
-    const userSettings: Partial<CustomThemeSettings> = settings;
+    const targetMode: ThemeMode = mode === "BUSINESS" ? "BUSINESS" : "SOCIAL";
+    const incoming: Partial<CustomThemeSettings> = settings ?? {};
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { isPremium: true }
+      select: { isPremium: true, role: true },
     });
 
-    let wasSanitized = false;
+    // All premium-logik bor i src/lib/feature-access.ts — både UI och API
+    // frågar samma config, så ett UI-lås som glöms bort inte blir en datalucka.
+    const { settings: safeSettings, sanitized, removed } = sanitizeThemeSettings(
+      incoming,
+      targetMode,
+      { isPremium: user?.isPremium, isAdmin: user?.role === "ADMIN" },
+    );
 
-    // --- SANERA INSTÄLLNINGAR FÖR GRATISANVÄNDARE ---
-    if (!user?.isPremium) {
-        
-        // 1. Sanera bakgrundsbild (fallback till färg)
-        if (userSettings.backgroundType === "image") {
-             userSettings.backgroundType = "solid";
-             userSettings.backgroundImage = undefined;
-             userSettings.backgroundColor = userSettings.backgroundColor || "#0f172a";
-             wasSanitized = true;
-        }
-
-        // 2. Tvinga branding att visas
-        if (userSettings.hideBranding) {
-            userSettings.hideBranding = false;
-            wasSanitized = true;
-        }
-
-        // 3. Sanera premium-knappar (ex. glass)
-        if (userSettings.buttonVariant === "glass") {
-            userSettings.buttonVariant = "solid";
-            wasSanitized = true;
-        }
-    }
-
-    const updateData = targetMode === "BUSINESS" 
-      ? { businessThemeSettings: userSettings }
-      : { themeSettings: userSettings };
+    const updateData =
+      targetMode === "BUSINESS"
+        ? { businessThemeSettings: safeSettings }
+        : { themeSettings: safeSettings };
 
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: updateData,
     });
 
-    const returnedSettings = targetMode === "BUSINESS" 
-      ? updatedUser.businessThemeSettings 
-      : updatedUser.themeSettings;
+    const returnedSettings =
+      targetMode === "BUSINESS"
+        ? updatedUser.businessThemeSettings
+        : updatedUser.themeSettings;
 
-    return NextResponse.json({ 
-        success: true, 
-        data: returnedSettings,
-        sanitized: wasSanitized // <-- Skickar info till frontend om vi ändrade något
+    return NextResponse.json({
+      success: true,
+      data: returnedSettings,
+      sanitized,
+      removed,
     });
-
   } catch (error) {
     console.error("Theme save error:", error);
     return NextResponse.json(
-      { error: "Kunde inte spara temat." }, 
-      { status: 500 }
+      { error: "Kunde inte spara temat." },
+      { status: 500 },
     );
   }
 }

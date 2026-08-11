@@ -28,6 +28,7 @@ import { ProfileTab } from "./tabs/profile-tab";
 interface UserThemeData {
   profileMode?: ThemeMode;
   isPremium?: boolean;
+  isAdmin?: boolean;
   [key: string]: unknown;
 }
 
@@ -50,6 +51,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const isUserPremium = userData.isPremium || false;
+  const isUserAdmin = userData.isAdmin || false;
 
   const currentSettings = mode === "BUSINESS" ? businessSettings : socialSettings;
 
@@ -189,7 +191,9 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             {activeTab === "templates" && (
                 <TemplatesTab 
                     isPremium={isUserPremium} 
+                    isAdmin={isUserAdmin}
                     onApply={(t) => applyTemplate(t.settings)}
+                    onShowUpgrade={() => setShowUpgradeModal(true)}
                     mode={mode}
                 />
             )}
