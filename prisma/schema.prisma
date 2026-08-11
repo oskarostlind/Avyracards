@@ -9,17 +9,17 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
+  id           String  @id @default(cuid())
+  email        String  @unique
   passwordHash String?
 
-  appleId    String? @unique
+  appleId    String?  @unique
   appleEmail String?
-  name         String?
-  username     String    @unique
-  bio          String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt @default(now())
+  name       String?
+  username   String   @unique
+  bio        String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
 
   resetPasswordToken       String?   @unique
   resetPasswordTokenExpiry DateTime?
@@ -47,17 +47,27 @@ model User {
   redirectEnabled Boolean @default(true) // Är funktionen påslagen?
   redirectLinkId  String? // NYTT: ID på länken vi ska skicka vidare till
 
-  links           Link[]
-  cards           Card[]
-  analyticsEvents AnalyticsEvent[]
+  // Soft versioning av profilen (arkitektur-backlogg punkt 3). Räknaren ökas
+  // vid varje sparning som ändrar något profilrelevant; historiken ligger i
+  // ProfileRevision så att en felaktig ändring går att rulla tillbaka.
+  profileVersion Int @default(1)
+
+  // Förberedelse för B2B (arkitektur-backlogg punkt 8). Nullbar: alla konton
+  // är personliga tills en organisation faktiskt införs.
+  organizationId String?
+
+  links            Link[]
+  cards            Card[]
+  analyticsEvents  AnalyticsEvent[]
+  profileRevisions ProfileRevision[]
 
   profileMode ProfileMode @default(SOCIAL)
 
   // Hero / Business
-  jobTitle         String?
-  companyName      String?
-  location         String?
-  businessHeadline String?
+  jobTitle          String?
+  companyName       String?
+  location          String?
+  businessHeadline  String?
   businessAvatarUrl String?
 
   // Kontaktblock
@@ -106,7 +116,7 @@ model User {
   role Role @default(USER)
 
   // RELATIONER
-  orders              Order[]
+  orders               Order[]
   appleIapTransactions AppleIapTransaction[]
 }
 
@@ -157,8 +167,11 @@ model Order {
   stripeSessionId       String? @unique
   stripePaymentIntentId String? @unique
   checkoutSource        String?
-  amountTotal     Int
-  currency        String  @default("sek")
+
+  // Förberedelse för B2B: en order kan senare höra till en organisation.
+  organizationId String?
+  amountTotal    Int
+  currency       String  @default("sek")
 
   status OrderStatus @default(PENDING)
 
@@ -189,16 +202,16 @@ model Order {
 }
 
 model AppleIapTransaction {
-  id            String   @id @default(cuid())
-  transactionId String   @unique
+  id            String    @id @default(cuid())
+  transactionId String    @unique
   productId     String
   userId        String
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   environment   String?
   purchasedAt   DateTime
   expiresAt     DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   @@index([userId])
 }
@@ -220,7 +233,7 @@ model OrderItem {
 model Card {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
 
   cardCode   String @unique
   claimToken String @unique
@@ -343,5 +356,27 @@ model Discount {
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+}
+
+/// Ögonblicksbild av en profil före en ändring (arkitektur-backlogg punkt 3).
+///
+/// Syfte: kunna svara på "jag ändrade fel" och "varför ändrades CTR plötsligt?"
+/// utan att bygga full versionshantering. Ingen UI krävs — bara strukturen.
+/// Raderas med användaren (GDPR + App Store 5.1.1(v)).
+model ProfileRevision {
+  id        String   @id @default(cuid())
+  userId    String
+  /// Versionsnumret som gällde INNAN ändringen, dvs. det snapshot beskriver.
+  version   Int
+  /// Profilfälten som de såg ut före ändringen.
+  snapshot  Json
+  /// Vem som orsakade ändringen: "user", "admin" eller "system".
+  changedBy String?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, version])
+  @@index([userId, createdAt])
 }
