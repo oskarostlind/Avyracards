@@ -4,7 +4,7 @@ import { normalizeWalletBaseUrl } from "@/lib/wallet/pass-content";
  * Mallar för systemkritiska mail (inte marknadsföring).
  *
  * Alla funktioner här är rena: in med data, ut med { subject, html, text }.
- * Det gör dem testbara utan SMTP och gör att avsändandet (notifications/index)
+ * Det gör dem testbara utan att röra Resend, och gör att avsändandet (notifications/index)
  * bara behöver bry sig om vem mailet går till.
  */
 

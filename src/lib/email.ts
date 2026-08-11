@@ -1,15 +1,15 @@
 import { isMailerConfigured, sendMail } from "@/lib/mailer";
 
 /**
- * Auth-relaterade mail. SMTP-konfigurationen ligger i `@/lib/mailer` så att
+ * Auth-relaterade mail. Transporten (Resend) ligger i `@/lib/mailer` så att
  * systemnotifikationer (se `@/lib/notifications`) och de här delar samma
- * transport och samma env-variabler.
+ * avsändare och samma konfiguration.
  */
 
 // --- FUNKTION 1: VERIFIERINGSMAIL ---
 export async function sendVerificationEmail(to: string, token: string) {
   if (!isMailerConfigured()) {
-    throw new Error("SMTP-konfigurationen är inte komplett.");
+    throw new Error("RESEND_API_KEY saknas — verifieringsmail kan inte skickas.");
   }
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
@@ -45,8 +45,8 @@ export async function sendVerificationEmail(to: string, token: string) {
 // --- FUNKTION 2: LÖSENORDSÅTERSTÄLLNING ---
 export async function sendPasswordResetEmail(email: string, resetLink: string) {
   if (!isMailerConfigured()) {
-    console.error("SMTP config missing for reset email");
-    return { success: false, error: "SMTP config missing" };
+    console.error("[email] RESEND_API_KEY saknas — kan inte skicka återställningsmail");
+    return { success: false, error: "Mail är inte konfigurerat" };
   }
 
   try {
@@ -70,7 +70,7 @@ export async function sendPasswordResetEmail(email: string, resetLink: string) {
     });
     return { success: true };
   } catch (error) {
-    console.error("Failed to send reset email via SMTP:", error);
+    console.error("[email] Kunde inte skicka återställningsmail:", error);
     return { success: false, error };
   }
 }

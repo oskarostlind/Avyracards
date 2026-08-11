@@ -1,5 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// Resend-klienten mockas för hela filen — inga riktiga utskick i testerna.
+const resendSend = vi.hoisted(() => vi.fn());
+vi.mock("resend", () => ({
+  Resend: class {
+    emails = { send: resendSend };
+  },
+}));
+
 import {
   formatAmount,
   renderCardOrderConfirmed,
@@ -11,7 +19,12 @@ import {
   renderNotification,
   sendSystemNotification,
 } from "@/lib/notifications";
-import { getMailerConfig, isMailerConfigured } from "@/lib/mailer";
+import {
+  DEFAULT_MAIL_FROM,
+  getMailerConfig,
+  isMailerConfigured,
+  sendMail,
+} from "@/lib/mailer";
 
 const ORIGINAL_ENV = { ...process.env };
 
@@ -21,45 +34,52 @@ beforeEach(() => {
 
 afterEach(() => {
   process.env = { ...ORIGINAL_ENV };
+  resendSend.mockReset();
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
 });
 
-describe("mailer-konfiguration", () => {
-  it("räknas som okonfigurerad när SMTP-variabler saknas", () => {
-    delete process.env.SMTP_HOST;
-    delete process.env.SMTP_USER;
-    delete process.env.SMTP_PASS;
-    delete process.env.STRATO_SMTP_USER;
-    delete process.env.STRATO_SMTP_PASS;
+describe("mailer-konfiguration (Resend)", () => {
+  it("räknas som okonfigurerad utan RESEND_API_KEY", () => {
+    delete process.env.RESEND_API_KEY;
 
     expect(isMailerConfigured()).toBe(false);
     expect(getMailerConfig()).toBeNull();
   });
 
-  it("faller tillbaka på STRATO-variablerna och bygger en from-adress", () => {
-    delete process.env.SMTP_USER;
-    delete process.env.SMTP_PASS;
+  it("använder standardavsändaren på den verifierade domänen", () => {
+    process.env.RESEND_API_KEY = "re_test";
+    delete process.env.MAIL_FROM;
     delete process.env.SMTP_FROM;
-    process.env.SMTP_HOST = "smtp.strato.de";
-    process.env.STRATO_SMTP_USER = "no-reply@avyracards.se";
-    process.env.STRATO_SMTP_PASS = "hemligt";
 
     const config = getMailerConfig();
-    expect(config).not.toBeNull();
-    expect(config?.from).toBe("AvyraCards <no-reply@avyracards.se>");
-    expect(config?.port).toBe(587);
-    expect(config?.secure).toBe(false);
+    expect(config?.from).toBe(DEFAULT_MAIL_FROM);
+    expect(config?.from).toContain("@avyracards.se");
   });
 
-  it("kräver alla tre delarna — bara host räcker inte", () => {
-    delete process.env.SMTP_USER;
-    delete process.env.SMTP_PASS;
-    delete process.env.STRATO_SMTP_USER;
-    delete process.env.STRATO_SMTP_PASS;
-    process.env.SMTP_HOST = "smtp.strato.de";
+  it("låter MAIL_FROM gå före den gamla SMTP_FROM-variabeln", () => {
+    process.env.RESEND_API_KEY = "re_test";
+    process.env.SMTP_FROM = "gammal@avyracards.se";
+    process.env.MAIL_FROM = "AvyraCards <hej@avyracards.se>";
 
-    expect(isMailerConfigured()).toBe(false);
+    expect(getMailerConfig()?.from).toBe("AvyraCards <hej@avyracards.se>");
+  });
+
+  it("faller tillbaka på SMTP_FROM så att en omigrerad miljö inte tystnar", () => {
+    process.env.RESEND_API_KEY = "re_test";
+    delete process.env.MAIL_FROM;
+    process.env.SMTP_FROM = "AvyraCards <gammal@avyracards.se>";
+
+    expect(getMailerConfig()?.from).toBe("AvyraCards <gammal@avyracards.se>");
+  });
+
+  it("sätter replyTo bara när MAIL_REPLY_TO har ett värde", () => {
+    process.env.RESEND_API_KEY = "re_test";
+    process.env.MAIL_REPLY_TO = "";
+    expect(getMailerConfig()?.replyTo).toBeUndefined();
+
+    process.env.MAIL_REPLY_TO = "support@avyracards.se";
+    expect(getMailerConfig()?.replyTo).toBe("support@avyracards.se");
   });
 });
 
@@ -188,12 +208,8 @@ describe("sendSystemNotification", () => {
     expect(result.reason).toBe("no_recipient");
   });
 
-  it("kastar aldrig när SMTP saknas — returnerar not_configured", async () => {
-    delete process.env.SMTP_HOST;
-    delete process.env.SMTP_USER;
-    delete process.env.SMTP_PASS;
-    delete process.env.STRATO_SMTP_USER;
-    delete process.env.STRATO_SMTP_PASS;
+  it("kastar aldrig när Resend saknas — returnerar not_configured", async () => {
+    delete process.env.RESEND_API_KEY;
 
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 
@@ -226,5 +242,108 @@ describe("sendSystemNotification", () => {
     expect(premium?.subject).not.toBe(shipped?.subject);
     expect(premium?.html).toContain("<!DOCTYPE html>");
     expect(shipped?.html).toContain("<!DOCTYPE html>");
+  });
+});
+
+describe("utskick via Resend", () => {
+  beforeEach(() => {
+    process.env.RESEND_API_KEY = "re_test";
+    delete process.env.MAIL_FROM;
+    delete process.env.SMTP_FROM;
+    delete process.env.MAIL_REPLY_TO;
+  });
+
+  it("skickar med avsändare, ämne och båda kroppsdelarna", async () => {
+    resendSend.mockResolvedValue({ data: { id: "email-1" }, error: null });
+
+    const result = await sendSystemNotification({
+      type: "premium_activated",
+      to: "  kund@example.com  ",
+      name: "Oskar",
+      source: "stripe",
+    });
+
+    expect(result).toEqual({ sent: true });
+    expect(resendSend).toHaveBeenCalledTimes(1);
+
+    const payload = resendSend.mock.calls[0][0];
+    expect(payload.from).toBe(DEFAULT_MAIL_FROM);
+    expect(payload.to).toBe("kund@example.com");
+    expect(payload.subject).toContain("Premium");
+    expect(payload.html).toContain("<!DOCTYPE html>");
+    expect(payload.text).toContain("Hej Oskar!");
+    expect(payload.replyTo).toBeUndefined();
+  });
+
+  it("skickar med replyTo när MAIL_REPLY_TO är satt", async () => {
+    process.env.MAIL_REPLY_TO = "support@avyracards.se";
+    resendSend.mockResolvedValue({ data: { id: "email-2" }, error: null });
+
+    await sendSystemNotification({
+      type: "card_order_shipped",
+      to: "kund@example.com",
+      orderId: "cmxyz1234abcdefgh",
+      quantity: 1,
+    });
+
+    expect(resendSend.mock.calls[0][0].replyTo).toBe("support@avyracards.se");
+  });
+
+  it("behandlar Resends error-fält som ett fel — inte som lyckat utskick", async () => {
+    // Resend kastar inte på API-fel. Utan den här kontrollen skulle ett avvisat
+    // mail (t.ex. overifierad avsändardomän) se ut som ett lyckat utskick.
+    resendSend.mockResolvedValue({
+      data: null,
+      error: { name: "validation_error", message: "Domain is not verified" },
+    });
+
+    await expect(
+      sendMail({ to: "kund@example.com", subject: "Test", html: "<p>x</p>", text: "x" })
+    ).rejects.toThrow(/Domain is not verified/);
+  });
+
+  it("returnerar send_failed i stället för att kasta när Resend avvisar", async () => {
+    resendSend.mockResolvedValue({
+      data: null,
+      error: { name: "validation_error", message: "Domain is not verified" },
+    });
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await sendSystemNotification({
+      type: "card_order_confirmed",
+      to: "kund@example.com",
+      orderId: "cmxyz1234abcdefgh",
+      quantity: 1,
+      amountTotal: 24900,
+      currency: "sek",
+    });
+
+    expect(result).toEqual({ sent: false, reason: "send_failed" });
+    expect(error).toHaveBeenCalled();
+  });
+
+  it("returnerar send_failed när nätverksanropet kastar", async () => {
+    resendSend.mockRejectedValue(new Error("ECONNRESET"));
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await sendSystemNotification({
+      type: "premium_activated",
+      to: "kund@example.com",
+      source: "gift",
+    });
+
+    expect(result).toEqual({ sent: false, reason: "send_failed" });
+  });
+
+  it("skickar inget alls när mottagaren är ogiltig", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await sendSystemNotification({
+      type: "premium_activated",
+      to: "trasig-adress",
+      source: "stripe",
+    });
+
+    expect(resendSend).not.toHaveBeenCalled();
   });
 });
