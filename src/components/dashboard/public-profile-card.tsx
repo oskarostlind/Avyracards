@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"; // La till useEffect
 import { Check, Copy, ExternalLink, Wallet } from "lucide-react";
+import { walletKindsForUserAgent, type WalletKind } from "@/lib/wallet/platform";
 
 type PublicProfileCardProps = {
   username: string;
@@ -13,11 +14,15 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
   const [walletLoading, setWalletLoading] = useState<"apple" | "google" | null>(null);
   // Vi sätter ett startvärde som är säkert för servern (undviker hydration error)
   const [origin, setOrigin] = useState("https://avyracards.se");
+  // Serverrenderas som "båda" och smalnas av på klienten när user agent är känd,
+  // så att markup:en matchar vid hydrering.
+  const [walletKinds, setWalletKinds] = useState<WalletKind[]>(["apple", "google"]);
 
   // Uppdatera till den faktiska adressen när komponenten laddats på klienten
   useEffect(() => {
     if (typeof window !== "undefined") {
       setOrigin(window.location.origin);
+      setWalletKinds(walletKindsForUserAgent(window.navigator.userAgent));
     }
   }, []);
 
@@ -87,8 +92,9 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
         </div>
 
         {/* Rad 2: Plånböcker */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className={`grid gap-2 ${walletKinds.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
            {/* Apple Wallet */}
+           {walletKinds.includes("apple") && (
            <button
              type="button"
              onClick={() => void openWallet("apple")}
@@ -98,8 +104,10 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
              <Wallet size={16} className="text-nordic-secondary" />
              <span>Apple Wallet</span>
            </button>
+           )}
 
            {/* Google Wallet */}
+           {walletKinds.includes("google") && (
            <button
              type="button"
              onClick={() => void openWallet("google")}
@@ -115,6 +123,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
              </svg>
              <span>Google Wallet</span>
            </button>
+           )}
         </div>
       </div>
     </div>

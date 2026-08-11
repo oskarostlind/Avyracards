@@ -24,7 +24,15 @@ const nextConfig = {
   experimental: {
     // Löser problem med Wallet-generatorn och Prisma (Från din originalkod)
     serverComponentsExternalPackages: ['passkit-generator', '@prisma/client', 'bcryptjs'],
-    
+
+    // Apple Wallet-routen läser ikon och logotyp från public/wallet vid körning
+    // (fs.readFile med process.cwd()). Next kan inte spåra den sortens dynamiska
+    // sökväg automatiskt, så filerna måste pekas ut explicit — annars riskerar
+    // funktionen att sakna dem i produktionsbundlen och passet faller på ENOENT.
+    outputFileTracingIncludes: {
+      '/api/wallet/apple': ['./public/wallet/**'],
+    },
+
     serverActions: {
       allowedOrigins: ["localhost:3000", "avyracards.se"]
     }

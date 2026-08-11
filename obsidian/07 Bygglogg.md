@@ -9,6 +9,65 @@ Logg över autonoma byggsessioner. Nyast överst.
 
 ---
 
+## 2026-08-11 — Session 7b (uppföljning på fråga från Oskar)
+
+Oskar frågade: fungerar wallet för Apple och Google, i appen och på webben?
+Genomgång av hela kedjan (`/api/wallet/apple`, `/api/wallet/google`,
+`/api/wallet/token`, `pass-content.ts`, `public-profile-card.tsx`). Läget i
+koden, och tre fixar.
+
+**Fungerar i koden:**
+
+- **Google Wallet** — save-URL:en är kort sedan session 2 (objektet skapas
+  server-side, JWT:n innehåller bara id + classId), klassen skapas med giltig
+  payload, och passet uppdateras vid varje tryck. Fel visas som en läsbar sida
+  i stället för rå JSON.
+- **Apple Wallet** — passet signeras med certifikat från env och serveras som
+  `application/vnd.apple.pkpass`.
+- **Sessionsproblemet i appen är löst** — passen öppnas via `window.open` i
+  systemwebbläsaren, som inte delar Capacitor-WebViewens cookie. Därför hämtas
+  först en femminuterstoken från `/api/wallet/token` och skickas med i länken.
+
+**Tre brister, alla åtgärdade i den här sessionen:**
+
+1. **Ingen plattformskontroll i UI:t.** Båda knapparna visades på alla enheter.
+   En Android-användare som tryckte "Apple Wallet" fick en `.pkpass` som Android
+   inte kan öppna — filen laddades ner och sedan hände ingenting. Ny modul
+   `src/lib/wallet/platform.ts`: iPhone/iPad → bara Apple, Android → bara
+   Google, dator → båda (macOS har Wallet, Google Wallet sparar till kontot).
+   5 tester.
+2. **Apple-routen saknade Googles kontroll av användarnamn.** Utan användarnamn
+   blev QR-koden `/u/?source=wallet` — en länk som inte leder någonstans. Ett
+   pkpass går inte att rätta i efterhand när det ligger i telefonen. Nu 400 med
+   samma text som Google-routen ger.
+3. **`public/wallet/*.png` lästes vid körning utan att vara spårad.** Routen gör
+   `fs.readFile(process.cwd() + "/public/wallet/icon.png")`, och Next kan inte
+   spåra en dynamiskt byggd sökväg. Filerna riskerade att saknas i
+   produktionsbundlen (ENOENT → 500 på passet). `outputFileTracingIncludes` för
+   `/api/wallet/apple` tillagt i `next.config.mjs`.
+
+Kvalitetsgrindar: lint ✔, tsc ✔, vitest ✔ (135/135), build ✔.
+
+**Kvar på wallet (inte åtgärdat):**
+
+- **Apple-passet uppdateras aldrig efter att det sparats.** Passet saknar
+  `webServiceURL` och `authenticationToken`, så byter användaren namn eller bild
+  ligger det gamla passet kvar. Google-passet uppdateras. Att fixa kräver en
+  egen pass-webbtjänst (register/unregister/get-endpoints + push via APNs med
+  pass-certifikatet) — större arbete, se session 5.
+- **Bildstorlekar.** `public/wallet/logo.png` är 1536×1024 px och 814 kB.
+  Apples spec för en generic pass-logotyp är max 160×50 pt (480×150 px @3x).
+  Passet blir onödigt tungt och logotypen kan renderas oskarpt. Bör beskäras.
+- **Inget av detta är verifierat på riktig enhet** — allt ovan är läst i koden.
+  Se avsnitt I i [[08 Testchecklista]].
+
+**Om migreringen:** Oskar svarade att jag har åtkomst till Neon-databasen, men
+den här sessionen har ingen anslutningssträng — ingen `.env` i repot (rätt),
+ingen `DATABASE_URL` i miljön och ingen Neon-integration bland verktygen. Ingen
+migrering kördes. Se sammanfattningen i svaret för vad som behövs.
+
+---
+
 ## 2026-08-11 — Session 7 (autonom)
 
 ### Gjort

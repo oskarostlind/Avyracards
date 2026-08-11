@@ -61,6 +61,17 @@ export async function GET(req: Request) {
       return new NextResponse("User not found", { status: 404 });
     }
 
+    // Utan användarnamn blir QR-koden `/u/?source=wallet`, alltså en länk som
+    // inte leder till någon profil. Google-routen stoppade redan detta; Apple
+    // gjorde det inte, och ett pkpass går inte att rätta i efterhand när det
+    // väl ligger i telefonen.
+    if (!user.username) {
+      return new NextResponse(
+        "Du måste välja ett användarnamn innan du kan spara kortet i Wallet.",
+        { status: 400 },
+      );
+    }
+
     // 1. Läs in certifikat från MILJÖVARIABLER (Base64)
     const signerPem = Buffer.from(process.env.WALLET_SIGNER_PEM || '', 'base64');
     const privateKey = Buffer.from(process.env.WALLET_PRIVATE_KEY || '', 'base64');
