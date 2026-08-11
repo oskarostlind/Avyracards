@@ -162,6 +162,84 @@ Manuell testchecklista utökad med avsnitt P i [[08 Testchecklista]].
 
 ---
 
+## 2026-08-11 — Session 6b (autonom, uppföljning)
+
+### Gjort
+
+**All e-post går nu via Resend — och avyracards.se är tillagd där**
+
+Oskars besked efter session 6: allt ska via Resend, inte SMTP. Genomfört i hela
+kedjan, inte bara för de nya systemmailen.
+
+**1. Domänen tillagd i Resend**
+
+`avyracards.se` är skapad i Resend-kontot, region `eu-west-1` (samma som de andra
+domänerna i kontot). Status: `not_started` — den blir verifierad först när DNS-posterna
+nedan ligger på plats. **Det här är enda återstående steget innan mail kan gå ut.**
+
+DNS-poster att lägga in hos domänleverantören:
+
+| Typ | Namn | Värde | Prio |
+|-----|------|-------|------|
+| TXT | `resend._domainkey` | `p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDY0ufoX+DkSwkCYhmzGMKYcs0qZlhDm0EKEba+DVRcOKHIZL4I+MPO2dMpmTaqRZ5lWW9xXtKoTQYeBnBGo9F68ZgIvTqZXP6hlljk3inHrsvUBxO0e9GcrqJM8arNnDlKH8jbsI3Z61G+gIV/tMDfENlGZUulrhOm5kycGaqC2wIDAQAB` | — |
+| MX | `send` | `feedback-smtp.eu-west-1.amazonses.com` | 10 |
+| TXT | `send` | `v=spf1 include:amazonses.com ~all` | — |
+
+TTL: auto. När de ligger inne: kör verifieringen i Resend (går att göra härifrån
+nästa session, eller i Resends webbgränssnitt).
+
+**2. Koden bytt från nodemailer till Resend**
+
+`src/lib/mailer.ts` är omskriven mot Resend-SDK:n (paketet fanns redan som beroende
+men användes inte). Gäller *all* utgående post — verifieringsmail, lösenordsåterställning
+och de tre systemmailen från session 6. Publika API:t (`sendMail` / `sendMailSafe` /
+`isMailerConfigured`) är oförändrat, så inga anropsställen behövde röras.
+
+**En fälla värd att notera:** Resend-SDK:n kastar inte vid API-fel — den returnerar
+`{ data, error }`. Utan en explicit kontroll av `error` hade ett avvisat mail (t.ex.
+just "domänen är inte verifierad") loggats som ett lyckat utskick, och vi hade trott
+att kunderna fick mail när de inte gjorde det. `sendMail` kastar nu på `error`, och
+`sendMailSafe` fångar det till en loggrad.
+
+**3. Nya miljövariabler**
+
+| Variabel | Krävs | Beskrivning |
+|----------|-------|-------------|
+| `RESEND_API_KEY` | Ja | Utan den skickas inga mail alls — bara en varning i loggen. Inget flöde går sönder. |
+| `MAIL_FROM` | Nej | Standard: `AvyraCards <no-reply@avyracards.se>`. Domänen måste vara verifierad i Resend. |
+| `MAIL_REPLY_TO` | Nej | Sätt till t.ex. supportadressen om svar ska gå någonstans. |
+
+`SMTP_FROM` läses fortfarande som fallback för `MAIL_FROM`, så en miljö som inte hunnit
+få den nya variabeln tystnar inte. Övriga `SMTP_*`-variabler används inte längre och kan
+tas bort ur Vercel när Resend är verifierat.
+
+**4. nodemailer avinstallerat.** Inga användningar kvar i koden.
+
+**Tester:** 8 nya (totalt 122, alla gröna). Resend-klienten mockas, så testerna
+verifierar avsändare, `replyTo`, att `error`-svaret behandlas som fel, att nätverksfel
+inte kastar vidare, och att inget anrop görs alls vid ogiltig mottagare.
+`npm run lint` OK, `npx tsc --noEmit` OK, `npm run build` OK.
+
+### Återstår / nästa session
+
+1. **Lägg in DNS-posterna ovan och verifiera domänen i Resend.** Tills det är gjort
+   går inga mail ut — varken de nya systemmailen eller verifieringsmailet vid
+   registrering. Det senare är värt att notera: registreringsflödet blir beroende av
+   att det här är klart.
+2. **Sätt `RESEND_API_KEY` i Vercel (Production).** Jag rör inte env-variabler.
+3. Punkterna från session 6 står kvar: [[08 Testchecklista]] är fortfarande inte körd
+   (15 avsnitt, A–O).
+
+### Frågor till Oskar
+
+- **Vilken avsändaradress vill du ha?** Jag satte `no-reply@avyracards.se` som standard.
+  Vill du hellre ha `hej@` eller `support@` är det en env-variabel (`MAIL_FROM`), ingen
+  kodändring.
+- **Ska svar på systemmail gå någonstans?** `MAIL_REPLY_TO` är osatt, så svar går till
+  no-reply. En supportadress där är förmodligen bättre inför lansering.
+
+---
+
 ## 2026-08-11 — Session 6 (autonom)
 
 ### Gjort

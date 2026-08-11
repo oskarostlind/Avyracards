@@ -154,9 +154,17 @@ automatiskt ännu (se [[07 Bygglogg]]) — där testas bara innehållet.
 
 ## O. Systemmail (nytt 2026-08-11)
 
-Kräver att SMTP-variablerna (`SMTP_HOST`, `SMTP_USER`/`STRATO_SMTP_USER`,
-`SMTP_PASS`/`STRATO_SMTP_PASS`) är satta i den miljö som testas. Saknas de
-loggas bara en varning — inget mail går ut och inget flöde ska fallera.
+All e-post går via **Resend**. Kräver att `RESEND_API_KEY` är satt i den miljö
+som testas OCH att `avyracards.se` är verifierad i Resend (DNS-poster, se
+[[07 Bygglogg]] session 6b). Saknas nyckeln loggas bara en varning — inget mail
+går ut och inget flöde ska fallera. Är domänen overifierad avvisar Resend
+utskicket, vilket också bara ska bli en loggrad.
+
+- [ ] Domänen `avyracards.se` visar status **verified** i Resend
+- [ ] Testmail syns i Resends logg (Emails-vyn) med status delivered
+- [ ] Mailet hamnar i inkorgen, inte i skräpposten (testa Gmail + Outlook)
+- [ ] Registrera nytt konto → verifieringsmailet kommer fram (går nu också via Resend)
+- [ ] Glömt lösenord → återställningsmailet kommer fram
 
 **Premium aktiverat:**
 
