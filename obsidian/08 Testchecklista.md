@@ -183,3 +183,22 @@ loggas bara en varning — inget mail går ut och inget flöde ska fallera.
 
 - [ ] Med felaktiga SMTP-uppgifter: genomför ett köp → betalningen ska gå igenom
       och ordern skapas; bara ett fel i loggen om mailet
+
+---
+
+## P. Systemstatus i admin (konfigurationskontroll)
+
+Ny sida: **Admin → Systemstatus** (`/admin/system`). Läser miljövariabler och
+visar om de är satta och rimliga för miljön. Visar aldrig själva värdena.
+
+- [ ] Logga in som ADMIN → knappen "Systemstatus" syns på adminsidan
+- [ ] Logga in som vanlig användare och gå till `/admin/system` direkt →
+      omdirigeras till `/dashboard`
+- [ ] I produktion: läs av "Miljö" — ska stå `production`
+- [ ] **Svara på den återkommande frågan:** raden
+      `NEXT_PUBLIC_IOS_NATIVE_PAYMENTS` — står den grön (OK) är App
+      Store-kravet 3.1.1 uppfyllt i produktionsbygget. Är den röd måste
+      variabeln sättas till exakt `true` i Vercel innan iOS-inlämning.
+- [ ] Raden "SMTP" — grön betyder att systemmailen (avsnitt O) faktiskt går ut
+- [ ] Raden "STRIPE_SECRET_KEY" — ska visa läge `live` i produktion
+- [ ] Ingen rad får innehålla ett faktiskt nyckelvärde eller lösenord

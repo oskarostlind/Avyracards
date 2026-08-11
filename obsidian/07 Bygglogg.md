@@ -9,6 +9,100 @@ Logg över autonoma byggsessioner. Nyast överst.
 
 ---
 
+## 2026-08-11 — Session 7 (autonom)
+
+### Gjort
+
+**Miljöseparation & config-hygien (ClickUp 86c777p5w, punkt 7)**
+
+Alla tekniska buggar i prioritetslistan är avklarade i kod sedan tidigare
+sessioner, så sessionen tog nästa punkt i arkitektur-backloggen.
+
+Punkten är till stor del en Vercel-uppgift (vilka variabler som är satta var),
+och det är inget en autonom session kan eller ska röra. Däremot går det att
+bygga *kontrollen* — och den saknades helt. Läget innan: systemet läser drygt
+40 miljövariabler, och i stort sett varje beroende faller tillbaka tyst när en
+variabel saknas. Tyst fallback är rätt i drift, men det innebär också att en
+saknad variabel upptäcks först när en kund hör av sig. Dessutom fanns ingen
+kod som skiljer en **preview-deploy** från **produktion** — `NODE_ENV` är
+"production" i båda.
+
+**Tre delar:**
+
+- **`src/lib/config/environment.ts`** — `getAppEnvironment()` läser `VERCEL_ENV`
+  först (production / preview / development) och faller tillbaka på `NODE_ENV`.
+  Dessutom `getStripeKeyMode()` som avgör om en nyckel är live eller test utifrån
+  prefixet, utan att returnera värdet, och `getStripeModeReport()` som svarar på
+  två frågor: hör hemlig och publik nyckel till samma läge, och matchar läget
+  miljön (live i produktion, test i preview/lokalt)? Stripes platshållare i
+  `stripe.ts` (`sk_test_missing_key_placeholder`) räknas som "saknad", inte som
+  en testnyckel — annars hade en helt okonfigurerad miljö sett frisk ut.
+- **`src/lib/config/health.ts`** — `buildConfigReport()` bygger en rapport i sex
+  grupper: plattform, betalningar, Apple IAP, systemmail, wallet och push. Varje
+  kontroll får status `ok` / `warn` / `error` / `off` plus en förklaring på
+  svenska. Skillnaden mellan `off` och `error` är miljöberoende: saknad SMTP
+  lokalt är "av", saknad SMTP i produktion är ett fel.
+- **`/admin/system`** — adminskyddad sida (samma `role !== "ADMIN"` → redirect
+  som resten av admin) som renderar rapporten. Länkad från adminsidans knappsrad.
+  `force-dynamic`, eftersom en cachad konfigurationsrapport vore värdelös.
+
+**Rapporten innehåller aldrig ett hemligt värde.** Bara "satt/inte satt", läge
+(live/test) och en förklarande text. Ett test låser fast det: en miljö där
+nycklar och lösenord innehåller strängen `SUPERHEMLIGT` serialiseras och testet
+kräver att strängen inte finns någonstans i rapporten.
+
+**Sidan besvarar tre av de frågor som stått obesvarade sedan session 1.** I
+stället för att fråga om `NEXT_PUBLIC_IOS_NATIVE_PAYMENTS` är satt i produktion,
+om SMTP är konfigurerat och om Stripe kör live-nycklar, kan Oskar öppna
+`avyracards.se/admin/system` och läsa av det. Särskilt viktig är
+`NEXT_PUBLIC_IOS_NATIVE_PAYMENTS`: kontrollen larmar även när variabeln är satt
+till något annat än exakt `"true"` (t.ex. `1` eller `True`), eftersom koden bara
+accepterar exakt den strängen — ett stavfel där hade tyst öppnat Stripe-checkout
+i iOS-appen och nästan säkert gett avslag på App Store-riktlinje 3.1.1.
+
+**Tester:** 16 nya Vitest-tester i `src/lib/__tests__/config.test.ts`
+(miljödetektering, nyckellägen, miljöberoende allvarlighetsgrad, SMTP-fallback
+till `STRATO_*`, hemlighetsläckage). Totalt 130, alla gröna.
+
+Kvalitetsgrindar: `npm run lint` ✔, `npx tsc --noEmit` ✔ (noll fel),
+`npx vitest run` ✔ (130/130), `npm run build` ✔.
+
+Manuell testchecklista utökad med avsnitt P i [[08 Testchecklista]].
+
+### Återstår / nästa session
+
+1. **[[08 Testchecklista]] är fortfarande inte körd** — nu 16 avsnitt (A–P).
+   Inget av kodfixarna från session 1–7 är verifierat live. Det är fortfarande
+   den enskilt största återstående risken inför lansering. Den nya sidan
+   `/admin/system` är det snabbaste stället att börja: den tar 30 sekunder och
+   avslöjar direkt om produktionsmiljön saknar något.
+2. **Arkitektur-backloggen (86c777p5w):** punkt 1, 2, 4, 5, 6 och 7 är gjorda.
+   Kvar: punkt 3 (profilversionering) och punkt 8 (B2B-datamodell). Båda kräver
+   nya databasfält, och där ligger ett hinder — se frågan nedan.
+3. **Ramar och engångsköps-mallar** (86c74tjrn) — blockerat på obesvarade frågor.
+4. **Apple Wallet-uppdatering** — blockerat, se session 5.
+
+### Frågor till Oskar
+
+- **Hur ska databasmigreringar köras i produktion?** `npm run build` kör bara
+  `next build` — ingen `prisma migrate deploy`. De två sista punkterna i
+  arkitektur-backloggen (profilversionering, organization_id) kräver båda nya
+  kolumner, och att pusha en schemaändring till main utan att migreringen körts
+  i produktionsdatabasen skulle ge körfel i drift. Jag rör inte
+  produktionsmigreringar enligt instruktionen, så jag behöver antingen (a) att
+  du kör migreringen manuellt när jag lagt migrationsfilen, eller (b) besked om
+  att `prisma migrate deploy` får läggas in i byggsteget. Utan svar är de två
+  återstående backloggpunkterna blockerade.
+- Obesvarade frågor från session 1–6 står kvar: vilka ramar som ska vara
+  premium, vad "engångsköps-mallar" betyder, Apple Wallet-uppdatering, kvitto i
+  orderbekräftelsen, intern kopia på nya ordrar, död kod
+  (`/api/upload/profile-image`, `ProfileSettingsForm`), samt om kort ska sättas
+  tillbaka till `UNCLAIMED` vid kontoradering.
+  *(Frågorna om `NEXT_PUBLIC_IOS_NATIVE_PAYMENTS` och SMTP i produktion utgår —
+  de går nu att svara på själv via `/admin/system`.)*
+
+---
+
 ## 2026-08-11 — Session 6 (autonom)
 
 ### Gjort
