@@ -126,3 +126,28 @@ Med **adminkonto utan premium**:
 - [ ] Klicka en länk och spara kontakt → "Länkklick" resp. "Spara Kontakt-knappen" som tidigare
 - [ ] Historiska events (före 2026-08-11) visas fortfarande korrekt i listan
 - [ ] Push-notiser för visning/klick/kontakt fungerar som förut
+
+## N. Wallet-pass lifecycle (nytt 2026-08-11)
+
+Kräver en Android-telefon med Google Wallet. Apple-passet uppdateras inte
+automatiskt ännu (se [[07 Bygglogg]]) — där testas bara innehållet.
+
+**Google Wallet (Android):**
+
+- [ ] Spara kortet i Google Wallet från appen/webben → passet ska dyka upp
+- [ ] Byt namn i profilen och spara → passet i Wallet ska visa det nya namnet
+      (kan ta upp till någon minut; öppna Wallet igen)
+- [ ] Byt profilbild → passets bild uppdateras
+- [ ] Byt användarnamn → skanna passets QR-kod → ska leda till den NYA profilen
+- [ ] Byt tema/länkar (inget passfält) → inget onödigt anrop; passet oförändrat
+- [ ] Radera kontot → passet i Wallet ska markeras som utgånget/inaktivt
+- [ ] Spara profilen medan Google Wallet är onåbart (t.ex. fel nyckel i dev)
+      → profilen ska sparas som vanligt, bara en loggrad om misslyckad synk
+
+**Innehåll, båda plattformarna:**
+
+- [ ] Konto i BUSINESS-läge: passet visar business-bilden och business-rubriken
+      (samma som publika profilen), inte social-varianten
+- [ ] Passets synliga länk står som `avyracards.se/u/...` — aldrig `.com`
+- [ ] QR-koden innehåller `?source=wallet` och visningen dyker upp som
+      "Wallet" i statistiken

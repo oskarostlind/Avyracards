@@ -9,6 +9,108 @@ Logg över autonoma byggsessioner. Nyast överst.
 
 ---
 
+## 2026-08-11 — Session 5 (autonom)
+
+### Gjort
+
+**Wallet-pass lifecycle (ClickUp 86c777p5w, punkt 5)**
+
+Alla tekniska lanseringsbuggar i prioritetslistan är avklarade i kod, så sessionen tog
+nästa punkt i arkitektur-backloggen.
+
+Rotproblemet: ett wallet-pass byggdes **bara i det ögonblick användaren tryckte "Lägg
+till i Wallet"** och rördes sedan aldrig igen. Ändrade användaren namn, titel, bild
+eller användarnamn låg det gamla passet kvar oförändrat i telefonen. Värst i fallet
+användarnamn — då pekade QR-koden på `/u/<gammalt-namn>`, alltså en profil som inte
+längre finns. Ett tryckt visitkort som slutar fungera efter en profiländring är precis
+den sortens "Wallet visar fel"-bugg som backloggen varnar för.
+
+Google Wallet-objekt är serverägda: en PATCH mot objektet propagerar till alla enheter
+som har passet sparat. Det är den mekaniken som nu används.
+
+Två nya moduler:
+
+- **`src/lib/wallet/pass-content.ts`** — en källa till sanning för *vad* ett pass visar
+  (namn, rubrik, QR-länk, visad länk, bild). Reglerna speglar `getProfileData()` i
+  profile-mapper så att passet och den publika profilen alltid visar samma sak.
+- **`src/lib/wallet/google.ts`** — id-generering, credential-tvätt, objektbyggare och
+  själva lifecycle-funktionerna `syncGoogleWalletPass()` och `expireGoogleWalletPass()`.
+
+Inkopplat på tre ställen:
+
+1. **`PATCH /api/profile`** — synkar passet när ett passrelevant fält ändrats. Sparningar
+   som bara rör tema, länkar eller redirect gör inget API-anrop alls.
+2. **`DELETE /api/account`** — passet markeras `EXPIRED` i stället för att ligga kvar och
+   visa en QR-kod mot en raderad profil. Körs *efter* raderingen och kan inte kasta, så
+   kontoraderingen (Apple 5.1.1(v)) aldrig kan se ut att misslyckas på grund av Google.
+3. **`/api/wallet/google` + `/api/wallet/apple`** — save-flödena bygger nu passet via
+   samma moduler, så ett uppdaterat pass har exakt samma form som ett nyskapat.
+
+**Tre buggar rättade på köpet** (alla följdeffekter av att Apple- och Google-routerna
+hade varsin egen tolkning av användaren):
+
+1. **Fel bild och rubrik för BUSINESS-konton.** Båda passen använde alltid `avatarUrl`
+   och `bio`/`jobTitle`, medan den publika profilen i BUSINESS-läge visar
+   `businessAvatarUrl` och `businessHeadline`. Passet kunde alltså visa en annan person
+   än profilen det leder till.
+2. **Apple-passet skrev hårdkodat `avyracards.com/u/...`** som synlig profil-länk, trots
+   att domänen är `.se`. Google hade en normalisering, Apple inte. Nu normaliseras
+   domänen centralt — för båda.
+3. **Base64-avatarer.** `/api/profile` tillåter data-URI som avatar. Google Wallet hämtar
+   bilden själv från en publik URL och Apple läser den via `fetch` — båda misslyckas tyst
+   på en data-URI. Nu faller passet tillbaka på AvyraCards-logotypen i stället.
+
+**Synken kastar aldrig.** Ett Google-fel loggas och släpps; profilsparningen ska inte
+kunna fallera för att Wallet-API:t har en dålig dag. Existerar inget objekt (404) har
+användaren aldrig sparat passet — då skapas inget nytt, eftersom ett pass ingen bett om
+bara kostar API-anrop.
+
+**Ingen databasmigrering.** Backloggen föreslår att `wallet_pass_id` och `platform`
+lagras. Det behövs inte för Google: objekt-id:t är deterministiskt (`<issuer>.user-<id>`),
+så passet går alltid att hitta utifrån användar-id. Att lägga till en tabell hade krävt
+en migrering — och migreringar körs inte automatiskt vid deploy, så en omigrerad
+schemaändring hade tagit ner sajten.
+
+**Tester:** 21 nya Vitest-tester i `src/lib/__tests__/wallet-pass.test.ts`. Totalt 94,
+alla gröna. `npm run lint` OK, `npx tsc --noEmit` OK (noll fel), `npm run build` OK.
+
+Manuell testchecklista utökad med avsnitt N i [[08 Testchecklista]].
+
+### Återstår / nästa session
+
+1. **[[08 Testchecklista]] är fortfarande inte körd** — nu 14 avsnitt (A–N). Inget av
+   kodfixarna från session 1–5 är verifierat live. Det är fortfarande den enskilt största
+   återstående risken inför lansering.
+2. **Apple-passet kan inte uppdateras alls.** Se frågan nedan — det är ett större jobb
+   och kräver beslut från dig.
+3. **Arkitektur-backloggen (86c777p5w):** punkt 1, 2, 4 och 5 (Google-delen) är gjorda.
+   Kvar: punkt 3 (profilversionering), punkt 6 (systemmail), punkt 7 (miljöseparation),
+   punkt 8 (B2B-datamodell). Nästa i tur enligt beskrivningens ordning: punkt 6, systemmail
+   — Resend finns redan i projektet, så det är den billigaste kvarvarande punkten.
+4. **Ramar och engångsköps-mallar** (86c74tjrn) — blockerat på frågorna nedan.
+
+### Frågor till Oskar
+
+- **Ska Apple Wallet-passet kunna uppdateras?** Google-passet uppdateras nu automatiskt,
+  Apple-passet gör det inte — och kan inte göra det som koden ser ut. Apple kräver att
+  passet innehåller `webServiceURL` + `authenticationToken` och att vi driftar en
+  web service med fyra endpoints för enhetsregistrering, plus APNs-push med ett separat
+  certifikat. Det är ungefär en dag jobb, kräver en ny databastabell (registrerade
+  enheter → alltså en migrering som måste köras manuellt) och ett APNs-cert i Apple
+  Developer. **Jag gör det inte utan besked.** Notera att redan sparade Apple-pass aldrig
+  kommer kunna uppdateras — `webServiceURL` bakas in i passet vid skapandet, så bara pass
+  som sparas *efter* en sådan ändring omfattas. Det talar för att göra det före lansering
+  om det ska göras alls.
+- **Admin "force refresh" av pass** (också del av backloggens punkt 5) byggdes inte —
+  supportverktyg utan support-UI känns förhastat. Säg till om du vill ha en enkel
+  admin-knapp så lägger jag den på en befintlig adminsida.
+- Frågorna från session 1–4 står kvar obesvarade: `NEXT_PUBLIC_IOS_NATIVE_PAYMENTS` i
+  produktion, delad lagring (Redis) för dedup/rate limiting, bot-trafik i statistiken,
+  vilka ramar som ska vara premium, vad "engångsköps-mallar" konkret betyder, samt död
+  kod (`/api/upload/profile-image`, `ProfileSettingsForm`).
+
+---
+
 ## 2026-08-11 — Session 4 (autonom)
 
 ### Gjort

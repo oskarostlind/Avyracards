@@ -4,39 +4,21 @@ import jwt from 'jsonwebtoken';
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { verifyWalletAccessToken } from "@/lib/wallet-auth";
+import {
+  buildGoogleWalletObject,
+  describeGoogleError,
+  getGoogleWalletCredentials,
+  googleWalletClassId,
+  googleWalletObjectId,
+  GOOGLE_WALLET_API_BASE,
+  GOOGLE_WALLET_ISSUER_ID,
+} from "@/lib/wallet/google";
 
 export const dynamic = 'force-dynamic';
 
 interface WalletClassResponse {
   id?: string;
   [key: string]: unknown;
-}
-
-/**
- * googleapis-fel packar in det intressanta (Googles felmeddelande om vilket
- * fält som är ogiltigt) djupt i response.data. Utan detta loggas bara
- * "Request failed with status code 400", vilket inte går att felsöka på.
- */
-function describeGoogleError(error: unknown): string {
-  const err = error as {
-    message?: string;
-    response?: { status?: number; data?: unknown };
-  };
-
-  const status = err?.response?.status;
-  const data = err?.response?.data;
-
-  if (data !== undefined) {
-    let body: string;
-    try {
-      body = typeof data === "string" ? data : JSON.stringify(data);
-    } catch {
-      body = String(data);
-    }
-    return `HTTP ${status ?? "?"}: ${body.slice(0, 2000)}`;
-  }
-
-  return err?.message ?? String(error);
 }
 
 /**
@@ -102,25 +84,21 @@ export async function GET(req: NextRequest) {
     }
 
     // 2. Credentials & Key Cleaning
-    const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
-    let privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    // Nyckeltvätten bor i @/lib/wallet/google så att lifecycle-synken använder
+    // exakt samma hantering som save-flödet.
+    const credentials = getGoogleWalletCredentials();
 
-    if (!clientEmail || !privateKey) {
+    if (!credentials) {
       console.error('Google Wallet: GOOGLE_CLIENT_EMAIL eller GOOGLE_PRIVATE_KEY saknas');
       return walletErrorPage('Google Wallet är inte konfigurerat på servern.', 500);
     }
 
-    if (privateKey.startsWith('"') && privateKey.endsWith('"')) {
-      privateKey = privateKey.substring(1, privateKey.length - 1);
-    }
-    privateKey = privateKey.replace(/\\n/g, '\n');
+    const { clientEmail, privateKey } = credentials;
 
-    const ISSUER_ID = '3388000000023044854';
-    
     // v7: v6-klassen kunde aldrig skapas eftersom payloaden var ogiltig
     // (se kommentaren vid klasskapandet nedan). Ny id ger en ren start.
-    const CLASS_ID = `${ISSUER_ID}.standard_card_v7`;
-    const OBJECT_ID = `${ISSUER_ID}.user-${user.id}`;
+    const CLASS_ID = googleWalletClassId();
+    const OBJECT_ID = googleWalletObjectId(user.id);
 
     const authClient = new google.auth.GoogleAuth({
       credentials: { client_email: clientEmail, private_key: privateKey },
@@ -128,7 +106,7 @@ export async function GET(req: NextRequest) {
     });
 
     const httpClient = await authClient.getClient();
-    const baseUrl = 'https://walletobjects.googleapis.com/walletobjects/v1';
+    const baseUrl = GOOGLE_WALLET_API_BASE;
 
     // 3. SKAPA MALLEN (Class v7)
     //
@@ -215,64 +193,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // FIX PUNKT 1: Tvinga .se i URL:en
-    let baseDomain = process.env.NEXT_PUBLIC_BASE_URL || 'https://avyracards.se';
-    baseDomain = baseDomain.replace('avyracards.com', 'avyracards.se');
-
-    // --- HÄR ÄR ÄNDRINGEN FÖR ANALYTICS ---
-    // Vi lägger till ?source=wallet här. Detta är länken QR-koden leder till.
-    const profileUrl = `${baseDomain}/u/${user.username}?source=wallet`;
-    
-    // Visuell länk (utan ?source=wallet för att hålla det snyggt)
-    const displayUrl = `avyracards.se/u/${user.username}`;
-    
-    // FIX PUNKT 2: Google Image URL
-    const logoUri = (user.avatarUrl && user.avatarUrl.startsWith('http')) 
-      ? user.avatarUrl 
-      : 'https://avyracards.se/wallet/logo.png';
-
-    // 5. Bygg pass-objektet
-    const genericObject = {
-      id: OBJECT_ID,
-      classId: CLASS_ID,
-      state: 'ACTIVE',
-      cardTitle: {
-        defaultValue: { language: 'en-US', value: 'AvyraCards' },
-      },
-      // Värdena (Stor text där nere)
-      header: {
-        defaultValue: { language: 'en-US', value: user.name || user.username || "Användare" },
-      },
-      // Etiketterna (Liten text där uppe)
-      subheader: {
-        defaultValue: { language: 'sv-SE', value: 'NAMN' },
-      },
-      // id:na måste matcha fieldPath i klassmallen ovan.
-      textModulesData: [
-        {
-          id: "titel",
-          header: "TITEL",
-          body: user.jobTitle || user.bio || "Digital Profil"
-        },
-        {
-          id: "profil",
-          header: "PROFIL",
-          body: displayUrl // Visar den snygga .se länken (utan tracking)
-        }
-      ],
-      barcode: {
-        type: "QR_CODE",
-        value: profileUrl, // QR-koden innehåller tracking-länken
-        alternateText: user.username
-      },
-      logo: {
-        sourceUri: { uri: logoUri },
-        contentDescription: {
-          defaultValue: { language: 'en-US', value: 'Profile Image' },
-        },
-      },
-      hexBackgroundColor: '#000000',
-    };
+    // 5. Bygg pass-objektet.
+    //
+    // Innehållet (namn, titel, bild, QR-länk) byggs av @/lib/wallet/pass-content
+    // via buildGoogleWalletObject, så att ett pass som uppdateras i efterhand av
+    // lifecycle-synken får exakt samma form som ett nyskapat — och så att passet
+    // följer samma fallback-regler som den publika profilen (BUSINESS-läge
+    // använder businessAvatarUrl och businessHeadline).
+    const genericObject = buildGoogleWalletObject(user, {
+      baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
+      issuerId: GOOGLE_WALLET_ISSUER_ID,
+    });
 
     // 6. Skapa/uppdatera objektet via Wallet-API:t och signera en "tunn" JWT.
     //

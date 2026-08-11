@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { generateClaimToken } from "@/lib/card-claim";
+import { expireGoogleWalletPass } from "@/lib/wallet/google";
 
 const accountSchema = z.object({
   marketingConsent: z.boolean().optional(),
@@ -153,6 +154,13 @@ export async function DELETE() {
         where: { id: userId },
       }),
     ]);
+
+    // Wallet lifecycle: passet lever kvar i användarens telefon efter att
+    // kontot raderats, med en QR-kod mot en profil som inte längre finns.
+    // Markera det som utgånget. Görs efter raderingen och kan inte kasta —
+    // ett Google-fel får inte göra att kontoraderingen ser ut att misslyckas
+    // när den faktiskt är genomförd (5.1.1(v) kräver att den fungerar).
+    await expireGoogleWalletPass(userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {
