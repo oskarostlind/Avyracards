@@ -9,6 +9,102 @@ Logg över autonoma byggsessioner. Nyast överst.
 
 ---
 
+## 2026-08-11 — Session 6 (autonom)
+
+### Gjort
+
+**Systemmail & central notifieringstjänst (ClickUp 86c777p5w, punkt 6)**
+
+Alla tekniska buggar i prioritetslistan är avklarade i kod, så sessionen tog nästa
+punkt i arkitektur-backloggen enligt beskrivningens ordning.
+
+Läget innan: projektet skickade exakt två mail — verifiering och lösenordsåterställning
+— och båda satt direkt i `src/lib/email.ts` med en SMTP-transport som byggdes på
+modulnivå. Ingen fick alltså mail när de betalade för premium, beställde ett kort eller
+när kortet skickades. Det är precis den sortens tystnad som blir supportärenden: kunden
+har dragits 598 kr och har ingen kvittens på att något hänt.
+
+**Två nya lager:**
+
+- **`src/lib/mailer.ts`** — delad SMTP-transport (Strato), skapad lat i stället för vid
+  import, med samma env-variabler som förut (`SMTP_*` med fallback till `STRATO_*`).
+  Två funktioner: `sendMail()` som kastar, och `sendMailSafe()` som aldrig kastar.
+- **`src/lib/notifications/`** — `templates.ts` (rena renderingsfunktioner, in med data
+  → ut med `{subject, html, text}`) och `index.ts` med `sendSystemNotification(event)`
+  som enda utgång. Både HTML- och textdel i varje mail.
+
+`email.ts` är omskriven till att använda den delade transporten. Signaturerna på
+`sendVerificationEmail` och `sendPasswordResetEmail` är oförändrade — inga anropsställen
+behövde röras.
+
+**Tre nya mail, inkopplade på sex ställen:**
+
+1. *Premium är aktiverat* — Stripe-webhooken, `/api/stripe/verify-session`,
+   `grantPremiumFromIap` (Apple IAP), premium-tillägget i `fulfillPhysicalCardOrder`
+   och admins "ge premium". Texten är källspecifik: App Store-köpet nämner App Store,
+   kortordern nämner kortordern, admin-gåvan nämner ingen betalning alls.
+2. *Tack för din beställning* — vid orderskapande, med ordernummer, antal och summa.
+3. *Din beställning är på väg* — när admin sätter status till SHIPPED, med
+   aktiveringsinstruktion för kortet.
+
+**Dubbletthantering utan migrering.** Det här var det svåraste i uppgiften.
+`/api/stripe/verify-session` och Stripe-webhooken kan båda träffa *samma* premiumköp,
+och admin kan klicka "markera som skickad" hur många gånger som helst. Alla ställen
+läser därför tillståndet före skrivningen och mailar bara vid en faktisk övergång
+(av → på, respektive → SHIPPED). Apple IAP var redan idempotent via unikt
+`transactionId`. Ingen ny tabell, ingen migrering.
+
+**Utskicken kan aldrig fälla ett flöde.** `sendSystemNotification` fångar allt: saknad
+SMTP-konfiguration, ogiltig mottagare (gästbeställningar utan e-post) och sändningsfel
+ger ett returvärde och en loggrad — aldrig ett kastat fel. En betalning eller en
+orderuppdatering får inte se ut att misslyckas för att mailservern har en dålig dag.
+Mailen skickas dessutom sist i respektive funktion, efter att databasen är skriven.
+
+**En bugg hittad av testerna:** kundnamnet gick orört in i mailets HTML. Namnet kommer
+från profilen eller från Stripes leveransuppgifter — alltså ett fält användaren själv
+fyller i — så ett namn med `<script>` hamnade som markup i mailet. Nu escapas det.
+
+**Tester:** 20 nya Vitest-tester i `src/lib/__tests__/notifications.test.ts`
+(mallar, beloppsformatering, dubblettskydd, mottagarvalidering, HTML-escaping).
+Totalt 114, alla gröna. `npm run lint` OK, `npx tsc --noEmit` OK (noll fel),
+`npm run build` OK.
+
+Manuell testchecklista utökad med avsnitt O i [[08 Testchecklista]].
+
+### Återstår / nästa session
+
+1. **[[08 Testchecklista]] är fortfarande inte körd** — nu 15 avsnitt (A–O). Inget av
+   kodfixarna från session 1–6 är verifierat live. Det är fortfarande den enskilt
+   största återstående risken inför lansering, och den växer för varje session.
+2. **Systemmailen kräver att SMTP är konfigurerat i produktion.** Se frågan nedan.
+3. **Arkitektur-backloggen (86c777p5w):** punkt 1, 2, 4, 5 och 6 är gjorda. Kvar:
+   punkt 3 (profilversionering), punkt 7 (miljöseparation), punkt 8 (B2B-datamodell).
+   Nästa i tur enligt beskrivningens ordning: punkt 7, miljöseparation — men den är
+   till stor del en env-/Vercel-uppgift snarare än kod, så punkt 3 kan vara ett
+   bättre val för en autonom session.
+4. **Ramar och engångsköps-mallar** (86c74tjrn) — blockerat på obesvarade frågor.
+5. **Apple Wallet-uppdatering** — blockerat, se session 5.
+
+### Frågor till Oskar
+
+- **Är SMTP satt i produktionsmiljön på Vercel?** De nya mailen använder samma
+  variabler som verifieringsmailet (`SMTP_HOST`, `SMTP_USER`/`STRATO_SMTP_USER`,
+  `SMTP_PASS`/`STRATO_SMTP_PASS`, ev. `SMTP_FROM`). Fungerar verifieringsmailet i
+  produktion idag så fungerar även de nya. Jag rör inte env-variabler.
+- **Ska kvitto/faktura bifogas orderbekräftelsen?** Just nu står ordernummer, antal
+  och summa i mailtexten, men det är inget bokföringsunderlag. Stripe kan skicka egna
+  kvitton — vill du ha det på, eller ska vi bygga ett eget kvitto? Hänger ihop med
+  ClickUp-tasken om bokföringsrutin.
+- **Vill du ha kopia till dig själv på nya ordrar?** Ett internt "ny order"-mail är
+  fem rader till, men jag vet inte vilken adress som ska ta emot dem.
+- Obesvarade frågor från session 1–5 står kvar: `NEXT_PUBLIC_IOS_NATIVE_PAYMENTS` i
+  produktion, vilka ramar som ska vara premium, vad "engångsköps-mallar" betyder,
+  Apple Wallet-uppdatering, död kod (`/api/upload/profile-image`,
+  `ProfileSettingsForm`), samt om kort ska sättas tillbaka till `UNCLAIMED` vid
+  kontoradering.
+
+---
+
 ## 2026-08-11 — Session 5 (autonom)
 
 ### Gjort

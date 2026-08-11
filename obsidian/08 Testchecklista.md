@@ -1,6 +1,6 @@
 ---
 skapad: 2026-08-10
-uppdaterad: 2026-08-10
+uppdaterad: 2026-08-11
 clickup: 86c6rbe2j
 ---
 
@@ -151,3 +151,35 @@ automatiskt ännu (se [[07 Bygglogg]]) — där testas bara innehållet.
 - [ ] Passets synliga länk står som `avyracards.se/u/...` — aldrig `.com`
 - [ ] QR-koden innehåller `?source=wallet` och visningen dyker upp som
       "Wallet" i statistiken
+
+## O. Systemmail (nytt 2026-08-11)
+
+Kräver att SMTP-variablerna (`SMTP_HOST`, `SMTP_USER`/`STRATO_SMTP_USER`,
+`SMTP_PASS`/`STRATO_SMTP_PASS`) är satta i den miljö som testas. Saknas de
+loggas bara en varning — inget mail går ut och inget flöde ska fallera.
+
+**Premium aktiverat:**
+
+- [ ] Köp premium via Stripe på webben → mail "Premium är aktiverat" kommer fram
+- [ ] Samma köp igen (eller ladda om kvittosidan) → INGET extra mail
+      (webhook och `/api/stripe/verify-session` träffar samma köp)
+- [ ] Köp premium via App Store i iOS-appen → mail nämner "App Store"
+- [ ] Beställ kort med premium-tillägg som gratiskonto → två mail:
+      orderbekräftelse + premium aktiverat
+- [ ] Beställ kort med premium-tillägg som redan har premium → BARA orderbekräftelse
+- [ ] Ge premium via admin → mail nämner inte betalning
+- [ ] Ge premium via admin till konto som redan har premium → INGET mail
+
+**Order:**
+
+- [ ] Lägg en kortbeställning → bekräftelsemail med ordernummer, antal och summa
+- [ ] Summan i mailet stämmer med det Stripe drog (öre → kronor, t.ex. 598 kr)
+- [ ] Markera ordern som SHIPPED i admin → "Din beställning är på väg"-mail
+- [ ] Klicka SHIPPED en gång till → INGET extra mail
+- [ ] Ändra till PAID och tillbaka till SHIPPED → nytt mail (förväntat)
+- [ ] Gästbeställning utan e-post → ordern skapas ändå, bara en loggrad
+
+**Robusthet:**
+
+- [ ] Med felaktiga SMTP-uppgifter: genomför ett köp → betalningen ska gå igenom
+      och ordern skapas; bara ett fel i loggen om mailet
