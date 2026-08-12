@@ -3,6 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
   createAppleLoginToken,
+  exchangeAppleAuthorizationCode,
   verifyAppleIdentityToken,
 } from "@/lib/apple-auth";
 import {
@@ -15,6 +16,9 @@ import { logIosNativeServer } from "@/lib/ios-native-server-debug";
 
 const appleAuthSchema = z.object({
   identityToken: z.string().min(1),
+  // Engångskod från Sign in with Apple. Växlas mot ett refresh token som vi
+  // behöver för att kunna återkalla kopplingen när kontot raderas (TN3194).
+  authorizationCode: z.string().optional().nullable(),
   email: z.string().email().optional().nullable(),
   givenName: z.string().optional().nullable(),
   familyName: z.string().optional().nullable(),
@@ -72,8 +76,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ loginToken, user });
     }
 
+    // Sparas så snart Apple skickar med koden. Kastar aldrig.
+    const appleRefreshToken = parsed.data.authorizationCode
+      ? await exchangeAppleAuthorizationCode(parsed.data.authorizationCode)
+      : null;
+
     const existingAppleUser = await findUserByAppleSub(appleId);
     if (existingAppleUser) {
+      if (appleRefreshToken) {
+        await prisma.user.update({
+          where: { id: existingAppleUser.id },
+          data: { appleRefreshToken },
+        });
+      }
+
       const loginToken = await createAppleLoginToken(existingAppleUser.id);
       return NextResponse.json({
         loginToken,
@@ -118,6 +134,13 @@ export async function POST(req: Request) {
       email: resolvedEmail,
       name: displayName || null,
     });
+
+    if (appleRefreshToken) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { appleRefreshToken },
+      });
+    }
 
     const loginToken = await createAppleLoginToken(user.id);
     return NextResponse.json({ loginToken, user });

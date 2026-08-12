@@ -5,8 +5,11 @@ import { Check, ArrowRight, CreditCard, Sparkles, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { LiveProfileDemo } from "@/components/live-profile-demo";
 import { formatPrice } from "@/lib/products";
+import { useIsApp } from "@/hooks/useIsApp";
 import { useIosNativePayments } from "@/hooks/useIosNativePayments";
 import { IosIapPremiumButton } from "@/components/checkout/ios-iap-premium-button";
+import { IosRestorePurchasesButton } from "@/components/checkout/ios-restore-purchases-button";
+import { SubscriptionTerms } from "@/components/checkout/subscription-terms";
 
 interface PremiumCheckoutProps {
   productName: string;
@@ -20,7 +23,16 @@ export function PremiumCheckoutForm({
   variantId, 
 }: PremiumCheckoutProps) {
   const [loading, setLoading] = useState(false);
+  const isApp = useIsApp();
   const isIosCheckout = useIosNativePayments();
+
+  // Guideline 3.1.1: digitalt innehåll måste köpas via Apples IAP. Tidigare låg
+  // Stripe-vägen i else-grenen, vilket innebar att appen visade
+  // Stripe-checkouten så fort NEXT_PUBLIC_IOS_NATIVE_PAYMENTS inte var satt
+  // till "true" i miljön — en felkonfigurerad env-variabel hade alltså räckt
+  // för ett garanterat avslag. Stripe-grenen renderas nu bara på webben.
+  const showStripeCheckout = !isApp;
+  const iapUnavailableInApp = isApp && !isIosCheckout;
 
   const formattedPrice = formatPrice(price);
 
@@ -105,7 +117,7 @@ export function PremiumCheckoutForm({
              </div>
 
              <form onSubmit={handleCheckout} className="space-y-4">
-                 {isIosCheckout ? (
+                 {isIosCheckout && (
                    <>
                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
                        <div className="mt-0.5 min-w-[16px]"><Check size={16} className="text-blue-400"/></div>
@@ -117,8 +129,22 @@ export function PremiumCheckoutForm({
                        productKey="monthly"
                        label={`Köp ${productName} via App Store`}
                      />
+                     <IosRestorePurchasesButton />
+                     <SubscriptionTerms price={formattedPrice} viaAppStore />
                    </>
-                 ) : (
+                 )}
+
+                 {iapUnavailableInApp && (
+                   <>
+                     <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-200/90 leading-relaxed">
+                       Premium kan just nu inte köpas i appen. Har du redan köpt
+                       Premium kan du återställa köpet nedan.
+                     </div>
+                     <IosRestorePurchasesButton />
+                   </>
+                 )}
+
+                 {showStripeCheckout && (
                    <>
                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
                     <div className="mt-0.5 min-w-[16px]"><Check size={16} className="text-blue-400"/></div>
@@ -135,6 +161,7 @@ export function PremiumCheckoutForm({
                     {loading ? <Loader2 className="animate-spin" /> : "Gå till betalning"}
                     {!loading && <ArrowRight size={18} />}
                  </button>
+                 <SubscriptionTerms price={formattedPrice} />
                  </>
                  )}
              </form>

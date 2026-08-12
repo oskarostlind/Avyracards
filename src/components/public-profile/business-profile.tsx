@@ -8,12 +8,16 @@ import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
 import { MappedProfileData } from "@/lib/profile-mapper";
+import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 import { Save } from "lucide-react";
 
 interface BusinessProfileProps {
   data: MappedProfileData;
   user: User;
   showAds: boolean;
+  /** Guideline 1.2: rapport-/blockeringskontroller på publika profiler. */
+  viewerIsLoggedIn?: boolean;
+  hasBlocked?: boolean;
 }
 
 const fontMap: Record<string, string> = {
@@ -25,7 +29,7 @@ const fontMap: Record<string, string> = {
   oswald: "'Oswald', sans-serif",
 };
 
-export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
+export function BusinessProfile({ data, user, showAds, viewerIsLoggedIn = false, hasBlocked = false }: BusinessProfileProps) {
   const tokens = getTheme(user.theme); 
   const savedSettings = (user.businessThemeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
@@ -284,6 +288,13 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
              </div>
           )}
         </div>
+
+        <ProfileSafetyActions
+          username={user.username}
+          isLoggedIn={viewerIsLoggedIn}
+          initiallyBlocked={hasBlocked}
+          color={settings.textColor}
+        />
 
         {showBranding && (
            <div className="text-center mt-8">

@@ -5,6 +5,9 @@ import { Star, Loader2, Calendar, CreditCard, Clock, AlertTriangle } from "lucid
 import Link from "next/link";
 import { format } from "date-fns";
 import { sv } from "date-fns/locale";
+import { NativePurchases } from "@capgo/native-purchases";
+import { useIsApp } from "@/hooks/useIsApp";
+import { IosRestorePurchasesButton } from "@/components/checkout/ios-restore-purchases-button";
 
 interface BillingProps {
   isPremium: boolean;
@@ -23,6 +26,20 @@ interface BillingProps {
 
 export function BillingView({ isPremium, subscription }: BillingProps) {
   const [loading, setLoading] = useState(false);
+
+  // Guideline 3.1.1/3.1.3: i iOS-appen får vi inte skicka användaren till en
+  // extern betalportal för ett digitalt abonnemang. Köp gjorda via IAP hanteras
+  // dessutom av App Store, inte av Stripe — knappen hade lett fel även rent
+  // funktionellt. På webben är Stripe-portalen oförändrad.
+  const isApp = useIsApp();
+
+  const handleManageInAppStore = async () => {
+    try {
+      await NativePurchases.manageSubscriptions();
+    } catch {
+      window.location.href = "https://apps.apple.com/account/subscriptions";
+    }
+  };
 
   const handlePortal = async () => {
     setLoading(true);
@@ -89,7 +106,14 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
           )}
         </div>
 
-        {isPremium ? (
+        {isPremium && isApp ? (
+          <button
+            onClick={handleManageInAppStore}
+            className="whitespace-nowrap rounded-xl border border-nordic-highlight/40 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 flex items-center gap-2"
+          >
+            Hantera i App Store
+          </button>
+        ) : isPremium ? (
           <button 
             onClick={handlePortal}
             disabled={loading}
@@ -99,12 +123,15 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
             Hantera via Stripe
           </button>
         ) : (
-           <Link
-             href="/checkout/premium"
-             className="whitespace-nowrap rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-nordic-secondary hover:bg-purple-500 shadow-lg shadow-purple-500/20"
-           >
-             Uppgradera Nu
-           </Link>
+           <div className="flex flex-col gap-2 items-stretch">
+             <Link
+               href="/checkout/premium"
+               className="whitespace-nowrap rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-nordic-secondary hover:bg-purple-500 shadow-lg shadow-purple-500/20 text-center"
+             >
+               Uppgradera Nu
+             </Link>
+             {isApp && <IosRestorePurchasesButton className="whitespace-nowrap rounded-xl border border-nordic-highlight/40 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 flex items-center justify-center gap-2" />}
+           </div>
         )}
       </div>
 

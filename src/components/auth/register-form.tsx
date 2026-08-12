@@ -237,7 +237,16 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
       </form>
 
       <p className="text-center text-xs text-nordic-highlight">
-        Genom att skapa konto godkänner du våra användarvillkor.
+        Genom att skapa konto godkänner du våra{" "}
+        <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-200">
+          användarvillkor
+        </a>{" "}
+        och{" "}
+        <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-200">
+          integritetspolicyn
+        </a>
+        . Villkoren har nolltolerans mot stötande eller kränkande innehåll — konton
+        som bryter mot dem stängs av.
       </p>
     </div>
   );

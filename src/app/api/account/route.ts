@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { revokeAppleToken } from "@/lib/apple-auth";
 import { z } from "zod";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { generateClaimToken } from "@/lib/card-claim";
@@ -126,6 +127,20 @@ export async function DELETE() {
     }
 
     const userId = session.user.id;
+
+    // Apple TN3194 / Guideline 5.1.1(v): Sign in with Apple-kopplingen måste
+    // återkallas som en del av raderingen, annars ligger AvyraCards kvar under
+    // "Logga in med Apple" i användarens iPhone-inställningar. Görs före
+    // raderingen eftersom vi behöver refresh-tokenet, men får aldrig avbryta
+    // raderingen om Apple svarar med fel.
+    const accountToDelete = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { appleRefreshToken: true },
+    });
+
+    if (accountToDelete?.appleRefreshToken) {
+      await revokeAppleToken(accountToDelete.appleRefreshToken);
+    }
 
     // Fysiska kort ska kunna återanvändas efter att ägaren raderat sitt konto.
     // Utan detta blir kortet kvar som CLAIMED med assignedUserId = null (Prisma
