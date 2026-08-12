@@ -3,6 +3,7 @@ import { addMonths } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { PremiumSource } from "@prisma/client";
 import { getIapProductIds } from "@/lib/ios-native";
+import { sendSystemNotification } from "@/lib/notifications";
 
 interface AppStoreTransactionPayload {
   signedTransactionInfo?: string;
@@ -125,7 +126,7 @@ export async function grantPremiumFromIap(params: {
     return;
   }
 
-  await prisma.$transaction([
+  const [, user] = await prisma.$transaction([
     prisma.appleIapTransaction.create({
       data: {
         transactionId: params.transactionId,
@@ -146,6 +147,16 @@ export async function grantPremiumFromIap(params: {
       },
     }),
   ]);
+
+  // Transaktions-id:t är unikt, så koden ovan körs bara en gång per köp —
+  // därmed kan inte förnyelser eller en omsänd kvittovalidering ge dubbla mail.
+  await sendSystemNotification({
+    type: "premium_activated",
+    to: user.email,
+    name: user.name,
+    source: "apple_iap",
+    expiresAt: params.expiresAt,
+  });
 }
 
 export function isKnownIapProduct(productId: string): boolean {

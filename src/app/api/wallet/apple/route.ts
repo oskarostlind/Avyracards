@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { verifyWalletAccessToken } from "@/lib/wallet-auth";
+import { buildWalletPassContent } from "@/lib/wallet/pass-content";
 import { PKPass } from "passkit-generator";
 import path from "path";
 import fs from "fs/promises";
@@ -60,6 +61,17 @@ export async function GET(req: Request) {
       return new NextResponse("User not found", { status: 404 });
     }
 
+    // Utan användarnamn blir QR-koden `/u/?source=wallet`, alltså en länk som
+    // inte leder till någon profil. Google-routen stoppade redan detta; Apple
+    // gjorde det inte, och ett pkpass går inte att rätta i efterhand när det
+    // väl ligger i telefonen.
+    if (!user.username) {
+      return new NextResponse(
+        "Du måste välja ett användarnamn innan du kan spara kortet i Wallet.",
+        { status: 400 },
+      );
+    }
+
     // 1. Läs in certifikat från MILJÖVARIABLER (Base64)
     const signerPem = Buffer.from(process.env.WALLET_SIGNER_PEM || '', 'base64');
     const privateKey = Buffer.from(process.env.WALLET_PRIVATE_KEY || '', 'base64');
@@ -69,9 +81,11 @@ export async function GET(req: Request) {
         throw new Error("Missing wallet certificates in environment variables");
     }
 
-    // 2. Hämta profilbild (Thumbnail)
-    const avatarUrl = user.avatarUrl;
-    const thumbnailBuffer = await fetchImageBuffer(avatarUrl);
+    // 2. Passets innehåll byggs av den delade modulen, så Apple- och
+    // Google-passet visar samma sak (och samma bild/titel som den publika
+    // profilen, även för konton i BUSINESS-läge).
+    const passContent = buildWalletPassContent(user, process.env.NEXT_PUBLIC_BASE_URL);
+    const thumbnailBuffer = await fetchImageBuffer(passContent.imageUrl);
 
     // 3. Läs in statiska ikoner från PUBLIC-mappen
     const publicDir = path.join(process.cwd(), 'public', 'wallet');
@@ -116,7 +130,7 @@ export async function GET(req: Request) {
     pass.setBarcodes({
       format: "PKBarcodeFormatQR",
       // Vi lägger till ?source=wallet här
-      message: `${process.env.NEXT_PUBLIC_BASE_URL}/u/${user.username}?source=wallet`,
+      message: passContent.profileUrl,
       messageEncoding: "iso-8859-1",
       altText: user.username || "Profile"
     });
@@ -126,19 +140,19 @@ export async function GET(req: Request) {
     pass.primaryFields.push({
       key: "name",
       label: "NAMN",
-      value: user.name || user.username || "Användare",
+      value: passContent.displayName,
     });
 
     pass.secondaryFields.push({
       key: "role",
       label: "TITEL",
-      value: user.bio || "Digital Profil",
+      value: passContent.headline,
     });
 
     pass.auxiliaryFields.push({
       key: "url",
       label: "PROFIL",
-      value: `avyracards.com/u/${user.username}`, // Visas bara för användaren, behöver inte source
+      value: passContent.displayUrl,
     });
     
     pass.backFields.push({

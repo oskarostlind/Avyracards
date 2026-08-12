@@ -2,18 +2,20 @@
 
 import Image from "next/image";
 import type { User } from "@prisma/client";
-import { AdBanner } from "@/components/ads/google-adsense";
 import { TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
 import { MappedProfileData } from "@/lib/profile-mapper";
+import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 import { Save } from "lucide-react";
 
 interface BusinessProfileProps {
   data: MappedProfileData;
   user: User;
-  showAds: boolean;
+  /** Guideline 1.2: rapport-/blockeringskontroller på publika profiler. */
+  viewerIsLoggedIn?: boolean;
+  hasBlocked?: boolean;
 }
 
 const fontMap: Record<string, string> = {
@@ -25,7 +27,7 @@ const fontMap: Record<string, string> = {
   oswald: "'Oswald', sans-serif",
 };
 
-export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
+export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlocked = false }: BusinessProfileProps) {
   const tokens = getTheme(user.theme); 
   const savedSettings = (user.businessThemeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
@@ -117,12 +119,18 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
     if (settings.frameStyle === "hexagon") return "hexagon-clip"; 
     if (settings.frameStyle === "none") return "rounded-none";
     if (settings.frameStyle === "ring") return "rounded-full ring-4 ring-offset-4 ring-offset-transparent";
-    return "rounded-full"; 
+    if (settings.frameStyle === "square") return "rounded-none";
+    if (settings.frameStyle === "shadow") return "rounded-full";
+    return "rounded-full";
   };
 
   const avatarStyle: React.CSSProperties = hasCustomTheme ? {
-     boxShadow: settings.frameStyle === 'glow' ? `0 0 30px ${settings.accentColor}` : 'none',
-     borderColor: settings.frameStyle === 'ring' ? settings.accentColor : 'transparent',
+     boxShadow: settings.frameStyle === 'glow'
+       ? `0 0 30px ${settings.accentColor}`
+       : settings.frameStyle === 'shadow'
+         ? `8px 8px 0 ${settings.accentColor}`
+         : 'none',
+     borderColor: (settings.frameStyle === 'ring' || settings.frameStyle === 'square') ? settings.accentColor : 'transparent',
   } : {};
 
   const cardStyle: React.CSSProperties = hasCustomTheme ? {
@@ -271,13 +279,14 @@ export function BusinessProfile({ data, user, showAds }: BusinessProfileProps) {
              </div>
           )}
 
-          {showAds && (
-             <div className="p-4 border-t border-white/5 text-center bg-black/20">
-                <p className="text-[10px] opacity-50 uppercase mb-2">Annons</p>
-                <div className="mx-auto max-w-[300px] overflow-hidden rounded-lg"><AdBanner /></div>
-             </div>
-          )}
         </div>
+
+        <ProfileSafetyActions
+          username={user.username}
+          isLoggedIn={viewerIsLoggedIn}
+          initiallyBlocked={hasBlocked}
+          color={settings.textColor}
+        />
 
         {showBranding && (
            <div className="text-center mt-8">

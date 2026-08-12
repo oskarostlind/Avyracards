@@ -1,4 +1,3 @@
-import * as admin from "firebase-admin";
 import { getFirebaseApp } from "@/lib/firebase-admin";
 
 /**

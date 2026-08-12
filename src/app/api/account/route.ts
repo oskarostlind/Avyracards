@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { revokeAppleToken } from "@/lib/apple-auth";
 import { z } from "zod";
-import { hashPassword, verifyPassword } from "@/lib/password"; // Antar att dessa finns baserat på tidigare kod
+import { hashPassword, verifyPassword } from "@/lib/password";
+import { generateClaimToken } from "@/lib/card-claim";
+import { expireGoogleWalletPass } from "@/lib/wallet/google";
 
 const accountSchema = z.object({
   marketingConsent: z.boolean().optional(),
@@ -123,9 +126,56 @@ export async function DELETE() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await prisma.user.delete({
-      where: { id: session.user.id },
+    const userId = session.user.id;
+
+    // Apple TN3194 / Guideline 5.1.1(v): Sign in with Apple-kopplingen måste
+    // återkallas som en del av raderingen, annars ligger AvyraCards kvar under
+    // "Logga in med Apple" i användarens iPhone-inställningar. Görs före
+    // raderingen eftersom vi behöver refresh-tokenet, men får aldrig avbryta
+    // raderingen om Apple svarar med fel.
+    const accountToDelete = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { appleRefreshToken: true },
     });
+
+    if (accountToDelete?.appleRefreshToken) {
+      await revokeAppleToken(accountToDelete.appleRefreshToken);
+    }
+
+    // Fysiska kort ska kunna återanvändas efter att ägaren raderat sitt konto.
+    // Utan detta blir kortet kvar som CLAIMED med assignedUserId = null (Prisma
+    // sätter den till null eftersom relationen är valfri) och går aldrig att
+    // claima igen — kortet blir permanent obrukbart.
+    const ownedCards = await prisma.card.findMany({
+      where: { assignedUserId: userId },
+      select: { id: true },
+    });
+
+    await prisma.$transaction([
+      // Ny claimToken per kort, annars skulle den gamla ägarens sparade
+      // aktiveringslänk fungera igen efter att kortet frigjorts.
+      ...ownedCards.map((card) =>
+        prisma.card.update({
+          where: { id: card.id },
+          data: {
+            status: "UNCLAIMED",
+            assignedUserId: null,
+            claimedAt: null,
+            claimToken: generateClaimToken(),
+          },
+        })
+      ),
+      prisma.user.delete({
+        where: { id: userId },
+      }),
+    ]);
+
+    // Wallet lifecycle: passet lever kvar i användarens telefon efter att
+    // kontot raderats, med en QR-kod mot en profil som inte längre finns.
+    // Markera det som utgånget. Görs efter raderingen och kan inte kasta —
+    // ett Google-fel får inte göra att kontoraderingen ser ut att misslyckas
+    // när den faktiskt är genomförd (5.1.1(v) kräver att den fungerar).
+    await expireGoogleWalletPass(userId);
 
     return NextResponse.json({ success: true });
   } catch (error) {

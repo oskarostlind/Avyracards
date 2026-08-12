@@ -10,32 +10,18 @@ export function ProfileViewTracker({ userId, sourceParam }: { userId: string, so
     if (hasFired.current) return;
     hasFired.current = true;
 
-    // 1. Avgör källa
-    let source = sourceParam || "direct"; // Prioritera ?source=nfc
-
-    // Om ingen source via URL, kolla referrer (var kom man ifrån?)
-    if (!sourceParam && typeof document !== "undefined" && document.referrer) {
-      const ref = document.referrer.toLowerCase();
-      
-      if (ref.includes("instagram")) source = "Instagram";
-      else if (ref.includes("facebook")) source = "Facebook";
-      else if (ref.includes("linkedin")) source = "LinkedIn";
-      else if (ref.includes("t.co") || ref.includes("twitter") || ref.includes("x.com")) source = "X (Twitter)";
-      else if (ref.includes("google")) source = "Google";
-      else if (ref.includes(window.location.hostname)) source = "Internal"; // Från egen sida
-      else source = "Webbplats"; // Annan webbplats
-    }
-
-    // 2. Skicka event
+    // Klienten skickar bara rådata. Härledningen av källa och enhet sker
+    // centralt på servern (src/lib/analytics/events.ts) så att alla klienter
+    // – webb, iOS-app, widget – ger samma statistik.
     fetch("/api/analytics", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "VIEW",
         profileOwnerId: userId,
-        source: source,
+        source: sourceParam || undefined,
         device: getDeviceType(),
-        referrer: document.referrer || undefined
+        referrer: document.referrer || undefined,
       }),
     }).catch((err) => console.error("Tracking failed", err));
     

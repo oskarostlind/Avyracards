@@ -2,23 +2,25 @@
 
 import Image from "next/image";
 import type { User, Link as LinkModel } from "@prisma/client";
-import { AdBanner } from "@/components/ads/google-adsense";
 import { TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
 import { Save } from "lucide-react";
 import { MappedProfileData } from "@/lib/profile-mapper";
+import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 
 type UserWithLinks = User & { links: LinkModel[] };
 
 interface SocialProfileProps {
   user: UserWithLinks;
   data: MappedProfileData; 
-  showAds: boolean;
+  /** Guideline 1.2: rapport-/blockeringskontroller på publika profiler. */
+  viewerIsLoggedIn?: boolean;
+  hasBlocked?: boolean;
 }
 
-export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
+export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked = false }: SocialProfileProps) {
   const useCustomTheme = !!user.themeSettings;
   const savedSettings = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
@@ -98,15 +100,20 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
   const frameStyle = settings.frameStyle || 'circle';
   const accentColor = settings.accentColor || '#ffffff';
   
-  let borderRadius = '50%'; 
+  let borderRadius = '50%';
   if (frameStyle === 'rounded') borderRadius = '20%';
   if (frameStyle === 'none') borderRadius = '0';
-  if (frameStyle === 'hexagon') borderRadius = '0'; 
+  if (frameStyle === 'hexagon') borderRadius = '0';
+  if (frameStyle === 'square') borderRadius = '0';
 
   const avatarStyle: React.CSSProperties = useCustomTheme ? {
-    borderColor: frameStyle === 'ring' ? accentColor : 'rgba(255,255,255,0.1)',
+    borderColor: (frameStyle === 'ring' || frameStyle === 'square') ? accentColor : 'rgba(255,255,255,0.1)',
     borderRadius: borderRadius,
-    boxShadow: frameStyle === 'glow' ? `0 0 30px ${accentColor}` : 'none',
+    boxShadow: frameStyle === 'glow'
+      ? `0 0 30px ${accentColor}`
+      : frameStyle === 'shadow'
+        ? `8px 8px 0 ${accentColor}`
+        : 'none',
   } : {};
 
   // --- NYTT: Spårning av vCard nedladdning ---
@@ -186,8 +193,14 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
               </TrackedLink>
             ))}
           </div>
-          {showAds && <AdBanner />}
         </section>
+
+        <ProfileSafetyActions
+          username={user.username}
+          isLoggedIn={viewerIsLoggedIn}
+          initiallyBlocked={hasBlocked}
+          color={useCustomTheme ? settings.textColor : undefined}
+        />
 
         {showBranding && (
           <div className="mt-8 text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity" style={{ color: useCustomTheme ? settings.textColor : undefined }}>

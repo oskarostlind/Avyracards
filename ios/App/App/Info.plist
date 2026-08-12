@@ -30,18 +30,11 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
-	</array>
-	<key>UISupportedInterfaceOrientations~ipad</key>
-	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
@@ -51,5 +44,9 @@
 	<string>AvyraCards använder kameran när du tar en profilbild eller lägger till tryck på ditt kort.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>AvyraCards behöver åtkomst till dina foton för att välja profilbilder och kortdesign.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>AvyraCards sparar ditt QR-kort och din kortdesign till dina foton när du väljer att ladda ner dem.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

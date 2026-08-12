@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react"; // La till useEffect
+import Link from "next/link";
 import { Check, Copy, ExternalLink, Wallet } from "lucide-react";
+import { walletKindsForUserAgent, type WalletKind } from "@/lib/wallet/platform";
+import { useIsApp } from "@/hooks/useIsApp";
 
 type PublicProfileCardProps = {
   username: string;
@@ -9,15 +12,27 @@ type PublicProfileCardProps = {
 };
 
 export function PublicProfileCard({ username, className }: PublicProfileCardProps) {
+  // target="_blank" öppnar systemwebbläsaren i en Capacitor-WebView. För
+  // plånbokspassen är det önskat (PassKit måste hantera filen), men för den
+  // egna profilen innebar det att appen kastade ut användaren till Safari —
+  // en återvändsgränd utan väg tillbaka, och exakt den signal som får en
+  // granskare att läsa appen som en inpackad webbplats (4.2). I appen navigerar
+  // vi därför inom WebViewen; profilsidan renderas med appens navigation så
+  // vägen tillbaka finns kvar. På webben behålls ny flik.
+  const isApp = useIsApp();
   const [copied, setCopied] = useState(false);
   const [walletLoading, setWalletLoading] = useState<"apple" | "google" | null>(null);
   // Vi sätter ett startvärde som är säkert för servern (undviker hydration error)
   const [origin, setOrigin] = useState("https://avyracards.se");
+  // Serverrenderas som "båda" och smalnas av på klienten när user agent är känd,
+  // så att markup:en matchar vid hydrering.
+  const [walletKinds, setWalletKinds] = useState<WalletKind[]>(["apple", "google"]);
 
   // Uppdatera till den faktiska adressen när komponenten laddats på klienten
   useEffect(() => {
     if (typeof window !== "undefined") {
       setOrigin(window.location.origin);
+      setWalletKinds(walletKindsForUserAgent(window.navigator.userAgent));
     }
   }, []);
 
@@ -75,20 +90,31 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
             {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
           </button>
           
-          <a
-            href={publicPath}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-nordic-secondary transition-colors border border-nordic-highlight/40"
-            title="Öppna profil i ny flik"
-          >
-            <ExternalLink size={18} />
-          </a>
+          {isApp ? (
+            <Link
+              href={publicPath}
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-nordic-secondary transition-colors border border-nordic-highlight/40"
+              title="Visa din profil"
+            >
+              <ExternalLink size={18} />
+            </Link>
+          ) : (
+            <a
+              href={publicPath}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-nordic-secondary transition-colors border border-nordic-highlight/40"
+              title="Öppna profil i ny flik"
+            >
+              <ExternalLink size={18} />
+            </a>
+          )}
         </div>
 
         {/* Rad 2: Plånböcker */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className={`grid gap-2 ${walletKinds.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
            {/* Apple Wallet */}
+           {walletKinds.includes("apple") && (
            <button
              type="button"
              onClick={() => void openWallet("apple")}
@@ -98,8 +124,10 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
              <Wallet size={16} className="text-nordic-secondary" />
              <span>Apple Wallet</span>
            </button>
+           )}
 
            {/* Google Wallet */}
+           {walletKinds.includes("google") && (
            <button
              type="button"
              onClick={() => void openWallet("google")}
@@ -115,6 +143,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
              </svg>
              <span>Google Wallet</span>
            </button>
+           )}
         </div>
       </div>
     </div>

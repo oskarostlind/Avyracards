@@ -30,9 +30,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "IOS debug är avstängt" }, { status: 404 });
   }
 
-  const sessionId = req.nextUrl.searchParams.get("sessionId") ?? undefined;
-  const scope = req.nextUrl.searchParams.get("scope") ?? undefined;
-  const limit = Number(req.nextUrl.searchParams.get("limit") ?? "50");
+  const { searchParams } = new URL(req.url);
+  const sessionId = searchParams.get("sessionId") ?? undefined;
+  const scope = searchParams.get("scope") ?? undefined;
+  const limit = Number(searchParams.get("limit") ?? "50");
 
   let entries = getIosNativeDebugLogs(sessionId);
   if (scope) {

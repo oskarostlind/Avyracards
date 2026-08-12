@@ -14,6 +14,7 @@ export default async function ThemesPage() {
       themeSettings: true, 
       businessThemeSettings: true,
       isPremium: true,
+      role: true,
       username: true,
       name: true,
       bio: true,
@@ -92,7 +93,8 @@ export default async function ThemesPage() {
       mode: l.mode as "SOCIAL" | "BUSINESS", // Nu är detta värde korrekt från databasen
       isActive: true
     })),
-    isPremium: user.isPremium
+    isPremium: user.isPremium,
+    isAdmin: user.role === "ADMIN"
   };
 
   return (

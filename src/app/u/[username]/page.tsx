@@ -1,5 +1,8 @@
 import { notFound, redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { hasBlocked as viewerHasBlocked } from "@/lib/moderation";
+import { BlockedProfileNotice } from "@/components/public-profile/blocked-profile-notice";
 import { ProfileViewTracker } from "@/components/analytics/trackers";
 import { SocialProfile } from "@/components/public-profile/social-profile";
 import { BusinessProfile } from "@/components/public-profile/business-profile";
@@ -37,6 +40,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
       businessThemeSettings: true,
       redirectEnabled: true,
       redirectLinkId: true,
+      isSuspended: true,
       
       // Business-fält
       jobTitle: true,
@@ -71,6 +75,25 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
 
   if (!user) {
     notFound();
+  }
+
+  // Guideline 1.2: moderationen måste kunna ta bort stötande innehåll. En
+  // avstängd profil ska inte gå att nå publikt — men kontot finns kvar så att
+  // ägaren kan höra av sig och överklaga.
+  if (user.isSuspended) {
+    notFound();
+  }
+
+  const session = await auth();
+  const viewerId = session?.user?.id ?? null;
+
+  // En blockerad profil ska inte längre visas för den som blockerat den,
+  // och besöket ska inte heller loggas i profilens statistik.
+  if (viewerId && viewerId !== user.id) {
+    const blocked = await viewerHasBlocked(viewerId, user.id);
+    if (blocked) {
+      return <BlockedProfileNotice username={user.username} />;
+    }
   }
 
   const displayMode: ThemeMode = (isPreview && previewMode) 
@@ -114,7 +137,6 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     }
   }
 
-  const showAds = !user.isPremium;
   const sourceParam = typeof searchParams.source === 'string' ? searchParams.source : undefined;
 
   return (
@@ -124,7 +146,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
         <BusinessProfile 
             data={profileData} 
             user={userForDisplay as any} // Vi skickar det "rena" objektet
-            showAds={showAds} 
+            viewerIsLoggedIn={Boolean(viewerId)} 
         />
       ) : (
         <SocialProfile 
@@ -133,7 +155,7 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
             // @ts-ignore
             data={profileData}
             user={userForDisplay as any} 
-            showAds={showAds} 
+            viewerIsLoggedIn={Boolean(viewerId)} 
         />
       )}
     </>

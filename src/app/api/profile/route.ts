@@ -3,8 +3,15 @@ import { z } from "zod";
 
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { syncGoogleWalletPass } from "@/lib/wallet/google";
+import { WALLET_PASS_FIELDS } from "@/lib/wallet/pass-content";
 
 export const runtime = "nodejs";
+
+/** Sant om sparningen rör något som syns på ett wallet-pass. */
+function touchesWalletPass(data: Record<string, unknown>): boolean {
+  return WALLET_PASS_FIELDS.some((field) => data[field] !== undefined);
+}
 
 // --- HJÄLPSCHEMAN ---
 
@@ -161,13 +168,29 @@ async function updateProfile(req: Request) {
       id: true,
       username: true,
       name: true,
-      avatarUrl: true, 
+      avatarUrl: true,
       businessAvatarUrl: true, // <--- NYTT: Returnera detta så frontend kan uppdateras
       profileMode: true,
-      redirectEnabled: true, 
+      redirectEnabled: true,
       redirectLinkId: true,
+
+      // Behövs för wallet-synken nedan.
+      bio: true,
+      businessHeadline: true,
+      jobTitle: true,
     },
   });
+
+  // Wallet lifecycle: ett pass som redan ligger i användarens telefon är
+  // serverägt och uppdateras inte av sig självt. Utan det här visade passet
+  // gammalt namn/titel/bild — och efter ett byte av användarnamn pekade
+  // QR-koden på en profil som inte längre fanns.
+  //
+  // Synken hoppas över när inget passrelevant fält var med i sparningen, och
+  // kastar aldrig: Google-strul får inte göra att profilen inte går att spara.
+  if (touchesWalletPass(data)) {
+    await syncGoogleWalletPass(updated);
+  }
 
   return NextResponse.json(updated);
 }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { stripe } from "@/lib/stripe";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { sendSystemNotification } from "@/lib/notifications";
 
 export async function POST(req: Request) {
   try {
@@ -34,7 +35,14 @@ export async function POST(req: Request) {
     }
 
     // 5. Uppdatera användaren
-    // Vi uppdaterar oavsett om de redan är premium eller inte, för att säkra stripeCustomerId
+    // Vi uppdaterar oavsett om de redan är premium eller inte, för att säkra stripeCustomerId.
+    // Läsningen före skrivningen används bara för att avgöra om mailet ska gå ut:
+    // den här routen och Stripe-webhooken kan båda träffa samma köp.
+    const before = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isPremium: true, name: true, email: true },
+    });
+
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -42,6 +50,15 @@ export async function POST(req: Request) {
         stripeCustomerId: session.customer as string,
       },
     });
+
+    if (before && !before.isPremium) {
+      await sendSystemNotification({
+        type: "premium_activated",
+        to: before.email,
+        name: before.name,
+        source: "stripe",
+      });
+    }
 
     console.log(`✅ User ${userId} manually activated premium via session ${sessionId}`);
 

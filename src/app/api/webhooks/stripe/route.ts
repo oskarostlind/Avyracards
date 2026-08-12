@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 import { fulfillPhysicalCardOrder, type PhysicalOrderItemInput } from "@/lib/stripe-order-fulfillment";
+import { sendSystemNotification } from "@/lib/notifications";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -35,11 +36,28 @@ export async function POST(req: Request) {
     // SCENARIO 1: Premium Subscription
     if (type === "premium_subscription") {
        if (!userId) return new NextResponse(null, { status: 200 });
-       
+
+       // Läs före skrivningen så att bara en faktisk aktivering ger mail.
+       // Webhooken och /api/stripe/verify-session kan båda träffa samma köp.
+       const before = await prisma.user.findUnique({
+         where: { id: userId },
+         select: { isPremium: true, name: true, email: true },
+       });
+
        await prisma.user.update({
          where: { id: userId },
          data: { isPremium: true, stripeCustomerId: session.customer as string },
        });
+
+       if (before && !before.isPremium) {
+         await sendSystemNotification({
+           type: "premium_activated",
+           to: before.email ?? session.customer_details?.email,
+           name: before.name,
+           source: "stripe",
+         });
+       }
+
        return new NextResponse(null, { status: 200 });
     }
 

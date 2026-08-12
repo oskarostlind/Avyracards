@@ -106,6 +106,9 @@ export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInBut
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           identityToken: appleResult.response.identityToken,
+          // Skickas vidare så att servern kan växla den mot ett refresh token
+          // och kunna återkalla Apple-kopplingen vid kontoradering (TN3194).
+          authorizationCode: appleResult.response.authorizationCode ?? null,
           email: appleResult.response.email,
           givenName: appleResult.response.givenName,
           familyName: appleResult.response.familyName,

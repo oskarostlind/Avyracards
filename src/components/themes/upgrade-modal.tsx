@@ -2,6 +2,7 @@
 
 import { X, Check, Crown, ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { useIsApp } from "@/hooks/useIsApp";
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -9,6 +10,11 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
+  // "30 dagars öppet köp" gäller vår egen webbförsäljning. I appen går köpet via
+  // App Store där Apple hanterar återbetalningar — att utlova en egen ångerrätt
+  // där är ett vilseledande köpvillkor (3.1.2(c)/2.3.1).
+  const isApp = useIsApp();
+
   if (!isOpen) return null;
 
   return (
@@ -50,7 +56,9 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
           </Link>
 
           <p className="mt-4 text-xs text-slate-500">
-            30 dagars öppet köp. Inga bindningstider.
+            {isApp
+              ? "Prenumerationen förnyas automatiskt tills du säger upp den i App Store. Inga bindningstider."
+              : "30 dagars öppet köp. Inga bindningstider."}
           </p>
         </div>
       </div>

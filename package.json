@@ -9,7 +9,9 @@
     "lint": "next lint",
     "ios:bump": "node scripts/bump-ios-build.mjs",
     "ios:release": "node scripts/bump-ios-build.mjs && npx cap sync ios",
-    "postinstall": "prisma generate && node scripts/patch-capacitor-plugins-spm.mjs"
+    "postinstall": "prisma generate && node scripts/patch-capacitor-plugins-spm.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",
@@ -40,7 +42,6 @@
     "lucide-react": "^0.554.0",
     "next": "14.2.35",
     "next-auth": "^5.0.0-beta.30",
-    "nodemailer": "^7.0.11",
     "passkit-generator": "^3.5.6",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
@@ -58,7 +59,6 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.19.3",
-    "@types/nodemailer": "^7.0.4",
     "@types/react": "^18.3.4",
     "@types/react-dom": "^18.3.0",
     "@typescript-eslint/eslint-plugin": "^7.0.0",

@@ -1,19 +1,21 @@
 "use client";
 
 import { ThemeTemplate, ThemeMode } from "@/types/theme";
-import { SOCIAL_TEMPLATES } from "@/data/theme-templates-social";
-import { BUSINESS_TEMPLATES } from "@/data/theme-templates-business";
 import { PremiumBadge } from "@/components/themes/theme-controls";
+import { getTemplates, isTemplateLocked } from "@/lib/feature-access";
 
 interface TemplatesTabProps {
   isPremium: boolean;
+  isAdmin?: boolean;
   onApply: (template: ThemeTemplate) => void;
+  onShowUpgrade: () => void;
   mode: ThemeMode;
 }
 
-export function TemplatesTab({ isPremium, onApply, mode }: TemplatesTabProps) {
-  
-  const templates = mode === "BUSINESS" ? BUSINESS_TEMPLATES : SOCIAL_TEMPLATES;
+export function TemplatesTab({ isPremium, isAdmin, onApply, onShowUpgrade, mode }: TemplatesTabProps) {
+
+  const templates = getTemplates(mode);
+  const accessUser = { isPremium, isAdmin };
 
   const getPreviewData = (t: ThemeTemplate) => {
     const s = t.settings;
@@ -88,26 +90,34 @@ export function TemplatesTab({ isPremium, onApply, mode }: TemplatesTabProps) {
       <div className="grid grid-cols-2 gap-3">
         {templates.map((t) => {
           const preview = getPreviewData(t);
-          
+          const locked = isTemplateLocked(t, accessUser);
+
           return (
             <button
               key={t.id}
-              onClick={() => onApply(t)}
-              className="group relative aspect-video rounded-xl border border-nordic-highlight/40 bg-slate-900 overflow-hidden hover:border-purple-500 transition-all text-left p-3 flex flex-col justify-end shadow-sm"
+              onClick={() => (locked ? onShowUpgrade() : onApply(t))}
+              aria-disabled={locked}
+              title={locked ? "Premium-mall – uppgradera för att använda" : t.name}
+              className={`group relative aspect-video rounded-xl border border-nordic-highlight/40 bg-slate-900 overflow-hidden transition-all text-left p-3 flex flex-col justify-end shadow-sm ${
+                locked ? "hover:border-amber-500 cursor-not-allowed" : "hover:border-purple-500"
+              }`}
             >
-              <div 
-                className={`absolute inset-0 opacity-80 transition-opacity group-hover:opacity-100 ${preview.className}`} 
+              <div
+                className={`absolute inset-0 opacity-80 transition-opacity group-hover:opacity-100 ${preview.className}`}
                 style={preview.style}
               />
-              
+
+              {/* Låst mall: dämpa förhandsvisningen så det syns att den inte går att välja */}
+              {locked && <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] z-[5]" />}
+
               <div className="relative z-10 flex items-center justify-between w-full">
-                  <span className={`text-xs font-bold drop-shadow-md ${getTextColor(t.id)}`}>
+                  <span className={`text-xs font-bold drop-shadow-md ${locked ? "text-white/80" : getTextColor(t.id)}`}>
                       {t.name}
                   </span>
               </div>
-              
+
               {/* Flyttad Badge så att dess absolu-position kan fästa direkt i parent-button */}
-              {t.isPremium && <PremiumBadge isUnlocked={isPremium} />}
+              {t.isPremium && <PremiumBadge isUnlocked={!locked} />}
             </button>
           )
         })}

@@ -50,7 +50,7 @@ export function ProfileTab({ settings, updateSetting, isPremium }: ProfileTabPro
         <div className="space-y-3">
          <label className="text-xs font-bold text-nordic-highlight uppercase">Profilbild Ram</label>
          <div className="grid grid-cols-3 gap-2">
-            {(['none', 'circle', 'rounded', 'ring', 'glow', 'hexagon'] as FrameStyle[]).map((frame) => {
+            {(['none', 'circle', 'rounded', 'ring', 'glow', 'hexagon', 'square', 'shadow'] as FrameStyle[]).map((frame) => {
                 return (
                   <button 
                     key={frame}
