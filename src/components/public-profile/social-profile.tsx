@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import type { User, Link as LinkModel } from "@prisma/client";
-import { AdBanner } from "@/components/ads/google-adsense";
 import { TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
@@ -16,13 +15,12 @@ type UserWithLinks = User & { links: LinkModel[] };
 interface SocialProfileProps {
   user: UserWithLinks;
   data: MappedProfileData; 
-  showAds: boolean;
   /** Guideline 1.2: rapport-/blockeringskontroller på publika profiler. */
   viewerIsLoggedIn?: boolean;
   hasBlocked?: boolean;
 }
 
-export function SocialProfile({ user, data, showAds, viewerIsLoggedIn = false, hasBlocked = false }: SocialProfileProps) {
+export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked = false }: SocialProfileProps) {
   const useCustomTheme = !!user.themeSettings;
   const savedSettings = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
@@ -195,7 +193,6 @@ export function SocialProfile({ user, data, showAds, viewerIsLoggedIn = false, h
               </TrackedLink>
             ))}
           </div>
-          {showAds && <AdBanner />}
         </section>
 
         <ProfileSafetyActions

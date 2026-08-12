@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import type { User } from "@prisma/client";
-import { AdBanner } from "@/components/ads/google-adsense";
 import { TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
@@ -14,7 +13,6 @@ import { Save } from "lucide-react";
 interface BusinessProfileProps {
   data: MappedProfileData;
   user: User;
-  showAds: boolean;
   /** Guideline 1.2: rapport-/blockeringskontroller på publika profiler. */
   viewerIsLoggedIn?: boolean;
   hasBlocked?: boolean;
@@ -29,7 +27,7 @@ const fontMap: Record<string, string> = {
   oswald: "'Oswald', sans-serif",
 };
 
-export function BusinessProfile({ data, user, showAds, viewerIsLoggedIn = false, hasBlocked = false }: BusinessProfileProps) {
+export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlocked = false }: BusinessProfileProps) {
   const tokens = getTheme(user.theme); 
   const savedSettings = (user.businessThemeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
@@ -281,12 +279,6 @@ export function BusinessProfile({ data, user, showAds, viewerIsLoggedIn = false,
              </div>
           )}
 
-          {showAds && (
-             <div className="p-4 border-t border-white/5 text-center bg-black/20">
-                <p className="text-[10px] opacity-50 uppercase mb-2">Annons</p>
-                <div className="mx-auto max-w-[300px] overflow-hidden rounded-lg"><AdBanner /></div>
-             </div>
-          )}
         </div>
 
         <ProfileSafetyActions
