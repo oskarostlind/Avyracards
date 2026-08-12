@@ -140,7 +140,36 @@ export default function TermsPage() {
 
         <section>
           <h2 className="text-xl font-semibold text-slate-100">
-            12. Ändringar av villkor
+            12. Användarskapat innehåll och nolltolerans
+          </h2>
+          <p className="mt-2">
+            Din publika profil är användarskapat innehåll: du ansvarar själv för
+            namn, presentationstext, bilder och länkar som du publicerar. Det är
+            förbjudet att publicera innehåll som är olagligt, hotfullt,
+            trakasserande, hatiskt, sexuellt explicit, våldsamt, integritetskränkande
+            eller som utger sig för att vara någon annan. Det är också förbjudet att
+            länka vidare till sådant innehåll.
+          </p>
+          <p className="mt-2">
+            Vi tillämpar nolltolerans mot stötande innehåll och mot användare som
+            beter sig kränkande. Alla publika profiler kan rapporteras direkt från
+            profilsidan, och du kan blockera en annan användare så att profilen inte
+            längre visas för dig. Rapporter granskas inom 24 timmar. Innehåll som
+            bryter mot villkoren tas bort och kontot kan stängas av permanent utan
+            förvarning.
+          </p>
+          <p className="mt-2">
+            Du kan alltid kontakta oss direkt på{" "}
+            <a href="mailto:kontakt@avyracards.se" className="underline">
+              kontakt@avyracards.se
+            </a>{" "}
+            om du sett innehåll som bryter mot villkoren.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold text-slate-100">
+            13. Ändringar av villkor
           </h2>
           <p className="mt-2">
             Vi kan uppdatera användarvillkoren när som helst. Fortsatt användning

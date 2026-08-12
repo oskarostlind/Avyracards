@@ -66,6 +66,11 @@ export function Footer() {
             </div>
             <ul className="space-y-1 text-xs text-nordic-highlight md:text-sm">
               <li>
+                <Link href="/report" className="hover:text-nordic-accent">
+                  Rapportera innehåll
+                </Link>
+              </li>
+              <li>
                 <Link href="/terms" className="hover:text-nordic-accent">
                   Användarvillkor
                 </Link>

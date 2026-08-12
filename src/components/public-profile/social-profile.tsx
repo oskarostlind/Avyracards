@@ -9,6 +9,7 @@ import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
 import { Save } from "lucide-react";
 import { MappedProfileData } from "@/lib/profile-mapper";
+import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 
 type UserWithLinks = User & { links: LinkModel[] };
 
@@ -16,9 +17,12 @@ interface SocialProfileProps {
   user: UserWithLinks;
   data: MappedProfileData; 
   showAds: boolean;
+  /** Guideline 1.2: rapport-/blockeringskontroller på publika profiler. */
+  viewerIsLoggedIn?: boolean;
+  hasBlocked?: boolean;
 }
 
-export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
+export function SocialProfile({ user, data, showAds, viewerIsLoggedIn = false, hasBlocked = false }: SocialProfileProps) {
   const useCustomTheme = !!user.themeSettings;
   const savedSettings = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
@@ -193,6 +197,13 @@ export function SocialProfile({ user, data, showAds }: SocialProfileProps) {
           </div>
           {showAds && <AdBanner />}
         </section>
+
+        <ProfileSafetyActions
+          username={user.username}
+          isLoggedIn={viewerIsLoggedIn}
+          initiallyBlocked={hasBlocked}
+          color={useCustomTheme ? settings.textColor : undefined}
+        />
 
         {showBranding && (
           <div className="mt-8 text-xs font-bold uppercase tracking-widest opacity-60 hover:opacity-100 transition-opacity" style={{ color: useCustomTheme ? settings.textColor : undefined }}>
