@@ -12,7 +12,13 @@ export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isApp = useIsApp();
-  const showAppleOnly = isApp && isIosNativePaymentsEnabled();
+  // Guideline 4.8 kräver att Sign in with Apple ERBJUDS när tredjepartsinloggning
+  // finns — inte att den egna inloggningen göms. Tidigare dolde appen
+  // e-post/lösenord helt, vilket gjorde det omöjligt för App Review att logga in
+  // med demokontot i review notes: de hade bara kunnat skapa ett nytt tomt konto
+  // via sitt eget Apple-ID. Apple-knappen ligger kvar överst, men formuläret
+  // finns alltid kvar under den.
+  const showAppleButton = isApp && isIosNativePaymentsEnabled();
   
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const registered = searchParams.get("registered");
@@ -94,10 +100,20 @@ export default function LoginForm() {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {showAppleOnly ? (
+      {showAppleButton && (
+        <div className="space-y-4">
           <AppleSignInButton callbackUrl={callbackUrl} />
-        ) : (
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-nordic-highlight/20" />
+            <span className="text-[11px] uppercase tracking-wider text-nordic-highlight">
+              eller
+            </span>
+            <div className="h-px flex-1 bg-nordic-highlight/20" />
+          </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div className="space-y-4">
           
           <div className="space-y-2">
@@ -150,9 +166,7 @@ export default function LoginForm() {
             />
           </div>
         </div>
-        )}
 
-        {!showAppleOnly && (
         <button
           type="submit"
           disabled={loading}
@@ -160,9 +174,7 @@ export default function LoginForm() {
         >
           {loading ? "Loggar in..." : "Logga in"}
         </button>
-        )}
 
-        {!showAppleOnly && (
         <div className="text-center space-y-4 pt-2">
           <Link
             href="/get-started"
@@ -171,7 +183,6 @@ export default function LoginForm() {
             Har du inget konto? <span className="font-semibold text-nordic-secondary">Skapa konto</span>
           </Link>
         </div>
-        )}
       </form>
     </div>
   );
