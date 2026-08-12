@@ -137,7 +137,6 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
     }
   }
 
-  const showAds = !user.isPremium;
   const sourceParam = typeof searchParams.source === 'string' ? searchParams.source : undefined;
 
   return (
@@ -147,7 +146,6 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
         <BusinessProfile 
             data={profileData} 
             user={userForDisplay as any} // Vi skickar det "rena" objektet
-            showAds={showAds}
             viewerIsLoggedIn={Boolean(viewerId)} 
         />
       ) : (
@@ -157,7 +155,6 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
             // @ts-ignore
             data={profileData}
             user={userForDisplay as any} 
-            showAds={showAds}
             viewerIsLoggedIn={Boolean(viewerId)} 
         />
       )}
