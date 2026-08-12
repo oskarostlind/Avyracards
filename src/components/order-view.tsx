@@ -305,7 +305,8 @@ const handleCheckout = async () => {
                 <div className="p-2 bg-white/5 rounded-lg"><CreditCard size={18} /></div>
                 <div className="text-left">
                   <span className="block font-bold text-sm">Metal Hybrid</span>
-                  <span className="text-xs opacity-60">Rostfritt stål</span>
+                  {/* Leverantörens spec är metall/PVC med aluminiumantenn — inte stål (ClickUp 86c6qdj6d) */}
+                  <span className="text-xs opacity-60">Metall/PVC</span>
                 </div>
                  <div className="ml-auto text-right">
                     {!hasMetal ? (
@@ -360,6 +361,8 @@ const handleCheckout = async () => {
                     <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-xl p-6 text-center cursor-pointer transition-all group">
                         <Upload className="mx-auto mb-2 text-nordic-highlight group-hover:text-blue-400" size={20} />
                         <p className="text-sm font-medium text-gray-300">Ladda upp logotyp</p>
+                        {/* Tryckytan är PVC-panelen, inte hela kortet (ClickUp 86c6qdj6d) */}
+                        <p className="mt-1 text-[11px] text-gray-500">Tryckyta 82 × 51 mm — ytterkanten förblir borstad metall</p>
                     </div>
                 ) : (
                     <div className="relative rounded-xl overflow-hidden border border-white/20 group h-24 w-full">
