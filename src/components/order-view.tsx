@@ -8,6 +8,7 @@ import { CardPreview3D } from "@/components/card-preview-3d";
 import { LiveProfileDemo } from "@/components/live-profile-demo";
 import { useIosNativePayments } from "@/hooks/useIosNativePayments";
 import { IosOrderCheckout } from "@/components/checkout/ios-order-checkout";
+import { SubscriptionTerms } from "@/components/checkout/subscription-terms";
 
 // --- Types ---
 type MaterialType = "plastic" | "metal";
@@ -445,6 +446,25 @@ const handleCheckout = async () => {
                 </div>
             </div>
            )}
+
+          {/* Guideline 3.1.2(c): orderflödet är en egen köppunkt för den
+              auto-förnyande 6-månadersprenumerationen. Villkoren måste därför
+              stå här också, inte bara på premium-sidan — belopp, att den
+              förnyas automatiskt, hur man säger upp och länkar till EULA och
+              integritetspolicy. */}
+          {premiumOption === "6mo" && (
+            <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+              <SubscriptionTerms price="299 kr" period="6 månader" viaAppStore />
+            </div>
+          )}
+
+          {premiumOption === "1mo" && (
+            <p className="mt-4 text-[11px] leading-relaxed text-slate-400">
+              Den första månaden Premium ingår utan kostnad i kortköpet och
+              förnyas inte automatiskt. När månaden är slut återgår kontot till
+              gratisversionen om du inte själv väljer att uppgradera.
+            </p>
+          )}
 
           <div className="h-px bg-white/10 my-6"></div>
 
