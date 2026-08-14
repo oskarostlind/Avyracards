@@ -3,6 +3,7 @@
 import { ThemeTemplate, ThemeMode } from "@/types/theme";
 import { PremiumBadge } from "@/components/themes/theme-controls";
 import { getTemplates, isTemplateLocked } from "@/lib/feature-access";
+import { useT } from "@/i18n/client";
 
 interface TemplatesTabProps {
   isPremium: boolean;
@@ -13,6 +14,8 @@ interface TemplatesTabProps {
 }
 
 export function TemplatesTab({ isPremium, isAdmin, onApply, onShowUpgrade, mode }: TemplatesTabProps) {
+  // Heter `tr` här: den lokala loop-variabeln `t` är en ThemeTemplate.
+  const tr = useT();
 
   const templates = getTemplates(mode);
   const accessUser = { isPremium, isAdmin };
@@ -82,9 +85,9 @@ export function TemplatesTab({ isPremium, isAdmin, onApply, onShowUpgrade, mode 
     <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
       <div className="flex items-center justify-between">
           <h3 className="text-xs font-bold text-nordic-highlight uppercase tracking-wider">
-            {mode === "BUSINESS" ? "Business Mallar" : "Social Mallar"}
+            {mode === "BUSINESS" ? tr("themes.upgrade.templatesTitleBusiness") : tr("themes.upgrade.templatesTitleSocial")}
           </h3>
-          <span className="text-[10px] text-slate-500">{templates.length} st</span>
+          <span className="text-[10px] text-slate-500">{tr("themes.upgrade.templatesCount", { count: templates.length })}</span>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -97,7 +100,7 @@ export function TemplatesTab({ isPremium, isAdmin, onApply, onShowUpgrade, mode 
               key={t.id}
               onClick={() => (locked ? onShowUpgrade() : onApply(t))}
               aria-disabled={locked}
-              title={locked ? "Premium-mall – uppgradera för att använda" : t.name}
+              title={locked ? tr("themes.templateLocked") : t.name}
               className={`group relative aspect-video rounded-xl border border-nordic-highlight/40 bg-slate-900 overflow-hidden transition-all text-left p-3 flex flex-col justify-end shadow-sm ${
                 locked ? "hover:border-amber-500 cursor-not-allowed" : "hover:border-purple-500"
               }`}
@@ -123,7 +126,7 @@ export function TemplatesTab({ isPremium, isAdmin, onApply, onShowUpgrade, mode 
         })}
       </div>
       <p className="text-xs text-nordic-highlight text-center mt-2">
-        Välj en mall som grund för din {mode === "BUSINESS" ? "affärsprofil" : "sociala profil"}.
+        {mode === "BUSINESS" ? tr("themes.templatesIntroBusiness") : tr("themes.templatesIntroSocial")}
       </p>
     </div>
   );

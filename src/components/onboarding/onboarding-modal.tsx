@@ -5,6 +5,7 @@ import { X, ChevronRight } from "lucide-react";
 import { completeOnboarding } from "@/actions/onboarding";
 import { DashboardVisual, StatsVisual, ThemesVisual, HardwareVisual } from "./slides/visuals";
 import { HardwareContent } from "./slides/hardware-slide";
+import { useT } from "@/i18n/client";
 
 interface OnboardingModalProps {
   user: {
@@ -15,38 +16,17 @@ interface OnboardingModalProps {
   prices: { standard: string; bundle: string };
 }
 
+// Texterna slås upp via i18n-nycklar vid render — hårdkodade strängar här
+// hade låst onboardingen till svenska oavsett språkval.
 const STEPS = [
-  {
-    id: "intro",
-    title: "Välkommen till Avyra",
-    desc: "Din nya digitala hub. Här samlar du dina länkar, sociala medier och kontaktuppgifter på ett och samma ställe.",
-    buttonText: "Visa mig runt",
-    visual: DashboardVisual,
-  },
-  {
-    id: "stats",
-    title: "Lär känna din publik",
-    desc: "Sluta gissa. Med vår inbyggda analys ser du exakt vem som besöker dig, varifrån de kommer och vad de är intresserade av.",
-    buttonText: "Spännande",
-    visual: StatsVisual,
-  },
-  {
-    id: "themes",
-    title: "Designa din identitet",
-    desc: "Första intrycket räknas. Välj bland våra professionella teman eller skräddarsy varje detalj för att matcha ditt varumärke.",
-    buttonText: "Gå vidare",
-    visual: ThemesVisual,
-  },
-  {
-    id: "hardware",
-    title: "", 
-    desc: "", 
-    buttonText: "",
-    visual: HardwareVisual,
-  },
-];
+  { id: "intro", key: "onboarding.intro", visual: DashboardVisual },
+  { id: "stats", key: "onboarding.stats", visual: StatsVisual },
+  { id: "themes", key: "onboarding.themes", visual: ThemesVisual },
+  { id: "hardware", key: null, visual: HardwareVisual },
+] as const;
 
 export function OnboardingModal({ user, prices }: OnboardingModalProps) {
+  const t = useT();
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -87,6 +67,7 @@ export function OnboardingModal({ user, prices }: OnboardingModalProps) {
             <button 
                 onClick={handleFinish} 
                 className="absolute top-3 right-3 z-[60] p-2 bg-slate-950/60 backdrop-blur-md md:bg-slate-800/50 hover:bg-slate-800 text-white rounded-full transition-all border border-white/10"
+                aria-label={t("onboarding.close")}
             >
                 <X size={18} />
             </button>
@@ -101,7 +82,7 @@ export function OnboardingModal({ user, prices }: OnboardingModalProps) {
                     <CurrentVisual isPremium={user.isPremium} />
                 ) : STEPS[currentStep].id === "hardware" ? (
                       // @ts-ignore
-                    <CurrentVisual name={user.name || "Ditt Namn"} />
+                    <CurrentVisual name={user.name || t("onboarding.yourName")} />
                 ) : (
                     // @ts-ignore
                     <CurrentVisual />
@@ -134,10 +115,10 @@ export function OnboardingModal({ user, prices }: OnboardingModalProps) {
                 ) : (
                     <div className="space-y-3 sm:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 key={currentStep}">
                         <h2 className="text-xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight">
-                            {STEPS[currentStep].title}
+                            {t(`${STEPS[currentStep].key}.title`)}
                         </h2>
                         <p className="text-sm sm:text-lg text-slate-400 leading-relaxed">
-                            {STEPS[currentStep].desc}
+                            {t(`${STEPS[currentStep].key}.desc`)}
                         </p>
                     </div>
                 )}
@@ -149,7 +130,7 @@ export function OnboardingModal({ user, prices }: OnboardingModalProps) {
                         onClick={handleNext}
                         className="w-full md:w-auto group flex items-center justify-center gap-2 px-6 py-3 sm:py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-base sm:text-lg rounded-xl transition-all shadow-lg shadow-emerald-900/20"
                     >
-                        {STEPS[currentStep].buttonText}
+                        {t(`${STEPS[currentStep].key}.button`)}
                         <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
                     </button>
                 </div>

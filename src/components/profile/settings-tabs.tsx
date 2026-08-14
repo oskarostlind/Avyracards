@@ -3,18 +3,20 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Settings, CreditCard, Layers, Bell } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 export function SettingsTabs() {
+  const t = useT();
   const searchParams = useSearchParams();
   // ÄNDRAT: Default är nu "account" istället för "profile"
   const currentView = searchParams.get("view") || "account";
 
   const tabs = [
     // Tog bort "Profil" härifrån
-    { id: "account", label: "Konto & Integritet", icon: Settings },
-    { id: "notifications", label: "Notiferingar", icon: Bell },
-    { id: "billing", label: "Prenumeration", icon: CreditCard },
-    { id: "cards", label: "Mina Kort", icon: Layers },
+    { id: "account", label: t("settings.tabs.account"), icon: Settings },
+    { id: "notifications", label: t("settings.tabs.notifications"), icon: Bell },
+    { id: "billing", label: t("settings.tabs.billing"), icon: CreditCard },
+    { id: "cards", label: t("settings.tabs.cards"), icon: Layers },
   ];
 
   return (

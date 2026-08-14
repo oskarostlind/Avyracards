@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import type { User, Link } from "@prisma/client";
 import { CollapsibleSection } from "@/components/dashboard/accordion";
 import { AvatarUploader } from "@/components/avatar-uploader";
+import { useT } from "@/i18n/client";
 
 type BusinessProfileFormProps = {
   user: User & { links: Link[] };
 };
 
 export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
+  const t = useT();
   const router = useRouter();
   
   // NYTT STATE
@@ -78,11 +80,11 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
         body: JSON.stringify({ [field]: url || null }),
       });
       if (!res.ok) throw new Error("Failed to save image");
-      setStatus("✔ Bilden är uppdaterad.");
+      setStatus(t("businessForm.imageUpdated"));
       router.refresh();
     } catch (error) {
       console.error(error);
-      setStatus("⚠ Kunde inte spara bilden. Försök igen.");
+      setStatus(t("businessForm.imageFailed"));
     }
   };
 
@@ -122,14 +124,14 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setStatus(data?.error ?? "Något gick fel. Försök igen.");
+        setStatus(data?.error ?? t("common.somethingWentWrong"));
       } else {
-        setStatus("✅ Business-profilen är uppdaterad.");
+        setStatus(t("businessForm.updated"));
         router.refresh(); 
       }
     } catch (error) {
       console.error(error);
-      setStatus("⚠ Ett oväntat fel uppstod.");
+      setStatus(t("businessForm.unexpectedError"));
     } finally {
       setIsSaving(false);
     }
@@ -139,8 +141,8 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       
       <CollapsibleSection
-        title="Hero"
-        description="Bild, titel, företag, ort och en kort headline."
+        title={t("businessForm.hero")}
+        description={t("businessForm.heroDesc")}
         defaultOpen
       >
         <div className="space-y-4">
@@ -148,7 +150,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
             {/* NYTT: UPLOADER FÖR BUSINESS AVATAR */}
             <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5">
                 <AvatarUploader
-                    label="Profilbild för Business-läge"
+                    label={t("businessForm.businessAvatar")}
                     value={businessAvatarUrl}
                     onChange={(url) => {
                       setBusinessAvatarUrl(url);
@@ -157,79 +159,79 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
                     onUploadStart={() => setIsSaving(true)}
                     onUploadEnd={() => setIsSaving(false)}
                 />
-                <p className="text-[10px] text-slate-400 mt-2">Om du lämnar denna tom används din vanliga profilbild.</p>
+                <p className="text-[10px] text-slate-400 mt-2">{t("businessForm.businessAvatarHint")}</p>
             </div>
 
             <div className="grid gap-3 md:grid-cols-2">
                 <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">Titel</label>
-                <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="Kundansvarig inom IT-lösningar" />
+                <label className="block text-xs font-medium text-slate-200">{t("businessForm.jobTitle")}</label>
+                <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.jobTitlePlaceholder")} />
                 </div>
                 <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">Företag</label>
-                <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="Företag AB" />
+                <label className="block text-xs font-medium text-slate-200">{t("businessForm.company")}</label>
+                <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.companyPlaceholder")} />
                 </div>
                 <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">Ort / region</label>
-                <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="Umeå, Norra Sverige" />
+                <label className="block text-xs font-medium text-slate-200">{t("businessForm.location")}</label>
+                <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.locationPlaceholder")} />
                 </div>
                 <div className="space-y-1.5 md:col-span-2">
-                <label className="block text-xs font-medium text-slate-200">Kort headline</label>
-                <input value={businessHeadline} onChange={(e) => setBusinessHeadline(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="Kundansvarig inom IT-lösningar | Eriksson Company AB" />
-                <p className="text-[10px] text-nordic-highlight">En kort 1-rads pitch som visas högst upp på din businessprofil.</p>
+                <label className="block text-xs font-medium text-slate-200">{t("businessForm.headline")}</label>
+                <input value={businessHeadline} onChange={(e) => setBusinessHeadline(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.headlinePlaceholder")} />
+                <p className="text-[10px] text-nordic-highlight">{t("businessForm.headlineHint")}</p>
                 </div>
             </div>
         </div>
       </CollapsibleSection>
 
       {/* ... Resten av sektionerna är oförändrade ... */}
-      <CollapsibleSection title="Kontakt & CTA" description="Telefon, e-post, bokningslänk och vCard." defaultOpen={false}>
+      <CollapsibleSection title={t("businessForm.contactSection")} description={t("businessForm.contactSectionDesc")} defaultOpen={false}>
         <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-200">Telefon (business)</label>
-            <input value={businessPhone} onChange={(e) => setBusinessPhone(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="+46 70 123 45 67" />
+            <label className="block text-xs font-medium text-slate-200">{t("businessForm.phone")}</label>
+            <input value={businessPhone} onChange={(e) => setBusinessPhone(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("profileForm.phonePlaceholder")} />
             </div>
             <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-200">E-post (business)</label>
-            <input type="email" value={businessEmail} onChange={(e) => setBusinessEmail(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="namn@företag.se" />
+            <label className="block text-xs font-medium text-slate-200">{t("businessForm.email")}</label>
+            <input type="email" value={businessEmail} onChange={(e) => setBusinessEmail(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("profileForm.contactEmailPlaceholder")} />
             </div>
             <div className="space-y-1.5 md:col-span-2">
-            <label className="block text-xs font-medium text-slate-200">Boka-möte-länk</label>
+            <label className="block text-xs font-medium text-slate-200">{t("businessForm.bookingUrl")}</label>
             <input value={bookingUrl} onChange={(e) => setBookingUrl(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="https://calendly.com/ditt-namn/30min" />
-            <p className="text-[10px] text-nordic-highlight">Besökare kan klicka direkt för att boka ett möte med dig.</p>
+            <p className="text-[10px] text-nordic-highlight">{t("businessForm.bookingUrlHint")}</p>
             </div>
             <div className="space-y-1.5 md:col-span-2">
-            <label className="block text-xs font-medium text-slate-200">vCard-URL (valfritt)</label>
-            <input value={vcardUrl} onChange={(e) => setVcardUrl(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="https://din-sajt.se/kontakt.vcf" />
-            <p className="text-[10px] text-nordic-highlight">Används om du vill erbjuda en &quot;Spara kontakt&quot;-knapp (vCard).</p>
+            <label className="block text-xs font-medium text-slate-200">{t("businessForm.vcardUrl")}</label>
+            <input value={vcardUrl} onChange={(e) => setVcardUrl(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.vcardUrlPlaceholder")} />
+            <p className="text-[10px] text-nordic-highlight">{t("businessForm.vcardUrlHint")}</p>
             </div>
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Nyckelinfo" description="Bransch/expertis, språk och region." defaultOpen={false}>
+      <CollapsibleSection title={t("businessForm.keyInfo")} description={t("businessForm.keyInfoDesc")} defaultOpen={false}>
         <div className="space-y-3">
             <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-200">Bransch / expertis</label>
-            <input value={expertiseTags} onChange={(e) => setExpertiseTags(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="Telekom, B2B-försäljning, CRM / Salesforce" />
+            <label className="block text-xs font-medium text-slate-200">{t("businessForm.expertise")}</label>
+            <input value={expertiseTags} onChange={(e) => setExpertiseTags(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.expertisePlaceholder")} />
             </div>
             <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">Språk</label>
-                <input value={languages} onChange={(e) => setLanguages(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="Svenska, Engelska" />
+                <label className="block text-xs font-medium text-slate-200">{t("businessForm.languages")}</label>
+                <input value={languages} onChange={(e) => setLanguages(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.languagesPlaceholder")} />
             </div>
             <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">Region</label>
-                <input value={businessRegion} onChange={(e) => setBusinessRegion(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="Norra Sverige" />
+                <label className="block text-xs font-medium text-slate-200">{t("businessForm.region")}</label>
+                <input value={businessRegion} onChange={(e) => setBusinessRegion(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.regionPlaceholder")} />
             </div>
             </div>
         </div>
       </CollapsibleSection>
 
-      <CollapsibleSection title="Företagssektion" description="Logo, kort beskrivning och länkar till hemsida/karriär." defaultOpen={false}>
+      <CollapsibleSection title={t("businessForm.companySection")} description={t("businessForm.companySectionDesc")} defaultOpen={false}>
         <div className="space-y-3">
             <div className="space-y-1.5">
                 <AvatarUploader
-                  label="Företagslogo"
+                  label={t("businessForm.companyLogo")}
                   value={companyLogoUrl}
                   onChange={(url) => {
                     setCompanyLogoUrl(url);
@@ -240,16 +242,16 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
                 />
             </div>
             <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-200">Kort text om företaget</label>
-            <textarea value={companyDescription} onChange={(e) => setCompanyDescription(e.target.value)} rows={3} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="Beskriv kort vad bolaget gör, målgrupp och erbjudande." />
+            <label className="block text-xs font-medium text-slate-200">{t("businessForm.companyDescription")}</label>
+            <textarea value={companyDescription} onChange={(e) => setCompanyDescription(e.target.value)} rows={3} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.companyDescriptionPlaceholder")} />
             </div>
             <div className="grid gap-3 md:grid-cols-2">
             <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">Hemsida</label>
+                <label className="block text-xs font-medium text-slate-200">{t("businessForm.website")}</label>
                 <input value={companyWebsite} onChange={(e) => setCompanyWebsite(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="https://företag.se" />
             </div>
             <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">Karriärsida</label>
+                <label className="block text-xs font-medium text-slate-200">{t("businessForm.careerPage")}</label>
                 <input value={careerPageUrl} onChange={(e) => setCareerPageUrl(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="https://företag.se/karriar" />
             </div>
             </div>
@@ -266,7 +268,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
               : "bg-slate-800 text-slate-500 border border-slate-700"
           }`}
         >
-          {isSaving ? "Sparar..." : hasChanges ? "Spara ändringar" : "Spara"}
+          {isSaving ? t("common.saving") : hasChanges ? t("profileForm.saveChanges") : t("common.save")}
         </button>
 
         {status && <p className="text-[11px] text-nordic-highlight animate-in fade-in">{status}</p>}

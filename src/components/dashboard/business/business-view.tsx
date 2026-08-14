@@ -6,12 +6,14 @@ import { LinksWorkspace } from "@/components/dashboard/links-workspace";
 import { CollapsibleSection } from "@/components/dashboard/accordion";
 import { PublicProfileCard } from "@/components/dashboard/public-profile-card";
 import type { LinkItem } from "@/components/links-list";
+import { useT } from "@/i18n/client";
 
 type BusinessViewProps = {
   user: User & { links: Link[] };
 };
 
 export function BusinessView({ user }: BusinessViewProps) {
+  const t = useT();
   // Filtrera ut länkar som är BUSINESS
   const businessLinks = user.links.filter((l) => l.mode === "BUSINESS");
 
@@ -27,8 +29,8 @@ export function BusinessView({ user }: BusinessViewProps) {
       
       <div className="flex-1 space-y-4">
         <CollapsibleSection
-          title="Businessprofil"
-          description="Visitkorts-läge med titel, företag, kontaktuppgifter och företagsinfo."
+          title={t("dashboard.sections.businessProfile")}
+          description={t("dashboard.sections.businessProfileDesc")}
           defaultOpen
         >
           <BusinessProfileForm 
@@ -42,8 +44,8 @@ export function BusinessView({ user }: BusinessViewProps) {
         <PublicProfileCard username={user.username!} />
 
         <CollapsibleSection
-          title="Länkar (Business)"
-          description="Hantera vilka länkar som visas i din businessprofil."
+          title={t("dashboard.sections.linksBusiness")}
+          description={t("dashboard.sections.linksBusinessDesc")}
           defaultOpen
         >
           <LinksWorkspace 

@@ -21,6 +21,7 @@ import { ProfilePreviewModal } from "@/components/dashboard/profile-preview-moda
 import { OnboardingModal } from "@/components/onboarding/onboarding-modal";
 import { OrderCardWidget } from "@/components/dashboard/order-card-widget"; // <--- IMPORTERA
 import { PushManager } from "@/components/dashboard/push-manager";
+import { useT } from "@/i18n/client";
 
 type DashboardShellProps = {
   // Lägg till hasOrderedCard i typen
@@ -38,6 +39,7 @@ function getEmailProviderLink(email: string) {
 }
 
 export function DashboardShell({ user, prices }: DashboardShellProps) {
+  const t = useT();
   const [activeMode, setActiveMode] = useState<"SOCIAL" | "BUSINESS">(
     (user.profileMode as "SOCIAL" | "BUSINESS") ?? "SOCIAL"
   );
@@ -79,10 +81,12 @@ export function DashboardShell({ user, prices }: DashboardShellProps) {
                     <Mail className="text-blue-400" size={24} />
                 </div>
                 <div>
-                    <h3 className="font-bold text-nordic-secondary text-sm sm:text-base">Verifiera din e-postadress</h3>
+                    <h3 className="font-bold text-nordic-secondary text-sm sm:text-base">{t("dashboard.verifyBanner.title")}</h3>
                     <p className="text-xs sm:text-sm text-nordic-highlight mt-1 leading-relaxed">
-                        Vi har skickat en länk till <span className="text-nordic-secondary font-medium">{user.email}</span>. <br className="hidden sm:block"/>
-                        Verifiera för att säkra ditt konto. (Du kan fortfarande använda tjänsten nu!)
+                        {t("dashboard.verifyBanner.bodyBefore")}{" "}
+                        <span className="text-nordic-secondary font-medium">{user.email}</span>.{" "}
+                        <br className="hidden sm:block" />
+                        {t("dashboard.verifyBanner.bodyAfter")}
                     </p>
                 </div>
             </div>
@@ -95,9 +99,9 @@ export function DashboardShell({ user, prices }: DashboardShellProps) {
                     className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-xl transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 whitespace-nowrap"
                 >
                     {isGenericMailto ? (
-                        <>Öppna Mail-app <AppWindow size={14} /></>
+                        <>{t("dashboard.verifyBanner.openMailApp")} <AppWindow size={14} /></>
                     ) : (
-                        <>Öppna Inkorgen <ExternalLink size={14} /></>
+                        <>{t("dashboard.verifyBanner.openInbox")} <ExternalLink size={14} /></>
                     )}
                 </a>
 
@@ -106,7 +110,7 @@ export function DashboardShell({ user, prices }: DashboardShellProps) {
                     className="w-full sm:w-auto px-4 py-2.5 bg-transparent border border-nordic-highlight/20 hover:bg-nordic-highlight/5 text-nordic-highlight text-sm font-medium rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap"
                 >
                     <RefreshCw size={14} />
-                    <span className="hidden sm:inline">Skicka nytt</span>
+                    <span className="hidden sm:inline">{t("dashboard.verifyBanner.resend")}</span>
                 </NextLink>
             </div>
          </div>
@@ -123,9 +127,11 @@ export function DashboardShell({ user, prices }: DashboardShellProps) {
       {/* 3. Header & Controls */}
       <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-nordic-secondary tracking-tight">Redigera Profil</h1>
+          <h1 className="text-3xl font-bold text-nordic-secondary tracking-tight">{t("dashboard.header.title")}</h1>
           <p className="text-sm text-nordic-highlight mt-1">
-            Hantera innehållet för din {viewMode === "SOCIAL" ? "privata" : "affärs"}profil.
+            {viewMode === "SOCIAL"
+              ? t("dashboard.header.subtitleSocial")
+              : t("dashboard.header.subtitleBusiness")}
           </p>
         </div>
 
@@ -140,7 +146,7 @@ export function DashboardShell({ user, prices }: DashboardShellProps) {
                     }`}
                 >
                     <LayoutGrid size={16} />
-                    Social
+                    {t("dashboard.mode.social")}
                     {activeMode === "SOCIAL" && (
                       <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -157,7 +163,7 @@ export function DashboardShell({ user, prices }: DashboardShellProps) {
                     }`}
                 >
                     <Briefcase size={16} />
-                    Business
+                    {t("dashboard.mode.business")}
                     {activeMode === "BUSINESS" && (
                       <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
@@ -177,22 +183,26 @@ export function DashboardShell({ user, prices }: DashboardShellProps) {
                     className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-nordic-secondary bg-slate-800 hover:bg-slate-700 border border-nordic-highlight/40 rounded-xl transition-all animate-in fade-in zoom-in-95"
                   >
                     <Power size={16} className={isPending ? "animate-spin" : ""} />
-                    <span>Aktivera {viewMode === "SOCIAL" ? "Social" : "Business"}</span>
+                    <span>
+                      {viewMode === "SOCIAL"
+                        ? t("dashboard.mode.activateSocial")
+                        : t("dashboard.mode.activateBusiness")}
+                    </span>
                   </button>
                 ) : (
                   <div className="flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-xl cursor-default">
                     <CheckCircle2 size={16} />
-                    <span>Aktiv Profil</span>
+                    <span>{t("dashboard.mode.activeProfile")}</span>
                   </div>
                 )}
 
                 <button
                     onClick={() => setIsPreviewOpen(true)}
                     className="flex items-center gap-2 px-4 py-2.5 text-sm font-bold text-nordic-primary bg-nordic-secondary hover:bg-nordic-support rounded-xl transition-all shadow-lg shadow-nordic-accent/10 border border-nordic-support"
-                    title="Förhandsgranska profil"
+                    title={t("dashboard.mode.previewTitle")}
                 >
                     <Eye size={18} />
-                    <span className="hidden sm:inline">Preview</span>
+                    <span className="hidden sm:inline">{t("dashboard.mode.preview")}</span>
                 </button>
             </div>
         </div>

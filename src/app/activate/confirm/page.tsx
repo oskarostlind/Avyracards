@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { claimCard } from "@/lib/card-claim";
 import Link from "next/link";
 import { CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { getT } from "@/i18n/server";
+import type { Translator } from "@/i18n";
 
 interface Props {
   searchParams: {
@@ -11,11 +13,12 @@ interface Props {
   };
 }
 
-export const metadata = {
-  title: "Bekräfta Aktivering | AvyraCards",
-};
+export async function generateMetadata() {
+  return { title: `${getT()("activate.confirmMetaTitle")} | AvyraCards` };
+}
 
 export default async function ConfirmActivationPage({ searchParams }: Props) {
+  const t = getT();
   const cardCode = searchParams.code;
   const claimToken = searchParams.token;
 
@@ -37,14 +40,15 @@ export default async function ConfirmActivationPage({ searchParams }: Props) {
     });
   } catch (error) {
     console.error("Activation error:", error);
-    return <ErrorState message="Ett tekniskt fel uppstod vid aktiveringen." />;
+    return <ErrorState t={t} message={t("activate.technicalError")} />;
   }
 
   if (!result.ok) {
     if (result.reason === "already_claimed_by_user") {
       redirect("/profile/settings");
     }
-    return <ErrorState message={result.message} />;
+    // `reason` är en stabil kod; `message` är serverns svenska fallback.
+    return <ErrorState t={t} message={t(`activate.reasons.${result.reason}`)} />;
   }
 
   return (
@@ -54,9 +58,10 @@ export default async function ConfirmActivationPage({ searchParams }: Props) {
           <CheckCircle size={40} />
         </div>
 
-        <h1 className="text-2xl font-bold text-nordic-secondary mb-2">Kortet är aktiverat!</h1>
+        <h1 className="text-2xl font-bold text-nordic-secondary mb-2">{t("activate.successTitle")}</h1>
         <p className="text-nordic-highlight mb-8">
-          Ditt AvyraCards <strong>{cardCode}</strong> är nu kopplat till din profil.
+          {t("activate.successBodyBefore")} <strong>{cardCode}</strong>{" "}
+          {t("activate.successBodyAfter")}
         </p>
 
         <div className="space-y-3">
@@ -64,13 +69,13 @@ export default async function ConfirmActivationPage({ searchParams }: Props) {
             href="/profile/settings"
             className="block w-full py-3.5 bg-nordic-secondary text-nordic-primary font-bold rounded-xl hover:bg-nordic-support transition-colors"
           >
-            Hantera mina kort
+            {t("activate.manageCards")}
           </Link>
           <Link
             href={`/u/${session.user.username}`}
             className="block w-full py-3.5 bg-nordic-accent text-nordic-primary font-medium rounded-xl hover:bg-nordic-accent/80 transition-colors"
           >
-            Visa min profil <ArrowRight size={16} className="inline ml-1" />
+            {t("activate.viewProfile")} <ArrowRight size={16} className="inline ml-1" />
           </Link>
         </div>
       </div>
@@ -78,20 +83,20 @@ export default async function ConfirmActivationPage({ searchParams }: Props) {
   );
 }
 
-function ErrorState({ message }: { message: string }) {
+function ErrorState({ message, t }: { message: string; t: Translator }) {
   return (
     <div className="min-h-screen bg-nordic-primary flex flex-col items-center justify-center p-4 text-center">
       <div className="max-w-md w-full bg-nordic-primary/80 border border-red-900/30 p-8 rounded-3xl backdrop-blur-sm">
         <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
           <XCircle size={32} />
         </div>
-        <h1 className="text-xl font-bold text-nordic-secondary mb-2">Kunde inte aktivera</h1>
+        <h1 className="text-xl font-bold text-nordic-secondary mb-2">{t("activate.errorTitle")}</h1>
         <p className="text-nordic-highlight mb-6">{message}</p>
         <Link
           href="/activate"
           className="inline-block px-6 py-3 bg-nordic-secondary text-nordic-primary rounded-lg hover:bg-nordic-support transition"
         >
-          Försök igen
+          {t("activate.tryAgain")}
         </Link>
       </div>
     </div>

@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation"; // NYTT
 import { AvatarUploader } from "@/components/avatar-uploader";
+import { useT } from "@/i18n/client";
 
 type ProfileFormProps = {
   user: {
@@ -19,6 +20,7 @@ type ProfileFormProps = {
 };
 
 export function SocialProfileForm({ user }: ProfileFormProps) {
+  const t = useT();
   const router = useRouter(); // Används för att refresha data efter sparning
 
   const [name, setName] = useState(user.name ?? "");
@@ -78,11 +80,11 @@ export function SocialProfileForm({ user }: ProfileFormProps) {
 
       if (!res.ok) throw new Error("Failed to save profile");
 
-      setStatus("✔ Profilen är uppdaterad.");
+      setStatus(t("profileForm.updated"));
       router.refresh(); // Uppdaterar server-data så att "user" prop blir ny och hasChanges blir false
     } catch (err) {
       console.error(err);
-      setStatus("⚠ Kunde inte spara profilen.");
+      setStatus(t("profileForm.updateFailed"));
     } finally {
       setSaving(false);
     }
@@ -93,26 +95,26 @@ export function SocialProfileForm({ user }: ProfileFormProps) {
       {/* Namn */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-slate-200">
-          Namn
+          {t("profileForm.name")}
         </label>
         <input
           className="w-full rounded-md border border-nordic-highlight/40 bg-slate-900 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-violet-400"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="Ditt namn"
+          placeholder={t("profileForm.namePlaceholder")}
         />
       </div>
 
       {/* Bio */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-slate-200">
-          Bio
+          {t("profileForm.bio")}
         </label>
         <textarea
           className="w-full min-h-[80px] rounded-md border border-nordic-highlight/40 bg-slate-900 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-violet-400"
           value={bio}
           onChange={(e) => setBio(e.target.value)}
-          placeholder="Kort text om dig"
+          placeholder={t("profileForm.bioPlaceholder")}
         />
       </div>
 
@@ -121,7 +123,7 @@ export function SocialProfileForm({ user }: ProfileFormProps) {
           stället för att kräva ett extra klick på "Spara ändringar" — flera
           användare missade det steget och trodde att bytet misslyckats. */}
       <AvatarUploader
-        label="Profilbild"
+        label={t("profileForm.avatar")}
         value={avatarUrl}
         onChange={async (url) => {
           setAvatarUrl(url);
@@ -132,11 +134,11 @@ export function SocialProfileForm({ user }: ProfileFormProps) {
               body: JSON.stringify({ avatarUrl: url }),
             });
             if (!res.ok) throw new Error("Failed to save avatar");
-            setStatus("✔ Profilbilden är uppdaterad.");
+            setStatus(t("profileForm.avatarUpdated"));
             router.refresh();
           } catch (err) {
             console.error(err);
-            setStatus("⚠ Kunde inte spara profilbilden. Försök igen.");
+            setStatus(t("profileForm.avatarFailed"));
           }
         }}
         onUploadStart={() => setSaving(true)}
@@ -146,28 +148,28 @@ export function SocialProfileForm({ user }: ProfileFormProps) {
       {/* Telefonnummer */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-slate-200">
-          Telefonnummer
+          {t("profileForm.phone")}
         </label>
         <input
           type="tel"
           className="w-full rounded-md border border-nordic-highlight/40 bg-slate-900 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-violet-400"
           value={phoneNumber}
           onChange={(e) => setPhoneNumber(e.target.value)}
-          placeholder="+46 70 123 45 67"
+          placeholder={t("profileForm.phonePlaceholder")}
         />
       </div>
 
       {/* Kontakt-mail */}
       <div className="space-y-2">
         <label className="block text-xs font-medium text-slate-200">
-          Kontakt-e-post
+          {t("profileForm.contactEmail")}
         </label>
         <input
           type="email"
           className="w-full rounded-md border border-nordic-highlight/40 bg-slate-900 px-3 py-2 text-sm text-nordic-secondary outline-none focus:border-violet-400"
           value={contactEmail}
           onChange={(e) => setContactEmail(e.target.value)}
-          placeholder="namn@företag.se"
+          placeholder={t("profileForm.contactEmailPlaceholder")}
         />
       </div>
 
@@ -182,7 +184,7 @@ export function SocialProfileForm({ user }: ProfileFormProps) {
                 : "bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700"
             }`}
         >
-            {saving ? "Sparar..." : hasChanges ? "Spara ändringar" : "Spara"}
+            {saving ? t("common.saving") : hasChanges ? t("profileForm.saveChanges") : t("common.save")}
         </button>
 
         {status && (

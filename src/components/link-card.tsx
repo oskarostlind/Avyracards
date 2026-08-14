@@ -1,6 +1,9 @@
+"use client";
+
 import { HTMLAttributes } from "react";
 
 import { getPlatformIcon } from "@/utils/platform";
+import { useT } from "@/i18n/client";
 
 interface LinkCardProps {
   id: string;
@@ -13,6 +16,7 @@ interface LinkCardProps {
 }
 
 export function LinkCard({ id, label, url, isVisible, onToggleVisibility, onDelete, dragProps }: LinkCardProps) {
+  const t = useT();
   const Icon = getPlatformIcon(url);
 
   return (
@@ -35,7 +39,7 @@ export function LinkCard({ id, label, url, isVisible, onToggleVisibility, onDele
           onClick={() => onToggleVisibility?.(id, !isVisible)}
           className="rounded-full border border-nordic-support px-3 py-1 text-xs font-medium text-nordic-highlight hover:bg-nordic-primary/60"
         >
-          {isVisible ? "Dölj" : "Visa"}
+          {isVisible ? t("publicProfile.hide") : t("publicProfile.show")}
         </button>
         <button
           type="button"

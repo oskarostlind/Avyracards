@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { useT } from "@/i18n/client";
 
 interface Props {
   /** Formaterat pris, t.ex. "49 kr". */
@@ -16,34 +19,30 @@ interface Props {
  * Att bara visa "49 kr/mån" räcker inte; det är den vanligaste
  * prenumerationsrelaterade avslagsorsaken.
  */
-export function SubscriptionTerms({ price, period = "månad", viaAppStore }: Props) {
+export function SubscriptionTerms({ price, period, viaAppStore }: Props) {
+  const t = useT();
+  const resolvedPeriod = period ?? t("checkout.terms.periodMonth");
+
   return (
     <div className="mt-4 space-y-2 text-[11px] leading-relaxed text-slate-400">
       <p>
-        {price} per {period}. Prenumerationen förnyas automatiskt med samma belopp
-        varje {period} tills du säger upp den. Beloppet dras{" "}
-        {viaAppStore ? "från ditt Apple-ID" : "från ditt betalkort"} vid varje
-        förnyelse.
+        {t("checkout.terms.body", {
+          price,
+          period: resolvedPeriod,
+          source: viaAppStore
+            ? t("checkout.terms.sourceAppStore")
+            : t("checkout.terms.sourceCard"),
+        })}
       </p>
       <p>
-        {viaAppStore ? (
-          <>
-            Du kan säga upp när som helst i Inställningar → ditt namn → Prenumerationer
-            på din enhet, senast 24 timmar före nästa förnyelse.
-          </>
-        ) : (
-          <>
-            Du kan säga upp när som helst under Konto → Fakturering. Uppsägningen
-            gäller från och med nästa faktureringsperiod.
-          </>
-        )}
+        {viaAppStore ? t("checkout.terms.cancelAppStore") : t("checkout.terms.cancelWeb")}
       </p>
       <p className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
         <Link href="/terms" className="underline hover:text-slate-200">
-          Användarvillkor (EULA)
+          {t("checkout.terms.eula")}
         </Link>
         <Link href="/privacy" className="underline hover:text-slate-200">
-          Integritetspolicy
+          {t("checkout.terms.privacy")}
         </Link>
       </p>
     </div>

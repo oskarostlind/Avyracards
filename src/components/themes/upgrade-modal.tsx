@@ -3,6 +3,7 @@
 import { X, Check, Crown, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useIsApp } from "@/hooks/useIsApp";
+import { useT } from "@/i18n/client";
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface UpgradeModalProps {
 }
 
 export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
+  const t = useT();
   // "30 dagars öppet köp" gäller vår egen webbförsäljning. I appen går köpet via
   // App Store där Apple hanterar återbetalningar — att utlova en egen ångerrätt
   // där är ett vilseledande köpvillkor (3.1.2(c)/2.3.1).
@@ -27,6 +29,7 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-full bg-slate-800/50 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors z-10"
+          aria-label={t("themes.upgrade.close")}
         >
           <X size={20} />
         </button>
@@ -36,29 +39,29 @@ export function UpgradeModal({ isOpen, onClose }: UpgradeModalProps) {
             <Crown size={32} className="text-white" fill="currentColor" />
           </div>
 
-          <h2 className="text-2xl font-bold text-white mb-2">Lås upp Premium-design</h2>
+          <h2 className="text-2xl font-bold text-white mb-2">{t("themes.upgrade.title")}</h2>
           <p className="text-slate-400 mb-8 leading-relaxed">
-            Detta tema använder funktioner som är exklusiva för Premium. Uppgradera kontot för att spara din unika design.
+            {t("themes.upgrade.body")}
           </p>
 
           <div className="w-full space-y-3 mb-8 text-left">
-            <FeatureRow text="Tillgång till alla Premium-teman" />
-            <FeatureRow text="Anpassade bakgrunder & typsnitt" />
-            <FeatureRow text="Ta bort AvyraCards-loggan" />
+            <FeatureRow text={t("themes.upgrade.feature")} />
+            <FeatureRow text={t("themes.upgrade.feature2")} />
+            <FeatureRow text={t("themes.upgrade.feature3")} />
           </div>
 
           <Link 
             href="/checkout/premium" 
             className="w-full py-3.5 rounded-xl bg-white text-slate-900 font-bold flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors shadow-lg group"
           >
-            <span>Uppgradera nu</span>
+            <span>{t("themes.upgrade.cta")}</span>
             <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Link>
 
           <p className="mt-4 text-xs text-slate-500">
             {isApp
-              ? "Prenumerationen förnyas automatiskt tills du säger upp den i App Store. Inga bindningstider."
-              : "30 dagars öppet köp. Inga bindningstider."}
+              ? t("themes.upgrade.finePrintIos")
+              : t("themes.upgrade.finePrintWeb")}
           </p>
         </div>
       </div>

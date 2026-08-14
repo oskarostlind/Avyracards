@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { claimCard } from "@/lib/card-claim";
 import { consumeRateLimit } from "@/lib/rate-limit";
+import { getT } from "@/i18n/server";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     if (!rate.allowed) {
       return NextResponse.json(
-        { message: "För många försök. Vänta en minut och försök igen." },
+        { message: getT()("api.tooManyAttempts") },
         { status: 429 }
       );
     }
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
     try {
       body = await req.json();
     } catch {
-      return NextResponse.json({ message: "Ogiltig JSON i förfrågan." }, { status: 400 });
+      return NextResponse.json({ message: getT()("api.invalidJson") }, { status: 400 });
     }
 
     const { cardCode, claimToken } = (body ?? {}) as {

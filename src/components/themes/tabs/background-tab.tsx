@@ -2,7 +2,8 @@
 
 import { type CustomThemeSettings } from "@/types/theme";
 import { ColorPicker, SegmentedControl, Slider } from "@/components/themes/theme-controls";
-import { MediaManager } from "@/components/themes/media-manager"; 
+import { MediaManager } from "@/components/themes/media-manager";
+import { useT } from "@/i18n/client";
 
 interface BackgroundTabProps {
   settings: CustomThemeSettings;
@@ -12,6 +13,8 @@ interface BackgroundTabProps {
 }
 
 export function BackgroundTab({ settings, updateSetting, isPremium, onShowUpgrade }: BackgroundTabProps) {
+  const t = useT();
+
   return (
     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
       
@@ -20,34 +23,34 @@ export function BackgroundTab({ settings, updateSetting, isPremium, onShowUpgrad
         value={settings.backgroundType} 
         onChange={(v) => updateSetting("backgroundType", v)} 
         options={[
-          { value: "solid", label: "Färg" },
-          { value: "gradient", label: "Gradient" },
-          { value: "image", label: "Bild" },
+          { value: "solid", label: t("themes.background.typeColor") },
+          { value: "gradient", label: t("themes.background.typeGradient") },
+          { value: "image", label: t("themes.background.typeImage") },
         ]}
       />
 
       {/* --- SOLID FÄRG --- */}
       {settings.backgroundType === "solid" && (
-        <ColorPicker label="Bakgrundsfärg" value={settings.backgroundColor} onChange={(v) => updateSetting("backgroundColor", v)} />
+        <ColorPicker label={t("themes.background.backgroundColor")} value={settings.backgroundColor} onChange={(v) => updateSetting("backgroundColor", v)} />
       )}
 
       {/* --- GRADIENT --- */}
       {settings.backgroundType === "gradient" && (
         <div className="space-y-4">
-          <ColorPicker label="Från färg" value={settings.gradientFrom} onChange={(v) => updateSetting("gradientFrom", v)} />
-          <ColorPicker label="Till färg" value={settings.gradientTo} onChange={(v) => updateSetting("gradientTo", v)} />
+          <ColorPicker label={t("themes.background.gradientFrom")} value={settings.gradientFrom} onChange={(v) => updateSetting("gradientFrom", v)} />
+          <ColorPicker label={t("themes.background.gradientTo")} value={settings.gradientTo} onChange={(v) => updateSetting("gradientTo", v)} />
           
           <div className="space-y-2">
-            <label className="text-xs font-bold text-nordic-highlight uppercase">Riktning</label>
+            <label className="text-xs font-bold text-nordic-highlight uppercase">{t("themes.background.direction")}</label>
             <select 
                 value={settings.gradientDir || "to bottom right"} 
                 onChange={(e) => updateSetting("gradientDir", e.target.value)}
                 className="w-full bg-slate-900 border border-nordic-highlight/40 rounded-lg px-3 py-2 text-xs text-nordic-secondary focus:border-purple-500 outline-none"
             >
-                <option value="to bottom">Neråt ↓</option>
-                <option value="to right">Höger →</option>
-                <option value="to bottom right">Diagonalt ↘</option>
-                <option value="to top right">Diagonalt ↗</option>
+                <option value="to bottom">{t("themes.background.dirDown")}</option>
+                <option value="to right">{t("themes.background.dirRight")}</option>
+                <option value="to bottom right">{t("themes.background.dirBottomRight")}</option>
+                <option value="to top right">{t("themes.background.dirTopRight")}</option>
             </select>
           </div>
         </div>
@@ -58,7 +61,7 @@ export function BackgroundTab({ settings, updateSetting, isPremium, onShowUpgrad
         <div className="space-y-5">
           
           <div className="space-y-2">
-            <label className="text-xs font-bold text-nordic-highlight uppercase">Välj Bakgrundsbild</label>
+            <label className="text-xs font-bold text-nordic-highlight uppercase">{t("themes.background.chooseImage")}</label>
             
             {/* HÄR ÄR DEN NYA KOMPONENTEN */}
             <MediaManager 
@@ -74,22 +77,22 @@ export function BackgroundTab({ settings, updateSetting, isPremium, onShowUpgrad
                   <div className="flex items-center gap-3 mb-2">
                       <div className="h-10 w-10 rounded-lg overflow-hidden border border-white/10 shrink-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={settings.backgroundImage} alt="Selected" className="h-full w-full object-cover" />
+                          <img src={settings.backgroundImage} alt={t("themes.background.selectedAlt")} className="h-full w-full object-cover" />
                       </div>
                       <div className="text-xs text-nordic-highlight truncate flex-1">
-                          Aktuell bild
+                          {t("themes.background.currentImage")}
                       </div>
                   </div>
 
                   <Slider 
-                    label="Oskärpa (Blur)" 
+                    label={t("themes.background.blur")}
                     value={settings.backgroundBlur || 0} 
                     min={0} max={20} unit="px"
                     onChange={(v) => updateSetting("backgroundBlur", v)} 
                   />
 
                   <Slider 
-                    label="Mörkare (Overlay)" 
+                    label={t("themes.background.overlay")}
                     value={settings.backgroundOverlay || 0} 
                     min={0} max={90} unit="%"
                     onChange={(v) => updateSetting("backgroundOverlay", v)} 

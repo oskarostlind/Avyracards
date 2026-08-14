@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import { Upload, X, Loader2, Image as ImageIcon, ZoomIn } from "lucide-react";
 import { getCroppedImg } from "@/lib/crop-image";
+import { useT } from "@/i18n/client";
+import type { Translator } from "@/i18n";
 
 type AvatarUploaderProps = {
   value?: string | null;
@@ -17,16 +19,16 @@ const MAX_SOURCE_IMAGE_BYTES = 12 * 1024 * 1024;
 const SUPPORTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const SUPPORTED_IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|gif)$/i;
 
-function validateImageFile(file: File) {
+function validateImageFile(file: File, t: Translator) {
   const hasSupportedType = SUPPORTED_IMAGE_TYPES.includes(file.type);
   const hasSupportedExtension = SUPPORTED_IMAGE_EXTENSIONS.test(file.name);
 
   if (!hasSupportedType && !hasSupportedExtension) {
-    return "Välj en JPG-, PNG-, WebP- eller GIF-bild. HEIC från iPhone stöds inte i webbläsaren ännu.";
+    return t("avatarUploader.unsupportedType");
   }
 
   if (file.size > MAX_SOURCE_IMAGE_BYTES) {
-    return "Bilden är för stor. Välj en bild under 12MB.";
+    return t("avatarUploader.tooLarge");
   }
 
   return null;
@@ -43,12 +45,12 @@ function getAvatarFilename(fileName: string) {
   return `${baseName || "avatar"}-${Date.now()}.jpg`;
 }
 
-async function getUploadErrorMessage(response: Response) {
+async function getUploadErrorMessage(response: Response, t: Translator) {
   if (response.status === 401) {
-    return "Du verkar ha blivit utloggad. Logga in igen och försök ladda upp bilden på nytt.";
+    return t("avatarUploader.loggedOut");
   }
 
-  const fallback = "Kunde inte ladda upp bilden. Försök igen.";
+  const fallback = t("avatarUploader.uploadFailed");
 
   try {
     const contentType = response.headers.get("content-type") ?? "";
@@ -69,8 +71,10 @@ export function AvatarUploader({
   onChange,
   onUploadStart,
   onUploadEnd,
-  label = "Profilbild",
+  label,
 }: AvatarUploaderProps) {
+  const t = useT();
+  const resolvedLabel = label ?? t("avatarUploader.label");
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [filename, setFilename] = useState<string>("");
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -105,7 +109,7 @@ export function AvatarUploader({
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
-      const validationError = validateImageFile(file);
+      const validationError = validateImageFile(file, t);
 
       if (validationError) {
         clearSelectedFile();
@@ -134,7 +138,7 @@ export function AvatarUploader({
   // Spara och ladda upp till Vercel Blob
   const handleSave = async () => {
     if (!selectedFile || !croppedAreaPixels) {
-      setError("Vänta tills bilden har laddats klart och försök igen.");
+      setError(t("avatarUploader.waitForLoad"));
       return;
     }
 
@@ -155,13 +159,13 @@ export function AvatarUploader({
       });
 
       if (!response.ok) {
-        throw new Error(await getUploadErrorMessage(response));
+        throw new Error(await getUploadErrorMessage(response, t));
       }
 
       const newBlob = await response.json();
 
       if (typeof newBlob?.url !== "string") {
-        throw new Error("Uppladdningen lyckades inte returnera en bild-URL.");
+        throw new Error(t("avatarUploader.noUrlReturned"));
       }
 
       // 3. Skicka tillbaka den nya URL:en (från Vercel) till formuläret
@@ -173,7 +177,7 @@ export function AvatarUploader({
       console.error("Failed to upload image", error);
       const message = error instanceof Error && error.message
         ? error.message
-        : "Kunde inte ladda upp bilden. Försök igen.";
+        : t("avatarUploader.uploadFailed");
       setError(message);
       alert(message);
     } finally {
@@ -185,7 +189,7 @@ export function AvatarUploader({
   return (
     <div className="space-y-3">
       <label className="block text-xs font-medium text-slate-200">
-        {label}
+        {resolvedLabel}
       </label>
 
       <div className="flex items-center gap-4">
@@ -195,7 +199,7 @@ export function AvatarUploader({
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={value}
-              alt="Avatar"
+              alt={t("avatarUploader.altAvatar")}
               className="h-full w-full object-cover"
             />
           ) : (
@@ -209,7 +213,7 @@ export function AvatarUploader({
         <div>
           <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-nordic-highlight/40 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-nordic-secondary transition-colors">
             <Upload size={14} />
-            <span>Välj ny bild</span>
+            <span>{t("avatarUploader.chooseImage")}</span>
             <input
               type="file"
               accept="image/jpeg,image/png,image/webp,image/gif"
@@ -218,7 +222,7 @@ export function AvatarUploader({
             />
           </label>
           <p className="mt-2 text-[10px] text-nordic-highlight">
-            JPG, PNG, WebP eller GIF. Max 12MB.
+            {t("avatarUploader.formatsHint")}
           </p>
           {error && (
             <p className="mt-2 max-w-xs text-[11px] text-red-300" aria-live="polite">
@@ -235,7 +239,7 @@ export function AvatarUploader({
             
             {/* Header */}
             <div className="flex items-center justify-between border-b border-nordic-highlight/40 px-4 py-3">
-              <h3 className="text-sm font-semibold text-nordic-secondary">Justera bild</h3>
+              <h3 className="text-sm font-semibold text-nordic-secondary">{t("avatarUploader.adjustImage")}</h3>
               <button
                 onClick={clearSelectedFile}
                 className="rounded-full p-1 text-nordic-highlight hover:bg-slate-800 hover:text-nordic-secondary"
@@ -280,7 +284,7 @@ export function AvatarUploader({
                   disabled={uploading}
                   className="rounded-lg px-4 py-2 text-xs font-medium text-slate-300 hover:text-nordic-secondary"
                 >
-                  Avbryt
+                  {t("common.cancel")}
                 </button>
                 <button
                   onClick={handleSave}
@@ -288,7 +292,7 @@ export function AvatarUploader({
                   className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-nordic-secondary hover:bg-purple-500 disabled:opacity-50"
                 >
                   {uploading && <Loader2 size={14} className="animate-spin" />}
-                  {uploading ? "Sparar..." : "Spara bild"}
+                  {uploading ? t("common.saving") : t("avatarUploader.saveImage")}
                 </button>
               </div>
             </div>

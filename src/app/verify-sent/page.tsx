@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Check, Sparkles, LayoutDashboard, Package, MapPin, Clock, Loader2 } from "lucide-react";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { useT, useLocaleTag } from "@/i18n/client";
+import type { Translator } from "@/i18n";
 
 interface OrderDetails {
   id: string;
@@ -30,15 +32,17 @@ interface OrderDetails {
   cardCount: number;
 }
 
-const STATUS_LABELS: Record<OrderDetails["status"], { label: string; className: string }> = {
-  PENDING: { label: "Väntar på betalning", className: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
-  PAID: { label: "Betald", className: "bg-green-500/10 text-green-400 border-green-500/30" },
-  FAILED: { label: "Misslyckades", className: "bg-red-500/10 text-red-400 border-red-500/30" },
-  SHIPPED: { label: "Skickad", className: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
+const STATUS_STYLES: Record<OrderDetails["status"], { labelKey: string; className: string }> = {
+  PENDING: { labelKey: "orderSuccess.status.pending", className: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+  PAID: { labelKey: "orderSuccess.status.paid", className: "bg-green-500/10 text-green-400 border-green-500/30" },
+  FAILED: { labelKey: "orderSuccess.status.failed", className: "bg-red-500/10 text-red-400 border-red-500/30" },
+  SHIPPED: { labelKey: "orderSuccess.status.shipped", className: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
 };
 
-function formatAmount(amountOre: number, currency: string) {
-  return new Intl.NumberFormat("sv-SE", {
+// Beloppet formateras efter valt språk, inte hårdkodat sv-SE: "299,00 kr"
+// respektive "SEK 299.00". Valutan kommer fortfarande från ordern.
+function formatAmount(amountOre: number, currency: string, localeTag: string) {
+  return new Intl.NumberFormat(localeTag, {
     style: "currency",
     currency: currency.toUpperCase(),
   }).format(amountOre / 100);
@@ -46,13 +50,15 @@ function formatAmount(amountOre: number, currency: string) {
 
 export default function VerifySentPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#030712] flex items-center justify-center text-nordic-highlight">Laddar...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#030712]" aria-busy="true" />}>
       <VerifyContent />
     </Suspense>
   );
 }
 
 function VerifyContent() {
+  const t = useT();
+  const localeTag = useLocaleTag();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
@@ -98,7 +104,7 @@ function VerifyContent() {
     };
   }, [sessionId]);
 
-  const statusMeta = order ? STATUS_LABELS[order.status] : null;
+  const statusMeta = order ? STATUS_STYLES[order.status] : null;
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-[#030712] p-4 py-12 text-center relative overflow-hidden">
@@ -112,7 +118,7 @@ function VerifyContent() {
           </div>
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white">Betalning godkänd!</h1>
+        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-white">{t("orderSuccess.title")}</h1>
         <p className="text-nordic-highlight mb-8 leading-relaxed text-lg">
           Tack för din beställning. En bekräftelse har skickats till din e-post och ditt kvitto finns sparat.
         </p>
@@ -123,16 +129,14 @@ function VerifyContent() {
             {status === "loading" && (
               <div className="flex items-center gap-3 text-nordic-highlight py-2">
                 <Loader2 size={18} className="animate-spin" />
-                <span className="text-sm">Hämtar orderstatus...</span>
+                <span className="text-sm">{t("orderSuccess.loadingOrder")}</span>
               </div>
             )}
 
             {status === "pending" && (
               <div className="flex items-center gap-3 text-amber-400 py-2">
                 <Clock size={18} />
-                <span className="text-sm">
-                  Vi bearbetar fortfarande din betalning. Ladda om sidan om en liten stund.
-                </span>
+                <span className="text-sm">{t("orderSuccess.pending")}</span>
               </div>
             )}
 
@@ -141,13 +145,13 @@ function VerifyContent() {
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-white text-lg flex items-center gap-2">
                     <Package size={18} className="text-nordic-accent" />
-                    Din beställning
+                    {t("orderSuccess.yourOrder")}
                   </h3>
                   {statusMeta && (
                     <span
                       className={`text-xs font-bold uppercase tracking-wide px-3 py-1 rounded-full border ${statusMeta.className}`}
                     >
-                      {statusMeta.label}
+                      {t(statusMeta.labelKey)}
                     </span>
                   )}
                 </div>
@@ -160,22 +164,22 @@ function VerifyContent() {
                         {item.variantName ? ` (${item.variantName})` : ""}
                       </span>
                       <span className="text-white font-mono">
-                        {formatAmount(item.price * item.quantity, order.currency)}
+                        {formatAmount(item.price * item.quantity, order.currency, localeTag)}
                       </span>
                     </li>
                   ))}
                 </ul>
 
                 <div className="flex justify-between items-center pt-3 border-t border-gray-800">
-                  <span className="text-sm text-nordic-highlight">Totalt</span>
+                  <span className="text-sm text-nordic-highlight">{t("orderSuccess.total")}</span>
                   <span className="text-white font-bold font-mono">
-                    {formatAmount(order.amountTotal, order.currency)}
+                    {formatAmount(order.amountTotal, order.currency, localeTag)}
                   </span>
                 </div>
 
                 {order.cardCount > 0 && (
                   <p className="text-xs text-nordic-highlight">
-                    {order.cardCount} {order.cardCount === 1 ? "kort" : "kort"} skapas åt dig och kan aktiveras från din Dashboard när det anländer.
+                    {t("orderSuccess.cardsBeingMade", { count: order.cardCount })}
                   </p>
                 )}
 
@@ -196,7 +200,7 @@ function VerifyContent() {
 
             {status === "none" && (
               <p className="text-sm text-nordic-highlight py-2">
-                Vi kunde inte hitta orderdetaljer just nu, men din betalning är genomförd.
+                {t("orderSuccess.notFound")}
               </p>
             )}
           </div>
@@ -210,22 +214,22 @@ function VerifyContent() {
 
           <h3 className="font-bold text-white mb-2 text-lg flex items-center gap-2">
             <Sparkles size={18} className="text-nordic-accent" />
-            Dags att skapa magi
+            {t("orderSuccess.nextStepTitle")}
           </h3>
           <p className="text-sm text-nordic-highlight mb-6 leading-relaxed">
-            Medan vi producerar ditt kort kan du börja designa din digitala profil. Allt du ändrar i Dashboarden uppdateras automatiskt på kortet.
+            {t("orderSuccess.nextStepBody")}
           </p>
 
           <Link
             href="/dashboard"
             className="w-full py-4 bg-nordic-secondary text-nordic-primary rounded-xl font-bold hover:bg-nordic-support transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
           >
-            <LayoutDashboard size={18} /> Gå till min Dashboard
+            <LayoutDashboard size={18} /> {t("orderSuccess.goToDashboard")}
           </Link>
         </div>
 
         <div className="text-xs text-gray-600">
-          Order ID: <span className="font-mono text-gray-500">{sessionId ? sessionId.slice(-8) : "..."}</span>
+          {t("orderSuccess.orderId")} <span className="font-mono text-gray-500">{sessionId ? sessionId.slice(-8) : "..."}</span>
         </div>
       </div>
     </div>

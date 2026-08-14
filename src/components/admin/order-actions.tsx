@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, PackageCheck, Wand2 } from "lucide-react";
 import type { OrderStatus } from "@prisma/client";
+import { useT } from "@/i18n/client";
 
 interface Props {
   orderId: string;
@@ -12,25 +13,26 @@ interface Props {
 }
 
 export function AdminOrderActions({ orderId, currentStatus, cardsGenerated }: Props) {
+  const t = useT();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
-    if (!confirm("Vill du generera nya koder och tokens för denna order?")) return;
+    if (!confirm(t("admin.orderActions.confirmGenerate"))) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/orders/${orderId}/generate`, { method: "POST" });
       if (!res.ok) throw new Error("Fel vid generering");
       router.refresh();
     } catch (err) {
-      alert("Kunde inte generera kort. Kolla serverloggen.");
+      alert(t("admin.orderActions.generateFailed"));
     } finally {
       setLoading(false);
     }
   };
 
   const handleMarkShipped = async () => {
-    if (!confirm("Är du säker på att du skickat ordern?")) return;
+    if (!confirm(t("admin.orderActions.confirmShipped"))) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/orders/${orderId}/status`, {
@@ -41,7 +43,7 @@ export function AdminOrderActions({ orderId, currentStatus, cardsGenerated }: Pr
       if (!res.ok) throw new Error("Fel vid uppdatering");
       router.refresh();
     } catch (err) {
-      alert("Kunde inte uppdatera status");
+      alert(t("admin.orderActions.statusFailed"));
     } finally {
       setLoading(false);
     }

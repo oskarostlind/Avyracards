@@ -9,6 +9,7 @@ import { useIsApp } from "@/hooks/useIsApp";
 import { isIosDebugEnabled, isIosNativePaymentsEnabled } from "@/lib/ios-native";
 import { LinkAppleAccountForm } from "@/components/auth/link-apple-account-form";
 import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
+import { useT } from "@/i18n/client";
 
 interface AppleSignInButtonProps {
   callbackUrl?: string;
@@ -23,6 +24,7 @@ interface AppleAuthResponse {
 }
 
 export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInButtonProps) {
+  const t = useT();
   const router = useRouter();
   const isApp = useIsApp();
   const [loading, setLoading] = useState(false);
@@ -58,7 +60,7 @@ export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInBut
         level: "error",
         hypothesisId: "D",
       });
-      throw new Error("Kunde inte skapa session");
+      throw new Error(t("auth.apple.sessionFailed"));
     }
 
     logIosNativeRuntime({
@@ -133,7 +135,7 @@ export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInBut
       });
 
       if (!response.ok) {
-        throw new Error(data.error ?? "Apple-inloggning misslyckades");
+        throw new Error(data.error ?? t("auth.apple.signInFailed"));
       }
 
       if (data.needsLink) {
@@ -147,7 +149,7 @@ export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInBut
       }
 
       if (!data.loginToken) {
-        throw new Error("Saknar login-token");
+        throw new Error(t("auth.apple.missingToken"));
       }
 
       await completeLogin(data.loginToken);
@@ -163,8 +165,8 @@ export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInBut
       console.error(err);
       setError(
         isIosDebugEnabled()
-          ? `Apple-inloggning misslyckades: ${message}`
-          : "Kunde inte logga in med Apple. Försök igen."
+          ? t("auth.apple.signInFailedDebug", { message })
+          : t("auth.apple.signInFailedRetry")
       );
       setLoading(false);
     }
@@ -203,7 +205,7 @@ export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInBut
         ) : (
           <>
             <span aria-hidden="true"></span>
-            Fortsätt med Apple
+            {t("auth.apple.continue")}
           </>
         )}
       </button>

@@ -2,6 +2,7 @@
 
 import { Search, Loader2, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { useT } from "@/i18n/client";
 
 interface UnsplashPickerProps {
   onImageSelected: (url: string) => void;
@@ -19,6 +20,7 @@ type UnsplashPhoto = {
 };
 
 export function UnsplashPicker({ onImageSelected, isPremium, onPremiumClick }: UnsplashPickerProps) {
+  const t = useT();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [photos, setPhotos] = useState<UnsplashPhoto[]>([]);
@@ -42,13 +44,13 @@ export function UnsplashPicker({ onImageSelected, isPremium, onPremiumClick }: U
 
     try {
       const res = await fetch(`/api/unsplash?query=${encodeURIComponent(query)}`);
-      if (!res.ok) throw new Error("Kunde inte hämta bilder");
+      if (!res.ok) throw new Error(t("themes.media.fetchFailed"));
       
       const data = await res.json();
       setPhotos(data.results || []);
     } catch (error) {
       console.error("Failed to search unsplash", error);
-      setError("Något gick fel vid sökningen.");
+      setError(t("themes.media.searchFailed"));
     } finally {
       setLoading(false);
     }
@@ -73,7 +75,7 @@ export function UnsplashPicker({ onImageSelected, isPremium, onPremiumClick }: U
       <form onSubmit={handleSearch} className="relative">
         <input 
           type="text" 
-          placeholder="Sök på 'Neon', 'Nature', 'Dark'..." 
+          placeholder={t("themes.media.searchPlaceholder")} 
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           // Om ej premium, trigga modal vid klick

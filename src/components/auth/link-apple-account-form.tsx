@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { isIosDebugEnabled } from "@/lib/ios-native";
 import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
+import { useT } from "@/i18n/client";
 
 interface LinkAppleAccountFormProps {
   identityToken: string;
@@ -25,6 +26,7 @@ export function LinkAppleAccountForm({
   onSuccess,
   onCancel,
 }: LinkAppleAccountFormProps) {
+  const t = useT();
   const [email, setEmail] = useState(suggestedEmail ?? "");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -32,7 +34,7 @@ export function LinkAppleAccountForm({
 
   const handleSubmit = async () => {
     if (!email || !password) {
-      setError("Fyll i både e-post och lösenord.");
+      setError(t("auth.apple.linkFillBoth"));
       return;
     }
 
@@ -68,7 +70,7 @@ export function LinkAppleAccountForm({
       });
 
       if (!response.ok || !data.loginToken) {
-        throw new Error(data.error ?? "Kunde inte koppla kontot");
+        throw new Error(data.error ?? t("auth.apple.linkFailed"));
       }
 
       await onSuccess(data.loginToken);
@@ -84,8 +86,8 @@ export function LinkAppleAccountForm({
       console.error(err);
       setError(
         isIosDebugEnabled()
-          ? `Koppling misslyckades: ${message}`
-          : "Kunde inte koppla Apple-ID till kontot. Kontrollera uppgifterna."
+          ? t("auth.apple.linkFailedDebug", { message })
+          : t("auth.apple.linkFailedHint")
       );
       setLoading(false);
     }
@@ -94,10 +96,9 @@ export function LinkAppleAccountForm({
   return (
     <div className="space-y-4 rounded-xl border border-white/10 bg-black/20 p-4">
       <div className="space-y-1">
-        <h2 className="text-sm font-bold text-nordic-secondary">Koppla Apple-ID</h2>
+        <h2 className="text-sm font-bold text-nordic-secondary">{t("auth.apple.linkTitle")}</h2>
         <p className="text-xs text-nordic-highlight">
-          {message ??
-            "Det finns redan ett konto med denna e-post. Bekräfta med ditt lösenord för att koppla Apple-ID."}
+          {message ?? t("auth.apple.linkBody")}
         </p>
       </div>
 
@@ -113,7 +114,7 @@ export function LinkAppleAccountForm({
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="E-post"
+          placeholder={t("common.email")}
           className="w-full px-4 py-3 bg-nordic-primary border border-nordic-highlight/30 rounded-xl text-nordic-secondary"
         />
         <input
@@ -127,7 +128,7 @@ export function LinkAppleAccountForm({
               void handleSubmit();
             }
           }}
-          placeholder="Lösenord"
+          placeholder={t("common.password")}
           className="w-full px-4 py-3 bg-nordic-primary border border-nordic-highlight/30 rounded-xl text-nordic-secondary"
         />
 
@@ -137,7 +138,7 @@ export function LinkAppleAccountForm({
           disabled={loading}
           className="w-full py-3 rounded-xl bg-nordic-secondary text-nordic-primary font-bold disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {loading ? <Loader2 className="animate-spin" size={18} /> : "Koppla konto"}
+          {loading ? <Loader2 className="animate-spin" size={18} /> : t("auth.apple.linkSubmit")}
         </button>
       </div>
 
@@ -146,7 +147,7 @@ export function LinkAppleAccountForm({
         onClick={onCancel}
         className="w-full text-sm text-nordic-highlight hover:text-nordic-secondary"
       >
-        Avbryt
+        {t("common.cancel")}
       </button>
     </div>
   );

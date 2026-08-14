@@ -5,6 +5,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { syncGoogleWalletPass } from "@/lib/wallet/google";
 import { WALLET_PASS_FIELDS } from "@/lib/wallet/pass-content";
+import { getT } from "@/i18n/server";
 
 export const runtime = "nodejs";
 
@@ -22,7 +23,7 @@ const avatarSchema = z.union([
       value.startsWith("data:image/") ||
       value.startsWith("http://") ||
       value.startsWith("https://"),
-    { message: "Måste vara giltig URL eller bild-data." }
+    { message: getT()("api.profile.mustBeUrl") }
   ),
   z.literal(""),
   z.null()
@@ -99,7 +100,7 @@ async function updateProfile(req: Request) {
 
   if (!session?.user?.id) {
     return NextResponse.json(
-      { error: "Du måste vara inloggad för att uppdatera profilen." },
+      { error: getT()("api.profile.notLoggedIn") },
       { status: 401 }
     );
   }
@@ -109,7 +110,7 @@ async function updateProfile(req: Request) {
     json = await req.json();
   } catch {
     return NextResponse.json(
-      { error: "Ogiltig JSON i förfrågan." },
+      { error: getT()("api.invalidJson") },
       { status: 400 }
     );
   }
@@ -118,7 +119,7 @@ async function updateProfile(req: Request) {
 
   if (!parsed.success) {
     console.log("Validation error:", parsed.error.format()); 
-    return NextResponse.json({ error: "Ogiltiga fält kontrollera formatet." }, { status: 400 });
+    return NextResponse.json({ error: getT()("api.profile.invalidFields") }, { status: 400 });
   }
 
   const data = parsed.data;
@@ -199,7 +200,7 @@ export async function GET() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Du måste vara inloggad." }, { status: 401 });
+    return NextResponse.json({ error: getT()("api.notLoggedIn") }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({
@@ -244,7 +245,7 @@ export async function GET() {
   });
 
   if (!user) {
-    return NextResponse.json({ error: "Användare hittades inte." }, { status: 404 });
+    return NextResponse.json({ error: getT()("api.userNotFound") }, { status: 404 });
   }
 
   return NextResponse.json(user);

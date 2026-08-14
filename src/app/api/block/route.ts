@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getT } from "@/i18n/server";
 
 export const runtime = "nodejs";
 
@@ -22,7 +23,7 @@ export async function POST(req: Request) {
 
   const parsed = bodySchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ogiltig förfrågan" }, { status: 400 });
+    return NextResponse.json({ error: getT()("api.invalidRequest") }, { status: 400 });
   }
 
   const target = await prisma.user.findUnique({
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
 
   if (target.id === session.user.id) {
     return NextResponse.json(
-      { error: "Du kan inte blockera dig själv." },
+      { error: getT()("api.block.cannotBlockSelf") },
       { status: 400 }
     );
   }
@@ -60,7 +61,7 @@ export async function DELETE(req: Request) {
 
   const parsed = bodySchema.safeParse(await req.json());
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ogiltig förfrågan" }, { status: 400 });
+    return NextResponse.json({ error: getT()("api.invalidRequest") }, { status: 400 });
   }
 
   const target = await prisma.user.findUnique({

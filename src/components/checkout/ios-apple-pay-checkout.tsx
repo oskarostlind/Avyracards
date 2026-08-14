@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Stripe, ApplePayEventsEnum } from "@capacitor-community/stripe";
 import { isIosDebugEnabled } from "@/lib/ios-native";
 import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
+import { useT } from "@/i18n/client";
 
 interface SummaryItem {
   label: string;
@@ -29,6 +30,7 @@ export function IosApplePayCheckout({
   premiumOption,
   onSuccess,
 }: IosApplePayCheckoutProps) {
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -51,7 +53,7 @@ export function IosApplePayCheckout({
       };
 
       if (!config.publishableKey || !config.merchantId) {
-        throw new Error("Apple Pay är inte konfigurerat ännu");
+        throw new Error(t("checkout.applePayNotConfigured"));
       }
 
       await Stripe.initialize({ publishableKey: config.publishableKey });
@@ -116,7 +118,7 @@ export function IosApplePayCheckout({
       await cancelListener.remove();
 
       if (result.paymentResult !== ApplePayEventsEnum.Completed) {
-        throw new Error("Betalningen avbröts");
+        throw new Error(t("checkout.paymentCancelled"));
       }
 
       logIosNativeRuntime({
@@ -142,7 +144,7 @@ export function IosApplePayCheckout({
           ? message
           : err instanceof Error
             ? err.message
-            : "Apple Pay misslyckades. Försök igen."
+            : t("checkout.applePayFailed")
       );
       setLoading(false);
     }

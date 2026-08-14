@@ -15,12 +15,14 @@ import {
   VenetianMask // Ikon för Impersonate
 } from "lucide-react";
 import Link from "next/link";
+import { getT } from "@/i18n/server";
 
 export default async function AdminUserDetailPage({
   params,
 }: {
   params: { id: string };
 }) {
+  const t = getT();
   const session = await auth();
   if (session?.user?.role !== "ADMIN") redirect("/dashboard");
 
@@ -33,7 +35,7 @@ export default async function AdminUserDetailPage({
         
         {/* Tillbaka-länk */}
         <Link href="/admin/users" className="flex items-center gap-2 text-sm text-nordic-highlight hover:text-nordic-secondary transition-colors">
-          <ChevronLeft size={16} /> Tillbaka till listan
+          <ChevronLeft size={16} /> {t("admin.user.backToList")}
         </Link>
 
         {/* --- HEADER KORT --- */}
@@ -51,7 +53,7 @@ export default async function AdminUserDetailPage({
             
             <div>
               <h1 className="text-2xl font-bold text-nordic-secondary flex items-center gap-2">
-                {user.name || "Namnlös"}
+                {user.name || t("admin.users.nameless")}
                 {user.isPremium && <Crown size={20} className="text-amber-400 fill-amber-400/20" />}
               </h1>
               <p className="text-nordic-highlight font-mono text-sm">@{user.username}</p>
@@ -66,7 +68,7 @@ export default async function AdminUserDetailPage({
                target="_blank"
                className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-medium transition"
              >
-               <ExternalLink size={14} /> Besök Profil
+               <ExternalLink size={14} /> {t("admin.user.visitProfile")}
              </a>
 
              {/* IMPERSONATE ACTION (NYTT) */}
@@ -77,9 +79,9 @@ export default async function AdminUserDetailPage({
                <button 
                  type="submit"
                  className="w-full py-2 rounded-lg text-sm font-bold bg-indigo-600 hover:bg-indigo-500 text-nordic-secondary shadow-lg shadow-indigo-500/20 transition flex items-center justify-center gap-2 mb-2"
-                 title="Logga ut som admin och logga in som denna användare"
+                 title={t("admin.user.impersonateTitle")}
                >
-                 <VenetianMask size={16} /> Logga in som user
+                 <VenetianMask size={16} /> {t("admin.user.impersonate")}
                </button>
              </form>
 
@@ -106,23 +108,23 @@ export default async function AdminUserDetailPage({
           
           {/* --- INFO & STATS --- */}
           <div className="bg-slate-900 border border-nordic-highlight/40 rounded-2xl p-6 space-y-4">
-             <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider border-b border-nordic-highlight/40 pb-2">Status & Info</h3>
+             <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider border-b border-nordic-highlight/40 pb-2">{t("admin.user.statusAndInfo")}</h3>
              
              <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
-                   <span className="text-nordic-highlight">Konto skapat:</span>
+                   <span className="text-nordic-highlight">{t("admin.user.accountCreated")}</span>
                    <span className="text-slate-300 font-mono">{new Date(user.createdAt).toLocaleDateString()}</span>
                 </div>
                 <div className="flex justify-between">
-                   <span className="text-nordic-highlight">Premium Källa:</span>
+                   <span className="text-nordic-highlight">{t("admin.user.premiumSource")}</span>
                    <span className="text-slate-300">{user.premiumSource || "-"}</span>
                 </div>
                 <div className="flex justify-between">
-                   <span className="text-nordic-highlight">Länkar i profil:</span>
+                   <span className="text-nordic-highlight">{t("admin.user.linksInProfile")}</span>
                    <span className="text-slate-300">{user._count.links} st</span>
                 </div>
                 <div className="flex justify-between">
-                   <span className="text-nordic-highlight">Kopplade kort:</span>
+                   <span className="text-nordic-highlight">{t("admin.user.linkedCards")}</span>
                    {/* Bugfix: Använd .length istället för _count.cards eftersom vi include:ar cards */}
                    <span className="text-slate-300">{user.cards.length} st</span>
                 </div>
@@ -131,7 +133,7 @@ export default async function AdminUserDetailPage({
 
           {/* --- ANTECKNINGAR (ADMIN NOTES) --- */}
           <div className="bg-slate-900 border border-nordic-highlight/40 rounded-2xl p-6 space-y-4">
-             <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider border-b border-nordic-highlight/40 pb-2">Interna Anteckningar</h3>
+             <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider border-b border-nordic-highlight/40 pb-2">{t("admin.user.internalNotes")}</h3>
              
              <form action={async (formData) => {
                 "use server";
@@ -141,11 +143,11 @@ export default async function AdminUserDetailPage({
                 <textarea 
                   name="notes"
                   defaultValue={user.adminNotes || ""}
-                  placeholder="Skriv noteringar här... (Bara admin ser detta)"
+                  placeholder={t("admin.user.notesPlaceholder")}
                   className="flex-1 bg-nordic-primary border border-nordic-highlight/40 rounded-lg p-3 text-sm text-slate-300 focus:outline-none focus:border-blue-500 min-h-[100px]"
                 />
                 <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-nordic-secondary py-2 rounded-lg text-xs font-bold transition">
-                   Spara anteckningar
+                   {t("admin.user.saveNotes")}
                 </button>
              </form>
           </div>
@@ -155,13 +157,13 @@ export default async function AdminUserDetailPage({
         {/* --- KOPPLADE KORT (NY SEKTION) --- */}
         <div className="bg-slate-900 border border-nordic-highlight/40 rounded-2xl overflow-hidden">
           <div className="px-6 py-4 border-b border-nordic-highlight/40 flex justify-between items-center">
-             <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider">Kopplade Kort</h3>
+             <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider">{t("admin.user.linkedCards")}</h3>
              <span className="text-xs text-nordic-highlight">{user.cards.length} st</span>
           </div>
           
           {user.cards.length === 0 ? (
             <div className="p-8 text-center text-nordic-highlight text-sm">
-               Inga kort kopplade till detta konto än.
+               {t("admin.user.noCards")}
             </div>
           ) : (
             <div className="divide-y divide-slate-800">
@@ -174,7 +176,7 @@ export default async function AdminUserDetailPage({
                       <div>
                          <p className="text-sm font-bold text-slate-200 font-mono tracking-wide">{card.cardCode}</p>
                          <p className="text-xs text-nordic-highlight">
-                           {card.status === "CLAIMED" ? "✅ Aktiverad" : "⚪ Ej aktiverad"} 
+                           {card.status === "CLAIMED" ? t("admin.user.activated") : t("admin.user.notActivated")} 
                            {card.claimedAt && ` • ${new Date(card.claimedAt).toLocaleDateString()}`}
                          </p>
                       </div>
@@ -187,7 +189,7 @@ export default async function AdminUserDetailPage({
                           target="_blank"
                           className="text-xs text-blue-400 hover:text-blue-300 hover:underline"
                         >
-                          Testa länk
+                          {t("admin.user.testLink")}
                         </a>
                       )}
                       <p className="text-[10px] text-slate-600 font-mono mt-1">ID: {card.id.slice(-6)}</p>

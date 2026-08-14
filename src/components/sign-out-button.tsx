@@ -3,8 +3,10 @@
 import { useTransition } from "react";
 
 import { signOut } from "next-auth/react";
+import { useT } from "@/i18n/client";
 
 export function SignOutButton() {
+  const t = useT();
   const [pending, startTransition] = useTransition();
 
   return (
@@ -14,7 +16,7 @@ export function SignOutButton() {
       type="button"
       disabled={pending}
     >
-      {pending ? "Loggar ut..." : "Logga ut"}
+      {pending ? t("nav.signingOut") : t("nav.signOut")}
     </button>
   );
 }

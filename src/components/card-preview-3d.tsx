@@ -4,6 +4,7 @@ import { useRef, useState, useMemo, CSSProperties } from "react";
 import Image from "next/image";
 import { QrCode, Wifi, RotateCw } from "lucide-react";
 import ReactCardFlip from 'react-card-flip';
+import { useT } from "@/i18n/client";
 
 /**
  * KORTPREVIEW
@@ -163,6 +164,7 @@ function buildFinish(hex: string): Finish {
 // --- KOMPONENT -------------------------------------------------------------
 
 export function CardPreview3D({ material, color, design, customImage }: CardPreview3DProps) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
 
   const [rotate, setRotate] = useState({ x: 0, y: 0 });
@@ -274,14 +276,14 @@ export function CardPreview3D({ material, color, design, customImage }: CardPrev
         className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 rounded-full text-sm font-medium transition-colors text-gray-300"
       >
         <RotateCw size={18} className={`transition-transform duration-500 ${isFlipped ? "rotate-180" : ""}`} />
-        Vänd kortet
+        {t("cardPreview.flip")}
       </button>
 
       <p className="text-center text-[11px] leading-relaxed text-gray-500 max-w-sm px-4">
         {isFlipped
-          ? "Baksidan är otryckt — korten trycks på framsidan."
+          ? t("cardPreview.backPlain")
           : isMetal
-            ? "Illustration. Trycket sitter på en glansig panel (82 × 51 mm) med en synlig borstad metallram runt om."
+            ? t("cardPreview.metalNote")
             : "Illustration. Plastkortet levereras i AvyraCards standarddesign."}
       </p>
     </div>
@@ -308,6 +310,8 @@ function MetalFront({
   textClass: string;
   design: "minimal" | "qr";
 }) {
+  const t = useT();
+
   const panelStyle: CSSProperties = {
     position: "absolute",
     top: `${PANEL_INSET_Y}%`,
@@ -356,7 +360,7 @@ function MetalFront({
             </div>
             <div className="flex items-end justify-between">
               <span className="text-[10px] md:text-xs uppercase tracking-[0.25em] opacity-45">
-                Din design här
+                {t("cardPreview.yourDesign")}
               </span>
               {design === "qr" && (
                 <div className="bg-white p-1.5 rounded-lg shadow-sm">

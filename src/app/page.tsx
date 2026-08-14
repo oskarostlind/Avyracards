@@ -7,8 +7,10 @@ import { useSession } from "next-auth/react";
 import { useIsApp } from "@/hooks/useIsApp";
 import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
 import { Check, ArrowRight, Layers, Users, ShieldCheck, Zap, ChevronDown } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 export default function HomePage() {
+  const t = useT();
   const router = useRouter();
   const { status } = useSession();
   const isApp = useIsApp();
@@ -48,23 +50,22 @@ export default function HomePage() {
             
             {/* Badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold text-emerald-400 backdrop-blur-sm shadow-lg shadow-emerald-500/5">
-              <span>Nyhet</span>
+              <span>{t("home.badgeNew")}</span>
               <span className="h-1 w-1 rounded-full bg-emerald-400" />
-              <span className="text-slate-300 font-medium">Google Wallet Integration</span>
+              <span className="text-slate-300 font-medium">{t("home.badgeFeature")}</span>
             </div>
 
             <div className="space-y-6">
               <h1 className="text-5xl font-bold tracking-tight text-nordic-secondary sm:text-6xl lg:text-7xl leading-[1.05]">
-                Dela rätt <br />
+                {t("home.heroLine1")} <br />
                 <span className="bg-gradient-to-r from-emerald-400 to-sky-400 bg-clip-text text-transparent">
-                  version av dig.
+                  {t("home.heroLine2")}
                 </span>
                 <br />
-                Varje gång.
+                {t("home.heroLine3")}
               </h1>
               <p className="max-w-lg text-lg text-nordic-highlight leading-relaxed font-light">
-                AVYRA är din digitala identitet. En profil som anpassar sig efter sammanhang – privat och professionellt.
-                Gratis att börja. Uppgradera när du vill.
+                {t("home.heroBody")}
               </p>
             </div>
 
@@ -74,21 +75,21 @@ export default function HomePage() {
                   href="/get-started"
                   className="inline-flex h-14 items-center justify-center rounded-2xl bg-emerald-500 px-8 text-base font-bold text-slate-950 shadow-lg shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98]"
                 >
-                  Skapa gratis profil
+                  {t("home.ctaCreate")}
                 </Link>
                 <Link
                   href="#how-it-works"
                   className="inline-flex h-14 items-center justify-center rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 px-8 text-base font-medium text-slate-300 transition-all hover:bg-slate-800 hover:text-nordic-secondary"
                 >
-                  Se hur det funkar <ArrowRight className="ml-2 h-4 w-4" />
+                  {t("home.ctaHow")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </div>
 
               {/* Trust Microcopy */}
               <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-medium text-nordic-highlight">
-                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Tar under 2 minuter</span>
-                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Funkar direkt i mobilen</span>
-                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Inget kort krävs</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> {t("home.trust1")}</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> {t("home.trust2")}</span>
+                <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> {t("home.trust3")}</span>
               </div>
             </div>
           </div>
@@ -139,8 +140,8 @@ export default function HomePage() {
                             <Zap size={20} fill="currentColor" />
                         </div>
                         <div className="min-w-0">
-                          <div className="text-xs text-emerald-300 font-bold mb-0.5 tracking-wide">NFC-TAGG HITTAD</div>
-                          <div className="text-xs text-nordic-secondary truncate">Öppnar avyra.se/alex...</div>
+                          <div className="text-xs text-emerald-300 font-bold mb-0.5 tracking-wide">{t("home.nfcFound")}</div>
+                          <div className="text-xs text-nordic-secondary truncate">{t("home.nfcOpening")}</div>
                         </div>
                       </div>
                     </div>
@@ -155,7 +156,7 @@ export default function HomePage() {
                   A
                 </div>
                 <h3 className="text-nordic-secondary font-bold tracking-[0.2em] text-sm uppercase">Avyra</h3>
-                <p className="text-[10px] text-nordic-highlight mt-2 uppercase tracking-widest font-medium">Founder Edition</p>
+                <p className="text-[10px] text-nordic-highlight mt-2 uppercase tracking-widest font-medium">{t("home.cardEdition")}</p>
                 
                 <div className="absolute bottom-8 w-full px-8 flex justify-between items-end opacity-40">
                   <div className="h-8 w-10 rounded bg-gradient-to-r from-yellow-200 to-yellow-500 opacity-80"></div>
@@ -173,21 +174,20 @@ export default function HomePage() {
             
             <div className="max-w-3xl mx-auto text-center space-y-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
                 <h2 className="text-4xl md:text-6xl font-bold tracking-tight text-nordic-secondary leading-tight">
-                Du är inte samma person <br/> <span className="text-nordic-highlight">i alla sammanhang.</span>
+                {t("home.problemTitle1")} <br/> <span className="text-nordic-highlight">{t("home.problemTitle2")}</span>
                 </h2>
                 <p className="text-xl text-nordic-highlight leading-relaxed font-light">
-                    Ändå använder vi oftast ett och samma gamla sätt att dela vilka vi är.
-                    AVYRA löser den digitala &quot;kodväxlingen&quot; åt dig.
+                    {t("home.problemBody")}
                 </p>
             </div>
 
             {/* Kort-grid */}
             <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 px-4 relative z-10">
                 {[
-                  { name: "LinkedIn", color: "sky", desc: "Professionella kontakter & CV", visual: "border-sky-500/30 bg-sky-950/20 text-sky-300" },
-                  { name: "Instagram", color: "purple", desc: "Vänner, följare & fans", visual: "border-purple-500/30 bg-purple-950/20 text-purple-300" },
-                  { name: "Visitkort", color: "amber", desc: "Gammalt/Fel info?", visual: "border-amber-500/30 bg-amber-950/20 text-amber-300" },
-                  { name: "Fel version", color: "red", desc: "Och ibland delar du fel.", visual: "border-red-500/40 bg-red-950/30 text-red-300" }
+                  { id: "linkedin", name: t("home.problemLinkedin"), desc: t("home.problemLinkedinDesc"), visual: "border-sky-500/30 bg-sky-950/20 text-sky-300" },
+                  { id: "instagram", name: t("home.problemInstagram"), desc: t("home.problemInstagramDesc"), visual: "border-purple-500/30 bg-purple-950/20 text-purple-300" },
+                  { id: "card", name: t("home.problemCard"), desc: t("home.problemCardDesc"), visual: "border-amber-500/30 bg-amber-950/20 text-amber-300" },
+                  { id: "wrong", name: t("home.problemWrong"), desc: t("home.problemWrongDesc"), visual: "border-red-500/40 bg-red-950/30 text-red-300" }
                 ].map((item, i) => (
                   <div key={i} className={`relative p-8 rounded-[2rem] border overflow-hidden backdrop-blur-sm group hover:-translate-y-2 transition-transform duration-300 flex flex-col justify-end h-56 ${item.visual} ${i % 2 === 0 ? 'lg:translate-y-6' : ''}`}>
                     <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
@@ -200,9 +200,9 @@ export default function HomePage() {
                     </div>
 
                     <div className="relative z-10 space-y-1">
-                      <div className="text-xs uppercase font-bold tracking-widest text-nordic-highlight">Ibland delar du...</div>
+                      <div className="text-xs uppercase font-bold tracking-widest text-nordic-highlight">{t("home.sometimesYouShare")}</div>
                       <h3 className="text-2xl font-bold tracking-tight text-nordic-secondary">{item.name}</h3>
-                      <p className={`text-sm italic font-medium ${item.name === "Fel version" ? "text-red-400" : "text-amber-400"}`}>{item.desc}</p>
+                      <p className={`text-sm italic font-medium ${item.id === "wrong" ? "text-red-400" : "text-amber-400"}`}>{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -214,7 +214,7 @@ export default function HomePage() {
                     <div className="absolute -inset-1 bg-emerald-500/10 blur-xl rounded-full" />
                     <Zap size={18}/>
                     <p className="relative text-xl md:text-2xl font-medium">
-                        AVYRA ger dig full kontroll över hur du syns.
+                        {t("home.solutionLine")}
                     </p>
                 </div>
             </div>
@@ -230,16 +230,14 @@ export default function HomePage() {
                 <div className="space-y-8">
                     <div className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-xs font-bold text-slate-300">
                         <Layers size={14} className="text-emerald-400" />
-                        <span>KÄRNKONCEPTET</span>
+                        <span>{t("home.coreBadge")}</span>
                     </div>
                     <h2 className="text-4xl md:text-5xl font-bold text-nordic-secondary leading-tight">
-                        En identitet. <br/>
-                        <span className="text-nordic-highlight">Flera sidor av dig.</span>
+                        {t("home.coreTitle1")} <br/>
+                        <span className="text-nordic-highlight">{t("home.coreTitle2")}</span>
                     </h2>
                     <p className="text-lg text-nordic-highlight leading-relaxed max-w-md">
-                        AVYRA är byggt för hur människor faktiskt nätverkar idag.
-                        Ett ställe för allt – men aldrig allt på samma gång.
-                        Du bestämmer vad som visas. Vi ser till att det känns rätt.
+                        {t("home.coreBody")}
                     </p>
                     
                     {/* Feature list */}
@@ -247,15 +245,15 @@ export default function HomePage() {
                         <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-400"><Users size={20}/></div>
                             <div>
-                                <div className="text-nordic-secondary font-bold">Social Vy</div>
-                                <div className="text-sm text-nordic-highlight">För vänner, följare & fans</div>
+                                <div className="text-nordic-secondary font-bold">{t("home.socialView")}</div>
+                                <div className="text-sm text-nordic-highlight">{t("home.socialViewDesc")}</div>
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
                             <div className="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400"><ShieldCheck size={20}/></div>
                             <div>
-                                <div className="text-nordic-secondary font-bold">Business Vy</div>
-                                <div className="text-sm text-nordic-highlight">För kunder, partners & rekryterare</div>
+                                <div className="text-nordic-secondary font-bold">{t("home.businessView")}</div>
+                                <div className="text-sm text-nordic-highlight">{t("home.businessViewDesc")}</div>
                             </div>
                         </div>
                     </div>
@@ -307,28 +305,28 @@ export default function HomePage() {
         {/* --- 4. HUR DET FUNKAR --- */}
         <section id="how-it-works" className="scroll-mt-24">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">Så enkelt är det.</h2>
-            <p className="text-nordic-highlight">Ingen app krävs för den du möter.</p>
+            <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">{t("home.howTitle")}</h2>
+            <p className="text-nordic-highlight">{t("home.howSubtitle")}</p>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
             {[
               {
                 step: "1",
-                title: "Skapa din profil",
-                desc: "Lägg till det som representerar dig. Bilder, länkar, bio.",
+                title: t("home.step1Title"),
+                desc: t("home.step1Desc"),
                 icon: "🎨"
               },
               {
                 step: "2",
-                title: "Välj vy",
-                desc: "Anpassa efter situation – privat fest eller affärsmöte.",
+                title: t("home.step2Title"),
+                desc: t("home.step2Desc"),
                 icon: "🔄"
               },
               {
                 step: "3",
-                title: "Blippa & Dela",
-                desc: "Håll kortet mot en mobil eller dela din QR-kod. Klart.",
+                title: t("home.step3Title"),
+                desc: t("home.step3Desc"),
                 icon: "✨"
               }
             ].map((item, i) => (
@@ -350,31 +348,16 @@ export default function HomePage() {
         {/* --- 5. FAQ (NY SEKTION) --- */}
         <section id="faq" className="scroll-mt-24 max-w-3xl mx-auto w-full py-12">
           <div className="text-center mb-12 space-y-4">
-            <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">Vanliga frågor.</h2>
-            <p className="text-nordic-highlight">Hittar du inte det du letar efter? Kontakta oss.</p>
+            <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">{t("home.faqTitle")}</h2>
+            <p className="text-nordic-highlight">{t("home.faqSubtitle")}</p>
           </div>
           
           <div className="space-y-4">
-            <FaqItem 
-              question="Måste mottagaren ladda ner en app?" 
-              answer="Nej! Din profil öppnas direkt i webbläsaren hos den du delar den med. Oavsett om de skannar din QR-kod eller blippar ditt NFC-kort behövs ingen app." 
-            />
-            <FaqItem 
-              question="Kostar det något att använda AvyraCards?" 
-              answer="Att skapa en profil och använda dina digitala QR-koder och länkar är helt gratis. Vill du ta det till nästa nivå kan du köpa till ett fysiskt NFC-kort engångskostnad, eller uppgradera till premium för avancerade designmöjligheter." 
-            />
-            <FaqItem 
-              question="Hur fungerar NFC-kortet?" 
-              answer="Våra fysiska kort har ett inbyggt NFC-chip, likt det som används för blipp-betalningar. När någon håller sin smartphone mot ditt kort, dyker en notis upp på deras skärm som direkt leder till din Avyra-profil." 
-            />
-            <FaqItem 
-              question="Kan jag ha både en privat och en professionell profil?" 
-              answer="Absolut. Det är hela poängen med AvyraCards! Du har ett och samma konto, men kan bygga upp en Social-vy och en Business-vy. Du väljer själv vilken vy som ska vara aktiv när du delar din länk eller ditt kort." 
-            />
-            <FaqItem 
-              question="Kan jag ändra mina uppgifter i efterhand?" 
-              answer="Ja, när som helst. Eftersom ditt kort och din QR-kod pekar på din digitala profil, kan du uppdatera ditt telefonnummer, byta jobb eller lägga till nya länkar direkt i din dashboard utan att behöva byta ut ditt fysiska kort." 
-            />
+            <FaqItem question={t("home.faq1Q")} answer={t("home.faq1A")} />
+            <FaqItem question={t("home.faq2Q")} answer={t("home.faq2A")} />
+            <FaqItem question={t("home.faq3Q")} answer={t("home.faq3A")} />
+            <FaqItem question={t("home.faq4Q")} answer={t("home.faq4A")} />
+            <FaqItem question={t("home.faq5Q")} answer={t("home.faq5A")} />
           </div>
         </section>
 
@@ -386,24 +369,23 @@ export default function HomePage() {
           
           <div className="relative z-10 max-w-2xl mx-auto space-y-8">
             <h2 className="text-3xl md:text-5xl font-bold text-nordic-secondary leading-tight">
-              Redo att sluta dela <br/> fel version av dig?
+              {t("home.finalTitle1")} <br/> {t("home.finalTitle2")}
             </h2>
             <p className="text-nordic-highlight text-lg">
-              Skapa din profil idag och upplev hur enkelt nätverkande kan vara.
-              Ingen betalning. Inget kort. Börja direkt.
+              {t("home.finalBody")}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 href="/get-started"
                 className="inline-flex h-14 items-center justify-center rounded-full bg-emerald-500 px-10 text-base font-bold text-slate-950 shadow-xl shadow-emerald-500/20 transition-all hover:bg-emerald-400 hover:scale-105"
               >
-                Skapa gratis profil
+                {t("home.ctaCreate")}
               </Link>
             </div>
             
             <div className="pt-8 flex justify-center gap-8 text-sm font-medium text-nordic-highlight">
-              <Link href="/social" className="hover:text-emerald-400 transition-colors">Utforska Social →</Link>
-              <Link href="/business" className="hover:text-emerald-400 transition-colors">Utforska Business →</Link>
+              <Link href="/social" className="hover:text-emerald-400 transition-colors">{t("home.exploreSocial")}</Link>
+              <Link href="/business" className="hover:text-emerald-400 transition-colors">{t("home.exploreBusiness")}</Link>
             </div>
           </div>
         </section>

@@ -6,6 +6,7 @@ import { NativePurchases, PURCHASE_TYPE } from "@capgo/native-purchases";
 import { IosApplePayCheckout } from "@/components/checkout/ios-apple-pay-checkout";
 import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
 import { isIosDebugEnabled } from "@/lib/ios-native";
+import { useT } from "@/i18n/client";
 
 interface OrderItemPayload {
   variantId: string;
@@ -27,6 +28,7 @@ export function IosOrderCheckout({
   premiumOption,
   isPremium,
 }: IosOrderCheckoutProps) {
+  const t = useT();
   const [iapCompleted, setIapCompleted] = useState(
     premiumOption !== "6mo" || isPremium
   );
@@ -50,7 +52,7 @@ export function IosOrderCheckout({
       };
 
       if (!config.products.sixMonths) {
-        throw new Error("6-månaders IAP-produkt saknas");
+        throw new Error(t("checkout.sixMonthMissing"));
       }
 
       const transaction = await NativePurchases.purchaseProduct({
@@ -68,7 +70,7 @@ export function IosOrderCheckout({
       });
 
       if (!verifyResponse.ok) {
-        throw new Error("Kunde inte verifiera premiumköpet");
+        throw new Error(t("checkout.verifyPremiumFailed"));
       }
 
       setIapCompleted(true);
@@ -87,7 +89,7 @@ export function IosOrderCheckout({
         level: "error",
       });
       console.error(err);
-      setError(isIosDebugEnabled() ? message : "Premiumköpet kunde inte slutföras.");
+      setError(isIosDebugEnabled() ? message : t("checkout.premiumFailed"));
     } finally {
       setLoading(false);
     }

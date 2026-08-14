@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeft, CheckCircle, AlertTriangle, XCircle, MinusCircle } from "lucide-react";
 import { buildConfigReport, type CheckStatus } from "@/lib/config/health";
+import { getT } from "@/i18n/server";
 
 export const metadata = {
   title: "Systemstatus | AvyraCards",
@@ -27,6 +28,7 @@ function StatusIcon({ status }: { status: CheckStatus }) {
 }
 
 export default async function AdminSystemPage() {
+  const t = getT();
   const session = await auth();
 
   if (session?.user?.role !== "ADMIN") {
@@ -44,16 +46,15 @@ export default async function AdminSystemPage() {
         <ChevronLeft size={16} /> Till admin
       </Link>
 
-      <h1 className="text-2xl font-semibold text-white">Systemstatus</h1>
+      <h1 className="text-2xl font-semibold text-white">{t("admin.system.title")}</h1>
       <p className="mt-2 text-sm text-nordic-highlight">
-        Kontroll av miljövariabler och konfiguration. Sidan visar bara om något är satt och
-        rimligt — aldrig själva värdet.
+        {t("admin.system.intro")}
       </p>
 
       <div className="mt-6 rounded-xl border border-white/10 bg-white/5 p-4">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
           <span className="text-nordic-highlight">
-            Miljö: <span className="font-medium text-white">{report.environment}</span>
+            {t("admin.system.environment")} <span className="font-medium text-white">{report.environment}</span>
           </span>
           <span className="text-nordic-highlight">
             Fel: <span className="font-medium text-red-400">{report.errorCount}</span>

@@ -1,4 +1,20 @@
 import { normalizeWalletBaseUrl } from "@/lib/wallet/pass-content";
+import { createTranslator, type Translator } from "@/i18n/translate";
+import { getMessages } from "@/i18n/messages";
+import { defaultLocale, type Locale } from "@/i18n/config";
+
+/**
+ * Mailen renderas ofta utanför en request (Stripe-webhookar, IAP-verifiering),
+ * och då finns ingen språkcookie att läsa. Anroparen får därför skicka med
+ * språket när det är känt; annars faller vi tillbaka på svenska.
+ *
+ * OBS: för att webhook-drivna mail ska följa användarens val krävs att språket
+ * lagras på User i databasen — det kräver en migrering och är medvetet inte
+ * gjort här.
+ */
+function translatorFor(locale: Locale = defaultLocale): Translator {
+  return createTranslator(getMessages(locale), getMessages(defaultLocale), locale);
+}
 
 /**
  * Mallar för systemkritiska mail (inte marknadsföring).
@@ -24,9 +40,9 @@ export function baseUrl(): string {
   return normalizeWalletBaseUrl(process.env.NEXT_PUBLIC_BASE_URL);
 }
 
-function greeting(name?: string | null): string {
+function greeting(name: string | null | undefined, t: Translator): string {
   const first = (name || "").trim().split(/\s+/)[0];
-  return first ? `Hej ${first}!` : "Hej!";
+  return first ? t("email.greeting", { name: first }) : t("email.greetingNoName");
 }
 
 /**
@@ -34,8 +50,8 @@ function greeting(name?: string | null): string {
  * alltså från fältet en användare själv fyller i. Det får aldrig gå orört in i
  * mailets HTML.
  */
-function greetingHtml(name?: string | null): string {
-  return escapeHtml(greeting(name));
+function greetingHtml(name: string | null | undefined, t: Translator): string {
+  return escapeHtml(greeting(name, t));
 }
 
 function escapeHtml(value: string): string {
@@ -69,6 +85,8 @@ function layout(options: {
   bodyHtml: string;
   ctaLabel?: string;
   ctaUrl?: string;
+  locale: Locale;
+  t: Translator;
 }): string {
   const cta =
     options.ctaLabel && options.ctaUrl
@@ -80,7 +98,7 @@ function layout(options: {
       : "";
 
   return `<!DOCTYPE html>
-<html lang="sv">
+<html lang="${options.locale}">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escapeHtml(
     options.heading
   )}</title></head>
@@ -91,60 +109,64 @@ function layout(options: {
     ${cta}
     <hr style="border:none;border-top:1px solid #eeeeee;margin:32px 0 16px;">
     <p style="margin:0;font-size:12px;color:#888888;">
-      Det här är ett automatiskt meddelande om ditt AvyraCards-konto och går inte att svara på.
+      ${escapeHtml(options.t("email.autoFooter"))}
     </p>
   </div>
 </body>
 </html>`;
 }
 
-const PREMIUM_SOURCE_LEAD: Record<PremiumActivationSource, string> = {
-  stripe: "Din premiumbetalning är genomförd och kontot är uppgraderat.",
-  apple_iap: "Ditt köp via App Store är bekräftat och kontot är uppgraderat.",
-  card_order:
-    "Premium ingick i din kortbeställning och är nu aktiverat på ditt konto.",
-  gift: "Du har fått premium aktiverat på ditt konto.",
+const PREMIUM_SOURCE_KEY: Record<PremiumActivationSource, string> = {
+  stripe: "email.premium.sourceStripe",
+  apple_iap: "email.premium.sourceApple",
+  card_order: "email.premium.sourceCardOrder",
+  gift: "email.premium.sourceGift",
 };
 
 export function renderPremiumActivated(input: {
   name?: string | null;
   source: PremiumActivationSource;
   expiresAt?: Date | null;
+  locale?: Locale;
 }): RenderedEmail {
+  const locale = input.locale ?? defaultLocale;
+  const t = translatorFor(locale);
   const url = `${baseUrl()}/profile/themes`;
-  const lead = PREMIUM_SOURCE_LEAD[input.source] ?? PREMIUM_SOURCE_LEAD.gift;
+  const lead = t(PREMIUM_SOURCE_KEY[input.source] ?? PREMIUM_SOURCE_KEY.gift);
 
   const expiryLine = input.expiresAt
-    ? `Premium gäller till och med ${input.expiresAt.toISOString().slice(0, 10)}.`
+    ? t("email.premium.expiry", { date: input.expiresAt.toISOString().slice(0, 10) })
     : null;
 
   const bullets = [
-    "Alla teman och mallar, inklusive de låsta",
-    "Statistik med fler detaljer",
-    "Egen bakgrundsbild och möjlighet att dölja AvyraCards-loggan",
+    t("email.premium.bullet1"),
+    t("email.premium.bullet2"),
+    t("email.premium.bullet3"),
   ];
 
   return {
-    subject: "Premium är aktiverat på ditt AvyraCards-konto",
+    subject: t("email.premium.subject"),
     text: [
-      greeting(input.name),
+      greeting(input.name, t),
       "",
       lead,
       expiryLine,
       "",
-      "Det här ingår:",
+      t("email.premium.included"),
       ...bullets.map((b) => `- ${b}`),
       "",
-      `Öppna dina teman: ${url}`,
+      t("email.premium.openThemes", { url }),
     ]
       .filter((line) => line !== null)
       .join("\n"),
     html: layout({
-      heading: "Premium är aktiverat",
-      ctaLabel: "Utforska premiumteman",
+      locale,
+      t,
+      heading: t("email.premium.heading"),
+      ctaLabel: t("email.premium.cta"),
       ctaUrl: url,
       bodyHtml: `
-    <p style="color:#333333;line-height:1.6;">${greetingHtml(input.name)}</p>
+    <p style="color:#333333;line-height:1.6;">${greetingHtml(input.name, t)}</p>
     <p style="color:#333333;line-height:1.6;">${escapeHtml(lead)}</p>
     ${
       expiryLine
@@ -164,44 +186,57 @@ export function renderCardOrderConfirmed(input: {
   quantity: number;
   amountTotal: number;
   currency: string;
+  locale?: Locale;
 }): RenderedEmail {
+  const locale = input.locale ?? defaultLocale;
+  const t = translatorFor(locale);
   const url = `${baseUrl()}/dashboard`;
   const reference = input.orderId.slice(-8).toUpperCase();
-  const cardsLabel = `${input.quantity} ${input.quantity === 1 ? "kort" : "kort"}`;
+  const cardsLabel = t("email.orderConfirmed.cards", { count: input.quantity });
   const amount = formatAmount(input.amountTotal, input.currency);
 
   return {
-    subject: `Tack för din beställning (${reference})`,
+    subject: t("email.orderConfirmed.subject", { reference }),
     text: [
-      greeting(input.name),
+      greeting(input.name, t),
       "",
-      `Vi har tagit emot din beställning på ${cardsLabel}.`,
-      `Ordernummer: ${reference}`,
-      `Summa: ${amount}`,
+      t("email.orderConfirmed.received", { cards: cardsLabel }),
+      `${t("email.orderConfirmed.orderNumber")}: ${reference}`,
+      `${t("email.orderConfirmed.amount")}: ${amount}`,
       "",
-      "Du får ett nytt mail så snart kortet skickas. När det kommer aktiverar du det genom att hålla telefonen mot kortet eller skanna QR-koden på baksidan.",
+      t("email.orderConfirmed.shippingInfo"),
       "",
-      `Din översikt: ${url}`,
+      t("email.orderConfirmed.overview", { url }),
     ].join("\n"),
     html: layout({
-      heading: "Tack för din beställning",
-      ctaLabel: "Till min översikt",
+      locale,
+      t,
+      heading: t("email.orderConfirmed.heading"),
+      ctaLabel: t("email.orderConfirmed.cta"),
       ctaUrl: url,
       bodyHtml: `
-    <p style="color:#333333;line-height:1.6;">${greetingHtml(input.name)}</p>
-    <p style="color:#333333;line-height:1.6;">Vi har tagit emot din beställning på ${escapeHtml(
-      cardsLabel
-    )}.</p>
+    <p style="color:#333333;line-height:1.6;">${greetingHtml(input.name, t)}</p>
+    <p style="color:#333333;line-height:1.6;">${escapeHtml(
+      t("email.orderConfirmed.received", { cards: cardsLabel })
+    )}</p>
     <table style="width:100%;border-collapse:collapse;margin:20px 0;">
-      <tr><td style="padding:6px 0;color:#666666;">Ordernummer</td><td style="padding:6px 0;color:#111111;text-align:right;font-weight:600;">${escapeHtml(
+      <tr><td style="padding:6px 0;color:#666666;">${escapeHtml(
+        t("email.orderConfirmed.orderNumber")
+      )}</td><td style="padding:6px 0;color:#111111;text-align:right;font-weight:600;">${escapeHtml(
         reference
       )}</td></tr>
-      <tr><td style="padding:6px 0;color:#666666;">Antal kort</td><td style="padding:6px 0;color:#111111;text-align:right;font-weight:600;">${input.quantity}</td></tr>
-      <tr><td style="padding:6px 0;color:#666666;">Summa</td><td style="padding:6px 0;color:#111111;text-align:right;font-weight:600;">${escapeHtml(
+      <tr><td style="padding:6px 0;color:#666666;">${escapeHtml(
+        t("email.orderConfirmed.quantity")
+      )}</td><td style="padding:6px 0;color:#111111;text-align:right;font-weight:600;">${input.quantity}</td></tr>
+      <tr><td style="padding:6px 0;color:#666666;">${escapeHtml(
+        t("email.orderConfirmed.amount")
+      )}</td><td style="padding:6px 0;color:#111111;text-align:right;font-weight:600;">${escapeHtml(
         amount
       )}</td></tr>
     </table>
-    <p style="color:#333333;line-height:1.6;">Du får ett nytt mail så snart kortet skickas. När det kommer aktiverar du det genom att hålla telefonen mot kortet eller skanna QR-koden på baksidan.</p>`,
+    <p style="color:#333333;line-height:1.6;">${escapeHtml(
+      t("email.orderConfirmed.shippingInfo")
+    )}</p>`,
     }),
   };
 }
@@ -211,47 +246,52 @@ export function renderCardOrderShipped(input: {
   orderId: string;
   quantity: number;
   shippingCity?: string | null;
+  locale?: Locale;
 }): RenderedEmail {
+  const locale = input.locale ?? defaultLocale;
+  const t = translatorFor(locale);
   const url = `${baseUrl()}/dashboard`;
   const reference = input.orderId.slice(-8).toUpperCase();
   const destination = input.shippingCity?.trim()
-    ? ` till ${input.shippingCity.trim()}`
+    ? t("email.orderShipped.destination", { city: input.shippingCity.trim() })
     : "";
+  const sentLine = t("email.orderShipped.sent", { count: input.quantity, destination });
+  const steps = [
+    t("email.orderShipped.step1"),
+    t("email.orderShipped.step2"),
+    t("email.orderShipped.step3"),
+  ];
 
   return {
-    subject: `Din beställning är på väg (${reference})`,
+    subject: t("email.orderShipped.subject", { reference }),
     text: [
-      greeting(input.name),
+      greeting(input.name, t),
       "",
-      `Nu är ${input.quantity === 1 ? "ditt kort" : "dina kort"} skickat${
-        input.quantity === 1 ? "" : "a"
-      }${destination}.`,
-      `Ordernummer: ${reference}`,
+      sentLine,
+      t("email.orderShipped.orderNumber", { reference }),
       "",
-      "Så aktiverar du kortet när det kommer:",
-      "1. Håll telefonen mot kortet, eller skanna QR-koden på baksidan.",
-      "2. Logga in med samma konto som du beställde med.",
-      "3. Bekräfta aktiveringen — sedan pekar kortet på din profil.",
+      t("email.orderShipped.howToTitle"),
+      ...steps.map((step, i) => `${i + 1}. ${step}`),
       "",
-      `Din översikt: ${url}`,
+      t("email.orderShipped.overview", { url }),
     ].join("\n"),
     html: layout({
-      heading: "Din beställning är på väg",
-      ctaLabel: "Till min översikt",
+      locale,
+      t,
+      heading: t("email.orderShipped.heading"),
+      ctaLabel: t("email.orderShipped.cta"),
       ctaUrl: url,
       bodyHtml: `
-    <p style="color:#333333;line-height:1.6;">${greetingHtml(input.name)}</p>
-    <p style="color:#333333;line-height:1.6;">Nu är ${
-      input.quantity === 1 ? "ditt kort" : "dina kort"
-    } skickat${input.quantity === 1 ? "" : "a"}${escapeHtml(destination)}.</p>
-    <p style="color:#666666;line-height:1.6;">Ordernummer: <strong style="color:#111111;">${escapeHtml(
-      reference
+    <p style="color:#333333;line-height:1.6;">${greetingHtml(input.name, t)}</p>
+    <p style="color:#333333;line-height:1.6;">${escapeHtml(sentLine)}</p>
+    <p style="color:#666666;line-height:1.6;">${escapeHtml(
+      t("email.orderShipped.orderNumber", { reference })
+    )}</p>
+    <p style="color:#333333;line-height:1.6;margin-top:24px;"><strong>${escapeHtml(
+      t("email.orderShipped.howToTitle")
     )}</strong></p>
-    <p style="color:#333333;line-height:1.6;margin-top:24px;"><strong>Så aktiverar du kortet när det kommer:</strong></p>
     <ol style="color:#333333;line-height:1.8;padding-left:20px;">
-      <li>Håll telefonen mot kortet, eller skanna QR-koden på baksidan.</li>
-      <li>Logga in med samma konto som du beställde med.</li>
-      <li>Bekräfta aktiveringen — sedan pekar kortet på din profil.</li>
+      ${steps.map((step) => `<li>${escapeHtml(step)}</li>`).join("\n      ")}
     </ol>`,
     }),
   };

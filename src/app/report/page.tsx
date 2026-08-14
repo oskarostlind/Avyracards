@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { StandaloneReportForm } from "@/components/public-profile/standalone-report-form";
+import { getT } from "@/i18n/server";
+import { MODERATION_CONTACT_EMAIL } from "@/lib/moderation-shared";
 
-export const metadata: Metadata = {
-  title: "Rapportera innehåll | AvyraCards",
-  description:
-    "Rapportera en profil eller innehåll som bryter mot AvyraCards användarvillkor.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = getT();
+  return {
+    title: `${t("moderation.pageTitle")} | AvyraCards`,
+    description: t("moderation.pageMetaDescription"),
+  };
+}
 
 /**
  * Publicerad, alltid nåbar rapportväg (Guideline 1.2). Rapportknappen finns på
@@ -17,23 +21,21 @@ export default function ReportPage({
 }: {
   searchParams: { u?: string };
 }) {
+  const t = getT();
+
   return (
     <main className="mx-auto max-w-xl px-4 py-16 text-slate-100">
-      <h1 className="text-3xl font-semibold">Rapportera innehåll</h1>
-      <p className="mt-3 text-slate-300">
-        Vi har nolltolerans mot stötande, olagligt eller kränkande innehåll. Alla
-        rapporter granskas inom 24 timmar och innehåll som bryter mot villkoren
-        tas bort — kontot kan stängas av permanent.
-      </p>
+      <h1 className="text-3xl font-semibold">{t("moderation.pageTitle")}</h1>
+      <p className="mt-3 text-slate-300">{t("moderation.pageIntro")}</p>
 
       <StandaloneReportForm defaultUsername={searchParams.u ?? ""} />
 
       <p className="mt-10 text-sm text-slate-400">
-        Föredrar du att mejla? Skriv till{" "}
-        <a href="mailto:kontakt@avyracards.se" className="underline">
-          kontakt@avyracards.se
+        {t("moderation.pageMailBefore")}{" "}
+        <a href={`mailto:${MODERATION_CONTACT_EMAIL}`} className="underline">
+          {MODERATION_CONTACT_EMAIL}
         </a>{" "}
-        så återkommer vi inom 24 timmar.
+        {t("moderation.pageMailAfter")}
       </p>
     </main>
   );

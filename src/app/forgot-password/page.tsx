@@ -5,8 +5,10 @@ import { useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Mail, ArrowLeft, Loader2, CheckCircle2 } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 function ForgotPasswordContent() {
+  const t = useT();
   const searchParams = useSearchParams();
   // Hämta mail från URL om den finns
   const emailFromUrl = searchParams.get("email") || "";
@@ -30,10 +32,10 @@ function ForgotPasswordContent() {
              <Mail className="h-6 w-6 text-nordic-accent" />
         </div>
         <h2 className="text-2xl font-bold text-nordic-secondary tracking-tight">
-          Glömt lösenord?
+          {t("passwordReset.forgotTitle")}
         </h2>
         <p className="text-nordic-highlight text-sm">
-          Inga problem. Skriv in din e-post så skickar vi en länk för att återställa det.
+          {t("passwordReset.forgotSubtitle")}
         </p>
       </div>
 
@@ -47,7 +49,7 @@ function ForgotPasswordContent() {
             </p>
             <div className="mt-6">
                 <Link href="/login" className="text-sm text-emerald-400 hover:text-emerald-300 font-bold">
-                    Tillbaka till inloggning
+                    {t("passwordReset.backToLogin")}
                 </Link>
             </div>
         </div>
@@ -55,7 +57,7 @@ function ForgotPasswordContent() {
         <form action={handleSubmit} className="space-y-6">
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-medium text-nordic-secondary block">
-                E-post
+                {t("common.email")}
             </label>
             <input
               id="email"
@@ -63,7 +65,7 @@ function ForgotPasswordContent() {
               type="email"
               required
               defaultValue={emailFromUrl} // Här förifyller vi!
-              placeholder="namn@exempel.se"
+              placeholder={t("auth.login.emailPlaceholder")}
               className="w-full px-4 py-3 bg-nordic-primary border border-nordic-highlight/30 rounded-xl text-nordic-secondary placeholder:text-nordic-highlight/50 focus:outline-none focus:ring-2 focus:ring-nordic-accent/50 focus:border-nordic-accent transition-all"
             />
           </div>
@@ -75,10 +77,10 @@ function ForgotPasswordContent() {
           >
             {loading ? (
                 <>
-                    <Loader2 size={18} className="animate-spin" /> Skickar...
+                    <Loader2 size={18} className="animate-spin" /> {t("passwordReset.sending")}
                 </>
             ) : (
-                "Skicka återställningslänk"
+                t("passwordReset.sendLink")
             )}
           </button>
         </form>
@@ -92,7 +94,7 @@ function ForgotPasswordContent() {
                 className="inline-flex items-center text-sm text-nordic-highlight hover:text-nordic-secondary transition-colors"
             >
                 <ArrowLeft size={16} className="mr-2" />
-                Tillbaka till inloggning
+                {t("passwordReset.backToLogin")}
             </Link>
           </div>
       )}
@@ -104,7 +106,7 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-nordic-primary px-4">
       {/* Suspense behövs för useSearchParams i client components */}
-      <Suspense fallback={<div className="text-nordic-highlight">Laddar...</div>}>
+      <Suspense fallback={<div className="text-nordic-highlight" aria-busy="true" />}>
         <ForgotPasswordContent />
       </Suspense>
     </div>

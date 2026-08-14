@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useT } from "@/i18n/client";
 
 type ProfilePreviewModalProps = {
   isOpen: boolean;
@@ -12,6 +13,7 @@ type ProfilePreviewModalProps = {
 };
 
 export function ProfilePreviewModal({ isOpen, onClose, username, mode }: ProfilePreviewModalProps) {
+  const t = useT();
   const [url, setUrl] = useState("");
 
   useEffect(() => {
@@ -43,6 +45,7 @@ export function ProfilePreviewModal({ isOpen, onClose, username, mode }: Profile
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 z-50 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-md transition-colors border border-white/10"
+          aria-label={t("dashboard.previewModal.close")}
         >
           <X size={20} />
         </button>
@@ -52,7 +55,7 @@ export function ProfilePreviewModal({ isOpen, onClose, username, mode }: Profile
             <iframe 
                 src={url} 
                 className="w-full h-full border-none"
-                title="Profile Preview"
+                title={t("dashboard.previewModal.iframeTitle")}
                 // NYTT: Sandbox-attribut för säkerhet (valfritt men bra)
                 sandbox="allow-scripts allow-same-origin allow-forms"
             />
@@ -63,7 +66,7 @@ export function ProfilePreviewModal({ isOpen, onClose, username, mode }: Profile
       </div>
 
       <div className="absolute top-6 right-6 text-nordic-secondary/50 text-sm hidden sm:block font-medium">
-         Tryck ESC för att stänga
+         {t("dashboard.previewModal.escToClose")}
       </div>
     </div>
   );

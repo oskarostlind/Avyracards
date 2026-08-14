@@ -1,6 +1,7 @@
 "use client";
 
 import { Lock, Crown } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 // --- FÄRGVÄLJARE ---
 export function ColorPicker({ label, value, onChange }: { label: string; value?: string; onChange: (v: string) => void }) {
@@ -62,6 +63,8 @@ export function Slider({ label, value, min, max, unit, onChange }: { label: stri
 
 // --- PREMIUM BADGE ---
 export function PremiumBadge({ isUnlocked, className = "absolute top-2 right-2" }: { isUnlocked: boolean; className?: string }) {
+  const t = useT();
+
   return (
     <div 
         className={`${className} p-1 rounded-full shadow-lg flex items-center justify-center z-10 ${
@@ -69,7 +72,7 @@ export function PremiumBadge({ isUnlocked, className = "absolute top-2 right-2" 
             ? "bg-emerald-500 text-white" 
             : "bg-amber-500 text-slate-900" 
         }`} 
-        title={isUnlocked ? "Ingår i ditt paket" : "Premium"}
+        title={isUnlocked ? t("themes.includedInPlan") : t("common.premium")}
     >
         {isUnlocked ? <Crown size={10} fill="currentColor" /> : <Lock size={10} />}
     </div>

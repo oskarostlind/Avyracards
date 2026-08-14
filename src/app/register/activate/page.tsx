@@ -4,14 +4,16 @@ import { useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, User, Mail, Lock } from "lucide-react";
 import { signIn } from "next-auth/react";
+import { useT } from "@/i18n/client";
 
 export default function ActivateAccountPage() {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("session_id");
 
   const [loading, setLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState("Aktivera konto"); // För att visa vad som händer
+  const [statusMessage, setStatusMessage] = useState(""); // För att visa vad som händer
   const [email, setEmail] = useState(""); 
 
   const handleActivation = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -51,7 +53,7 @@ export default function ActivateAccountPage() {
       });
 
       if (signInRes?.error) {
-        throw new Error("Kunde inte logga in automatiskt. Försök logga in manuellt.");
+        throw new Error(t("postPurchase.autoLoginFailed"));
       }
 
       // STEG 3: Aktivera Premium via "Bakdörren" (verify-session)
@@ -86,7 +88,7 @@ export default function ActivateAccountPage() {
       console.error(error);
       setLoading(false);
       setStatusMessage("Aktivera konto");
-      alert(error.message || "Något gick fel.");
+      alert(error.message || t("common.somethingWentWrong"));
     }
   };
 
@@ -98,9 +100,9 @@ export default function ActivateAccountPage() {
             <div className="mx-auto w-20 h-20 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center ring-1 ring-green-500/30 shadow-[0_0_40px_rgba(34,197,94,0.3)]">
                <CheckCircle2 size={40} />
             </div>
-            <h1 className="text-3xl font-bold">Betalning Mottagen!</h1>
+            <h1 className="text-3xl font-bold">{t("postPurchase.title")}</h1>
             <p className="text-nordic-highlight">
-               Tack för ditt köp. Slutför din registrering nedan för att komma igång direkt.
+               {t("postPurchase.subtitle")}
             </p>
          </div>
 
@@ -108,22 +110,22 @@ export default function ActivateAccountPage() {
             <form onSubmit={handleActivation} className="space-y-5">
                
                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-nordic-highlight">Användarnamn</label>
+                  <label className="text-xs font-bold uppercase text-nordic-highlight">{t("postPurchase.username")}</label>
                   <div className="relative">
                      <User className="absolute left-4 top-3.5 text-nordic-highlight" size={18} />
                      <input 
                         name="username" 
                         type="text" 
                         required 
-                        placeholder="dittnamn" 
+                        placeholder={t("postPurchase.usernamePlaceholder")} 
                         className="w-full bg-[#030712] border border-gray-700 rounded-xl pl-11 pr-4 py-3 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition-all placeholder:text-gray-600" 
                      />
                   </div>
-                  <p className="text-[10px] text-nordic-highlight pl-1">Din länk: avyracards.se/användarnamn</p>
+                  <p className="text-[10px] text-nordic-highlight pl-1">{t("postPurchase.linkHint")}</p>
                </div>
 
                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-nordic-highlight">E-post</label>
+                  <label className="text-xs font-bold uppercase text-nordic-highlight">{t("common.email")}</label>
                   <div className="relative">
                      <Mail className="absolute left-4 top-3.5 text-nordic-highlight" size={18} />
                      <input 
@@ -132,14 +134,14 @@ export default function ActivateAccountPage() {
                         required 
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="namn@exempel.se"
+                        placeholder={t("auth.login.emailPlaceholder")}
                         className="w-full bg-[#030712] border border-gray-700 rounded-xl pl-11 pr-4 py-3 focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none transition-all placeholder:text-gray-600"
                      />
                   </div>
                </div>
 
                <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase text-nordic-highlight">Lösenord</label>
+                  <label className="text-xs font-bold uppercase text-nordic-highlight">{t("common.password")}</label>
                   <div className="relative">
                      <Lock className="absolute left-4 top-3.5 text-nordic-highlight" size={18} />
                      <input 
@@ -157,7 +159,7 @@ export default function ActivateAccountPage() {
                     <span className="flex items-center gap-2">
                       <Loader2 className="animate-spin" size={20}/> {statusMessage}
                     </span>
-                  ) : "Aktivera konto"}
+                  ) : t("postPurchase.activate")}
                </button>
             </form>
          </div>

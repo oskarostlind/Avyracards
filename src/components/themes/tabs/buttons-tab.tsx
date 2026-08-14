@@ -2,6 +2,7 @@
 
 import { type CustomThemeSettings, type ButtonStyle, type ButtonVariant } from "@/types/theme";
 import { ColorPicker, PremiumBadge } from "@/components/themes/theme-controls";
+import { useT } from "@/i18n/client";
 
 interface ButtonsTabProps {
   settings: CustomThemeSettings;
@@ -10,6 +11,7 @@ interface ButtonsTabProps {
 }
 
 export function ButtonsTab({ settings, updateSetting, isPremium }: ButtonsTabProps) {
+  const t = useT();
   
   const renderShapePreview = (style: ButtonStyle) => {
     const baseClass = "w-full h-8 bg-slate-700 transition-all group-hover:bg-purple-500/50";
@@ -24,7 +26,7 @@ export function ButtonsTab({ settings, updateSetting, isPremium }: ButtonsTabPro
        
        {/* FORM */}
        <div className="space-y-3">
-         <label className="text-xs font-bold text-nordic-highlight uppercase">Knappform</label>
+         <label className="text-xs font-bold text-nordic-highlight uppercase">{t("themes.buttons.shape")}</label>
          <div className="grid grid-cols-4 gap-2">
             {(['rounded', 'pill', 'sharp', 'brutal'] as ButtonStyle[]).map((style) => (
               <button 
@@ -45,7 +47,7 @@ export function ButtonsTab({ settings, updateSetting, isPremium }: ButtonsTabPro
 
        {/* STIL */}
        <div className="space-y-3">
-         <label className="text-xs font-bold text-nordic-highlight uppercase">Knappstil</label>
+         <label className="text-xs font-bold text-nordic-highlight uppercase">{t("themes.buttons.style")}</label>
          <div className="grid grid-cols-2 gap-2">
             {(['solid', 'outline', 'soft', 'glass', 'ghost'] as ButtonVariant[]).map((variant) => {
                 const isPremiumVariant = variant === 'glass';
@@ -70,7 +72,7 @@ export function ButtonsTab({ settings, updateSetting, isPremium }: ButtonsTabPro
        
        {/* SKUGGA TOGGLE */}
        <div className="flex items-center justify-between p-3 border border-nordic-highlight/40 rounded-xl bg-slate-900/30">
-          <span className="text-xs font-bold text-nordic-highlight uppercase">Skugga</span>
+          <span className="text-xs font-bold text-nordic-highlight uppercase">{t("themes.buttons.shadow")}</span>
           <button 
             onClick={() => updateSetting("buttonShadow", !settings.buttonShadow)}
             className={`w-10 h-5 rounded-full transition-colors relative ${settings.buttonShadow ? 'bg-purple-500' : 'bg-slate-700'}`}
@@ -81,8 +83,8 @@ export function ButtonsTab({ settings, updateSetting, isPremium }: ButtonsTabPro
 
        <hr className="border-nordic-highlight/40"/>
        
-       <ColorPicker label="Knappfärg (Accent)" value={settings.accentColor} onChange={(v) => updateSetting("accentColor", v)} />
-       <ColorPicker label="Textfärg (Knappar)" value={settings.textColor} onChange={(v) => updateSetting("textColor", v)} />
+       <ColorPicker label={t("themes.buttons.accentColor")} value={settings.accentColor} onChange={(v) => updateSetting("accentColor", v)} />
+       <ColorPicker label={t("themes.buttons.textColor")} value={settings.textColor} onChange={(v) => updateSetting("textColor", v)} />
     </div>
   );
 }

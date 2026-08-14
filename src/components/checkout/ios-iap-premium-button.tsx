@@ -6,6 +6,7 @@ import { NativePurchases, PURCHASE_TYPE } from "@capgo/native-purchases";
 import type { IosPremiumProductKey } from "@/lib/ios-native";
 import { isIosDebugEnabled } from "@/lib/ios-native";
 import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
+import { useT } from "@/i18n/client";
 
 interface IosIapPremiumButtonProps {
   productKey: IosPremiumProductKey;
@@ -18,6 +19,7 @@ export function IosIapPremiumButton({
   label,
   onSuccess,
 }: IosIapPremiumButtonProps) {
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -60,7 +62,7 @@ export function IosIapPremiumButton({
       });
 
       if (!verifyResponse.ok) {
-        throw new Error("Kunde inte verifiera köpet");
+        throw new Error(t("checkout.verifyFailed"));
       }
 
       logIosNativeRuntime({
@@ -83,7 +85,7 @@ export function IosIapPremiumButton({
       });
       console.error(err);
       setError(
-        isIosDebugEnabled() ? `IAP: ${message}` : "Köpet kunde inte slutföras. Försök igen."
+        isIosDebugEnabled() ? `IAP: ${message}` : t("checkout.iapFailed")
       );
       setLoading(false);
     }

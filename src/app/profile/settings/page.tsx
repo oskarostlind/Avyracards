@@ -9,12 +9,14 @@ import { AccountForm } from "@/components/profile/account-form";
 import { BillingView } from "@/components/profile/billing-view";
 import { CardsView } from "@/components/profile/cards-view";
 import { NotificationsForm } from "@/components/profile/notifications-form";
+import { getT } from "@/i18n/server";
 
 type PageProps = {
   searchParams: { [key: string]: string | string[] | undefined };
 };
 
 export default async function ProfileSettingsPage({ searchParams }: PageProps) {
+  const t = getT();
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login");
@@ -101,8 +103,8 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
       {/* Innehållet */}
       <div className="relative z-10 container mx-auto max-w-4xl px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-nordic-secondary">Inställningar</h1>
-          <p className="text-nordic-highlight">Hantera ditt konto, prenumeration och säkerhet.</p>
+          <h1 className="text-2xl font-bold text-nordic-secondary">{t("settings.title")}</h1>
+          <p className="text-nordic-highlight">{t("settings.subtitle")}</p>
         </div>
 
         <SettingsTabs />

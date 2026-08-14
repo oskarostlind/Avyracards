@@ -16,6 +16,17 @@ export const REPORT_REASON_KEYS = [
 
 export type ReportReasonKey = (typeof REPORT_REASON_KEYS)[number];
 
+/**
+ * i18n-nyckel per anledning. Texten bor i meddelandeträdet så att både
+ * rapportformuläret och moderationsmailen följer språkvalet.
+ */
+export const REPORT_REASON_KEY_PREFIX = "moderation.reasons";
+
+export function reportReasonKey(reason: ReportReasonKey): string {
+  return `${REPORT_REASON_KEY_PREFIX}.${reason}`;
+}
+
+/** Svenska etiketter — används där ingen översättare finns (t.ex. adminmail). */
 export const REPORT_REASON_LABELS: Record<ReportReasonKey, string> = {
   SPAM: "Spam eller bedrägeri",
   IMPERSONATION: "Utger sig för att vara någon annan",

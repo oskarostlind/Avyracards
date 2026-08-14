@@ -4,17 +4,18 @@ import Link from "next/link";
 import { ReportStatus } from "@prisma/client";
 import { ArrowLeft, ShieldAlert } from "lucide-react";
 import { getModerationQueue } from "@/actions/moderation";
-import { REPORT_REASON_LABELS, type ReportReasonKey } from "@/lib/moderation-shared";
+import { reportReasonKey, type ReportReasonKey } from "@/lib/moderation-shared";
 import { ModerationActions } from "@/components/admin/moderation-actions";
+import { getT } from "@/i18n/server";
 
 export const metadata = { title: "Admin | Moderation" };
 
-const TABS: { key: ReportStatus | "ALL"; label: string }[] = [
-  { key: "PENDING", label: "Nya" },
-  { key: "REVIEWING", label: "Under granskning" },
-  { key: "ACTIONED", label: "Åtgärdade" },
-  { key: "DISMISSED", label: "Avfärdade" },
-  { key: "ALL", label: "Alla" },
+const TABS: { key: ReportStatus | "ALL"; labelKey: string }[] = [
+  { key: "PENDING", labelKey: "admin.reports.filterPending" },
+  { key: "REVIEWING", labelKey: "admin.reports.filterReviewing" },
+  { key: "ACTIONED", labelKey: "admin.reports.filterActioned" },
+  { key: "DISMISSED", labelKey: "admin.reports.filterDismissed" },
+  { key: "ALL", labelKey: "admin.reports.filterAll" },
 ];
 
 export default async function AdminReportsPage({
@@ -22,6 +23,7 @@ export default async function AdminReportsPage({
 }: {
   searchParams: { status?: string };
 }) {
+  const t = getT();
   const session = await auth();
   if (session?.user?.role !== "ADMIN") redirect("/dashboard");
 
@@ -48,7 +50,7 @@ export default async function AdminReportsPage({
             )}
           </h1>
           <p className="mt-1 text-sm text-nordic-highlight">
-            Rapporterat användarinnehåll. Enligt våra villkor ska rapporter granskas
+            {t("admin.reports.intro")}
             inom 24 timmar.
           </p>
         </div>
@@ -64,14 +66,14 @@ export default async function AdminReportsPage({
                   : "bg-slate-800 text-slate-300 hover:bg-slate-700"
               }`}
             >
-              {tab.label}
+              {t(tab.labelKey)}
             </Link>
           ))}
         </div>
 
         {reports.length === 0 ? (
           <div className="rounded-2xl border border-nordic-highlight/30 bg-slate-900/50 p-10 text-center text-sm text-nordic-highlight">
-            Inga rapporter i den här vyn.
+            {t("admin.reports.empty")}
           </div>
         ) : (
           <div className="space-y-4">
@@ -92,7 +94,7 @@ export default async function AdminReportsPage({
                       </Link>
                       {report.reportedUser.isSuspended && (
                         <span className="rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-bold text-red-400">
-                          AVSTÄNGD
+                          {t("admin.reports.suspended")}
                         </span>
                       )}
                     </div>
@@ -102,7 +104,7 @@ export default async function AdminReportsPage({
                   </div>
                   <div className="text-right text-xs text-nordic-highlight">
                     <div className="font-medium text-amber-400">
-                      {REPORT_REASON_LABELS[report.reason as ReportReasonKey]}
+                      {t(reportReasonKey(report.reason as ReportReasonKey))}
                     </div>
                     <div>{report.createdAt.toLocaleString("sv-SE")}</div>
                   </div>
@@ -115,7 +117,7 @@ export default async function AdminReportsPage({
                 )}
 
                 <p className="text-xs text-nordic-highlight">
-                  Rapportör: {report.reporterEmail ?? "anonym"} · Status: {report.status}
+                  {t("admin.reports.reporter", { email: report.reporterEmail ?? t("admin.reports.anonymous"), status: report.status })}
                 </p>
 
                 <ModerationActions

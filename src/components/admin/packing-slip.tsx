@@ -2,6 +2,7 @@
 
 import { QRCodeSVG } from "qrcode.react"; // <-- Ändrad import
 import { type Card } from "@prisma/client";
+import { useT } from "@/i18n/client";
 
 interface PackingSlipProps {
   orderId: string;
@@ -10,13 +11,14 @@ interface PackingSlipProps {
 }
 
 export function PackingSlip({ orderId, customerName, cards }: PackingSlipProps) {
+  const t = useT();
   return (
     <div className="hidden print:block print:absolute print:top-0 print:left-0 print:w-full print:bg-white print:p-10 print:z-[10000]">
       {/* Huvud/Logga */}
       <div className="flex justify-between items-start mb-12 border-b-2 border-black pb-6">
         <div>
           <h1 className="text-4xl font-bold tracking-tighter text-nordic-secondary">AvyraCards</h1>
-          <p className="text-sm text-nordic-highlight mt-2">Ditt digitala visitkort</p>
+          <p className="text-sm text-nordic-highlight mt-2">{t("packingSlip.tagline")}</p>
         </div>
         <div className="text-right">
           <p className="text-sm font-mono text-nordic-highlight">Order #{orderId.slice(-6).toUpperCase()}</p>
@@ -26,10 +28,9 @@ export function PackingSlip({ orderId, customerName, cards }: PackingSlipProps) 
 
       {/* Välkomsttext */}
       <div className="mb-16">
-        <h2 className="text-2xl font-bold text-nordic-secondary mb-4">Hej {customerName || "där"}! 👋</h2>
+        <h2 className="text-2xl font-bold text-nordic-secondary mb-4">{t("packingSlip.greeting", { name: customerName || t("packingSlip.greetingFallback") })}</h2>
         <p className="text-lg text-gray-700 max-w-xl leading-relaxed">
-          Tack för din beställning. Här kommer ditt nya AvyraCards! 
-          Vi hoppas att det ska hjälpa dig att nätverka smartare och snyggare.
+          {t("packingSlip.thanks")}
         </p>
       </div>
 
@@ -37,22 +38,22 @@ export function PackingSlip({ orderId, customerName, cards }: PackingSlipProps) 
       <div className="grid grid-cols-2 gap-12 mb-16">
         <div>
           <h3 className="text-lg font-bold text-nordic-secondary uppercase tracking-wider mb-4 border-b border-black/10 pb-2">
-            Så här kommer du igång
+            {t("packingSlip.getStartedTitle")}
           </h3>
           <ol className="list-decimal list-inside space-y-3 text-gray-700">
-            <li>Slå på NFC på din telefon (ofta påslaget).</li>
-            <li>Håll kortet mot toppen av din telefon.</li>
-            <li>Klicka på notisen som dyker upp.</li>
-            <li>Skapa ditt konto och bygg din profil!</li>
+            <li>{t("packingSlip.step1")}</li>
+            <li>{t("packingSlip.step2")}</li>
+            <li>{t("packingSlip.step3")}</li>
+            <li>{t("packingSlip.createAccount")}</li>
           </ol>
         </div>
         
         <div className="bg-transparent p-6 rounded-xl border border-nordic-support">
           <h3 className="text-sm font-bold text-nordic-highlight uppercase tracking-wider mb-2">
-            Behöver du hjälp?
+            {t("packingSlip.helpTitle")}
           </h3>
           <p className="text-gray-600 text-sm mb-4">
-            Om NFC inte fungerar direkt kan du alltid skanna QR-koden nedan eller besöka länken manuellt.
+            {t("packingSlip.helpBody")}
           </p>
           <p className="text-sm font-medium text-nordic-secondary">support@avyracards.se</p>
         </div>
@@ -74,9 +75,9 @@ export function PackingSlip({ orderId, customerName, cards }: PackingSlipProps) 
                   <QRCodeSVG value={url} size={100} level="H" />
                 </div>
                 <div>
-                  <p className="text-xs text-nordic-highlight uppercase font-bold mb-1">Kort ID</p>
+                  <p className="text-xs text-nordic-highlight uppercase font-bold mb-1">{t("packingSlip.cardId")}</p>
                   <p className="text-xl font-mono font-bold text-nordic-secondary mb-2">{card.cardCode}</p>
-                  <p className="text-xs text-nordic-highlight mb-1">Aktiveringslänk:</p>
+                  <p className="text-xs text-nordic-highlight mb-1">{t("packingSlip.activationLink")}</p>
                   <p className="text-xs text-gray-800 break-all font-mono">{url}</p>
                 </div>
               </div>

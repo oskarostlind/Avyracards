@@ -1,21 +1,26 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { format, subDays, formatDistanceToNow, startOfDay, endOfDay } from "date-fns";
-import { sv } from "date-fns/locale";
+import { sv, enGB } from "date-fns/locale";
 
 import { prisma } from "@/lib/prisma";
 import { AnalyticsView } from "@/components/dashboard/analytics-view";
 import { getReadableSource } from "@/lib/analytics/events";
+import { getI18n } from "@/i18n/server";
+import { getT } from "@/i18n/server";
 
-export const metadata = {
-  title: "Statistik | AvyraCards",
-};
+export async function generateMetadata() {
+  return { title: `${getT()("analytics.title")} | AvyraCards` };
+}
 
 export default async function AnalyticsPage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
+  const { locale, t } = getI18n();
+  const dateLocale = locale === "en" ? enGB : sv;
+
   const session = await auth();
   if (!session?.user) return redirect("/login");
 
@@ -69,7 +74,7 @@ export default async function AnalyticsPage({
     const bucket = eventsByDay.get(key);
 
     chartData.push({
-      date: format(currentDate, "d MMM", { locale: sv }),
+      date: format(currentDate, "d MMM", { locale: dateLocale }),
       views: bucket?.views ?? 0,
       clicks: bucket?.clicks ?? 0,
     });
@@ -129,10 +134,16 @@ export default async function AnalyticsPage({
     country: e.country,
     city: e.city,
     device: e.device,
-    timeAgo: formatDistanceToNow(new Date(e.createdAt), { addSuffix: true, locale: sv }),
-    source: getReadableSource(e.source, e.referrer),
-    // NYTT: Bättre läsbart namn för live-feeden
-    actionName: e.type === 'VIEW' ? 'Profilvisning' : (e.source === 'vcard' ? 'Sparade kontakt' : 'Länkklick'),
+    timeAgo: formatDistanceToNow(new Date(e.createdAt), { addSuffix: true, locale: dateLocale }),
+    source: getReadableSource(e.source, e.referrer, t),
+    // Nyckel i stället för färdig sträng: vyn översätter den, och kan dessutom
+    // jämföra på nyckeln utan att bero på exakt formulering.
+    actionKey:
+      e.type === "VIEW"
+        ? "analytics.actions.profileView"
+        : e.source === "vcard"
+          ? "analytics.actions.contactSaved"
+          : "analytics.actions.linkClick",
   }));
 
   return (
@@ -144,12 +155,12 @@ export default async function AnalyticsPage({
         <div className="relative z-10 mx-auto max-w-5xl p-4 sm:p-6 py-8">
             <div className="mb-8 flex items-center justify-between">
                 <div>
-                <h1 className="text-2xl font-bold text-slate-100">Statistik</h1>
-                <p className="text-nordic-highlight">Insikter för @{user.username}</p>
+                <h1 className="text-2xl font-bold text-slate-100">{t("analytics.title")}</h1>
+                <p className="text-nordic-highlight">{t("analytics.subtitle", { username: user.username ?? "" })}</p>
                 </div>
                 {!user.isPremium && (
                 <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-nordic-highlight border border-nordic-highlight/40">
-                    Gratisplan
+                    {t("analytics.freePlan")}
                 </span>
                 )}
             </div>

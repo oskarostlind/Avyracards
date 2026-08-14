@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfileMode } from "@prisma/client"; // VIKTIGT: Importerar Enumen
+import { getT } from "@/i18n/server";
 
 export const runtime = "nodejs";
 
@@ -13,7 +14,7 @@ export async function GET(req: Request) {
 
   if (!session?.user?.id) {
     return NextResponse.json(
-      { error: "Du måste vara inloggad." },
+      { error: getT()("api.notLoggedIn") },
       { status: 401 }
     );
   }
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
 
   if (!session?.user?.id) {
     return NextResponse.json(
-      { error: "Du måste vara inloggad." },
+      { error: getT()("api.notLoggedIn") },
       { status: 401 }
     );
   }
@@ -63,7 +64,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[links] Ogiltig JSON:", err);
     return NextResponse.json(
-      { error: "Ogiltig JSON i förfrågan." },
+      { error: getT()("api.invalidJson") },
       { status: 400 }
     );
   }
@@ -80,14 +81,14 @@ export async function POST(req: Request) {
 
   if (!label || !url) {
     return NextResponse.json(
-      { error: "Titel och URL krävs." },
+      { error: getT()("api.links.titleAndUrlRequired") },
       { status: 400 }
     );
   }
 
   if (!/^https?:\/\//i.test(url)) {
     return NextResponse.json(
-      { error: "URL måste börja med http:// eller https://." },
+      { error: getT()("api.links.urlProtocol") },
       { status: 400 }
     );
   }
@@ -124,7 +125,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[links] Fel vid skapande:", err);
     return NextResponse.json(
-      { error: "Kunde inte skapa länk." },
+      { error: getT()("api.links.createFailed") },
       { status: 500 }
     );
   }

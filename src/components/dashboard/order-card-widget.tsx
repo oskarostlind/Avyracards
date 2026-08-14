@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CreditCard, X, ArrowRight, Sparkles } from "lucide-react";
 import { VARIANT_IDS } from "@/lib/constants"; // <--- SÄKER IMPORT
+import { useT } from "@/i18n/client";
 
 interface OrderCardWidgetProps {
   isPremium: boolean;
@@ -11,6 +12,7 @@ interface OrderCardWidgetProps {
 }
 
 export function OrderCardWidget({ isPremium, prices }: OrderCardWidgetProps) {
+  const t = useT();
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
 
@@ -37,6 +39,7 @@ export function OrderCardWidget({ isPremium, prices }: OrderCardWidgetProps) {
       <button 
         onClick={handleDismiss}
         className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+        aria-label={t("dashboard.orderWidget.dismiss")}
       >
         <X size={20} />
       </button>
@@ -48,13 +51,13 @@ export function OrderCardWidget({ isPremium, prices }: OrderCardWidgetProps) {
           </div>
           <div className="space-y-1">
             <h3 className="flex items-center gap-2 text-base font-bold text-white">
-              Du saknar det fysiska kortet
-              {!isPremium && <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30 font-extrabold uppercase tracking-wider">Rekommenderas</span>}
+              {t("dashboard.orderWidget.title")}
+              {!isPremium && <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30 font-extrabold uppercase tracking-wider">{t("dashboard.orderWidget.recommended")}</span>}
             </h3>
             <p className="text-sm text-slate-400 max-w-md leading-relaxed">
               {isPremium 
-                ? "Dra nytta av din premiumrabatt (30%) och beställ ditt NFC-kort idag."
-                : "Just nu: Spara pengar med vårt startpaket (Premium + Kort)."
+                ? t("dashboard.orderWidget.bodyPremium")
+                : t("dashboard.orderWidget.bodyFree")
               }
             </p>
           </div>
@@ -65,11 +68,11 @@ export function OrderCardWidget({ isPremium, prices }: OrderCardWidgetProps) {
           className="group whitespace-nowrap flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-lg shadow-white/5 hover:bg-slate-200 transition-all active:scale-95 w-full sm:w-auto justify-center"
         >
           {isPremium ? (
-             <>Beställ kort <span className="font-normal text-slate-600">({prices.standard})</span></>
+             <>{t("dashboard.orderWidget.orderCard")} <span className="font-normal text-slate-600">({prices.standard})</span></>
           ) : (
              <>
                <Sparkles size={16} className="text-amber-500 fill-amber-500" />
-               Köp Startpaket ({prices.bundle})
+               {t("dashboard.orderWidget.buyBundle", { price: prices.bundle })}
              </>
           )}
           <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5 text-slate-400 group-hover:text-slate-900" />

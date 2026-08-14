@@ -6,6 +6,7 @@ import { z } from "zod";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { generateClaimToken } from "@/lib/card-claim";
 import { expireGoogleWalletPass } from "@/lib/wallet/google";
+import { getT } from "@/i18n/server";
 
 const accountSchema = z.object({
   marketingConsent: z.boolean().optional(),
@@ -17,7 +18,7 @@ const accountSchema = z.object({
   username: z
     .string()
     .min(3, "Minst 3 tecken")
-    .regex(/^[a-zA-Z0-9_]+$/, "Endast bokstäver, siffror och understreck")
+    .regex(/^[a-zA-Z0-9_]+$/, getT()("api.account.usernamePattern"))
     .optional(),
   currentPassword: z.string().optional(),
   newPassword: z.string().min(6, "Minst 6 tecken").optional(),
@@ -53,7 +54,7 @@ export async function PATCH(req: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "Användare hittades inte" }, { status: 404 });
+      return NextResponse.json({ error: getT()("api.userNotFound") }, { status: 404 });
     }
 
     const updateData: any = { ...settings };
@@ -67,7 +68,7 @@ export async function PATCH(req: Request) {
       
       if (existing) {
         return NextResponse.json(
-          { error: "Användarnamnet är upptaget." }, 
+          { error: getT()("api.account.usernameTaken") }, 
           { status: 409 }
         );
       }
@@ -78,14 +79,14 @@ export async function PATCH(req: Request) {
     if (newPassword) {
       if (!currentPassword) {
         return NextResponse.json(
-          { error: "Du måste ange nuvarande lösenord för att byta." }, 
+          { error: getT()("api.account.currentPasswordRequired") }, 
           { status: 400 }
         );
       }
 
       if (!user.passwordHash) {
         return NextResponse.json(
-          { error: "Detta konto använder extern inloggning (Google etc)." }, 
+          { error: getT()("api.account.externalLogin") }, 
           { status: 400 }
         );
       }
@@ -93,7 +94,7 @@ export async function PATCH(req: Request) {
       const isValid = await verifyPassword(currentPassword, user.passwordHash);
       if (!isValid) {
         return NextResponse.json(
-          { error: "Felaktigt nuvarande lösenord." }, 
+          { error: getT()("api.account.wrongCurrentPassword") }, 
           { status: 403 }
         );
       }
@@ -112,7 +113,7 @@ export async function PATCH(req: Request) {
   } catch (error) {
     console.error("Account update error:", error);
     return NextResponse.json(
-      { error: "Kunde inte uppdatera kontoinställningar" },
+      { error: getT()("api.account.updateFailed") },
       { status: 500 }
     );
   }

@@ -12,6 +12,7 @@ import {
   X,
   ExternalLink
 } from "lucide-react";
+import { useT } from "@/i18n/client";
 //import { cn } from "@/lib/utils"; // Eller din utility för klassnamn om du har en, annars ta bort cn()
 
 // Om du inte har en cn-funktion, använd denna enkla ersättare eller ta bort den:
@@ -128,6 +129,7 @@ function SortableLinkCard({
   onSetRedirect,
   onEdit
 }: SortableLinkCardProps) {
+  const t = useT();
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ label: link.label, url: link.url });
   const [isSaving, setIsSaving] = useState(false);
@@ -167,7 +169,7 @@ function SortableLinkCard({
           {isEditing ? (
             <div className="space-y-2 animate-in fade-in zoom-in-95 duration-200">
               <div>
-                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">Titel</label>
+                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">{t("links.titleShort")}</label>
                 <input 
                   value={editForm.label}
                   onChange={(e) => setEditForm(prev => ({...prev, label: e.target.value}))}
@@ -176,7 +178,7 @@ function SortableLinkCard({
                 />
               </div>
               <div>
-                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">URL</label>
+                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">{t("links.url")}</label>
                 <input 
                   value={editForm.url}
                   onChange={(e) => setEditForm(prev => ({...prev, url: e.target.value}))}
@@ -189,13 +191,13 @@ function SortableLinkCard({
                   disabled={isSaving}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold text-white transition-colors"
                 >
-                  <Check size={14} /> {isSaving ? "Sparar..." : "Spara"}
+                  <Check size={14} /> {isSaving ? t("common.saving") : t("common.save")}
                 </button>
                 <button 
                   onClick={() => setIsEditing(false)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 transition-colors"
                 >
-                  <X size={14} /> Avbryt
+                  <X size={14} /> {t("common.cancel")}
                 </button>
               </div>
             </div>
@@ -208,7 +210,7 @@ function SortableLinkCard({
                 </h3>
                 {isRedirect && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-amber-500/20">
-                    <Zap size={10} fill="currentColor" /> REDIRECT
+                    <Zap size={10} fill="currentColor" /> {t("links.redirectBadge")}
                   </span>
                 )}
               </div>
@@ -243,7 +245,7 @@ function SortableLinkCard({
                   ? "bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20" 
                   : "text-slate-500 hover:text-amber-400 hover:bg-amber-500/10"
               }`}
-              title={isRedirect ? "Inaktivera redirect" : "Gör till aktiv redirect"}
+              title={isRedirect ? t("links.redirectOff") : t("links.redirectOn")}
             >
               <Zap size={16} fill={isRedirect ? "currentColor" : "none"} />
             </button>
@@ -252,7 +254,7 @@ function SortableLinkCard({
             <button
               onClick={() => setIsEditing(true)}
               className="p-2 text-slate-500 hover:text-nordic-accent hover:bg-nordic-accent/10 rounded-lg transition-colors"
-              title="Redigera länk"
+              title={t("links.editLink")}
             >
               <Pencil size={16} />
             </button>
@@ -269,7 +271,7 @@ function SortableLinkCard({
               }`}
             >
               {link.isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
-              <span className="hidden sm:inline">{link.isVisible ? "Visas" : "Dold"}</span>
+              <span className="hidden sm:inline">{link.isVisible ? t("links.visible") : t("links.hidden")}</span>
             </button>
 
             {/* Delete Button */}
@@ -278,7 +280,7 @@ function SortableLinkCard({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 transition-colors"
             >
               <Trash2 size={14} />
-              <span className="hidden sm:inline">Ta bort</span>
+              <span className="hidden sm:inline">{t("common.delete")}</span>
             </button>
           </div>
         </div>

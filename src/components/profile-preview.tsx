@@ -4,6 +4,7 @@ import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { User as UserIcon, Save } from "lucide-react"; 
 import { SocialIcon } from "@/components/icons/social-icons"; 
 import { MappedProfileData } from "@/lib/profile-mapper";
+import { useT } from "@/i18n/client";
 
 export interface ProfilePreviewProps {
   data: MappedProfileData;
@@ -27,7 +28,8 @@ export function ProfilePreview({
   fullscreen = false,
   isPremium = false,
 }: ProfilePreviewProps) {
-  
+  const t = useT();
+
   const settings = customSettings || defaultSettings;
   const currentFont = settings.font && fontMap[settings.font] ? fontMap[settings.font] : fontMap['inter'];
 
@@ -284,7 +286,7 @@ export function ProfilePreview({
       {showBranding && (
           <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity pb-4">
              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary drop-shadow-md">
-               <span>Powered by AvyraCards</span>
+               <span>{t("publicProfile.poweredBy")}</span>
              </div>
           </div>
       )}

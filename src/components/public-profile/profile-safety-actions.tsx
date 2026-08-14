@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Flag, Ban, X, Loader2, Check } from "lucide-react";
-import { REPORT_REASON_KEYS, REPORT_REASON_LABELS } from "@/lib/moderation-shared";
+import { REPORT_REASON_KEYS, reportReasonKey } from "@/lib/moderation-shared";
+import { useT } from "@/i18n/client";
 
 interface Props {
   username: string;
@@ -24,6 +25,7 @@ export function ProfileSafetyActions({
   initiallyBlocked = false,
   color,
 }: Props) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [blocked, setBlocked] = useState(initiallyBlocked);
   const [blocking, setBlocking] = useState(false);
@@ -63,7 +65,7 @@ export function ProfileSafetyActions({
           className="flex items-center gap-1.5 underline-offset-2 hover:underline"
         >
           <Flag size={12} />
-          Rapportera profil
+          {t("moderation.reportProfile")}
         </button>
         <span aria-hidden>·</span>
         <button
@@ -73,7 +75,7 @@ export function ProfileSafetyActions({
           className="flex items-center gap-1.5 underline-offset-2 hover:underline disabled:opacity-50"
         >
           {blocking ? <Loader2 size={12} className="animate-spin" /> : <Ban size={12} />}
-          {blocked ? "Avblockera" : "Blockera"}
+          {blocked ? t("moderation.unblock") : t("moderation.block")}
         </button>
       </div>
 
@@ -91,6 +93,7 @@ function ReportDialog({
   username: string;
   onClose: () => void;
 }) {
+  const t = useT();
   const [reason, setReason] = useState<string>(REPORT_REASON_KEYS[0]);
   const [details, setDetails] = useState("");
   const [email, setEmail] = useState("");
@@ -119,7 +122,7 @@ function ReportDialog({
           type="button"
           onClick={onClose}
           className="absolute top-4 right-4 text-slate-400 hover:text-white"
-          aria-label="Stäng"
+          aria-label={t("moderation.close")}
         >
           <X size={18} />
         </button>
@@ -129,10 +132,9 @@ function ReportDialog({
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
               <Check size={22} />
             </div>
-            <h2 className="text-lg font-semibold">Tack — rapporten är mottagen</h2>
+            <h2 className="text-lg font-semibold">{t("moderation.receivedTitle")}</h2>
             <p className="text-sm text-slate-400">
-              Vi granskar innehållet inom 24 timmar och vidtar åtgärder om det
-              bryter mot våra villkor. Du kan även mejla oss på{" "}
+              {t("moderation.receivedBodyBefore")}{" "}
               <a href="mailto:kontakt@avyracards.se" className="underline">
                 kontakt@avyracards.se
               </a>
@@ -143,21 +145,20 @@ function ReportDialog({
               onClick={onClose}
               className="mt-2 w-full rounded-xl bg-white/10 py-2.5 text-sm font-medium hover:bg-white/15"
             >
-              Stäng
+              {t("moderation.close")}
             </button>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-4">
             <div>
-              <h2 className="text-lg font-semibold">Rapportera @{username}</h2>
+              <h2 className="text-lg font-semibold">{t("moderation.dialogTitle", { username })}</h2>
               <p className="mt-1 text-sm text-slate-400">
-                Berätta vad som är fel med profilen. Rapporten går direkt till vår
-                moderation.
+                {t("moderation.dialogIntro")}
               </p>
             </div>
 
             <label className="block space-y-1.5">
-              <span className="text-xs font-medium text-slate-400">Anledning</span>
+              <span className="text-xs font-medium text-slate-400">{t("moderation.reason")}</span>
               <select
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
@@ -165,7 +166,7 @@ function ReportDialog({
               >
                 {REPORT_REASON_KEYS.map((key) => (
                   <option key={key} value={key}>
-                    {REPORT_REASON_LABELS[key]}
+                    {t(reportReasonKey(key))}
                   </option>
                 ))}
               </select>
@@ -173,7 +174,7 @@ function ReportDialog({
 
             <label className="block space-y-1.5">
               <span className="text-xs font-medium text-slate-400">
-                Beskrivning (valfritt)
+                {t("moderation.detailsLabel")}
               </span>
               <textarea
                 value={details}
@@ -181,30 +182,30 @@ function ReportDialog({
                 rows={3}
                 maxLength={2000}
                 className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm"
-                placeholder="Vad är det som bryter mot villkoren?"
+                placeholder={t("moderation.detailsPlaceholder")}
               />
             </label>
 
             <label className="block space-y-1.5">
               <span className="text-xs font-medium text-slate-400">
-                Din e-post (valfritt — om vi behöver följa upp)
+                {t("moderation.emailLabel")}
               </span>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm"
-                placeholder="du@example.com"
+                placeholder={t("moderation.emailPlaceholder")}
               />
             </label>
 
             {state === "error" && (
               <p className="text-xs text-red-400">
-                Kunde inte skicka rapporten. Mejla{" "}
+                {t("moderation.sendFailedBefore")}{" "}
                 <a href="mailto:kontakt@avyracards.se" className="underline">
                   kontakt@avyracards.se
                 </a>{" "}
-                i stället.
+                {t("moderation.sendFailedAfter")}
               </p>
             )}
 
@@ -214,7 +215,7 @@ function ReportDialog({
               className="w-full rounded-xl bg-red-600 py-3 text-sm font-bold text-white hover:bg-red-500 disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {state === "sending" && <Loader2 size={16} className="animate-spin" />}
-              Skicka rapport
+              {t("moderation.submit")}
             </button>
           </form>
         )}

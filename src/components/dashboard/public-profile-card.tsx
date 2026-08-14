@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Check, Copy, ExternalLink, Wallet } from "lucide-react";
 import { walletKindsForUserAgent, type WalletKind } from "@/lib/wallet/platform";
 import { useIsApp } from "@/hooks/useIsApp";
+import { useT } from "@/i18n/client";
 
 type PublicProfileCardProps = {
   username: string;
@@ -20,6 +21,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
   // vi därför inom WebViewen; profilsidan renderas med appens navigation så
   // vägen tillbaka finns kvar. På webben behålls ny flik.
   const isApp = useIsApp();
+  const t = useT();
   const [copied, setCopied] = useState(false);
   const [walletLoading, setWalletLoading] = useState<"apple" | "google" | null>(null);
   // Vi sätter ett startvärde som är säkert för servern (undviker hydration error)
@@ -70,7 +72,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
     <div className={`rounded-2xl border border-purple-500/20 bg-purple-500/5 p-4 ${className}`}>
       <div className="flex items-center justify-between mb-2">
         <label className="text-xs font-bold uppercase tracking-wider text-purple-400">
-          Din publika profil
+          {t("dashboard.publicProfile.label")}
         </label>
       </div>
 
@@ -85,7 +87,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
             type="button"
             onClick={copyToClipboard}
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-nordic-secondary transition-colors border border-nordic-highlight/40"
-            title="Kopiera länk"
+            title={t("dashboard.publicProfile.copyLink")}
           >
             {copied ? <Check size={18} className="text-emerald-400" /> : <Copy size={18} />}
           </button>
@@ -94,7 +96,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
             <Link
               href={publicPath}
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-nordic-secondary transition-colors border border-nordic-highlight/40"
-              title="Visa din profil"
+              title={t("dashboard.publicProfile.viewProfile")}
             >
               <ExternalLink size={18} />
             </Link>
@@ -104,7 +106,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
               target="_blank"
               rel="noopener noreferrer"
               className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-nordic-secondary transition-colors border border-nordic-highlight/40"
-              title="Öppna profil i ny flik"
+              title={t("dashboard.publicProfile.openInNewTab")}
             >
               <ExternalLink size={18} />
             </a>
@@ -122,7 +124,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
              className="flex items-center justify-center gap-2 bg-[#1C1C1E] text-nordic-secondary border border-white/10 px-4 py-3 rounded-xl hover:bg-[#2C2C2E] transition-all font-medium text-xs sm:text-sm shadow-lg disabled:opacity-50"
            >
              <Wallet size={16} className="text-nordic-secondary" />
-             <span>Apple Wallet</span>
+             <span>{t("dashboard.publicProfile.appleWallet")}</span>
            </button>
            )}
 
@@ -141,7 +143,7 @@ export function PublicProfileCard({ username, className }: PublicProfileCardProp
                <path d="M12.75 3V9.75H21.75C22.2575 9.75 22.708 9.87703 23.1075 10.1006L16.2075 3.20062C15.27 2.26312 14.025 1.75687 12.75 1.75687V3Z" fill="#4285F4"/>
                <path d="M4.5 9.75H12.75V3L4.5 9.75Z" fill="#34A853"/>
              </svg>
-             <span>Google Wallet</span>
+             <span>{t("dashboard.publicProfile.googleWallet")}</span>
            </button>
            )}
         </div>

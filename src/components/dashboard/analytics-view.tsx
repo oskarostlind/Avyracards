@@ -7,7 +7,9 @@ import {
 import { MousePointerClick, Eye, TrendingUp, Lock, Globe as GlobeIcon, QrCode, Save } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Globe } from "./globe"; 
+import { Globe } from "./globe";
+import { useT, useLocaleTag } from "@/i18n/client";
+import type { Translator } from "@/i18n";
 
 interface AnalyticsProps {
   isPremium: boolean;
@@ -23,7 +25,8 @@ interface AnalyticsProps {
 export function AnalyticsView({ 
   isPremium, stats, chartData, topLinks, trafficSources, topCountries, recentActivity, currentDays 
 }: AnalyticsProps) {
-  
+  const t = useT();
+  const localeTag = useLocaleTag();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -39,27 +42,27 @@ export function AnalyticsView({
       
       {/* 1. KPIer - Nu med 4 kolumner */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="Profilvisningar" value={stats.totalViews} icon={<Eye className="h-5 w-5 text-blue-400" />} subtitle={`Senaste ${currentDays} dagarna`} />
+        <StatCard title={t("analytics.profileViews")} value={stats.totalViews} icon={<Eye className="h-5 w-5 text-blue-400" />} subtitle={t("analytics.lastDays", { days: currentDays })} />
         {/* NYTT KORT */}
-        <StatCard title="Sparade kontakter" value={stats.totalVcardDownloads} icon={<Save className="h-5 w-5 text-emerald-400" />} subtitle={`Senaste ${currentDays} dagarna`} />
-        <StatCard title="Länkklick" value={stats.totalClicks} icon={<MousePointerClick className="h-5 w-5 text-sky-400" />} subtitle={`Senaste ${currentDays} dagarna`} />
-        <StatCard title="Klickfrekvens (CTR)" value={`${stats.ctr}%`} icon={<TrendingUp className="h-5 w-5 text-purple-400" />} subtitle="Besökare som klickar" />
+        <StatCard title={t("analytics.contactsSaved")} value={stats.totalVcardDownloads} icon={<Save className="h-5 w-5 text-emerald-400" />} subtitle={t("analytics.lastDays", { days: currentDays })} />
+        <StatCard title={t("analytics.linkClicks")} value={stats.totalClicks} icon={<MousePointerClick className="h-5 w-5 text-sky-400" />} subtitle={t("analytics.lastDays", { days: currentDays })} />
+        <StatCard title={t("analytics.ctr")} value={`${stats.ctr}%`} icon={<TrendingUp className="h-5 w-5 text-purple-400" />} subtitle={t("analytics.ctrSubtitle")} />
       </div>
 
       {/* 2. Huvudgraf */}
       <div className="rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h3 className="text-lg font-semibold text-slate-100">Aktivitet över tid</h3>
+            <h3 className="text-lg font-semibold text-slate-100">{t("analytics.activityOverTime")}</h3>
             <select 
                 value={currentDays}
                 onChange={handleDateChange}
                 className="bg-slate-800 text-sm text-slate-200 rounded-lg px-3 py-2 border border-nordic-highlight/40 outline-none cursor-pointer hover:border-emerald-500/50 transition-colors"
             >
-                <option value={7}>Senaste 7 dagarna</option>
-                <option value={14}>Senaste 14 dagarna</option>
-                <option value={30}>Senaste 30 dagarna</option>
-                <option value={90}>Senaste 90 dagarna</option>
-                <option value={365}>Senaste året</option>
+                <option value={7}>{t("analytics.range7")}</option>
+                <option value={14}>{t("analytics.range14")}</option>
+                <option value={30}>{t("analytics.range30")}</option>
+                <option value={90}>{t("analytics.range90")}</option>
+                <option value={365}>{t("analytics.range365")}</option>
             </select>
         </div>
 
@@ -70,8 +73,8 @@ export function AnalyticsView({
               <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
               <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#1e293b", color: "#f8fafc" }} />
-              <Line type="monotone" dataKey="views" name="Visningar" stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
-              <Line type="monotone" dataKey="clicks" name="Klick" stroke="#22c55e" strokeWidth={3} dot={false} />
+              <Line type="monotone" dataKey="views" name={t("analytics.views")} stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
+              <Line type="monotone" dataKey="clicks" name={t("analytics.clicks")} stroke="#22c55e" strokeWidth={3} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -84,25 +87,25 @@ export function AnalyticsView({
         <div className="relative flex flex-col rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl overflow-hidden min-h-[400px]">
           <div className="flex items-center justify-between mb-4 z-10">
             <h3 className="text-lg font-semibold text-slate-100 flex items-center gap-2">
-              <GlobeIcon className="h-5 w-5 text-indigo-400" /> Geografi
+              <GlobeIcon className="h-5 w-5 text-indigo-400" /> {t("analytics.geography")}
             </h3>
-            {isPremium && <span className="text-xs text-indigo-400 font-mono animate-pulse">LIVE MAP</span>}
+            {isPremium && <span className="text-xs text-indigo-400 font-mono animate-pulse">{t("analytics.liveMap")}</span>}
           </div>
 
-              <PremiumLock isPremium={isPremium} title="Se var dina besökare finns">
+              <PremiumLock isPremium={isPremium} t={t} title={t("analytics.lockGeo")}>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-50 md:opacity-100 mt-10">
                     <Globe className="scale-125" /> 
                 </div>
                 
                 <div className="relative z-10 space-y-3 mt-4 bg-nordic-primary/30 p-4 rounded-xl backdrop-blur-sm border border-white/5 max-w-[250px]">
                   {(isPremium ? topCountries : [{code: "SE", count: 42}, {code: "US", count: 12}]).length === 0 ? (
-                      <p className="text-xs text-nordic-highlight">Väntar på geodata...</p>
+                      <p className="text-xs text-nordic-highlight">{t("analytics.waitingForGeo")}</p>
                   ) : (
                     (isPremium ? topCountries : [{code: "SE", count: 42}, {code: "US", count: 12}]).map((c: any, i: number) => (
                       <div key={i} className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
                           <span>{getFlagEmoji(c.code)}</span> 
-                          <span className="text-slate-200">{getCountryName(c.code)}</span>
+                          <span className="text-slate-200">{getCountryName(c.code, localeTag)}</span>
                         </div>
                         <span className="font-bold text-nordic-highlight">{c.count}</span>
                       </div>
@@ -115,12 +118,12 @@ export function AnalyticsView({
         {/* TRAFIKKÄLLOR */}
         <div className="relative rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl overflow-hidden">
           <h3 className="mb-6 text-lg font-semibold text-slate-100 flex items-center gap-2">
-            <QrCode className="h-5 w-5 text-pink-400" /> Trafikkällor
+            <QrCode className="h-5 w-5 text-pink-400" /> {t("analytics.trafficSources")}
           </h3>
-          <PremiumLock isPremium={isPremium} title="Se hur folk hittar dig">
+          <PremiumLock isPremium={isPremium} t={t} title={t("analytics.lockSources")}>
             <div className="h-[250px] w-full">
                <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={isPremium ? (trafficSources.length ? trafficSources : [{name:'Ingen data', value:0}]) : [{name: 'Instagram', value: 65}, {name: 'LinkedIn', value: 20}, {name: 'Direkt', value: 15}]} layout="vertical" margin={{ left: 10 }}>
+                <BarChart data={isPremium ? (trafficSources.length ? trafficSources : [{name: t("analytics.noData"), value: 0}]) : [{name: 'Instagram', value: 65}, {name: 'LinkedIn', value: 20}, {name: 'Direkt', value: 15}]} layout="vertical" margin={{ left: 10 }}>
                   <XAxis type="number" hide />
                   <YAxis dataKey="name" type="category" width={70} tick={{fill: '#94a3b8', fontSize: 12}} />
                   <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155" }} />
@@ -141,46 +144,48 @@ export function AnalyticsView({
         
         {/* Live Feed */}
         <div className="relative rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
-             <h3 className="mb-4 text-lg font-semibold text-slate-100">Live-aktivitet</h3>
-             <PremiumLock isPremium={isPremium} title="Se vem som tittar just nu">
+             <h3 className="mb-4 text-lg font-semibold text-slate-100">{t("analytics.liveActivity")}</h3>
+             <PremiumLock isPremium={isPremium} t={t} title={t("analytics.lockLive")}>
                 <div className="space-y-4">
                     {(isPremium ? recentActivity : [1,2,3,4]).map((item: any, i: number) => (
                     <div key={i} className="flex items-center justify-between border-b border-nordic-highlight/40/50 pb-3 last:border-0 last:pb-0">
                         <div className="flex items-center gap-3">
                             <div className="p-2 rounded-full bg-slate-800/50">
                                 {/* Visar olika ikoner baserat på handlingen */}
-                                {isPremium && item.actionName === 'Sparade kontakt' 
+                                {isPremium && item.actionKey === "analytics.actions.contactSaved" 
                                   ? <Save size={14} className="text-emerald-400"/> 
                                   : (item.type === 'CLICK' ? <MousePointerClick size={14} className="text-sky-400"/> : <Eye size={14} className="text-blue-400"/>)
                                 }
                             </div>
                             <div>
                                 <p className="text-xs text-slate-300 font-medium">
-                                    {isPremium ? item.actionName : 'Besökare'}
+                                    {isPremium ? t(item.actionKey) : t("analytics.visitor")}
                                 </p>
                                 <p className="text-[10px] text-nordic-highlight">
-                                    {isPremium ? `${item.city || 'Okänd plats'}, ${item.country || ''}` : 'Stockholm, Sverige'}
+                                    {isPremium
+                                      ? `${item.city || t("analytics.unknownPlace")}, ${item.country || ""}`
+                                      : "Stockholm, Sweden"}
                                 </p>
                             </div>
                         </div>
                         <div className="text-[10px] text-slate-600 font-mono">
-                           {isPremium ? item.timeAgo : 'Just nu'}
+                           {isPremium ? item.timeAgo : t("analytics.justNow")}
                         </div>
                     </div>
                     ))}
-                    {isPremium && recentActivity.length === 0 && <p className="text-sm text-nordic-highlight">Ingen aktivitet än.</p>}
+                    {isPremium && recentActivity.length === 0 && <p className="text-sm text-nordic-highlight">{t("analytics.noActivityYet")}</p>}
                 </div>
              </PremiumLock>
         </div>
         
         {/* Topplista Länkar */}
         <div className="rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-semibold text-slate-100">Mest klickade</h3>
+            <h3 className="mb-4 text-lg font-semibold text-slate-100">{t("analytics.mostClicked")}</h3>
             <div className="space-y-3">
-            {topLinks.length === 0 ? <p className="text-sm text-nordic-highlight">Ingen data.</p> : topLinks.map((link, i) => (
+            {topLinks.length === 0 ? <p className="text-sm text-nordic-highlight">{t("analytics.noData")}</p> : topLinks.map((link, i) => (
                 <div key={i} className="flex items-center justify-between rounded-lg bg-nordic-primary/30 p-3 border border-nordic-highlight/40/50">
                     <span className="truncate text-sm font-medium text-slate-300 max-w-[150px]">{link.title || link.url}</span>
-                    <span className="text-xs font-bold text-emerald-400">{link.clicks} klick</span>
+                    <span className="text-xs font-bold text-emerald-400">{link.clicks} {t("analytics.clicksSuffix")}</span>
                 </div>
             ))}
             </div>
@@ -190,7 +195,7 @@ export function AnalyticsView({
   );
 }
 
-function PremiumLock({ isPremium, title, children }: { isPremium: boolean; title: string; children: React.ReactNode }) {
+function PremiumLock({ isPremium, title, t, children }: { isPremium: boolean; title: string; t: Translator; children: React.ReactNode }) {
   if (isPremium) return <>{children}</>;
   return (
     <div className="relative group cursor-default h-full">
@@ -203,7 +208,7 @@ function PremiumLock({ isPremium, title, children }: { isPremium: boolean; title
         </div>
         <h4 className="text-slate-200 font-bold text-sm mb-1">{title}</h4>
         <Link href="/checkout/premium" className="rounded-full bg-emerald-600 px-4 py-1.5 text-[10px] font-bold text-nordic-secondary hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">
-          Lås upp
+          {t("analytics.unlock")}
         </Link>
       </div>
     </div>
@@ -231,7 +236,13 @@ function getFlagEmoji(countryCode: string) {
   return String.fromCodePoint(...codePoints);
 }
 
-function getCountryName(code: string) {
-  const names: Record<string, string> = { SE: "Sverige", US: "USA", NO: "Norge", GB: "UK", DE: "Tyskland" };
-  return names[code] || code;
+// Intl.DisplayNames ger landsnamnet på valt språk för ALLA landskoder, inte
+// bara de fem som råkade finnas i den handskrivna listan.
+function getCountryName(code: string, localeTag: string) {
+  if (!code || code === "Unknown") return code;
+  try {
+    return new Intl.DisplayNames([localeTag], { type: "region" }).of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
 }

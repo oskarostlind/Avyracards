@@ -13,6 +13,7 @@ import {
   GOOGLE_WALLET_API_BASE,
   GOOGLE_WALLET_ISSUER_ID,
 } from "@/lib/wallet/google";
+import { getT } from "@/i18n/server";
 
 export const dynamic = 'force-dynamic';
 
@@ -90,7 +91,7 @@ export async function GET(req: NextRequest) {
 
     if (!credentials) {
       console.error('Google Wallet: GOOGLE_CLIENT_EMAIL eller GOOGLE_PRIVATE_KEY saknas');
-      return walletErrorPage('Google Wallet är inte konfigurerat på servern.', 500);
+      return walletErrorPage(getT()("wallet.notConfigured"), 500);
     }
 
     const { clientEmail, privateKey } = credentials;
@@ -178,7 +179,7 @@ export async function GET(req: NextRequest) {
       // ändå trasigt, och det är bättre att felet syns.
       console.error('Google Wallet class create/check failed:', describeGoogleError(error));
       return walletErrorPage(
-        'Kunde inte förbereda Wallet-passet just nu. Försök igen om en stund.',
+        getT()("wallet.prepareFailed"),
         502
       );
     }
@@ -188,7 +189,7 @@ export async function GET(req: NextRequest) {
     // Ett pass utan användarnamn skulle ge en QR-kod som pekar på /u/null.
     if (!user.username) {
       return walletErrorPage(
-        'Du måste välja ett användarnamn innan du kan spara kortet i Wallet.',
+        getT()("wallet.needUsername"),
         400
       );
     }
@@ -245,7 +246,7 @@ export async function GET(req: NextRequest) {
       // att felet syns än att Android-användare får "Något gick fel".
       console.error('Google Wallet object insert/update failed:', describeGoogleError(error));
       return walletErrorPage(
-        'Kunde inte skapa Wallet-passet just nu. Försök igen om en stund.',
+        getT()("wallet.createFailed"),
         502
       );
     }

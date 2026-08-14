@@ -1,4 +1,7 @@
+"use client";
+
 import { BarChart3, Globe, MousePointer2, ShieldCheck, Zap } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 // --- SLIDE 1: DASHBOARD ---
 export function DashboardVisual() {
@@ -55,6 +58,7 @@ export function DashboardVisual() {
 
 // --- SLIDE 2: STATS ---
 export function StatsVisual({ isPremium }: { isPremium: boolean }) {
+  const t = useT();
   return (
     <div className="w-full h-full bg-slate-900 border-b md:border-b-0 md:border-l border-slate-800 p-8 relative overflow-hidden flex items-center justify-center">
        <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_var(--tw-gradient-stops))] from-emerald-900/10 via-slate-900 to-slate-900" />
@@ -63,7 +67,7 @@ export function StatsVisual({ isPremium }: { isPremium: boolean }) {
            {/* Graph Header */}
            <div className="flex justify-between items-end">
                <div>
-                   <div className="text-xs text-slate-500 uppercase tracking-widest font-bold">Unika Besökare</div>
+                   <div className="text-xs text-slate-500 uppercase tracking-widest font-bold">{t("onboarding.visuals.uniqueVisitors")}</div>
                    <div className="text-4xl font-bold text-white mt-1">12,450</div>
                </div>
                <div className="flex items-center gap-1 text-emerald-400 text-sm font-bold bg-emerald-500/10 px-2 py-1 rounded">
@@ -100,8 +104,8 @@ export function StatsVisual({ isPremium }: { isPremium: boolean }) {
                   <div className="bg-slate-900 p-4 rounded-full border border-slate-700 shadow-2xl inline-flex mb-4">
                       <BarChart3 className="text-slate-400" size={32} />
                   </div>
-                  <h3 className="text-xl font-bold text-white">Lås upp Analytics</h3>
-                  <p className="text-slate-400 text-sm mt-2">Se vilka som besöker dig.</p>
+                  <h3 className="text-xl font-bold text-white">{t("onboarding.visuals.unlockAnalytics")}</h3>
+                  <p className="text-slate-400 text-sm mt-2">{t("onboarding.visuals.unlockAnalyticsBody")}</p>
               </div>
           </div>
        )}
@@ -162,6 +166,7 @@ export function ThemesVisual() {
 
 // --- SLIDE 4: HARDWARE VISUAL (Bara kortet) ---
 export function HardwareVisual({ name }: { name: string }) {
+  const t = useT();
     return (
         <div className="w-full h-full bg-slate-900 border-b md:border-b-0 md:border-l border-slate-800 relative overflow-hidden flex items-center justify-center p-8">
             <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/30" />
@@ -181,7 +186,7 @@ export function HardwareVisual({ name }: { name: string }) {
                 </div>
                 
                 <div className="space-y-1">
-                    <p className="text-[8px] sm:text-[10px] text-white/30 uppercase tracking-wider font-semibold">Cardholder</p>
+                    <p className="text-[8px] sm:text-[10px] text-white/30 uppercase tracking-wider font-semibold">{t("onboarding.visuals.cardholder")}</p>
                     <p className="text-base sm:text-lg md:text-2xl font-medium text-white tracking-wide truncate font-mono shadow-black drop-shadow-md">
                         {name || "DITT NAMN"}
                     </p>

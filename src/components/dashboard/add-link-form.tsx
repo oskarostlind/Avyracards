@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { z } from "zod";
+import { useT } from "@/i18n/client";
 
 const schema = z.object({
   label: z.string().min(1).max(60),
@@ -15,6 +16,7 @@ interface AddLinkFormProps {
 }
 
 export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
+  const t = useT();
   const [form, setForm] = useState<{ label: string; url: string }>({
     label: "",
     url: "",
@@ -28,7 +30,7 @@ export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
 
     const parsed = schema.safeParse(form);
     if (!parsed.success) {
-      setError("Kontrollera länkens titel och URL.");
+      setError(t("links.invalid"));
       return;
     }
 
@@ -44,9 +46,9 @@ export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
       if (!response.ok) {
         try {
           const data = await response.json();
-          setError(data.error ?? "Kunde inte spara länk");
+          setError(data.error ?? t("links.saveFailed"));
         } catch {
-          setError("Kunde inte spara länk");
+          setError(t("links.saveFailed"));
         }
         return;
       }
@@ -62,7 +64,7 @@ export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <label className="block text-sm font-medium text-slate-200">
-          Länktitel
+          {t("links.title")}
         </label>
         <input
           type="text"
@@ -71,14 +73,14 @@ export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
             setForm((prev) => ({ ...prev, label: e.target.value }))
           }
           // Dynamisk placeholder beroende på läge
-          placeholder={mode === "BUSINESS" ? "Ex. Boka möte" : "Ex. Instagram"}
+          placeholder={mode === "BUSINESS" ? t("links.placeholderBusiness") : t("links.placeholderSocial")}
           className="w-full rounded-xl border border-nordic-highlight/40 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
       </div>
 
       <div className="space-y-2">
         <label className="block text-sm font-medium text-slate-200">
-          URL
+          {t("links.url")}
         </label>
         <input
           type="url"
@@ -86,7 +88,7 @@ export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
           onChange={(e) =>
             setForm((prev) => ({ ...prev, url: e.target.value }))
           }
-          placeholder="https://..."
+          placeholder={t("links.urlPlaceholder")}
           className="w-full rounded-xl border border-nordic-highlight/40 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
       </div>
@@ -98,7 +100,7 @@ export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
         disabled={loading}
         className="w-full rounded-full bg-nordic-secondary px-4 py-2 text-sm font-medium text-nordic-primary hover:bg-nordic-support disabled:opacity-60"
       >
-        {loading ? "Sparar..." : "Lägg till länk"}
+        {loading ? t("common.saving") : t("links.add")}
       </button>
     </form>
   );

@@ -18,7 +18,8 @@ import { type CustomThemeSettings, defaultSettings, type ThemeMode } from "@/typ
 import { ProfilePreview } from "@/components/profile-preview";
 import { getProfileData } from "@/lib/profile-mapper";
 import { useRouter } from "next/navigation";
-import { UpgradeModal } from "@/components/themes/upgrade-modal"; 
+import { UpgradeModal } from "@/components/themes/upgrade-modal";
+import { useT } from "@/i18n/client";
 
 import { TemplatesTab } from "./tabs/templates-tab";
 import { BackgroundTab } from "./tabs/background-tab";
@@ -39,6 +40,7 @@ interface ThemeEditorProps {
 }
 
 export function ThemeEditor({ initialSettings, initialBusinessSettings, userData }: ThemeEditorProps) {
+  const t = useT();
   const router = useRouter();
   
   const [mode, setMode] = useState<ThemeMode>(userData.profileMode || "SOCIAL");
@@ -134,7 +136,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
         
         <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 bg-slate-900/80 backdrop-blur-md px-3 py-1 rounded-full border border-white/10 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary shadow-lg">
-              {mode === "BUSINESS" ? "Business Mode" : "Social Mode"}
+              {mode === "BUSINESS" ? t("themes.businessMode") : t("themes.socialMode")}
         </div>
 
         <div className="transform scale-[0.55] sm:scale-[0.70] lg:scale-[0.85] xl:scale-100 transition-transform duration-500 w-[375px] h-[750px] border-[8px] border-nordic-highlight/40 rounded-[3rem] overflow-hidden shadow-2xl bg-nordic-primary ring-1 ring-white/10 relative z-10 shrink-0 origin-center">
@@ -159,7 +161,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
                         : "text-slate-400 hover:text-white hover:bg-white/5"
                     }`}
                 >
-                    <Share2 size={14} /> Social
+                    <Share2 size={14} /> {t("themes.social")}
                 </button>
                 <button
                     onClick={() => setMode("BUSINESS")}
@@ -169,16 +171,16 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
                         : "text-slate-400 hover:text-white hover:bg-white/5"
                     }`}
                 >
-                    <Briefcase size={14} /> Business
+                    <Briefcase size={14} /> {t("themes.business")}
                 </button>
             </div>
         </div>
 
         <div className="grid grid-cols-4 border-b border-nordic-highlight/40 shrink-0 bg-nordic-primary">
-          <TabButton active={activeTab === "templates"} onClick={() => setActiveTab("templates")} icon={LayoutTemplate} label="Mallar" />
-          <TabButton active={activeTab === "background"} onClick={() => setActiveTab("background")} icon={ImageIcon} label="Bakgrund" />
-          <TabButton active={activeTab === "buttons"} onClick={() => setActiveTab("buttons")} icon={BoxSelect} label="Knappar" />
-          <TabButton active={activeTab === "profile"} onClick={() => setActiveTab("profile")} icon={User} label="Profil" />
+          <TabButton active={activeTab === "templates"} onClick={() => setActiveTab("templates")} icon={LayoutTemplate} label={t("themes.tabTemplates")} />
+          <TabButton active={activeTab === "background"} onClick={() => setActiveTab("background")} icon={ImageIcon} label={t("themes.tabBackground")} />
+          <TabButton active={activeTab === "buttons"} onClick={() => setActiveTab("buttons")} icon={BoxSelect} label={t("themes.tabButtons")} />
+          <TabButton active={activeTab === "profile"} onClick={() => setActiveTab("profile")} icon={User} label={t("themes.tabProfile")} />
         </div>
 
         <div className="flex-1 p-5 overflow-y-auto custom-scrollbar relative">
@@ -229,7 +231,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
           <button 
             onClick={handleReset}
             className="p-3 rounded-xl bg-slate-900 text-nordic-highlight hover:text-nordic-secondary transition"
-            title="Återställ ändringar för detta läge"
+            title={t("themes.reset")}
           >
              <RotateCcw size={18} />
           </button>
@@ -242,7 +244,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
                 : "bg-purple-600 hover:bg-purple-500 text-white shadow-purple-500/20"
             }`}
           >
-             {isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <><Save size={16}/> Spara {mode === "BUSINESS" ? "Business" : "Social"}</>}
+             {isSaving ? <Loader2 className="animate-spin h-4 w-4" /> : <><Save size={16}/> {mode === "BUSINESS" ? t("themes.saveBusiness") : t("themes.saveSocial")}</>}
           </button>
         </div>
       </div>

@@ -2,9 +2,12 @@
 
 import Link from "next/link";
 import { useIsApp } from "@/hooks/useIsApp";
+import { useT } from "@/i18n/client";
+import { LanguageSwitcher } from "@/components/language-switcher";
 
 export function Footer() {
   const isApp = useIsApp();
+  const t = useT();
 
   if (isApp) {
     return null;
@@ -18,25 +21,24 @@ export function Footer() {
             AvyraCards
           </div>
           <p className="text-xs text-nordic-highlight md:text-sm">
-            Digitalt visitkort och länkprofil kopplad till NFC-kort. Byggd i
-            Sverige för kreatörer, frilansare och företag.
+{t("footer.tagline")}
           </p>
         </div>
 
         <div className="grid flex-1 grid-cols-2 gap-6 md:grid-cols-3">
           <div className="space-y-2">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-nordic-highlight">
-              Produkt
+              {t("footer.product")}
             </div>
             <ul className="space-y-1 text-xs text-nordic-highlight md:text-sm">
               <li>
                 <Link href="/#how-it-works" className="hover:text-nordic-accent">
-                  Så funkar det
+                  {t("footer.howItWorks")}
                 </Link>
               </li>
               <li>
                 <Link href="/#faq" className="hover:text-nordic-accent">
-                  FAQ
+                  {t("footer.faq")}
                 </Link>
               </li>
             </ul>
@@ -44,17 +46,17 @@ export function Footer() {
 
           <div className="space-y-2">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-nordic-highlight">
-              För företag
+              {t("footer.forBusiness")}
             </div>
             <ul className="space-y-1 text-xs text-nordic-highlight md:text-sm">
               <li>
                 <Link href="/business" className="hover:text-nordic-accent">
-                  AvyraCards Business
+                  {t("footer.businessProduct")}
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="hover:text-nordic-accent">
-                  Kontakt & offert
+                  {t("footer.contactAndQuote")}
                 </Link>
               </li>
             </ul>
@@ -62,22 +64,22 @@ export function Footer() {
 
           <div className="space-y-2">
             <div className="text-[11px] font-semibold uppercase tracking-wide text-nordic-highlight">
-              Juridik
+              {t("footer.legal")}
             </div>
             <ul className="space-y-1 text-xs text-nordic-highlight md:text-sm">
               <li>
                 <Link href="/report" className="hover:text-nordic-accent">
-                  Rapportera innehåll
+                  {t("footer.reportContent")}
                 </Link>
               </li>
               <li>
                 <Link href="/terms" className="hover:text-nordic-accent">
-                  Användarvillkor
+                  {t("footer.terms")}
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="hover:text-nordic-accent">
-                  Integritetspolicy
+                  {t("footer.privacy")}
                 </Link>
               </li>
             </ul>
@@ -85,9 +87,12 @@ export function Footer() {
         </div>
 
         <div className="space-y-3 text-xs text-nordic-highlight md:text-sm md:text-right">
+          <div className="flex md:justify-end">
+            <LanguageSwitcher variant="compact" />
+          </div>
           <div>AvyraCards {new Date().getFullYear()}.</div>
           <div>
-            Frågor?{" "}
+            {t("footer.questions")}{" "}
             <a
               href="mailto:kontakt@avyracards.se"
               className="text-nordic-accent hover:text-nordic-accent/80"

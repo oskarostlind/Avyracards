@@ -3,6 +3,7 @@
 import { useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { setReportStatus, setUserSuspension } from "@/actions/moderation";
+import { useT } from "@/i18n/client";
 
 interface Props {
   reportId: string;
@@ -11,6 +12,7 @@ interface Props {
 }
 
 export function ModerationActions({ reportId, userId, isSuspended }: Props) {
+  const t = useT();
   const [pending, startTransition] = useTransition();
 
   return (
@@ -32,7 +34,7 @@ export function ModerationActions({ reportId, userId, isSuspended }: Props) {
             : "bg-red-600 text-white hover:bg-red-500"
         }`}
       >
-        {isSuspended ? "Häv avstängning" : "Stäng av profil"}
+        {isSuspended ? t("admin.reports.unsuspend") : t("admin.reports.suspend")}
       </button>
 
       <button
@@ -41,7 +43,7 @@ export function ModerationActions({ reportId, userId, isSuspended }: Props) {
         onClick={() => startTransition(() => setReportStatus(reportId, "REVIEWING"))}
         className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700 disabled:opacity-50"
       >
-        Markera som granskas
+        {t("admin.reports.markReviewing")}
       </button>
 
       <button
@@ -50,7 +52,7 @@ export function ModerationActions({ reportId, userId, isSuspended }: Props) {
         onClick={() => startTransition(() => setReportStatus(reportId, "DISMISSED"))}
         className="rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-700 disabled:opacity-50"
       >
-        Avfärda
+        {t("admin.reports.dismiss")}
       </button>
     </div>
   );

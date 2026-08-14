@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
 import { z } from "zod";
+import { getLocale } from "@/i18n/server";
 
 export const runtime = "nodejs";
 
@@ -38,7 +39,7 @@ export async function POST(req: Request) {
     // Skicka mailet igen (använder samma token som redan finns i DB)
     // Om token saknas (gammal user), borde vi kanske generera en ny, men vi kör på befintlig först.
     if (user.verificationToken) {
-      await sendVerificationEmail(user.email, user.verificationToken);
+      await sendVerificationEmail(user.email, user.verificationToken, getLocale());
     } else {
         // Fallback: Om token saknas av någon anledning
         return NextResponse.json({ error: "Kunde inte hitta verifieringsdata. Kontakta support." }, { status: 400 });

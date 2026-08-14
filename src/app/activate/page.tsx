@@ -4,16 +4,18 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense, useState } from "react";
 import { CreditCard, ArrowRight, LogIn } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 export default function ActivatePage() {
   return (
-    <Suspense fallback={<div className="p-10 text-center text-nordic-secondary">Laddar...</div>}>
+    <Suspense fallback={<div className="p-10 text-center text-nordic-secondary" aria-busy="true" />}>
       <ActivateContent />
     </Suspense>
   );
 }
 
 function ActivateContent() {
+  const t = useT();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -32,9 +34,9 @@ function ActivateContent() {
             <CreditCard size={32} />
           </div>
 
-          <h1 className="text-2xl font-bold text-center mb-2">Aktivera kort</h1>
+          <h1 className="text-2xl font-bold text-center mb-2">{t("activate.enterCodeTitle")}</h1>
           <p className="text-nordic-highlight text-center mb-8 text-sm">
-            Skriv in den 6-siffriga koden som står tryckt på ditt kort.
+            {t("activate.enterCodeBody")}
           </p>
 
           <form
@@ -49,7 +51,7 @@ function ActivateContent() {
             <div>
               <input
                 type="text"
-                placeholder="T.ex. X9F2P1"
+                placeholder={t("activate.codePlaceholder")}
                 className="w-full text-center text-2xl font-mono tracking-widest uppercase py-4 bg-nordic-primary border border-nordic-highlight/40 rounded-xl focus:ring-2 focus:ring-nordic-accent/60 focus:border-transparent outline-none transition-all placeholder:text-nordic-highlight/60"
                 value={inputCode}
                 onChange={(e) => setInputCode(e.target.value.toUpperCase())}
@@ -62,7 +64,7 @@ function ActivateContent() {
               disabled={inputCode.length < 3}
               className="w-full py-4 bg-nordic-secondary text-nordic-primary font-bold rounded-xl hover:bg-nordic-support transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Fortsätt <ArrowRight size={18} />
+              {t("activate.continue")} <ArrowRight size={18} />
             </button>
           </form>
         </div>
@@ -80,10 +82,11 @@ function ActivateContent() {
           <CreditCard size={32} />
         </div>
 
-        <h1 className="text-2xl font-bold text-center mb-2">Aktivera ditt AvyraCards</h1>
+        <h1 className="text-2xl font-bold text-center mb-2">{t("activate.title")}</h1>
         <p className="text-nordic-highlight text-center mb-8 text-sm">
-          Du håller i kortet <strong className="text-nordic-secondary font-mono">{activeCode}</strong>. <br />
-          Koppla det till en profil för att komma igång.
+          {t("activate.holdingCardBefore")}{" "}
+          <strong className="text-nordic-secondary font-mono">{activeCode}</strong>. <br />
+          {t("activate.holdingCardAfter")}
         </p>
 
         <div className="space-y-4">
@@ -92,7 +95,7 @@ function ActivateContent() {
             className="w-full py-4 bg-nordic-secondary text-nordic-primary font-bold rounded-xl hover:bg-nordic-support transition-all flex items-center justify-center gap-2"
           >
             <LogIn size={18} />
-            Jag har redan ett konto
+            {t("activate.haveAccount")}
           </button>
 
           <div className="relative py-2">
@@ -100,7 +103,7 @@ function ActivateContent() {
               <span className="w-full border-t border-nordic-highlight/40" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-[#020617] px-2 text-nordic-secondary">Eller</span>
+              <span className="bg-[#020617] px-2 text-nordic-secondary">{t("activate.or")}</span>
             </div>
           </div>
 
@@ -108,12 +111,12 @@ function ActivateContent() {
             href={`/register?cardCode=${activeCode}&claimToken=${claimToken || ""}`}
             className="w-full py-4 bg-nordic-accent text-nordic-primary font-medium rounded-xl hover:bg-nordic-accent/80 transition-all flex items-center justify-center gap-2 border border-nordic-accent/50"
           >
-            Skapa nytt konto <ArrowRight size={18} />
+            {t("activate.createAccount")} <ArrowRight size={18} />
           </Link>
         </div>
 
         <p className="text-center text-xs text-nordic-highlight mt-8">
-          Genom att aktivera kortet godkänner du våra villkor.
+          {t("activate.terms")}
         </p>
       </div>
     </div>

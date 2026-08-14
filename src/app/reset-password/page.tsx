@@ -4,8 +4,10 @@ import { resetPassword } from "@/actions/reset-password";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 export default function ResetPasswordPage() {
+  const t = useT();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   
@@ -17,7 +19,7 @@ export default function ResetPasswordPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-nordic-primary text-nordic-secondary">
         <div className="p-6 bg-slate-900 border border-nordic-highlight/40 rounded-xl shadow-xl">
-            Ogiltig eller saknad återställningskod.
+            {t("passwordReset.invalidToken")}
         </div>
       </div>
     );
@@ -44,13 +46,13 @@ export default function ResetPasswordPage() {
         {/* Header Section (Matchar Login-form) */}
         <div className="text-center space-y-2">
             <h3 className="text-xs font-bold tracking-widest text-nordic-highlight uppercase">
-              AvyraCards
+              {t("auth.login.eyebrow")}
             </h3>
             <h1 className="text-3xl font-bold text-nordic-secondary tracking-tight">
-              Nytt lösenord
+              {t("passwordReset.newPasswordTitle")}
             </h1>
             <p className="text-nordic-highlight text-sm">
-              Välj ett säkert lösenord och bekräfta det nedan.
+              {t("passwordReset.newPasswordSubtitle")}
             </p>
         </div>
 
@@ -70,7 +72,7 @@ export default function ResetPasswordPage() {
                   htmlFor="password" 
                   className="text-sm font-medium text-nordic-secondary block"
                 >
-                    Nytt lösenord
+                    {t("passwordReset.newPassword")}
                 </label>
                 <div className="relative">
                     <input
@@ -99,7 +101,7 @@ export default function ResetPasswordPage() {
                   htmlFor="confirmPassword" 
                   className="text-sm font-medium text-nordic-secondary block"
                 >
-                    Bekräfta lösenord
+                    {t("passwordReset.confirmPassword")}
                 </label>
                 <input
                   id="confirmPassword"
@@ -120,10 +122,10 @@ export default function ResetPasswordPage() {
           >
             {loading ? (
                 <>
-                    <Loader2 size={18} className="animate-spin" /> Sparar...
+                    <Loader2 size={18} className="animate-spin" /> {t("common.saving")}
                 </>
             ) : (
-                "Spara nytt lösenord"
+                t("passwordReset.submit")
             )}
           </button>
         </form>

@@ -7,26 +7,32 @@ import * as z from "zod";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, AlertCircle } from "lucide-react";
 // VIKTIGT: Importera signIn från next-auth/react (eller var din klient-auth ligger)
-import { signIn } from "next-auth/react"; 
+import { signIn } from "next-auth/react";
+import { useT } from "@/i18n/client";
+import type { Translator } from "@/i18n";
 
 interface RegisterFormProps {
   selectedPlan?: string; 
 }
 
-const RegisterSchema = z.object({
-  profileMode: z.enum(["social", "business"]),
-  username: z
-    .string()
-    .min(3, "Användarnamnet måste vara minst 3 tecken")
-    .max(30, "Max 30 tecken")
-    .regex(/^[a-zA-Z0-9_]+$/, "Endast bokstäver, siffror och understreck"),
-  email: z.string().email("Ogiltig e-postadress"),
-  password: z.string().min(6, "Lösenordet måste vara minst 6 tecken"),
-});
+// Schemat byggs per render eftersom felmeddelandena är översatta. zod bakar
+// in strängarna i schemat, så ett modulnivå-schema hade låst dem till svenska.
+const buildRegisterSchema = (t: Translator) =>
+  z.object({
+    profileMode: z.enum(["social", "business"]),
+    username: z
+      .string()
+      .min(3, t("auth.register.errors.usernameMin"))
+      .max(30, t("auth.register.errors.usernameMax"))
+      .regex(/^[a-zA-Z0-9_]+$/, t("auth.register.errors.usernamePattern")),
+    email: z.string().email(t("auth.register.errors.emailInvalid")),
+    password: z.string().min(6, t("auth.register.errors.passwordMin")),
+  });
 
-type RegisterFormData = z.infer<typeof RegisterSchema>;
+type RegisterFormData = z.infer<ReturnType<typeof buildRegisterSchema>>;
 
 export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProps) {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [globalError, setGlobalError] = useState<string>("");
@@ -42,7 +48,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
     watch,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
-    resolver: zodResolver(RegisterSchema),
+    resolver: zodResolver(buildRegisterSchema(t)),
     defaultValues: {
       profileMode: "social",
     },
@@ -64,7 +70,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
       const result = await res.json();
 
       if (!res.ok) {
-        setGlobalError(result.error || "Registreringen misslyckades.");
+        setGlobalError(result.error || t("auth.register.failed"));
         return;
       }
 
@@ -79,7 +85,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
 
       if (signInResult?.error) {
         // Om inloggningen av någon anledning falierar (ovanligt efter lyckad reg)
-        setGlobalError("Konto skapat, men inloggningen misslyckades. Vänligen logga in manuellt.");
+        setGlobalError(t("auth.register.loginFailedAfterRegister"));
         router.push("/login?registered=true");
         return;
       }
@@ -101,7 +107,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
       router.refresh(); // Uppdatera sessionen i klienten
 
     } catch (error) {
-      setGlobalError("Kunde inte nå servern. Kontrollera din anslutning.");
+      setGlobalError(t("common.networkError"));
       setIsLoggingIn(false);
     }
   };
@@ -111,15 +117,20 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
   return (
     <div className="w-full max-w-md mx-auto p-6 space-y-8 bg-nordic-primary text-nordic-secondary rounded-3xl border border-nordic-highlight/40 shadow-2xl">
       <div className="text-center space-y-2">
-        <h6 className="text-xs font-bold tracking-widest text-nordic-highlight uppercase">SOCIALCARD</h6>
-        <h1 className="text-3xl font-bold tracking-tight">Skapa konto</h1>
+        <h6 className="text-xs font-bold tracking-widest text-nordic-highlight uppercase">{t("auth.register.eyebrow")}</h6>
+        <h1 className="text-3xl font-bold tracking-tight">{t("auth.register.title")}</h1>
         <p className="text-sm text-nordic-highlight">
-          Registrera dig för att skapa din digitala kortprofil.
+          {t("auth.register.subtitle")}
         </p>
         
         {activePlan !== "free" && (
             <div className="mt-2 inline-block px-3 py-1 rounded-full bg-nordic-accent/10 border border-nordic-accent/30 text-xs font-bold text-nordic-accent uppercase tracking-wide">
-                Vald plan: {activePlan === "bundle" ? "Pro Bundle" : "Premium"}
+                {t("auth.register.selectedPlan", {
+                  plan:
+                    activePlan === "bundle"
+                      ? t("auth.register.planBundle")
+                      : t("auth.register.planPremium"),
+                })}
             </div>
         )}
       </div>
@@ -133,7 +144,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-3">
-          <label className="text-sm font-medium text-nordic-highlight">Profiltyp</label>
+          <label className="text-sm font-medium text-nordic-highlight">{t("auth.register.profileType")}</label>
           <div className="grid grid-cols-2 gap-3">
             <button
               type="button"
@@ -146,10 +157,10 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
             >
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${selectedMode === "social" ? "bg-nordic-primary" : "bg-nordic-highlight/60"}`} />
-                <span className="font-bold text-sm">Social</span>
+                <span className="font-bold text-sm">{t("auth.register.socialTitle")}</span>
               </div>
               <p className="text-[10px] opacity-80 text-left leading-tight">
-                För kreatörer, influencers och profiler som vill samla sociala medier.
+                {t("auth.register.socialBody")}
               </p>
             </button>
 
@@ -164,10 +175,10 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
             >
               <div className="flex items-center gap-2">
                 <span className={`w-2 h-2 rounded-full ${selectedMode === "business" ? "bg-nordic-primary" : "bg-nordic-highlight/60"}`} />
-                <span className="font-bold text-sm">Business</span>
+                <span className="font-bold text-sm">{t("auth.register.businessTitle")}</span>
               </div>
               <p className="text-[10px] opacity-80 text-left leading-tight">
-                För yrkespersoner, säljare och företag som vill ha ett modernt visitkort.
+                {t("auth.register.businessBody")}
               </p>
             </button>
           </div>
@@ -175,7 +186,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
 
         <div className="space-y-2">
           <label htmlFor="username" className="block text-sm font-medium text-nordic-highlight">
-            Användarnamn
+            {t("auth.register.username")}
           </label>
           <input
             {...register("username")}
@@ -184,7 +195,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
             className={`w-full px-4 py-3 rounded-xl bg-nordic-primary border text-nordic-secondary placeholder:text-nordic-highlight/60 focus:outline-none focus:ring-2 focus:ring-nordic-accent/60 transition-all ${
               errors.username ? "border-red-500/50 focus:border-red-500" : "border-nordic-highlight/40 focus:border-nordic-accent"
             }`}
-            placeholder="t.ex. elonmusk"
+            placeholder={t("auth.register.usernamePlaceholder")}
           />
           {errors.username && (
             <p className="text-xs text-red-400 ml-1">{errors.username.message}</p>
@@ -193,7 +204,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
 
         <div className="space-y-2">
           <label htmlFor="email" className="block text-sm font-medium text-nordic-highlight">
-            E-post
+            {t("common.email")}
           </label>
           <input
             {...register("email")}
@@ -202,7 +213,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
             className={`w-full px-4 py-3 rounded-xl bg-nordic-primary border text-nordic-secondary placeholder:text-nordic-highlight/60 focus:outline-none focus:ring-2 focus:ring-nordic-accent/60 transition-all ${
               errors.email ? "border-red-500/50 focus:border-red-500" : "border-nordic-highlight/40 focus:border-nordic-accent"
             }`}
-            placeholder="namn@exempel.se"
+            placeholder={t("auth.login.emailPlaceholder")}
           />
           {errors.email && (
             <p className="text-xs text-red-400 ml-1">{errors.email.message}</p>
@@ -211,7 +222,7 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
 
         <div className="space-y-2">
           <label htmlFor="password" className="block text-sm font-medium text-nordic-highlight">
-            Lösenord
+            {t("common.password")}
           </label>
           <input
             {...register("password")}
@@ -232,21 +243,20 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
           disabled={isLoading}
           className="w-full py-4 bg-nordic-secondary text-nordic-primary font-bold rounded-xl hover:bg-nordic-support focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-nordic-accent disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
         >
-          {isLoading ? <Loader2 className="animate-spin" /> : "Skapa konto & Logga in"}
+          {isLoading ? <Loader2 className="animate-spin" /> : t("auth.register.submit")}
         </button>
       </form>
 
       <p className="text-center text-xs text-nordic-highlight">
-        Genom att skapa konto godkänner du våra{" "}
+        {t("auth.register.legalIntro")}{" "}
         <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-200">
-          användarvillkor
+          {t("auth.register.legalTerms")}
         </a>{" "}
-        och{" "}
+        {t("auth.register.legalAnd")}{" "}
         <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-slate-200">
-          integritetspolicyn
+          {t("auth.register.legalPrivacy")}
         </a>
-        . Villkoren har nolltolerans mot stötande eller kränkande innehåll — konton
-        som bryter mot dem stängs av.
+        {t("auth.register.legalOutro")}
       </p>
     </div>
   );

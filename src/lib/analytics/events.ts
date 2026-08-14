@@ -15,6 +15,16 @@
 
 import { z } from "zod";
 
+import { createTranslator, type Translator } from "@/i18n/translate";
+import { getMessages } from "@/i18n/messages";
+
+/**
+ * Modulen anropas både från server-komponenter (som har användarens språk) och
+ * från kod utan request-kontext (jobb, tester). Utan översättare faller vi
+ * tillbaka på svenska, som är källspråket.
+ */
+const defaultTranslator: Translator = createTranslator(getMessages("sv"));
+
 /**
  * Höjs när formatet på ett lagrat event ändras på ett sätt som kräver backfill.
  * v1 = ursprungsformatet (AnalyticsEvent-tabellen som den ser ut idag).
@@ -336,30 +346,35 @@ export function buildAnalyticsEvent(
 /* Presentation (läsvägen)                                                     */
 /* -------------------------------------------------------------------------- */
 
-const READABLE_SOURCES: Record<string, string> = {
-  nfc: "NFC-kort",
-  qr: "QR-kod",
-  wallet: "Digital Plånbok",
-  apple_wallet: "Digital Plånbok",
-  google_wallet: "Digital Plånbok",
-  ios_widget: "Hem-skärm Widget",
-  email_signature: "E-postsignatur",
-  link_bio: "Instagram Bio",
-  instagram: "Instagram",
-  linkedin: "LinkedIn",
-  facebook: "Facebook",
-  "x (twitter)": "X (Twitter)",
-  tiktok: "TikTok",
-  youtube: "YouTube",
-  snapchat: "Snapchat",
-  pinterest: "Pinterest",
-  google: "Google Sök",
-  bing: "Bing",
-  duckduckgo: "DuckDuckGo",
-  internal: "Intern navigering",
-  webbplats: "Annan webbplats",
-  vcard: "Spara Kontakt-knappen",
-  direct: "Direkt (Ingen data)",
+/**
+ * Lagrat källvärde → i18n-nyckel. Själva texten bor i meddelandeträdet, så
+ * att källorna följer användarens språkval. Nycklarna här är BAKÅT-
+ * KOMPATIBLA med värdena i databasen — ändra dem inte utan backfill.
+ */
+const SOURCE_KEYS: Record<string, string> = {
+  nfc: "analytics.sources.nfc",
+  qr: "analytics.sources.qr",
+  wallet: "analytics.sources.wallet",
+  apple_wallet: "analytics.sources.wallet",
+  google_wallet: "analytics.sources.wallet",
+  ios_widget: "analytics.sources.iosWidget",
+  email_signature: "analytics.sources.emailSignature",
+  link_bio: "analytics.sources.linkBio",
+  instagram: "analytics.sources.instagram",
+  linkedin: "analytics.sources.linkedin",
+  facebook: "analytics.sources.facebook",
+  "x (twitter)": "analytics.sources.x",
+  tiktok: "analytics.sources.tiktok",
+  youtube: "analytics.sources.youtube",
+  snapchat: "analytics.sources.snapchat",
+  pinterest: "analytics.sources.pinterest",
+  google: "analytics.sources.google",
+  bing: "analytics.sources.bing",
+  duckduckgo: "analytics.sources.duckduckgo",
+  internal: "analytics.sources.internal",
+  webbplats: "analytics.sources.website",
+  vcard: "analytics.sources.vcard",
+  direct: "analytics.sources.direct",
 };
 
 /**
@@ -369,20 +384,22 @@ const READABLE_SOURCES: Record<string, string> = {
 export function getReadableSource(
   source: string | null | undefined,
   referrer: string | null | undefined,
+  t: Translator = defaultTranslator,
 ): string {
   const key = source?.trim().toLowerCase();
 
   if (key && key !== "direct") {
-    const readable = READABLE_SOURCES[key];
-    if (readable) return readable;
+    const messageKey = SOURCE_KEYS[key];
+    if (messageKey) return t(messageKey);
   }
 
   const derived = deriveSourceFromReferrer(referrer);
   if (derived) {
-    return READABLE_SOURCES[derived.toLowerCase()] ?? derived;
+    const messageKey = SOURCE_KEYS[derived.toLowerCase()];
+    return messageKey ? t(messageKey) : derived;
   }
 
-  if (key === "direct" || !key) return READABLE_SOURCES.direct;
+  if (key === "direct" || !key) return t(SOURCE_KEYS.direct);
 
   // Okänd källa: visa värdet som det är hellre än att tappa bort trafiken.
   try {
@@ -390,5 +407,5 @@ export function getReadableSource(
   } catch {
     /* ignoreras – faller igenom till råvärdet nedan */
   }
-  return source ?? READABLE_SOURCES.direct;
+  return source ?? t(SOURCE_KEYS.direct);
 }

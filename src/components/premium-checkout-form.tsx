@@ -12,6 +12,7 @@ import { IosRestorePurchasesButton } from "@/components/checkout/ios-restore-pur
 import { SubscriptionTerms } from "@/components/checkout/subscription-terms";
 import type { MappedProfileData } from "@/lib/profile-mapper";
 import type { CustomThemeSettings } from "@/types/theme";
+import { useT } from "@/i18n/client";
 
 interface PremiumCheckoutProps {
   productName: string;
@@ -29,6 +30,7 @@ export function PremiumCheckoutForm({
   profileData,
   profileSettings,
 }: PremiumCheckoutProps) {
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const isApp = useIsApp();
   const isIosCheckout = useIosNativePayments();
@@ -64,14 +66,14 @@ export function PremiumCheckoutForm({
         window.location.href = "/login?callbackUrl=" + encodeURIComponent("/checkout/premium");
         return;
       }
-      if (!response.ok) throw new Error("Kunde inte starta betalning");
+      if (!response.ok) throw new Error(t("premiumCheckout.startFailed"));
       const data = await response.json();
       
       if (data.url) window.location.href = data.url;
       
     } catch (error) {
       console.error(error);
-      alert("Något gick fel. Försök igen.");
+      alert(t("common.somethingWentWrong"));
       setLoading(false);
     }
   };
@@ -85,14 +87,14 @@ export function PremiumCheckoutForm({
           <div className="space-y-4">
               <div className="flex items-center gap-2 text-blue-400 bg-blue-500/10 w-fit px-3 py-1 rounded-full border border-blue-500/20">
                 <Sparkles size={14} />
-                <span className="font-bold tracking-wider uppercase text-xs">Premium Medlemskap</span>
+                <span className="font-bold tracking-wider uppercase text-xs">{t("premiumCheckout.badge")}</span>
               </div>
               <h1 className="text-4xl lg:text-5xl font-bold leading-tight tracking-tight">
-                Allt du behöver för att <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">växa ditt varumärke</span>
+                {t("premiumCheckout.titleLine1")} <br/>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">{t("premiumCheckout.titleLine2")}</span>
               </h1>
               <p className="text-nordic-highlight text-lg leading-relaxed max-w-md">
-                Lås upp teman, analysverktyg och ta bort loggor. Inga bindningstider.
+                {t("premiumCheckout.subtitle")}
               </p>
           </div>
 
@@ -100,7 +102,7 @@ export function PremiumCheckoutForm({
               <LiveProfileDemo data={profileData} settings={profileSettings} />
               {profileData && (
                 <p className="mt-2 text-center text-xs text-nordic-highlight">
-                  Din profil — så här ser den ut för den som blippar ditt kort.
+                  {t("premiumCheckout.yourProfileNote")}
                 </p>
               )}
           </div>
@@ -113,8 +115,8 @@ export function PremiumCheckoutForm({
 
              <div className="mb-8 flex items-center justify-between">
                  <div>
-                    <h2 className="text-2xl font-bold">Uppgradera</h2>
-                    <p className="text-nordic-highlight text-sm">Gå vidare till säker betalning</p>
+                    <h2 className="text-2xl font-bold">{t("premiumCheckout.upgrade")}</h2>
+                    <p className="text-nordic-highlight text-sm">{t("premiumCheckout.secureCheckout")}</p>
                  </div>
                  <div className="bg-gray-800/50 p-2 rounded-lg">
                     <CreditCard className="text-nordic-highlight" />
@@ -124,11 +126,11 @@ export function PremiumCheckoutForm({
              <div className="bg-nordic-primary/40 p-4 rounded-xl border border-gray-800 mb-6 space-y-3">
                  <div className="flex justify-between items-center">
                     <span className="font-medium text-sm">{productName}</span>
-                    <span className="font-bold">{formattedPrice}<span className="text-nordic-highlight font-normal text-xs">/mån</span></span>
+                    <span className="font-bold">{formattedPrice}<span className="text-nordic-highlight font-normal text-xs">{t("premiumCheckout.perMonth")}</span></span>
                  </div>
                  <div className="h-px bg-gray-800 w-full"></div>
                  <div className="flex justify-between items-center text-blue-400 text-sm font-medium">
-                    <span>Att betala idag</span>
+                    <span>{t("premiumCheckout.dueToday")}</span>
                     <span>{formattedPrice}</span>
                  </div>
              </div>
@@ -139,12 +141,12 @@ export function PremiumCheckoutForm({
                      <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
                        <div className="mt-0.5 min-w-[16px]"><Check size={16} className="text-blue-400"/></div>
                        <p className="text-sm text-blue-200/80 leading-relaxed">
-                         Premium köps via App Store i iOS-appen.
+                         {t("premiumCheckout.iapNotice")}
                        </p>
                      </div>
                      <IosIapPremiumButton
                        productKey="monthly"
-                       label={`Köp ${productName} via App Store`}
+                       label={t("premiumCheckout.iapButton", { product: productName })}
                      />
                      <IosRestorePurchasesButton />
                      <SubscriptionTerms price={formattedPrice} viaAppStore />
@@ -154,8 +156,7 @@ export function PremiumCheckoutForm({
                  {iapUnavailableInApp && (
                    <>
                      <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-200/90 leading-relaxed">
-                       Premium kan just nu inte köpas i appen. Har du redan köpt
-                       Premium kan du återställa köpet nedan.
+                       {t("premiumCheckout.iapUnavailable")}
                      </div>
                      <IosRestorePurchasesButton />
                    </>
@@ -166,7 +167,7 @@ export function PremiumCheckoutForm({
                  <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
                     <div className="mt-0.5 min-w-[16px]"><Check size={16} className="text-blue-400"/></div>
                     <p className="text-sm text-blue-200/80 leading-relaxed">
-                        Du omdirigeras till Stripe för att slutföra betalningen säkert.
+                        {t("premiumCheckout.stripeNotice")}
                     </p>
                  </div>
 
@@ -175,7 +176,7 @@ export function PremiumCheckoutForm({
                     disabled={loading}
                     className="w-full bg-nordic-secondary text-nordic-primary font-bold py-4 rounded-xl hover:bg-nordic-support transition-all flex items-center justify-center gap-2 mt-4 shadow-lg shadow-white/5"
                  >
-                    {loading ? <Loader2 className="animate-spin" /> : "Gå till betalning"}
+                    {loading ? <Loader2 className="animate-spin" /> : t("premiumCheckout.goToPayment")}
                     {!loading && <ArrowRight size={18} />}
                  </button>
                  <SubscriptionTerms price={formattedPrice} />
@@ -186,7 +187,7 @@ export function PremiumCheckoutForm({
            
            <div className="text-center mt-6">
               <Link href="/get-started" className="text-sm text-nordic-highlight hover:text-nordic-secondary transition-colors">
-                 Avbryt
+                 {t("common.cancel")}
               </Link>
            </div>
         </div>

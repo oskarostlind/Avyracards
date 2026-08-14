@@ -12,6 +12,8 @@ import { SubscriptionTerms } from "@/components/checkout/subscription-terms";
 import { PREMIUM_6MO_PRICE_ORE, PREMIUM_6MO_COMPARE_ORE } from "@/lib/constants";
 import type { MappedProfileData } from "@/lib/profile-mapper";
 import type { CustomThemeSettings } from "@/types/theme";
+import { useT } from "@/i18n/client";
+import type { Translator } from "@/i18n";
 
 // --- Types ---
 type MaterialType = "plastic" | "metal";
@@ -55,6 +57,9 @@ export default function OrderViewWrapper(props: OrderViewProps) {
 }
 
 function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPremium, isLoggedIn, profileData, profileSettings, premiumMonthlyOre }: OrderViewProps) {
+  const t = useT();
+  /** Prisrad med rätt valutasuffix för valt språk ("299 kr" / "299 SEK"). */
+  const price = (amount: number | string) => t("order.price", { amount: String(amount) });
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const isIosCheckout = useIosNativePayments();
@@ -89,8 +94,15 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   // Premium-användare har inget nivåval och hoppar över steg 2.
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const steps = isPremium
-    ? [{ n: 1, label: "Designa" }, { n: 3, label: "Sammanfattning" }]
-    : [{ n: 1, label: "Designa" }, { n: 2, label: "Välj nivå" }, { n: 3, label: "Sammanfattning" }];
+    ? [
+        { n: 1, label: t("order.stepDesign") },
+        { n: 3, label: t("order.stepSummary") },
+      ]
+    : [
+        { n: 1, label: t("order.stepDesign") },
+        { n: 2, label: t("order.stepTier") },
+        { n: 3, label: t("order.stepSummary") },
+      ];
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -178,7 +190,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   };
 
   const handleCheckout = async () => {
-      if (!selectedVariant) return alert("Ingen variant vald, eller så är produkten slut i lager.");
+      if (!selectedVariant) return alert(t("order.noVariant"));
 
       // Checkout kräver inloggning — skicka till login med återvändo i stället
       // för att låta API:t svara 401 och visa ett kryptiskt felmeddelande.
@@ -200,7 +212,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                 body: formData
             });
 
-            if (!uploadRes.ok) throw new Error("Kunde inte ladda upp bilden.");
+            if (!uploadRes.ok) throw new Error(t("order.uploadFailed"));
             const uploadData = await uploadRes.json();
             printFileUrl = uploadData.url;
         }
@@ -236,7 +248,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
 
       } catch (error) {
         console.error(error);
-        alert("Ett fel uppstod. Försök igen.");
+        alert(t("order.checkoutError"));
         setLoading(false);
       }
   };
@@ -269,11 +281,11 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
 
   const isCompletelyOutOfStock = !hasStandard && !hasMetal;
 
-  const materialLabel = material === "plastic" ? "Standard (PVC)" : "Metal Hybrid";
+  const materialLabel = material === "plastic" ? t("order.standard") : t("order.metal");
   const premiumLabel = premiumOption === "1mo"
-    ? "Startpaket — 1 mån Premium (ingår)"
+    ? t("order.starterPackRow")
     : premiumOption === "6mo"
-      ? "Premium 6 månader"
+      ? t("order.premium6mo")
       : null;
 
   const goNext = () => {
@@ -338,15 +350,15 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                       <div className="bg-blue-500/20 p-2 rounded-lg text-blue-400"><Sparkles size={20}/></div>
                       <div>
                         <h3 className="font-bold text-base text-nordic-secondary">
-                            {profileData ? "Din profil med Premium" : "Så här kan din profil se ut"}
+                            {profileData ? t("order.previewTitleOwn") : t("order.previewTitleDemo")}
                         </h3>
-                        <p className="text-xs text-nordic-highlight">Detta ser folk när de blippar ditt kort</p>
+                        <p className="text-xs text-nordic-highlight">{t("order.previewSubtitle")}</p>
                       </div>
                   </div>
                   <LiveProfileDemo data={profileData} settings={profileSettings} />
                   {!profileData && (
                     <p className="mt-4 text-center text-xs text-nordic-highlight">
-                      Exempelprofil — logga in för att se din egen.
+                      {t("order.previewDemoNote")}
                     </p>
                   )}
                </div>
@@ -360,13 +372,13 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
             {step === 1 && (
               <>
                 <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-nordic-secondary mb-2">Designa ditt kort</h1>
-                  <p className="text-nordic-highlight text-sm lg:text-base">Skräddarsy ditt NFC-kort för professionellt nätverkande.</p>
+                  <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-nordic-secondary mb-2">{t("order.designTitle")}</h1>
+                  <p className="text-nordic-highlight text-sm lg:text-base">{t("order.designSubtitle")}</p>
                 </div>
 
                 {/* Material */}
                 <div className="space-y-3">
-                  <label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest ml-1">Material</label>
+                  <label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest ml-1">{t("order.material")}</label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
                     <button
@@ -382,8 +394,8 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                     >
                       <div className="p-2 bg-white/5 rounded-lg"><Layers size={18} /></div>
                       <div className="text-left">
-                        <span className="block font-bold text-sm">Standard</span>
-                        <span className="text-xs opacity-60">PVC Plast</span>
+                        <span className="block font-bold text-sm">{t("order.standard")}</span>
+                        <span className="text-xs opacity-60">{t("order.standardSub")}</span>
                       </div>
                       <div className="ml-auto text-right">
                           {!hasStandard ? (
@@ -391,10 +403,10 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                           ) : (
                               <>
                                 {standardDisplay.compareAt && standardDisplay.compareAt > standardDisplay.price && (
-                                    <div className="text-[10px] text-nordic-highlight line-through">{(standardDisplay.compareAt / 100).toFixed(0)} kr</div>
+                                    <div className="text-[10px] text-nordic-highlight line-through">{price((standardDisplay.compareAt / 100).toFixed(0))}</div>
                                 )}
                                 <span className="text-xs font-medium bg-white/10 px-2 py-1 rounded block">
-                                    {(standardDisplay.price / 100).toFixed(0)} kr
+                                    {price((standardDisplay.price / 100).toFixed(0))}
                                 </span>
                               </>
                           )}
@@ -414,9 +426,9 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                     >
                       <div className="p-2 bg-white/5 rounded-lg"><CreditCard size={18} /></div>
                       <div className="text-left">
-                        <span className="block font-bold text-sm">Metal Hybrid</span>
+                        <span className="block font-bold text-sm">{t("order.metal")}</span>
                         {/* Leverantörens spec är metall/PVC med aluminiumantenn — inte stål (ClickUp 86c6qdj6d) */}
-                        <span className="text-xs opacity-60">Metall/PVC</span>
+                        <span className="text-xs opacity-60">{t("order.metalSub")}</span>
                       </div>
                        <div className="ml-auto text-right">
                           {!hasMetal ? (
@@ -424,10 +436,10 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                           ) : (
                               <>
                                 {metalDisplay.compareAt && metalDisplay.compareAt > metalDisplay.price && (
-                                    <div className="text-[10px] text-nordic-highlight line-through">{(metalDisplay.compareAt / 100).toFixed(0)} kr</div>
+                                    <div className="text-[10px] text-nordic-highlight line-through">{price((metalDisplay.compareAt / 100).toFixed(0))}</div>
                                 )}
                                 <span className="text-xs font-medium bg-white/10 px-2 py-1 rounded block">
-                                    {(metalDisplay.price / 100).toFixed(0)} kr
+                                    {price((metalDisplay.price / 100).toFixed(0))}
                                 </span>
                               </>
                           )}
@@ -438,9 +450,9 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
 
                 {/* Färg */}
                 <div className="space-y-3">
-                  <label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest ml-1">Färg</label>
+                  <label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest ml-1">{t("order.color")}</label>
                   {activeVariants.length === 0 ? (
-                      <div className="text-sm text-nordic-highlight py-2 ml-1">Inga färger tillgängliga för detta material.</div>
+                      <div className="text-sm text-nordic-highlight py-2 ml-1">{t("order.noColors")}</div>
                   ) : (
                       <div className="flex flex-wrap gap-3">
                         {activeVariants.map((variant) => {
@@ -466,20 +478,20 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                 {/* Custom Print (Metal Only) */}
                 {material === "metal" && hasMetal && (
                    <div className="space-y-3 animate-in fade-in slide-in-from-top-4">
-                      <div className="flex justify-between items-center ml-1"><label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest">Custom Print (+100 kr)</label><span className="text-[10px] bg-blue-500 text-nordic-secondary px-2 py-0.5 rounded-full">POPULÄRT</span></div>
+                      <div className="flex justify-between items-center ml-1"><label className="text-xs font-bold text-nordic-highlight uppercase tracking-widest">{t("order.customPrint")}</label><span className="text-[10px] bg-blue-500 text-nordic-secondary px-2 py-0.5 rounded-full">{t("order.popular")}</span></div>
                       {!customImage ? (
                           <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed border-white/10 hover:border-blue-500/50 hover:bg-blue-500/5 rounded-xl p-6 text-center cursor-pointer transition-all group">
                               <Upload className="mx-auto mb-2 text-nordic-highlight group-hover:text-blue-400" size={20} />
-                              <p className="text-sm font-medium text-gray-300">Ladda upp logotyp</p>
+                              <p className="text-sm font-medium text-gray-300">{t("order.uploadLogo")}</p>
                               {/* Tryckytan är PVC-panelen, inte hela kortet (ClickUp 86c6qdj6d) */}
-                              <p className="mt-1 text-[11px] text-gray-500">Tryckyta 82 × 51 mm — ytterkanten förblir borstad metall</p>
+                              <p className="mt-1 text-[11px] text-gray-500">{t("order.printAreaHint")}</p>
                           </div>
                       ) : (
                           <div className="relative rounded-xl overflow-hidden border border-white/20 group h-24 w-full">
-                              <Image src={customImage} alt="Upload" fill className="object-cover opacity-50" unoptimized />
+                              <Image src={customImage} alt={t("order.uploadAlt")} fill className="object-cover opacity-50" unoptimized />
                               <div className="absolute inset-0 flex items-center justify-center gap-4 z-10">
-                                   <button onClick={() => fileInputRef.current?.click()} className="bg-nordic-secondary text-nordic-primary px-3 py-1.5 rounded-lg text-xs font-bold">Byt</button>
-                                   <button onClick={clearImage} className="bg-red-500/20 text-red-400 p-1.5 rounded-lg"><X size={16} /></button>
+                                   <button onClick={() => fileInputRef.current?.click()} className="bg-nordic-secondary text-nordic-primary px-3 py-1.5 rounded-lg text-xs font-bold">{t("order.replaceImage")}</button>
+                                   <button onClick={clearImage} aria-label={t("order.removeImage")} className="bg-red-500/20 text-red-400 p-1.5 rounded-lg"><X size={16} /></button>
                               </div>
                           </div>
                       )}
@@ -496,7 +508,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                       : "bg-nordic-secondary text-nordic-primary hover:bg-nordic-support"
                   }`}
                 >
-                  {isCompletelyOutOfStock ? "Inga produkter tillgängliga" : "Fortsätt"} {!isCompletelyOutOfStock && <ArrowRight size={18} />}
+                  {isCompletelyOutOfStock ? t("order.noProducts") : t("order.continue")} {!isCompletelyOutOfStock && <ArrowRight size={18} />}
                 </button>
               </>
             )}
@@ -505,8 +517,8 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
             {step === 2 && !isPremium && (
               <>
                 <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-nordic-secondary mb-2">Välj nivå</h1>
-                  <p className="text-nordic-highlight text-sm lg:text-base">Ditt kort blippar alltid till din profil — Premium låser upp teman, statistik och tar bort branding.</p>
+                  <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-nordic-secondary mb-2">{t("order.tierTitle")}</h1>
+                  <p className="text-nordic-highlight text-sm lg:text-base">{t("order.tierSubtitle")}</p>
                 </div>
 
                 <div className="space-y-3">
@@ -519,8 +531,8 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                             <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${premiumOption === "none" ? "border-blue-500 bg-blue-500" : "border-gray-600"}`}>
                                 {premiumOption === "none" && <Check size={12} className="text-white" />}
                             </div>
-                            <span className="font-medium text-sm">Enbart kort</span>
-                            <span className="ml-auto text-sm font-bold text-nordic-highlight">+0 kr</span>
+                            <span className="font-medium text-sm">{t("order.cardOnly")}</span>
+                            <span className="ml-auto text-sm font-bold text-nordic-highlight">{t("order.plusZero")}</span>
                         </div>
                     </div>
 
@@ -535,14 +547,14 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-bold text-sm flex items-center gap-2">
-                                    Startpaket — 1 mån Premium
-                                    <span className="bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full">GRATIS</span>
+                                    {t("order.starterPack")}
+                                    <span className="bg-blue-600 text-white text-[9px] px-2 py-0.5 rounded-full">{t("order.freeBadge")}</span>
                                 </span>
-                                <span className="text-xs text-nordic-highlight">Prova på utan kostnad, förnyas inte automatiskt</span>
+                                <span className="text-xs text-nordic-highlight">{t("order.starterPackSub")}</span>
                             </div>
                             <div className="ml-auto text-right">
-                                <span className="block font-bold text-sm">+0 kr</span>
-                                <span className="text-xs text-nordic-highlight line-through">{premiumMonthly} kr</span>
+                                <span className="block font-bold text-sm">{t("order.plusZero")}</span>
+                                <span className="text-xs text-nordic-highlight line-through">{price(premiumMonthly)}</span>
                             </div>
                         </div>
                     </div>
@@ -558,14 +570,16 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                             </div>
                             <div className="flex flex-col">
                                 <span className="font-bold text-sm flex items-center gap-2">
-                                    Premium 6 månader
-                                    <span className="bg-green-600 text-white text-[9px] px-2 py-0.5 rounded-full">SPARA {Math.max(0, Math.round((1 - premium6moPrice / premium6moCompare) * 100))}%</span>
+                                    {t("order.premium6mo")}
+                                    <span className="bg-green-600 text-white text-[9px] px-2 py-0.5 rounded-full">
+                                      {t("order.saveBadge", { percent: Math.max(0, Math.round((1 - premium6moPrice / premium6moCompare) * 100)) })}
+                                    </span>
                                 </span>
-                                <span className="text-xs text-nordic-highlight">Långsiktig satsning</span>
+                                <span className="text-xs text-nordic-highlight">{t("order.premium6moSub")}</span>
                             </div>
                             <div className="ml-auto text-right">
-                                <span className="block font-bold text-sm">+{premium6moPrice} kr</span>
-                                <span className="text-xs text-nordic-highlight line-through">{premium6moCompare} kr</span>
+                                <span className="block font-bold text-sm">+{price(premium6moPrice)}</span>
+                                <span className="text-xs text-nordic-highlight line-through">{price(premium6moCompare)}</span>
                             </div>
                         </div>
                     </div>
@@ -578,24 +592,22 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                     integritetspolicy. */}
                 {premiumOption === "6mo" && (
                   <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                    <SubscriptionTerms price={`${premium6moPrice} kr`} period="6 månader" viaAppStore />
+                    <SubscriptionTerms price={price(premium6moPrice)} period={t("order.period6mo")} viaAppStore />
                   </div>
                 )}
 
                 {premiumOption === "1mo" && (
                   <p className="mt-4 text-[11px] leading-relaxed text-slate-400">
-                    Den första månaden Premium ingår utan kostnad i kortköpet och
-                    förnyas inte automatiskt. När månaden är slut återgår kontot till
-                    gratisversionen om du inte själv väljer att uppgradera.
+                    {t("order.starterPackTerms")}
                   </p>
                 )}
 
                 <div className="flex gap-3">
                   <button onClick={goBack} className="py-4 px-5 rounded-xl font-bold border border-white/10 hover:border-white/20 text-nordic-highlight transition-all flex items-center gap-2">
-                    <ArrowLeft size={16} /> Tillbaka
+                    <ArrowLeft size={16} /> {t("order.back")}
                   </button>
                   <button onClick={goNext} className="flex-1 py-4 rounded-xl font-bold text-lg bg-nordic-secondary text-nordic-primary hover:bg-nordic-support transition-all shadow-lg flex items-center justify-center gap-2">
-                    Fortsätt <ArrowRight size={18} />
+                    {t("order.continue")} <ArrowRight size={18} />
                   </button>
                 </div>
               </>
@@ -605,61 +617,63 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
             {step === 3 && (
               <>
                 <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-nordic-secondary mb-2">Din beställning</h1>
-                  <p className="text-nordic-highlight text-sm lg:text-base">Kontrollera allt innan du går till kassan.</p>
+                  <h1 className="text-3xl lg:text-4xl font-bold tracking-tight text-nordic-secondary mb-2">{t("order.summaryTitle")}</h1>
+                  <p className="text-nordic-highlight text-sm lg:text-base">{t("order.summarySubtitle")}</p>
                 </div>
 
                 {/* Specificerat ordersammandrag */}
                 <div className="rounded-2xl border border-white/10 bg-white/[0.03] divide-y divide-white/5">
                   <SummaryRow
-                    label={`NFC-kort · ${materialLabel}`}
+                    t={t}
+                    label={t("order.nfcCard", { material: materialLabel })}
                     sub={selectedVariant?.name}
-                    price={`${cardPrice.toFixed(0)} kr`}
-                    compareAt={compareAt && compareAt > cardPrice ? `${compareAt.toFixed(0)} kr` : undefined}
+                    price={price(cardPrice.toFixed(0))}
+                    compareAt={compareAt && compareAt > cardPrice ? price(compareAt.toFixed(0)) : undefined}
                     onEdit={() => setStep(1)}
                   />
                   {customPrintCost > 0 && (
-                    <SummaryRow label="Custom Print" sub="Egen logotyp på kortet" price={`${customPrintCost} kr`} onEdit={() => setStep(1)} />
+                    <SummaryRow t={t} label={t("order.customPrintRow")} sub={t("order.customPrintSub")} price={price(customPrintCost)} onEdit={() => setStep(1)} />
                   )}
                   {!isPremium && premiumLabel && (
                     <SummaryRow
+                      t={t}
                       label={premiumLabel}
-                      sub={premiumOption === "1mo" ? "Förnyas inte automatiskt" : "Auto-förnyas var 6:e månad"}
-                      price={premiumOption === "6mo" ? `${premium6moPrice} kr` : "0 kr"}
-                      compareAt={premiumOption === "1mo" ? `${premiumMonthly} kr` : `${premium6moCompare} kr`}
+                      sub={premiumOption === "1mo" ? t("order.noAutoRenew") : t("order.autoRenew6mo")}
+                      price={premiumOption === "6mo" ? price(premium6moPrice) : price(0)}
+                      compareAt={premiumOption === "1mo" ? price(premiumMonthly) : price(premium6moCompare)}
                       onEdit={() => setStep(2)}
                     />
                   )}
                   <div className="flex items-center justify-between p-4">
-                    <span className="text-sm font-medium text-nordic-highlight">Totalt</span>
+                    <span className="text-sm font-medium text-nordic-highlight">{t("order.total")}</span>
                     <div className="text-right">
                         {hasSavings && (
                              <span className="text-sm text-nordic-highlight line-through mr-2">
-                                {totalOriginalPrice} kr
+                                {price(totalOriginalPrice)}
                              </span>
                         )}
-                        <span className="text-3xl font-bold tracking-tight">{total} kr</span>
+                        <span className="text-3xl font-bold tracking-tight">{price(total)}</span>
                     </div>
                   </div>
                 </div>
 
                 {hasSavings && (
                    <div className="bg-green-500/10 border border-green-500/20 text-green-400 p-3 rounded-lg text-center text-sm font-bold">
-                       🎉 Du sparar {savings} kr!
+                       {t("order.savings", { amount: savings })}
                    </div>
                 )}
 
                 {/* Prenumerationsvillkor även i sammanfattningen (Guideline 3.1.2c) */}
                 {premiumOption === "6mo" && (
                   <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
-                    <SubscriptionTerms price={`${premium6moPrice} kr`} period="6 månader" viaAppStore />
+                    <SubscriptionTerms price={price(premium6moPrice)} period={t("order.period6mo")} viaAppStore />
                   </div>
                 )}
 
                 <div className="space-y-4">
                    <div className="flex gap-3">
                      <button onClick={goBack} className="py-4 px-5 rounded-xl font-bold border border-white/10 hover:border-white/20 text-nordic-highlight transition-all flex items-center gap-2">
-                       <ArrowLeft size={16} /> Tillbaka
+                       <ArrowLeft size={16} /> {t("order.back")}
                      </button>
                      <button
                         onClick={handleCheckout}
@@ -671,9 +685,9 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                         }`}
                      >
                         {loading ? <Loader2 className="animate-spin" /> : (
-                          isCompletelyOutOfStock ? "Inga produkter tillgängliga"
-                            : !isLoggedIn ? "Logga in & gå till kassan"
-                            : (isIosCheckout ? "Fortsätt till betalning" : "Gå till kassan")
+                          isCompletelyOutOfStock ? t("order.noProducts")
+                            : !isLoggedIn ? t("order.loginAndCheckout")
+                            : (isIosCheckout ? t("order.continueToPayment") : t("order.goToCheckout"))
                         )}
                      </button>
                    </div>
@@ -687,12 +701,12 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                    )}
                    {/* Köpvillkor (ClickUp 86ca6yfmy) */}
                    <p className="text-center text-xs text-gray-500">
-                      Genom att gå till kassan godkänner du våra{" "}
-                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">köpvillkor</a>
-                      {" "}och{" "}
-                      <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">integritetspolicy</a>.
+                      {t("order.legalBefore")}{" "}
+                      <a href="/terms" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">{t("order.legalTerms")}</a>
+                      {" "}{t("order.legalAnd")}{" "}
+                      <a href="/privacy" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-300 transition-colors">{t("order.legalPrivacy")}</a>.
                    </p>
-                   <p className="text-center text-xs text-gray-600">Leverans 2-4 arbetsdagar • Fri frakt över 500 kr</p>
+                   <p className="text-center text-xs text-gray-600">{t("order.shippingNote")}</p>
                 </div>
               </>
             )}
@@ -704,12 +718,13 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   );
 }
 
-function SummaryRow({ label, sub, price, compareAt, onEdit }: {
+function SummaryRow({ label, sub, price, compareAt, onEdit, t }: {
   label: string;
   sub?: string | null;
   price: string;
   compareAt?: string;
   onEdit?: () => void;
+  t: Translator;
 }) {
   return (
     <div className="flex items-center justify-between p-4 gap-3">
@@ -723,7 +738,7 @@ function SummaryRow({ label, sub, price, compareAt, onEdit }: {
           <span className="text-sm font-bold">{price}</span>
         </div>
         {onEdit && (
-          <button onClick={onEdit} aria-label={`Ändra ${label}`} className="p-1.5 rounded-lg text-nordic-highlight hover:text-nordic-secondary hover:bg-white/5 transition-colors">
+          <button onClick={onEdit} aria-label={t("order.editAria", { label })} className="p-1.5 rounded-lg text-nordic-highlight hover:text-nordic-secondary hover:bg-white/5 transition-colors">
             <Pencil size={14} />
           </button>
         )}

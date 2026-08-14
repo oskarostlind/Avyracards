@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Check, Sparkles, User, ArrowRight, CreditCard, Zap } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 interface GetStartedViewProps {
   premiumProduct?: any;
@@ -9,6 +10,8 @@ interface GetStartedViewProps {
 }
 
 export default function GetStartedView({ premiumProduct, bundleProduct }: GetStartedViewProps) {
+  const t = useT();
+  const price = (amount: number | string) => t("order.price", { amount: String(amount) });
   
   // --- 1. HÄMTA PRISER FRÅN DB-OBJEKTEN ---
   
@@ -31,10 +34,10 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
       <div className="text-center max-w-3xl mb-16 animate-in slide-in-from-bottom-4 fade-in duration-700">
         {/* FIX: Lade till pb-2 för att g:et inte ska kapas av bg-clip-text, och ändrade mb-6 till mb-4 för att kompensera */}
         <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4 pb-2 bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">
-          Välj nivån som passar dig
+          {t("getStarted.title")}
         </h1>
         <p className="text-nordic-highlight text-lg md:text-xl leading-relaxed">
-          Från digital visitkort till komplett nätverkspaket. Uppgradera eller ändra plan när som helst.
+          {t("getStarted.subtitle")}
         </p>
       </div>
 
@@ -47,22 +50,22 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
             <div className="w-12 h-12 bg-white/5 rounded-xl flex items-center justify-center mb-4 text-nordic-secondary">
               <User size={24} />
             </div>
-            <h3 className="text-xl font-bold mb-2">Digital Profil</h3>
-            <p className="text-nordic-highlight text-sm">För dig som vill testa på.</p>
+            <h3 className="text-xl font-bold mb-2">{t("getStarted.free.name")}</h3>
+            <p className="text-nordic-highlight text-sm">{t("getStarted.free.tagline")}</p>
           </div>
           <div className="flex items-baseline gap-1 mb-8">
-            <span className="text-4xl font-bold">0 kr</span>
-            <span className="text-nordic-highlight text-sm">/ mån</span>
+            <span className="text-4xl font-bold">{t("getStarted.free.price")}</span>
+            <span className="text-nordic-highlight text-sm">{t("getStarted.perMonth")}</span>
           </div>
           <div className="space-y-4 mb-8 flex-grow">
-            <Feature text="Anpassad länk" />
-            <Feature text="Grundläggande profil" />
-            <Feature text="Obegränsade länkar" />
-            <Feature text="QR-kod" />
-            <Feature text="Apple/Google wallet kort" />
+            <Feature text={t("getStarted.free.f1")} />
+            <Feature text={t("getStarted.free.f2")} />
+            <Feature text={t("getStarted.free.f3")} />
+            <Feature text={t("getStarted.free.f4")} />
+            <Feature text={t("getStarted.free.f5")} />
           </div>
           <Link href="/register?plan=free" className="w-full py-3 rounded-xl border border-nordic-highlight/30 hover:bg-white/5 text-nordic-secondary font-bold text-center transition-all text-sm mt-auto">
-            Kom igång gratis
+            {t("getStarted.free.cta")}
           </Link>
         </div>
 
@@ -70,7 +73,7 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
         <div className="relative p-8 rounded-3xl border border-nordic-accent bg-gradient-to-b from-nordic-accent/10 to-nordic-primary/90 backdrop-blur-sm flex flex-col shadow-2xl shadow-nordic-accent/10 transform md:-translate-y-6 transition-all duration-300 h-full select-none hover:-translate-y-2 md:hover:-translate-y-8 active:scale-[0.98]">
           
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-nordic-accent text-nordic-primary text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg flex items-center gap-2 whitespace-nowrap">
-            <Sparkles size={12} fill="currentColor" /> Mest Populär
+            <Sparkles size={12} fill="currentColor" /> {t("getStarted.bundle.badge")}
           </div>
 
           <div className="mb-6 mt-2">
@@ -79,29 +82,29 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
             </div>
             {/* Ett namn genomgående: "Startpaket" (hette tidigare Pro Bundle här,
                 Startpaket i dashboarden och Pro på ordersidan — förvirrande) */}
-            <h3 className="text-xl font-bold mb-2 text-white">Startpaket</h3>
-            <p className="text-nordic-highlight text-sm">Premium + Fysiskt Kort.</p>
+            <h3 className="text-xl font-bold mb-2 text-white">{t("getStarted.bundle.name")}</h3>
+            <p className="text-nordic-highlight text-sm">{t("getStarted.bundle.tagline")}</p>
           </div>
 
           <div className="flex items-baseline gap-2 mb-2">
-            <span className="text-4xl font-bold text-white">{bundlePrice} kr</span>
-            <span className="text-nordic-highlight text-sm line-through opacity-70">{bundleOriginalPrice} kr</span>
+            <span className="text-4xl font-bold text-white">{price(bundlePrice)}</span>
+            <span className="text-nordic-highlight text-sm line-through opacity-70">{price(bundleOriginalPrice)}</span>
           </div>
           <p className="text-xs text-nordic-accent font-medium mb-8 bg-nordic-accent/10 inline-block px-2 py-1 rounded w-fit">
-            Engångsavgift (inkl. kort & 1 mån premium)
+            {t("getStarted.bundle.note")}
           </p>
 
           <div className="space-y-4 mb-8 flex-grow">
-            <Feature text="Alla Premium-funktioner" highlight />
-            <Feature text="Fysiskt NFC-kort" highlight icon={<CreditCard size={14}/>} />
-            <Feature text="Fri frakt" highlight />
+            <Feature text={t("getStarted.bundle.f1")} highlight />
+            <Feature text={t("getStarted.bundle.f2")} highlight icon={<CreditCard size={14}/>} />
+            <Feature text={t("getStarted.bundle.f3")} highlight />
           </div>
 
           <Link
             href="/register?plan=bundle" 
             className="w-full py-4 rounded-xl bg-nordic-accent text-nordic-primary font-bold text-center hover:bg-nordic-accent/90 shadow-lg shadow-nordic-accent/20 flex items-center justify-center gap-2 group mt-auto"
           >
-            Skaffa Startpaketet <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
+            {t("getStarted.bundle.cta")} <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
           </Link>
         </div>
 
@@ -111,31 +114,31 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
             <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center mb-4">
               <Zap size={24} />
             </div>
-            <h3 className="text-xl font-bold mb-2 text-white">Premium</h3>
-            <p className="text-nordic-highlight text-sm">Enbart digitalt för seriösa nätverkare.</p>
+            <h3 className="text-xl font-bold mb-2 text-white">{t("getStarted.premium.name")}</h3>
+            <p className="text-nordic-highlight text-sm">{t("getStarted.premium.tagline")}</p>
           </div>
           <div className="flex items-baseline gap-1 mb-8">
-            <span className="text-4xl font-bold">{premiumPrice} kr</span>
-            <span className="text-nordic-highlight text-sm">/ mån</span>
+            <span className="text-4xl font-bold">{price(premiumPrice)}</span>
+            <span className="text-nordic-highlight text-sm">{t("getStarted.perMonth")}</span>
           </div>
           <div className="space-y-4 mb-8 flex-grow">
-            <Feature text="Allt i Gratis" highlight />
-            <Feature text="Avancerad Statistik" highlight />
-            <Feature text="Lås upp alla Teman" highlight />
-            <Feature text="Ta bort branding" highlight />
-            <Feature text="Prioriterad support" highlight />
+            <Feature text={t("getStarted.premium.f1")} highlight />
+            <Feature text={t("getStarted.premium.f2")} highlight />
+            <Feature text={t("getStarted.premium.f3")} highlight />
+            <Feature text={t("getStarted.premium.f4")} highlight />
+            <Feature text={t("getStarted.premium.f5")} highlight />
           </div>
           <Link href="/register?plan=premium" className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-center transition-all text-sm shadow-lg shadow-blue-900/20 mt-auto">
-            Välj Premium
+            {t("getStarted.premium.cta")}
           </Link>
         </div>
 
       </div>
 
       <div className="mt-20 text-center border-t border-white/5 pt-10 w-full max-w-4xl">
-        <p className="text-sm text-nordic-highlight mb-4">Litar du inte på oss än? Börja gratis.</p>
+        <p className="text-sm text-nordic-highlight mb-4">{t("getStarted.trustTitle")}</p>
         <Link href="/register?plan=free" className="text-nordic-secondary underline hover:text-white text-sm">
-          Skapa gratis konto utan kortuppgifter
+          {t("getStarted.trustCta")}
         </Link>
       </div>
 

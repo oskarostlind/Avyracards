@@ -6,6 +6,7 @@ import { FCM } from "@capacitor-community/fcm";
 import { Bell, X } from "lucide-react";
 import { useIsApp } from "@/hooks/useIsApp";
 import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
+import { useT } from "@/i18n/client";
 
 async function sendTokenToBackend(token: string): Promise<void> {
   const res = await fetch("/api/user/push-token", {
@@ -20,6 +21,7 @@ async function sendTokenToBackend(token: string): Promise<void> {
 }
 
 export function PushManager() {
+  const t = useT();
   const isApp = useIsApp();
 
   // Guideline 4.5.4 / 5.1.1(ii): systemdialogen för push fick tidigare
@@ -233,10 +235,9 @@ export function PushManager() {
       </div>
       <div className="flex-1 space-y-3">
         <div>
-          <p className="text-sm font-semibold text-slate-100">Slå på notiser</p>
+          <p className="text-sm font-semibold text-slate-100">{t("dashboard.push.title")}</p>
           <p className="mt-0.5 text-xs text-slate-300/80">
-            Få en notis när någon sparar din kontakt, när ditt kort skickas och när
-            en beställning uppdateras. Du kan stänga av det när som helst.
+            {t("dashboard.push.body")}
           </p>
         </div>
         <div className="flex gap-2">
@@ -245,21 +246,21 @@ export function PushManager() {
             onClick={handleEnable}
             className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-500"
           >
-            Slå på notiser
+            {t("dashboard.push.enable")}
           </button>
           <button
             type="button"
             onClick={() => setDismissed(true)}
             className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/5"
           >
-            Inte nu
+            {t("dashboard.push.notNow")}
           </button>
         </div>
       </div>
       <button
         type="button"
         onClick={() => setDismissed(true)}
-        aria-label="Stäng"
+        aria-label={t("dashboard.push.dismiss")}
         className="text-slate-400 hover:text-slate-200"
       >
         <X size={16} />

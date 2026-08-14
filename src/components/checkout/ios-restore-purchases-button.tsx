@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2, RotateCcw } from "lucide-react";
 import { NativePurchases } from "@capgo/native-purchases";
 import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
+import { useT } from "@/i18n/client";
 
 interface Props {
   className?: string;
@@ -21,6 +22,7 @@ interface Props {
  * verifieringsendpoint så att premium sätts på det inloggade kontot.
  */
 export function IosRestorePurchasesButton({ className, label }: Props) {
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(
     null
@@ -60,14 +62,14 @@ export function IosRestorePurchasesButton({ className, label }: Props) {
       });
 
       if (restored > 0) {
-        setMessage({ type: "ok", text: "Ditt köp är återställt." });
+        setMessage({ type: "ok", text: t("checkout.restored") });
         window.location.href = "/dashboard";
         return;
       }
 
       setMessage({
         type: "err",
-        text: "Vi hittade inga tidigare köp kopplade till ditt Apple-ID.",
+        text: t("checkout.nothingToRestore"),
       });
     } catch (err) {
       const text = err instanceof Error ? err.message : String(err);
@@ -78,7 +80,7 @@ export function IosRestorePurchasesButton({ className, label }: Props) {
         data: { error: text },
         level: "error",
       });
-      setMessage({ type: "err", text: "Kunde inte återställa köp. Försök igen." });
+      setMessage({ type: "err", text: t("checkout.restoreFailed") });
     } finally {
       setLoading(false);
     }
@@ -100,7 +102,7 @@ export function IosRestorePurchasesButton({ className, label }: Props) {
         ) : (
           <RotateCcw size={16} />
         )}
-        {label ?? "Återställ köp"}
+        {label ?? t("checkout.restoreLabel")}
       </button>
       {message && (
         <p

@@ -5,6 +5,7 @@ import { randomBytes } from "crypto";
 import { hash } from "bcryptjs"; 
 import { redirect } from "next/navigation";
 import { sendPasswordResetEmail } from "@/lib/email"; // <--- IMPORTERA HÄR
+import { getLocale } from "@/i18n/server";
 
 // 1. BEGÄR ÅTERSTÄLLNING
 export async function requestPasswordReset(formData: FormData) {
@@ -16,7 +17,7 @@ export async function requestPasswordReset(formData: FormData) {
 
   // Av säkerhetsskäl säger vi alltid "Om adressen finns..." även om den inte gör det
   if (!user) {
-    return { success: true, message: "Om adressen finns har en länk skickats." };
+    return { success: true, message: getT()("api.reset.linkSentIfExists") };
   }
 
   const token = randomBytes(32).toString("hex");
@@ -36,13 +37,13 @@ export async function requestPasswordReset(formData: FormData) {
   console.log("Dev reset link:", resetLink);
 
   // --- HÄR ÄR FIXEN: SKICKA MAILET PÅ RIKTIGT ---
-  const emailResult = await sendPasswordResetEmail(user.email, resetLink);
+  const emailResult = await sendPasswordResetEmail(user.email, resetLink, getLocale());
 
   if (!emailResult.success) {
-      return { error: "Kunde inte skicka mailet. Försök igen senare." };
+      return { error: getT()("api.reset.sendFailed") };
   }
   
-  return { success: true, message: "Om adressen finns har en länk skickats." };
+  return { success: true, message: getT()("api.reset.linkSentIfExists") };
 }
 
 // 2. UTFÖR ÅTERSTÄLLNING (Oförändrad, men med för tydlighetens skull)
@@ -52,15 +53,15 @@ export async function resetPassword(formData: FormData) {
   const confirmPassword = formData.get("confirmPassword") as string;
 
   if (!token || !password || !confirmPassword) {
-    return { error: "Alla fält måste fyllas i." };
+    return { error: getT()("api.reset.allFieldsRequired") };
   }
 
   if (password !== confirmPassword) {
-    return { error: "Lösenorden matchar inte." };
+    return { error: getT()("api.reset.passwordsDoNotMatch") };
   }
 
   if (password.length < 6) {
-      return { error: "Lösenordet måste vara minst 6 tecken." };
+      return { error: getT()("api.reset.passwordTooShort") };
   }
 
   const user = await prisma.user.findFirst({
@@ -71,7 +72,7 @@ export async function resetPassword(formData: FormData) {
   });
 
   if (!user) {
-    return { error: "Ogiltig eller utgången länk. Begär en ny återställning." };
+    return { error: getT()("api.reset.invalidOrExpired") };
   }
 
   const hashedPassword = await hash(password, 12);

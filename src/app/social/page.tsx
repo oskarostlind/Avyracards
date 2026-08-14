@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Check, ArrowRight, Instagram, Music, Share2, Wallet, QrCode, Smartphone } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 export default function SocialLandingPage() {
+  const t = useT();
+
   return (
     <main className="min-h-screen bg-nordic-primary text-nordic-secondary selection:bg-sky-500/30 overflow-hidden">
       <div className="mx-auto flex max-w-6xl flex-col gap-24 px-4 pb-24 pt-20 md:px-8">
@@ -12,19 +17,18 @@ export default function SocialLandingPage() {
             
             <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/20 bg-sky-500/10 px-4 py-1.5 text-xs font-bold text-sky-300">
               <span className="h-2 w-2 rounded-full bg-sky-400 animate-pulse" />
-              Avyra Social
+              {t("socialPage.badge")}
             </div>
 
             <div className="space-y-6">
               <h1 className="text-5xl font-extrabold tracking-tight text-nordic-secondary sm:text-6xl lg:text-7xl leading-[1.05]">
-                Dela dina länkar. <br />
+                {t("socialPage.heroLine1")} <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-indigo-400">
-                  På ditt sätt.
+                  {t("socialPage.heroLine2")}
                 </span>
               </h1>
               <p className="max-w-lg text-lg text-nordic-highlight leading-relaxed font-light">
-                Samla Instagram, Snapchat, Spotify, länkar och kontaktuppgifter på ett ställe.
-                Dela med mobilen – eller med ett NFC-kort om du vill.
+                {t("socialPage.heroBody")}
               </p>
             </div>
 
@@ -34,21 +38,21 @@ export default function SocialLandingPage() {
                     href="/register"
                     className="rounded-2xl bg-sky-500 px-8 py-4 text-base font-bold text-slate-950 shadow-[0_0_20px_rgba(14,165,233,0.3)] transition hover:bg-sky-400 hover:scale-105 active:scale-95"
                 >
-                    Skapa gratis sida
+                    {t("socialPage.ctaCreate")}
                 </Link>
                 <Link
                     href="#how-it-works" 
                     className="inline-flex items-center rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 px-8 py-4 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-nordic-secondary transition"
                 >
-                    Se hur det funkar <ArrowRight className="ml-2 h-4 w-4" />
+                    {t("socialPage.ctaHow")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
                 </div>
 
                  {/* Trust Microcopy */}
                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-medium text-nordic-highlight">
-                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-sky-500" /> Gratis att börja</span>
-                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-sky-500" /> Ingen app krävs</span>
-                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-sky-500" /> NFC-kort är valfritt</span>
+                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-sky-500" /> {t("socialPage.trust1")}</span>
+                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-sky-500" /> {t("socialPage.trust2")}</span>
+                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-sky-500" /> {t("socialPage.trust3")}</span>
                 </div>
             </div>
           </div>
@@ -78,9 +82,9 @@ export default function SocialLandingPage() {
                        </div>
                    </div>
                    
-                   <h3 className="mt-3 text-xl font-bold text-nordic-secondary">Alex Music</h3>
+                   <h3 className="mt-3 text-xl font-bold text-nordic-secondary">{t("socialPage.mockName")}</h3>
                    <p className="text-sm text-nordic-highlight text-center mt-1 px-2 font-light">
-                      DJ & Producer from Stockholm. <br/> New mix out now! 👇
+                      {t("socialPage.mockBioLine1")} <br/> {t("socialPage.mockBioLine2")}
                    </p>
                    
                    {/* Social Icons Row - FIXAT HÄR */}
@@ -95,7 +99,7 @@ export default function SocialLandingPage() {
 
                  {/* Links Stack */}
                  <div className="px-5 mt-8 space-y-3 pb-8">
-                   {["Lyssna på Spotify", "Kommande Spelningar", "Boka mig", "Min Soundcloud"].map((label, i) => (
+                   {[t("socialPage.mockLink1"), t("socialPage.mockLink2"), t("socialPage.mockLink3"), t("socialPage.mockLink4")].map((label, i) => (
                      <div key={i} className="group w-full p-4 rounded-2xl bg-slate-900 border border-nordic-highlight/40 hover:border-sky-500/30 hover:shadow-[0_0_15px_rgba(14,165,233,0.1)] transition-all cursor-pointer flex items-center justify-between">
                         <span className="text-sm font-medium text-slate-200">{label}</span>
                      </div>
@@ -122,21 +126,21 @@ export default function SocialLandingPage() {
           <div className="max-w-3xl mx-auto text-center space-y-12">
             <div className="space-y-6">
                 <h2 className="text-3xl md:text-5xl font-bold text-nordic-secondary">
-                 Det borde vara enklare <br/> att dela vem du är.
+                 {t("socialPage.problemTitle1")} <br/> {t("socialPage.problemTitle2")}
                 </h2>
                 <div className="text-lg md:text-xl text-nordic-highlight space-y-2 leading-relaxed font-light">
-                    <p>Ibland vill du dela <span className="text-sky-400 font-medium">Instagram</span>.</p>
-                    <p>Ibland <span className="text-yellow-400 font-medium">Snapchat</span>.</p>
-                    <p>Ibland bara ditt nummer.</p>
-                    <p className="pt-4 italic text-nordic-highlight">Men istället letar du efter rätt app – eller förklarar hur man ska hitta dig.</p>
+                    <p>{t("socialPage.problemLine1Before")} <span className="text-sky-400 font-medium">{t("socialPage.problemLine1Word")}</span>.</p>
+                    <p>{t("socialPage.problemLine2Before")} <span className="text-yellow-400 font-medium">{t("socialPage.problemLine2Word")}</span>.</p>
+                    <p>{t("socialPage.problemLine3")}</p>
+                    <p className="pt-4 italic text-nordic-highlight">{t("socialPage.problemLine4")}</p>
                 </div>
             </div>
             
             {/* Lösning Highlight */}
             <div className="bg-slate-900/50 border border-nordic-highlight/40 rounded-2xl p-6 md:p-8 inline-block max-w-2xl mx-auto">
                  <p className="text-lg md:text-xl text-slate-200">
-                    <span className="font-bold text-nordic-secondary">AVYRA</span> samlar allt du vill dela på ett ställe. <br/>
-                    Redo i fickan – när du behöver det.
+                    <span className="font-bold text-nordic-secondary">AVYRA</span> {t("socialPage.solutionLine1")} <br/>
+                    {t("socialPage.solutionLine2")}
                  </p>
             </div>
           </div>
@@ -148,24 +152,24 @@ export default function SocialLandingPage() {
             <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
                 <div className="space-y-8">
                     <h2 className="text-4xl md:text-5xl font-bold text-nordic-secondary leading-tight">
-                        Dela det som <br/> är <span className="text-sky-400">du.</span>
+                        {t("socialPage.shareTitle1")} <br/> {t("socialPage.shareTitle2")} <span className="text-sky-400">{t("socialPage.shareTitleYou")}</span>
                     </h2>
                     
                     <ul className="space-y-4 text-lg text-nordic-highlight">
                         <li className="flex items-center gap-3">
-                            <div className="h-2 w-2 rounded-full bg-sky-400"/> Sociala medier
+                            <div className="h-2 w-2 rounded-full bg-sky-400"/> {t("socialPage.shareItem1")}
                         </li>
                         <li className="flex items-center gap-3">
-                            <div className="h-2 w-2 rounded-full bg-purple-400"/> Musik, länkar, favoriter
+                            <div className="h-2 w-2 rounded-full bg-purple-400"/> {t("socialPage.shareItem2")}
                         </li>
                         <li className="flex items-center gap-3">
-                            <div className="h-2 w-2 rounded-full bg-emerald-400"/> Kontaktuppgifter
+                            <div className="h-2 w-2 rounded-full bg-emerald-400"/> {t("socialPage.shareItem3")}
                         </li>
                     </ul>
 
                     <p className="text-nordic-highlight italic border-l-2 border-nordic-highlight/40 pl-4 py-1">
-                        Precis det du vill – inget mer. <br/>
-                        Du ändrar när som helst. Samma sida fungerar alltid.
+                        {t("socialPage.shareNote1")} <br/>
+                        {t("socialPage.shareNote2")}
                     </p>
                 </div>
 
@@ -176,8 +180,8 @@ export default function SocialLandingPage() {
                         <div className="flex items-center gap-3 mb-4">
                             <div className="h-10 w-10 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center">🎓</div>
                             <div>
-                                <div className="text-xs text-nordic-highlight font-bold uppercase">Student</div>
-                                <div className="text-nordic-secondary font-medium">Portfolio</div>
+                                <div className="text-xs text-nordic-highlight font-bold uppercase">{t("socialPage.exStudent")}</div>
+                                <div className="text-nordic-secondary font-medium">{t("socialPage.exStudentSub")}</div>
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -191,8 +195,8 @@ export default function SocialLandingPage() {
                          <div className="flex items-center gap-3 mb-4">
                             <div className="h-10 w-10 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center">✈️</div>
                             <div>
-                                <div className="text-xs text-nordic-highlight font-bold uppercase">Resenär</div>
-                                <div className="text-nordic-secondary font-medium">Mina guider</div>
+                                <div className="text-xs text-nordic-highlight font-bold uppercase">{t("socialPage.exTraveller")}</div>
+                                <div className="text-nordic-secondary font-medium">{t("socialPage.exTravellerSub")}</div>
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -205,8 +209,8 @@ export default function SocialLandingPage() {
                          <div className="flex items-center gap-3 mb-4">
                             <div className="h-10 w-10 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center">👋</div>
                             <div>
-                                <div className="text-xs text-nordic-highlight font-bold uppercase">Vän</div>
-                                <div className="text-nordic-secondary font-medium">Bara jag</div>
+                                <div className="text-xs text-nordic-highlight font-bold uppercase">{t("socialPage.exFriend")}</div>
+                                <div className="text-nordic-secondary font-medium">{t("socialPage.exFriendSub")}</div>
                             </div>
                         </div>
                         <div className="space-y-2">
@@ -222,24 +226,24 @@ export default function SocialLandingPage() {
         {/* FIX: Lade till scroll-mt-24 här */}
         <section id="how-it-works" className="py-12 scroll-mt-24">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">Välj det som passar dig.</h2>
+            <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">{t("socialPage.howTitle")}</h2>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
             {[
               {
-                title: "Med mobilen",
-                desc: "Visa din QR-kod direkt i appen eller dela din unika länk.",
+                title: t("socialPage.how1Title"),
+                desc: t("socialPage.how1Desc"),
                 icon: <QrCode size={32} className="text-sky-400" />
               },
               {
-                title: "Med Wallet",
-                desc: "Ha din profil redo i Apple Wallet eller Google Wallet. Alltid ett dubbelklick bort.",
+                title: t("socialPage.how2Title"),
+                desc: t("socialPage.how2Desc"),
                 icon: <Wallet size={32} className="text-purple-400" />
               },
               {
-                title: "Med NFC-kort",
-                desc: "Blippa kortet mot mobilen och dela direkt – utan appar.",
+                title: t("socialPage.how3Title"),
+                desc: t("socialPage.how3Desc"),
                 icon: <Smartphone size={32} className="text-emerald-400" />
               }
             ].map((item, i) => (
@@ -269,15 +273,14 @@ export default function SocialLandingPage() {
                 <div className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-xs font-bold text-slate-300">
                     NFC
                 </div>
-                <h2 className="text-3xl font-bold text-nordic-secondary">Vill du dela ännu snabbare?</h2>
+                <h2 className="text-3xl font-bold text-nordic-secondary">{t("socialPage.nfcTitle")}</h2>
                 <p className="text-lg text-nordic-highlight leading-relaxed font-light">
-                    Med ett AVYRA-kort kan du dela din profil med ett enkelt blipp.
-                    Perfekt när du möter nya människor – utan att leta efter rätt länk.
+                    {t("socialPage.nfcBody1")}
                     <br/><br/>
-                    Kortet är kopplat till din sida. Ändra innehållet när du vill.
+                    {t("socialPage.nfcBody2")}
                 </p>
                 <div className="pt-2">
-                    <span className="text-sm font-medium text-nordic-highlight">Finns som tillval inuti dashboarden.</span>
+                    <span className="text-sm font-medium text-nordic-highlight">{t("socialPage.nfcNote")}</span>
                 </div>
             </div>
         </section>
@@ -290,28 +293,28 @@ export default function SocialLandingPage() {
           
           <div className="relative z-10 max-w-2xl mx-auto space-y-8">
             <h2 className="text-3xl md:text-5xl font-bold text-nordic-secondary leading-tight">
-              Redo att göra det enklare?
+              {t("socialPage.finalTitle")}
             </h2>
             <p className="text-nordic-highlight text-lg">
-              Skapa din sida idag och börja dela på ditt sätt. <br/>
-              Med mobil – eller med NFC-kort om du vill.
+              {t("socialPage.finalBody1")} <br/>
+              {t("socialPage.finalBody2")}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 href="/register"
                 className="inline-flex h-14 items-center justify-center rounded-2xl bg-sky-500 px-10 text-base font-bold text-slate-950 shadow-xl shadow-sky-500/20 transition-all hover:bg-sky-400 hover:scale-105"
               >
-                Skapa gratis sida
+                {t("socialPage.ctaCreate")}
               </Link>
             </div>
-            <p className="text-xs text-nordic-highlight font-medium">Tar mindre än 2 minuter.</p>
+            <p className="text-xs text-nordic-highlight font-medium">{t("socialPage.finalNote")}</p>
             
             <div className="pt-12 flex justify-center gap-6 text-sm text-nordic-highlight border-t border-nordic-highlight/40/50 w-fit mx-auto mt-8 px-8">
-               <Link href="/social" className="hover:text-nordic-secondary transition-colors">För kreatörer</Link>
+               <Link href="/social" className="hover:text-nordic-secondary transition-colors">{t("socialPage.forCreators")}</Link>
                <span className="text-slate-700">•</span>
-               <Link href="/business" className="hover:text-nordic-secondary transition-colors">För företag</Link>
+               <Link href="/business" className="hover:text-nordic-secondary transition-colors">{t("socialPage.forCompanies")}</Link>
                <span className="text-slate-700">•</span>
-               <Link href="/login" className="hover:text-nordic-secondary transition-colors">Logga in</Link>
+               <Link href="/login" className="hover:text-nordic-secondary transition-colors">{t("socialPage.login")}</Link>
             </div>
           </div>
         </section>

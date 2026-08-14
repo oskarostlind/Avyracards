@@ -5,6 +5,8 @@ import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useIsApp } from "@/hooks/useIsApp";
+import { useT } from "@/i18n/client";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import {
@@ -23,33 +25,35 @@ type NavbarClientProps = {
   isAdmin?: boolean;
 };
 
+// `labelKey` slås upp mot i18n-trädet vid render — namnen får inte vara
+// hårdkodade här eftersom listan renderas i både mobil- och desktopnaven.
 const navLinks = [
   {
-    name: "Dashboard",
+    labelKey: "nav.dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
     exact: true,
   },
   {
-    name: "Teman",
+    labelKey: "nav.themes",
     href: "/profile/themes",
     icon: Palette,
     exact: false,
   },
   {
-    name: "Statistik",
+    labelKey: "nav.analytics",
     href: "/dashboard/analytics",
     icon: BarChart3,
     exact: false,
   },
   {
-    name: "Shop",
+    labelKey: "nav.shop",
     href: "/order",
     icon: ShoppingBag,
     exact: true,
   },
   {
-    name: "Inställningar",
+    labelKey: "nav.settings",
     href: "/profile/settings",
     icon: Settings,
     exact: false,
@@ -57,6 +61,7 @@ const navLinks = [
 ];
 
 export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isOpen, setIsOpen] = useState(false);
@@ -100,7 +105,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
             className={`flex cursor-pointer items-center justify-center rounded-full border border-nordic-highlight/20 bg-nordic-primary/50 px-3 py-2 text-nordic-secondary transition hover:bg-nordic-primary/80 ${
               isApp ? "ml-auto" : ""
             }`}
-            aria-label={isOpen ? "Stäng meny" : "Öppna meny"}
+            aria-label={isOpen ? t("nav.closeMenu") : t("nav.openMenu")}
           >
             {isOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -112,7 +117,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
             {isAuthenticated ? (
               <nav className="space-y-2">
                 <div className="px-2 pb-2 text-[10px] font-semibold uppercase tracking-wide text-nordic-highlight/60">
-                  Meny
+                  {t("nav.menu")}
                 </div>
 
                 {isAdmin && (
@@ -121,7 +126,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                     onClick={closeMenu}
                     className="flex items-center gap-3 rounded-xl bg-red-500/10 px-4 py-3 text-sm font-medium text-red-400 border border-red-500/20 hover:bg-red-500/20 mb-4"
                   >
-                    <ShieldCheck size={18} /> Admin Panel
+                    <ShieldCheck size={18} /> {t("nav.adminPanel")}
                   </Link>
                 )}
 
@@ -140,13 +145,14 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                       }`}
                     >
                       <Icon size={18} className={active ? "text-nordic-accent" : "text-nordic-highlight"} />
-                      {link.name}
+                      {t(link.labelKey)}
                     </Link>
                   );
                 })}
 
-                <div className="mt-4 border-t border-nordic-highlight/20 pt-4 px-2">
+                <div className="mt-4 flex items-center justify-between gap-3 border-t border-nordic-highlight/20 px-2 pt-4">
                   <SignOutButton />
+                  <LanguageSwitcher variant="compact" />
                 </div>
               </nav>
             ) : (
@@ -156,10 +162,13 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                   onClick={closeMenu}
                   className="block w-full text-center rounded-lg bg-nordic-accent text-nordic-primary font-bold px-3 py-3 text-sm"
                 >
-                  Kom igång
+                  {t("nav.getStarted")}
                 </Link>
                 <div className="flex justify-center">
                   <SignInButton />
+                </div>
+                <div className="flex justify-center pt-2">
+                  <LanguageSwitcher variant="compact" />
                 </div>
               </nav>
             )}
@@ -187,7 +196,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                       href="/social"
                       className={`rounded-full px-4 py-1.5 font-medium transition-all ${inSocial ? "bg-nordic-secondary text-nordic-primary shadow-sm" : "text-nordic-highlight hover:text-nordic-secondary"}`}
                     >
-                      Socialt
+                      {t("nav.social")}
                     </Link>
                   </li>
                   <li>
@@ -195,7 +204,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                       href="/business"
                       className={`rounded-full px-4 py-1.5 font-medium transition-all ${inBusiness ? "bg-nordic-secondary text-nordic-primary shadow-sm" : "text-nordic-highlight hover:text-nordic-secondary"}`}
                     >
-                      Business
+                      {t("nav.business")}
                     </Link>
                   </li>
                 </ul>
@@ -224,7 +233,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                           `}
                       >
                         <Icon size={14} className={active ? "text-nordic-accent" : "opacity-70 group-hover:opacity-100"} />
-                        {link.name}
+                        {t(link.labelKey)}
                       </Link>
                     );
                   })}
@@ -235,22 +244,24 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                     href="/admin"
                     className="flex items-center gap-1.5 rounded-full bg-red-500/10 px-3 py-2 text-xs font-bold text-red-400 border border-red-500/30 hover:bg-red-500/20 transition-colors mr-2"
                   >
-                    <ShieldCheck size={14} /> Admin
+                    <ShieldCheck size={14} /> {t("nav.admin")}
                   </Link>
                 )}
 
-                <div className="pl-2 border-l border-white/10">
+                <div className="flex items-center gap-3 border-l border-white/10 pl-2">
+                  <LanguageSwitcher variant="compact" />
                   <SignOutButton />
                 </div>
               </>
             ) : (
               <div className="flex items-center gap-4">
+                <LanguageSwitcher variant="compact" />
                 <SignInButton />
                 <Link
                   href="/get-started"
                   className="rounded-full bg-nordic-accent px-5 py-2 text-sm font-bold text-nordic-primary hover:bg-nordic-accent/90 transition-all shadow-lg shadow-nordic-accent/20"
                 >
-                  Kom igång
+                  {t("nav.getStarted")}
                 </Link>
               </div>
             )}

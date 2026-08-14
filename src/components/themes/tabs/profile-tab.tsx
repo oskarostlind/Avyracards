@@ -2,6 +2,7 @@
 
 import { type CustomThemeSettings, type Font, type FrameStyle } from "@/types/theme";
 import { PremiumBadge } from "@/components/themes/theme-controls";
+import { useT } from "@/i18n/client";
 
 interface ProfileTabProps {
   settings: CustomThemeSettings;
@@ -10,6 +11,7 @@ interface ProfileTabProps {
 }
 
 export function ProfileTab({ settings, updateSetting, isPremium }: ProfileTabProps) {
+  const t = useT();
   
   const getFontFamily = (font: string) => {
     switch(font) {
@@ -28,7 +30,7 @@ export function ProfileTab({ settings, updateSetting, isPremium }: ProfileTabPro
         
         {/* FONTER */}
         <div className="space-y-3">
-         <label className="text-xs font-bold text-nordic-highlight uppercase">Typsnitt</label>
+         <label className="text-xs font-bold text-nordic-highlight uppercase">{t("themes.profile.font")}</label>
          <div className="grid grid-cols-2 gap-2">
             {(["inter", "playfair", "roboto", "space", "oswald", "lora"] as Font[]).map((font) => (
                <button 
@@ -48,7 +50,7 @@ export function ProfileTab({ settings, updateSetting, isPremium }: ProfileTabPro
 
         {/* RAMAR */}
         <div className="space-y-3">
-         <label className="text-xs font-bold text-nordic-highlight uppercase">Profilbild Ram</label>
+         <label className="text-xs font-bold text-nordic-highlight uppercase">{t("themes.profile.frame")}</label>
          <div className="grid grid-cols-3 gap-2">
             {(['none', 'circle', 'rounded', 'ring', 'glow', 'hexagon', 'square', 'shadow'] as FrameStyle[]).map((frame) => {
                 return (
@@ -76,12 +78,12 @@ export function ProfileTab({ settings, updateSetting, isPremium }: ProfileTabPro
             <div className="flex items-center justify-between p-4 border border-amber-500/20 rounded-xl bg-amber-500/5 relative overflow-hidden">
                 <div className="space-y-1">
                     <span className="text-xs font-bold text-nordic-secondary flex items-center gap-2">
-                        Dölj AvyraCards Logga 
+                        {t("themes.profile.hideBranding")}
                         <div className="scale-75 origin-left">
                             <PremiumBadge isUnlocked={isPremium} />
                         </div>
                     </span>
-                    <p className="text-[10px] text-nordic-highlight">Ta bort &quot;Powered by&quot; i sidfoten.</p>
+                    <p className="text-[10px] text-nordic-highlight">{t("themes.profile.hideBrandingDesc")}</p>
                 </div>
                 <button 
                     onClick={() => {
@@ -98,9 +100,9 @@ export function ProfileTab({ settings, updateSetting, isPremium }: ProfileTabPro
             <div className="flex items-center justify-between p-4 border border-nordic-highlight/20 rounded-xl bg-slate-900/30">
                 <div className="space-y-1">
                     <span className="text-xs font-bold text-nordic-secondary flex items-center gap-2">
-                        Visa &quot;Spara Kontakt&quot;
+                        {t("themes.profile.showSaveContact")}
                     </span>
-                    <p className="text-[10px] text-nordic-highlight">Låter besökare ladda ner dina uppgifter.</p>
+                    <p className="text-[10px] text-nordic-highlight">{t("themes.profile.showSaveContactDesc")}</p>
                 </div>
                 <button 
                     onClick={() => updateSetting("showSaveContact", settings.showSaveContact === false ? true : false)}

@@ -2,6 +2,7 @@
 
 import { UploadCloud, Loader2, AlertCircle } from "lucide-react";
 import { useState, useRef } from "react";
+import { useT } from "@/i18n/client";
 
 interface ImageUploaderProps {
   onImageSelected: (url: string) => void;
@@ -10,6 +11,7 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ onImageSelected, isPremium, onPremiumClick }: ImageUploaderProps) {
+  const t = useT();
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -26,12 +28,12 @@ export function ImageUploader({ onImageSelected, isPremium, onPremiumClick }: Im
 
     // 2. Validering (Max 4MB för bakgrunder är rimligt)
     if (file.size > 4 * 1024 * 1024) {
-      setError("Bilden är för stor (Max 4MB)");
+      setError(t("themes.media.tooLarge"));
       return;
     }
 
     if (!file.type.startsWith("image/")) {
-      setError("Endast bildfiler tillåtna");
+      setError(t("themes.media.onlyImages"));
       return;
     }
 
@@ -56,7 +58,7 @@ export function ImageUploader({ onImageSelected, isPremium, onPremiumClick }: Im
 
     } catch (err) {
       console.error("Upload error:", err);
-      setError("Kunde inte ladda upp bilden. Försök igen.");
+      setError(t("themes.media.uploadFailed"));
     } finally {
       setIsUploading(false);
     }

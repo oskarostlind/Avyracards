@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Save, Bell } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 interface NotificationsFormProps {
   notifyOnProfileView: boolean;
@@ -50,6 +51,7 @@ export function NotificationsForm({
   notifyOnLinkClick: initialLinkClick,
   notifyOnContactSave: initialContactSave,
 }: NotificationsFormProps) {
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{ type: "success" | "error"; msg: string } | null>(null);
   const [notifyOnProfileView, setNotifyOnProfileView] = useState(initialProfileView);
@@ -71,14 +73,14 @@ export function NotificationsForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || "Kunde inte spara inställningar.");
+        throw new Error(data.error || t("settings.account.saveFailed"));
       }
-      setStatus({ type: "success", msg: "Inställningar sparade!" });
+      setStatus({ type: "success", msg: t("settings.account.saved") });
       setTimeout(() => setStatus(null), 3000);
     } catch (err) {
       setStatus({
         type: "error",
-        msg: err instanceof Error ? err.message : "Kunde inte spara inställningar.",
+        msg: err instanceof Error ? err.message : t("settings.account.saveFailed"),
       });
     } finally {
       setLoading(false);
@@ -101,29 +103,29 @@ export function NotificationsForm({
 
       <section className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6 space-y-6">
         <h3 className="text-lg font-medium text-slate-100 flex items-center gap-2">
-          <Bell size={18} className="text-nordic-highlight" /> Push-notiser
+          <Bell size={18} className="text-nordic-highlight" /> {t("settings.notifications.pushTitle")}
         </h3>
         <p className="text-sm text-nordic-highlight">
-          Välj vilka händelser på din profil som ska skicka en notis till appen.
+          {t("settings.notifications.pushIntro")}
         </p>
         <div className="space-y-4 pt-2">
           <ToggleItem
-            label="Profilvisning"
-            description="När någon öppnar din publika profil."
+            label={t("settings.notifications.profileView")}
+            description={t("settings.notifications.profileViewDesc")}
             checked={notifyOnProfileView}
             onChange={setNotifyOnProfileView}
           />
           <div className="h-px bg-slate-800" />
           <ToggleItem
-            label="Länkklick"
-            description="När någon klickar på en länk på din profil."
+            label={t("settings.notifications.linkClick")}
+            description={t("settings.notifications.linkClickDesc")}
             checked={notifyOnLinkClick}
             onChange={setNotifyOnLinkClick}
           />
           <div className="h-px bg-slate-800" />
           <ToggleItem
-            label="Sparade kontakt"
-            description="När någon sparar ditt visitkort (vCard) till kontakter."
+            label={t("settings.notifications.contactSave")}
+            description={t("settings.notifications.contactSaveDesc")}
             checked={notifyOnContactSave}
             onChange={setNotifyOnContactSave}
           />
@@ -139,7 +141,7 @@ export function NotificationsForm({
           ) : (
             <Save size={16} />
           )}
-          Spara
+          {t("common.save")}
         </button>
       </section>
     </div>

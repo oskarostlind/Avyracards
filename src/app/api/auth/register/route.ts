@@ -4,20 +4,21 @@ import { hashPassword } from "@/lib/password";
 import { randomUUID } from "crypto";
 import { sendVerificationEmail } from "@/lib/email";
 import { z } from "zod";
+import { getLocale } from "@/i18n/server";
 
 export const runtime = "nodejs";
 
 const RegisterSchema = z.object({
   username: z
     .string()
-    .min(3, "Användarnamnet måste vara minst 3 tecken.")
+    .min(3, getT()("api.register.usernameMin"))
     .max(30)
     .regex(
       /^[a-zA-Z0-9_]+$/,
-      "Användarnamnet får bara innehålla bokstäver, siffror och underscore."
+      getT()("api.register.usernamePattern")
     ),
   email: z.string().email("Ogiltig e-postadress."),
-  password: z.string().min(6, "Lösenordet måste vara minst 6 tecken."),
+  password: z.string().min(6, getT()("api.register.passwordMin")),
   profileMode: z.enum(["social", "business"]).optional(),
   
   // Tillåt dessa fält från frontend (används vid köp)
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: "Användarnamn eller e-post används redan." },
+        { error: getT()("api.register.alreadyTaken") },
         { status: 400 }
       );
     }
@@ -107,7 +108,7 @@ export async function POST(req: Request) {
     // 2. Skicka mail (ENDAST om INTE verifierad via köp)
     if (!isVerifiedByPurchase) {
       try {
-        await sendVerificationEmail(user.email, verificationToken);
+        await sendVerificationEmail(user.email, verificationToken, getLocale());
       } catch (emailError: any) {
         console.error("[register] Mail misslyckades, rullar tillbaka användare:", emailError.message);
         
@@ -116,7 +117,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json(
           { 
-            error: "Kunde inte skicka verifieringsmail. Kontrollera att din e-postadress är korrekt.",
+            error: getT()("api.register.mailFailed"),
             details: emailError.message 
           },
           { status: 500 }
@@ -131,7 +132,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[register] Kritisk krasch:", err);
     return NextResponse.json(
-      { error: "Något gick fel vid registrering. Försök igen senare." },
+      { error: getT()("api.register.failed") },
       { status: 500 }
     );
   }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Ban, Loader2 } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 /**
  * Vyn en användare får när hen öppnar en profil hen själv har blockerat.
@@ -9,6 +10,7 @@ import { Ban, Loader2 } from "lucide-react";
  * det räcker inte att spara flaggan i databasen.
  */
 export function BlockedProfileNotice({ username }: { username: string }) {
+  const t = useT();
   const [loading, setLoading] = useState(false);
 
   const unblock = async () => {
@@ -27,9 +29,9 @@ export function BlockedProfileNotice({ username }: { username: string }) {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white/5 text-slate-400">
           <Ban size={26} />
         </div>
-        <h1 className="text-xl font-semibold">Du har blockerat @{username}</h1>
+        <h1 className="text-xl font-semibold">{t("moderation.blockedTitle", { username })}</h1>
         <p className="text-sm text-slate-400">
-          Profilen visas inte för dig så länge blockeringen är aktiv.
+          {t("moderation.blockedBody")}
         </p>
         <button
           type="button"
@@ -38,13 +40,13 @@ export function BlockedProfileNotice({ username }: { username: string }) {
           className="w-full rounded-xl border border-white/15 py-3 text-sm font-medium hover:bg-white/5 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          Häv blockeringen
+          {t("moderation.unblockButton")}
         </button>
         <a
           href="/"
           className="block text-xs text-slate-500 underline underline-offset-2 hover:text-slate-300"
         >
-          Till startsidan
+          {t("moderation.toHome")}
         </a>
       </div>
     </main>

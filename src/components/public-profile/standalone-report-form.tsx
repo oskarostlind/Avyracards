@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 import { Check, Loader2 } from "lucide-react";
-import { REPORT_REASON_KEYS, REPORT_REASON_LABELS } from "@/lib/moderation-shared";
+import { REPORT_REASON_KEYS, reportReasonKey, MODERATION_CONTACT_EMAIL } from "@/lib/moderation-shared";
+import { useT } from "@/i18n/client";
 
 export function StandaloneReportForm({
   defaultUsername = "",
 }: {
   defaultUsername?: string;
 }) {
+  const t = useT();
   const [username, setUsername] = useState(defaultUsername);
   const [reason, setReason] = useState<string>(REPORT_REASON_KEYS[0]);
   const [details, setDetails] = useState("");
@@ -41,9 +43,9 @@ export function StandaloneReportForm({
         <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-400">
           <Check size={22} />
         </div>
-        <h2 className="text-lg font-semibold">Rapporten är mottagen</h2>
+        <h2 className="text-lg font-semibold">{t("moderation.standaloneDoneTitle")}</h2>
         <p className="mt-1 text-sm text-slate-300">
-          Vi granskar den inom 24 timmar.
+          {t("moderation.standaloneDoneBody")}
         </p>
       </div>
     );
@@ -53,19 +55,19 @@ export function StandaloneReportForm({
     <form onSubmit={submit} className="mt-8 space-y-4">
       <label className="block space-y-1.5">
         <span className="text-xs font-medium text-slate-400">
-          Användarnamn på profilen
+          {t("moderation.usernameLabel")}
         </span>
         <input
           required
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="@anvandarnamn"
+          placeholder={t("moderation.usernamePlaceholder")}
           className="w-full rounded-xl border border-white/10 bg-slate-950 px-3 py-2.5 text-sm"
         />
       </label>
 
       <label className="block space-y-1.5">
-        <span className="text-xs font-medium text-slate-400">Anledning</span>
+        <span className="text-xs font-medium text-slate-400">{t("moderation.reason")}</span>
         <select
           value={reason}
           onChange={(e) => setReason(e.target.value)}
@@ -73,7 +75,7 @@ export function StandaloneReportForm({
         >
           {REPORT_REASON_KEYS.map((key) => (
             <option key={key} value={key}>
-              {REPORT_REASON_LABELS[key]}
+              {t(reportReasonKey(key))}
             </option>
           ))}
         </select>
@@ -81,7 +83,7 @@ export function StandaloneReportForm({
 
       <label className="block space-y-1.5">
         <span className="text-xs font-medium text-slate-400">
-          Beskrivning (valfritt)
+          {t("moderation.detailsLabel")}
         </span>
         <textarea
           value={details}
@@ -94,7 +96,7 @@ export function StandaloneReportForm({
 
       <label className="block space-y-1.5">
         <span className="text-xs font-medium text-slate-400">
-          Din e-post (valfritt)
+          {t("moderation.emailLabelShort")}
         </span>
         <input
           type="email"
@@ -106,7 +108,7 @@ export function StandaloneReportForm({
 
       {state === "error" && (
         <p className="text-xs text-red-400">
-          Kunde inte skicka rapporten. Mejla kontakt@avyracards.se i stället.
+          {t("moderation.sendFailedPlain", { email: MODERATION_CONTACT_EMAIL })}
         </p>
       )}
 
@@ -116,7 +118,7 @@ export function StandaloneReportForm({
         className="w-full rounded-xl bg-red-600 py-3 text-sm font-bold text-white hover:bg-red-500 disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {state === "sending" && <Loader2 size={16} className="animate-spin" />}
-        Skicka rapport
+        {t("moderation.submit")}
       </button>
     </form>
   );

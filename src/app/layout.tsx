@@ -8,6 +8,9 @@ import SessionProviderWrapper from "@/components/providers/session-provider";
 import CookieBanner from "@/components/cookie-banner";
 import { SplashScreenManager } from "@/components/splash-screen-manager";
 import { IosNativeDebugPanel } from "@/components/debug/ios-native-debug-panel";
+import { LocaleProvider } from "@/i18n/client";
+import { getLocale } from "@/i18n/server";
+import { defaultLocale, getMessages } from "@/i18n";
 
 const manrope = Manrope({
   subsets: ["latin"],
@@ -39,20 +42,33 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return (
-    <html lang="sv">
-      <body className={`${manrope.className} min-h-screen bg-black text-white antialiased`}>
-        <SessionProviderWrapper>
-          <SplashScreenManager />
-          <div className="flex min-h-screen flex-col">
-            <Navbar />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </div>
+  // Språket läses ur cookien (se src/i18n/config.ts för varför det inte ligger
+  // i URL:en). Bara det aktiva språkets meddelanden — plus svenska som
+  // fallback — skickas ned i RSC-payloaden, inte hela bunten.
+  const locale = getLocale();
+  const messages = getMessages(locale);
+  const fallbackMessages = getMessages(defaultLocale);
 
-          <CookieBanner />
-          <IosNativeDebugPanel />
-        </SessionProviderWrapper>
+  return (
+    <html lang={locale}>
+      <body className={`${manrope.className} min-h-screen bg-black text-white antialiased`}>
+        <LocaleProvider
+          locale={locale}
+          messages={messages}
+          fallbackMessages={fallbackMessages}
+        >
+          <SessionProviderWrapper>
+            <SplashScreenManager />
+            <div className="flex min-h-screen flex-col">
+              <Navbar />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </div>
+
+            <CookieBanner />
+            <IosNativeDebugPanel />
+          </SessionProviderWrapper>
+        </LocaleProvider>
       </body>
     </html>
   );

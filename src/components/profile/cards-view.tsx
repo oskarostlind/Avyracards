@@ -1,5 +1,7 @@
 import { CreditCard, Plus } from "lucide-react";
 import Link from "next/link";
+import { getI18n } from "@/i18n/server";
+import { localeTags } from "@/i18n";
 
 interface Card {
   id: string;
@@ -9,22 +11,24 @@ interface Card {
 }
 
 export function CardsView({ cards }: { cards: Card[] }) {
+  const { locale, t } = getI18n();
+
   return (
     <div className="max-w-2xl space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium text-slate-100">Mina NFC Kort</h3>
+        <h3 className="text-lg font-medium text-slate-100">{t("settings.cards.title")}</h3>
         <Link
           href="/activate"
           className="flex items-center gap-2 rounded-xl bg-slate-800 px-3 py-1.5 text-xs font-medium text-nordic-secondary hover:bg-slate-700"
         >
-          <Plus size={14} /> Aktivera nytt kort
+          <Plus size={14} /> {t("settings.cards.activateNew")}
         </Link>
       </div>
 
       {cards.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-nordic-highlight/40 p-8 text-center bg-slate-900/20">
           <CreditCard className="mx-auto h-10 w-10 text-slate-600 mb-3" />
-          <p className="text-nordic-highlight text-sm">Inga kort kopplade ännu.</p>
+          <p className="text-nordic-highlight text-sm">{t("settings.cards.empty")}</p>
         </div>
       ) : (
         <div className="grid gap-3">
@@ -42,7 +46,9 @@ export function CardsView({ cards }: { cards: Card[] }) {
                     {card.cardCode}
                   </div>
                   <div className="text-xs text-nordic-highlight">
-                    Tillagd {new Date(card.createdAt).toLocaleDateString()}
+                    {t("settings.cards.addedOn", {
+                      date: new Date(card.createdAt).toLocaleDateString(localeTags[locale]),
+                    })}
                   </div>
                 </div>
               </div>

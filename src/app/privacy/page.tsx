@@ -1,93 +1,62 @@
+import { getT } from "@/i18n/server";
+import { MODERATION_CONTACT_EMAIL } from "@/lib/moderation-shared";
+
+/**
+ * Se kommentaren i terms/page.tsx — samma upplägg. Sektion 5 har en
+ * kontaktlänk mitt i texten och renderas därför separat.
+ */
+const SECTIONS_BEFORE_CONTACT = [1, 2, 3, 4] as const;
+const SECTIONS_AFTER_CONTACT = [6, 7] as const;
+
 export default function PrivacyPage() {
+  const t = getT();
+  const prevailing = t("legal.prevailingNotice");
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-16 text-slate-100">
-      <h1 className="text-3xl font-semibold">Integritetspolicy</h1>
-      <p className="mt-2 text-slate-300">
-        Denna integritetspolicy beskriver hur AvyraCards samlar in, använder och
-        skyddar personlig information i enlighet med GDPR.
-      </p>
+      <h1 className="text-3xl font-semibold">{t("legal.privacy.title")}</h1>
+      <p className="mt-2 text-slate-300">{t("legal.privacy.intro")}</p>
+
+      {prevailing && (
+        <p className="mt-4 rounded-xl border border-white/10 bg-white/5 p-3 text-xs text-slate-400">
+          {prevailing}
+        </p>
+      )}
 
       <div className="mt-8 space-y-8 text-slate-300">
-        <section>
-          <h2 className="text-xl font-semibold text-slate-100">1. Data vi samlar in</h2>
-          <p className="mt-2">
-            Vi samlar in den information du själv tillhandahåller, såsom namn,
-            e-postadress, profilinformation, länkar och inställningar. Vi kan
-            också samla teknisk data som IP-adress, enhetstyp och
-            användningsstatistik.
-          </p>
-        </section>
+        {SECTIONS_BEFORE_CONTACT.map((n) => (
+          <section key={n}>
+            <h2 className="text-xl font-semibold text-slate-100">
+              {t(`legal.privacy.s${n}Title`)}
+            </h2>
+            <p className="mt-2">{t(`legal.privacy.s${n}Body`)}</p>
+          </section>
+        ))}
 
         <section>
           <h2 className="text-xl font-semibold text-slate-100">
-            2. Hur vi använder informationen
+            {t("legal.privacy.s5Title")}
           </h2>
           <p className="mt-2">
-            Informationen används för att tillhandahålla och förbättra tjänsten,
-            anpassa din profil, analysera användning och erbjuda support. Vi
-            säljer aldrig din information till tredje part.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-semibold text-slate-100">
-            3. Lagring & säkerhet
-          </h2>
-          <p className="mt-2">
-            Data lagras säkert i EU hos våra molnleverantörer. Vi vidtar tekniska
-            och organisatoriska åtgärder för att skydda din information mot
-            obehörig åtkomst eller förlust.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-semibold text-slate-100">
-            4. Delning av information
-          </h2>
-          <p className="mt-2">
-            Vi delar endast data med betrodda partners som krävs för att driva
-            tjänsten, t.ex. molnleverantörer, betalningslösningar och e-posttjänster.
-            Vi delar aldrig information för marknadsföringssyften utan ditt samtycke.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-semibold text-slate-100">
-            5. Dina rättigheter
-          </h2>
-          <p className="mt-2">
-            Du har rätt att begära utdrag, rättelse, radering och begränsning av
-            dina personuppgifter. Kontakta oss via{" "}
+            {t("legal.privacy.s5BodyBefore")}{" "}
             <a
-              href="mailto:kontakt@avyracards.se"
-              className="text-emerald-300 hover:text-emerald-200"
+              href={`mailto:${MODERATION_CONTACT_EMAIL}`}
+              className="underline hover:text-white"
             >
-              kontakt@avyracards.se
+              {MODERATION_CONTACT_EMAIL}
             </a>{" "}
-            för att utöva dina rättigheter.
+            {t("legal.privacy.s5BodyAfter")}
           </p>
         </section>
 
-        <section>
-          <h2 className="text-xl font-semibold text-slate-100">
-            6. Cookies
-          </h2>
-          <p className="mt-2">
-            Vi använder cookies för att förbättra användarupplevelsen, mäta
-            trafik och hantera inloggningar. Du kan välja att blockera cookies i
-            din webbläsare, men vissa funktioner kan då sluta fungera.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="text-xl font-semibold text-slate-100">
-            7. A,ndringar i policyn
-          </h2>
-          <p className="mt-2">
-            Vi kan uppdatera denna policy vid behov. Den senaste versionen finns
-            alltid på denna sida.
-          </p>
-        </section>
+        {SECTIONS_AFTER_CONTACT.map((n) => (
+          <section key={n}>
+            <h2 className="text-xl font-semibold text-slate-100">
+              {t(`legal.privacy.s${n}Title`)}
+            </h2>
+            <p className="mt-2">{t(`legal.privacy.s${n}Body`)}</p>
+          </section>
+        ))}
       </div>
     </main>
   );

@@ -9,9 +9,10 @@ import {
   CreditCard, 
   Link as LinkIcon 
 } from "lucide-react";
+import { getT } from "@/i18n/server";
 
 export const metadata = {
-  title: "Admin | Användare",
+  title: "Admin | Users",
 };
 
 export default async function AdminUsersPage({
@@ -19,6 +20,7 @@ export default async function AdminUsersPage({
 }: {
   searchParams: { q?: string; page?: string };
 }) {
+  const t = getT();
   const session = await auth();
   if (session?.user?.role !== "ADMIN") redirect("/dashboard");
 
@@ -39,10 +41,10 @@ export default async function AdminUsersPage({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-100 flex items-center gap-3">
-              <Users className="text-blue-500" /> Användare
+              <Users className="text-blue-500" /> {t("admin.users.title")}
             </h1>
             <p className="text-nordic-highlight">
-              Totalt {totalCount} användare i databasen.
+              {t("admin.users.total", { count: totalCount })}
             </p>
           </div>
           
@@ -51,7 +53,7 @@ export default async function AdminUsersPage({
             <input 
               name="q"
               defaultValue={query}
-              placeholder="Sök namn/email..."
+              placeholder={t("admin.users.searchPlaceholder")}
               className="bg-slate-900 border border-nordic-highlight/40 rounded-lg px-4 py-2 text-sm text-slate-200 focus:outline-none focus:border-blue-500"
             />
             <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-slate-300 p-2 rounded-lg">
@@ -66,10 +68,10 @@ export default async function AdminUsersPage({
             <table className="w-full text-left text-sm">
               <thead className="bg-slate-900/50 text-nordic-highlight">
                 <tr>
-                  <th className="px-6 py-3 font-medium">Användare</th>
-                  <th className="px-6 py-3 font-medium">Email</th>
-                  <th className="px-6 py-3 font-medium">Status</th>
-                  <th className="px-6 py-3 font-medium text-center">Stats</th>
+                  <th className="px-6 py-3 font-medium">{t("admin.users.user")}</th>
+                  <th className="px-6 py-3 font-medium">{t("admin.users.email")}</th>
+                  <th className="px-6 py-3 font-medium">{t("admin.status")}</th>
+                  <th className="px-6 py-3 font-medium text-center">{t("admin.users.stats")}</th>
                   <th className="px-6 py-3 font-medium text-right">Reg. Datum</th>
                 </tr>
               </thead>
@@ -79,7 +81,7 @@ export default async function AdminUsersPage({
                     <td className="px-6 py-4">
                       <Link href={`/admin/users/${user.id}`} className="block">
                         <div className="font-medium text-slate-200 group-hover:text-blue-400 group-hover:underline">
-                          {user.name || "Namnlös"}
+                          {user.name || t("admin.users.nameless")}
                         </div>
                         <div className="text-xs text-nordic-highlight font-mono">
                           @{user.username}
@@ -106,7 +108,7 @@ export default async function AdminUsersPage({
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center gap-4 text-xs text-nordic-highlight">
-                        <span className="flex items-center gap-1" title="Antal Länkar">
+                        <span className="flex items-center gap-1" title={t("admin.users.linkCount")}>
                           <LinkIcon size={12} /> {user._count.links}
                         </span>
                         <span className="flex items-center gap-1" title="Kopplade Kort">
@@ -131,13 +133,13 @@ export default async function AdminUsersPage({
                 href={`/admin/users?page=${page - 1}&q=${query}`}
                 className={`px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 ${page <= 1 ? "pointer-events-none opacity-50" : ""}`}
               >
-                Föregående
+                {t("admin.users.previous")}
               </Link>
               <Link 
                 href={`/admin/users?page=${page + 1}&q=${query}`}
                 className={`px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 ${page >= totalPages ? "pointer-events-none opacity-50" : ""}`}
               >
-                Nästa
+                {t("admin.users.next")}
               </Link>
             </div>
           </div>

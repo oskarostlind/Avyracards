@@ -1,41 +1,36 @@
+import { getT } from "@/i18n/server";
+import { MODERATION_CONTACT_EMAIL } from "@/lib/moderation-shared";
+
 export default function ContactPage() {
+  const t = getT();
+
   return (
     <main className="mx-auto max-w-3xl px-4 py-16 text-slate-100">
-      <h1 className="text-3xl font-semibold">Kontakta oss</h1>
-      <p className="mt-2 text-slate-300">
-        Har du frågor om AvyraCards, beställningar eller partnerskap? Hör av dig
-        så återkommer vi så snabbt som möjligt.
-      </p>
+      <h1 className="text-3xl font-semibold">{t("contact.title")}</h1>
+      <p className="mt-2 text-slate-300">{t("contact.intro")}</p>
 
       <div className="mt-8 space-y-6 rounded-2xl border border-nordic-highlight/40 bg-slate-900/40 p-6">
         <div>
-          <h2 className="text-xl font-medium">E-post</h2>
-          <p className="mt-1 text-slate-300">
-            Vi svarar vanligtvis inom 24-48 timmar.
-          </p>
+          <h2 className="text-xl font-medium">{t("contact.emailTitle")}</h2>
+          <p className="mt-1 text-slate-300">{t("contact.emailBody")}</p>
           <p className="mt-2">
             <a
-              href="mailto:kontakt@avyracards.se"
+              href={`mailto:${MODERATION_CONTACT_EMAIL}`}
               className="text-emerald-300 hover:text-emerald-200"
             >
-              kontakt@avyracards.se
+              {MODERATION_CONTACT_EMAIL}
             </a>
           </p>
         </div>
 
         <div>
-          <h2 className="text-xl font-medium">Support</h2>
-          <p className="mt-1 text-slate-300">
-            Frågor om ditt konto, NFC-kort eller profil? Vi hjälper dig gärna!
-          </p>
+          <h2 className="text-xl font-medium">{t("contact.supportTitle")}</h2>
+          <p className="mt-1 text-slate-300">{t("contact.supportBody")}</p>
         </div>
 
         <div>
-          <h2 className="text-xl font-medium">Företagsinformation</h2>
-          <p className="mt-1 text-slate-300">
-            AvyraCards drivs och utvecklas i Sverige. För affärsförfrågningar,
-            företagslösningar eller samarbeten - kontakta oss via mail.
-          </p>
+          <h2 className="text-xl font-medium">{t("contact.companyTitle")}</h2>
+          <p className="mt-1 text-slate-300">{t("contact.companyBody")}</p>
         </div>
       </div>
     </main>

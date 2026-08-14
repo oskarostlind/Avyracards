@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import { Check, ArrowRight, Save, Mail, Phone, BarChart3, Smartphone, QrCode, Wallet, Layers, Lock, ShieldCheck } from "lucide-react";
+import { useT } from "@/i18n/client";
 
 export default function BusinessLandingPage() {
+  const t = useT();
+
   return (
     <main className="min-h-screen bg-nordic-primary text-nordic-secondary selection:bg-emerald-500/30 overflow-hidden">
       <div className="mx-auto flex max-w-6xl flex-col gap-24 px-4 pb-24 pt-20 md:px-8">
@@ -13,19 +18,18 @@ export default function BusinessLandingPage() {
           <div className="space-y-8 order-2 lg:order-1 animate-in fade-in slide-in-from-bottom-8 duration-700">
             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-950/30 px-4 py-1.5 text-xs font-semibold text-emerald-200">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Avyra Business
+              {t("businessPage.badge")}
             </div>
 
             <div className="space-y-6">
               <h1 className="text-4xl font-bold tracking-tight text-nordic-secondary sm:text-5xl lg:text-6xl leading-[1.05]">
-                Ett visitkort som <br />
+                {t("businessPage.heroLine1")} <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-400">
-                  faktiskt fungerar.
+                  {t("businessPage.heroLine2")}
                 </span>
               </h1>
               <p className="max-w-xl text-lg text-nordic-highlight leading-relaxed font-light">
-                Avyra Business är ditt digitala visitkort – alltid uppdaterat, alltid professionellt och redo att delas på sekunder.
-                Perfekt för möten, kundkontakter och nätverkande.
+                {t("businessPage.heroBody")}
               </p>
             </div>
 
@@ -35,21 +39,21 @@ export default function BusinessLandingPage() {
                         href="/register?mode=business"
                         className="inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-8 py-4 text-base font-bold text-nordic-secondary shadow-lg shadow-emerald-900/20 transition hover:bg-emerald-500 hover:scale-105 active:scale-95"
                     >
-                        Skapa business-profil gratis
+                        {t("businessPage.ctaCreate")}
                     </Link>
                     <Link
                         href="#how-it-works"
                         className="inline-flex items-center justify-center rounded-2xl border border-nordic-highlight/40 bg-transparent px-8 py-4 text-base font-medium text-slate-300 hover:bg-slate-800 hover:text-nordic-secondary transition"
                     >
-                        Se hur det funkar <ArrowRight className="ml-2 h-4 w-4" />
+                        {t("businessPage.ctaHow")} <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                  </div>
 
                  {/* Trust Microcopy */}
                  <div className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-medium text-nordic-highlight">
-                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Gratis att börja</span>
-                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> Anpassat för proffs</span>
-                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> NFC-kort är valfritt</span>
+                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> {t("businessPage.trust1")}</span>
+                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> {t("businessPage.trust2")}</span>
+                    <span className="flex items-center gap-1.5"><Check className="h-3.5 w-3.5 text-emerald-500" /> {t("businessPage.trust3")}</span>
                 </div>
             </div>
           </div>
@@ -105,21 +109,21 @@ export default function BusinessLandingPage() {
                      <div className="p-4 rounded-xl bg-slate-900/50 border border-nordic-highlight/40 flex items-center justify-between cursor-pointer hover:border-emerald-500/30 transition-colors group">
                        <div className="flex items-center gap-4">
                          <div className="h-10 w-10 rounded-lg bg-[#0077b5]/10 text-[#0077b5] flex items-center justify-center font-bold">in</div>
-                         <div className="text-sm font-medium text-slate-200">Connect på LinkedIn</div>
+                         <div className="text-sm font-medium text-slate-200">{t("businessPage.mockLinkedin")}</div>
                        </div>
                        <ArrowRight size={16} className="text-slate-600 group-hover:text-emerald-400 transition-colors"/>
                      </div>
                      <div className="p-4 rounded-xl bg-slate-900/50 border border-nordic-highlight/40 flex items-center justify-between cursor-pointer hover:border-emerald-500/30 transition-colors group">
                        <div className="flex items-center gap-4">
                          <div className="h-10 w-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">📅</div>
-                         <div className="text-sm font-medium text-slate-200">Boka ett möte</div>
+                         <div className="text-sm font-medium text-slate-200">{t("businessPage.mockBooking")}</div>
                        </div>
                        <ArrowRight size={16} className="text-slate-600 group-hover:text-emerald-400 transition-colors"/>
                      </div>
                      <div className="p-4 rounded-xl bg-slate-900/50 border border-nordic-highlight/40 flex items-center justify-between cursor-pointer hover:border-emerald-500/30 transition-colors group">
                        <div className="flex items-center gap-4">
                          <div className="h-10 w-10 rounded-lg bg-slate-800 text-nordic-highlight flex items-center justify-center font-bold">🌐</div>
-                         <div className="text-sm font-medium text-slate-200">Besök hemsida</div>
+                         <div className="text-sm font-medium text-slate-200">{t("businessPage.mockWebsite")}</div>
                        </div>
                        <ArrowRight size={16} className="text-slate-600 group-hover:text-emerald-400 transition-colors"/>
                      </div>
@@ -136,21 +140,21 @@ export default function BusinessLandingPage() {
           <div className="max-w-3xl mx-auto text-center space-y-12">
             <div className="space-y-6">
                 <h2 className="text-3xl md:text-5xl font-bold text-nordic-secondary">
-                 Visitkort räcker inte längre.
+                 {t("businessPage.problemTitle")}
                 </h2>
                 <div className="text-lg md:text-xl text-nordic-highlight space-y-2 leading-relaxed font-light">
-                    <p>Papperskort blir <span className="text-slate-300">gamla</span>.</p>
-                    <p>PDF:er <span className="text-slate-300">tappas bort</span>.</p>
-                    <p>Profiler är utspridda.</p>
-                    <p className="pt-4 italic text-nordic-highlight">Och när du väl delar – är det inte säkert att det leder någonstans.</p>
+                    <p>{t("businessPage.problemLine1Before")} <span className="text-slate-300">{t("businessPage.problemLine1Word")}</span>.</p>
+                    <p>{t("businessPage.problemLine2Before")} <span className="text-slate-300">{t("businessPage.problemLine2Word")}</span>.</p>
+                    <p>{t("businessPage.problemLine3")}</p>
+                    <p className="pt-4 italic text-nordic-highlight">{t("businessPage.problemLine4")}</p>
                 </div>
             </div>
             
             {/* Lösning Highlight */}
             <div className="bg-emerald-950/30 border border-emerald-900/50 rounded-2xl p-6 md:p-8 inline-block max-w-2xl mx-auto">
                  <p className="text-lg md:text-xl text-emerald-100">
-                    <span className="font-bold text-emerald-400">AVYRA</span> samlar allt som är relevant i ett professionellt sammanhang. <br/>
-                    Alltid uppdaterat. Alltid rätt.
+                    <span className="font-bold text-emerald-400">AVYRA</span> {t("businessPage.solutionLine1")} <br/>
+                    {t("businessPage.solutionLine2")}
                  </p>
             </div>
           </div>
@@ -162,30 +166,30 @@ export default function BusinessLandingPage() {
             <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
                 <div className="space-y-8">
                     <h2 className="text-4xl md:text-5xl font-bold text-nordic-secondary leading-tight">
-                        Allt som hör jobbet till. <br/>
-                        <span className="text-emerald-400">På ett ställe.</span>
+                        {t("businessPage.featuresTitle1")} <br/>
+                        <span className="text-emerald-400">{t("businessPage.featuresTitle2")}</span>
                     </h2>
                     
                     <ul className="space-y-6 text-lg text-nordic-highlight">
                         <li className="flex items-start gap-4">
                             <div className="h-6 w-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mt-1"><Save size={14}/></div>
                             <div>
-                                <span className="text-nordic-secondary block font-medium">Dela kontaktuppgifter direkt</span>
-                                <span className="text-sm">En knapp sparar dig i kundens telefonbok.</span>
+                                <span className="text-nordic-secondary block font-medium">{t("businessPage.feature1")}</span>
+                                <span className="text-sm">{t("businessPage.feature1Desc")}</span>
                             </div>
                         </li>
                         <li className="flex items-start gap-4">
                             <div className="h-6 w-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mt-1"><Layers size={14}/></div>
                              <div>
-                                <span className="text-nordic-secondary block font-medium">Visa professionell info</span>
-                                <span className="text-sm">LinkedIn, hemsida, och företagsinformation.</span>
+                                <span className="text-nordic-secondary block font-medium">{t("businessPage.feature2")}</span>
+                                <span className="text-sm">{t("businessPage.feature2Desc")}</span>
                             </div>
                         </li>
                         <li className="flex items-start gap-4">
                             <div className="h-6 w-6 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mt-1"><ShieldCheck size={14}/></div>
                              <div>
-                                <span className="text-nordic-secondary block font-medium">Alltid uppdaterat</span>
-                                <span className="text-sm">Bytt titel? Ändra i profilen – länken är densamma.</span>
+                                <span className="text-nordic-secondary block font-medium">{t("businessPage.feature3")}</span>
+                                <span className="text-sm">{t("businessPage.feature3Desc")}</span>
                             </div>
                         </li>
                     </ul>
@@ -196,7 +200,7 @@ export default function BusinessLandingPage() {
                     <div className="absolute w-72 bg-nordic-primary border border-nordic-highlight/40 rounded-2xl shadow-2xl p-6 rotate-[-2deg] hover:rotate-0 transition-transform duration-500 z-10">
                         <div className="flex justify-between items-center mb-6">
                              <div className="h-12 w-12 bg-slate-800 rounded-full flex items-center justify-center text-2xl">💼</div>
-                             <div className="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full uppercase">Verified</div>
+                             <div className="bg-emerald-500/10 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full uppercase">{t("businessPage.verified")}</div>
                         </div>
                         <div className="space-y-3">
                             <div className="h-4 w-3/4 bg-slate-800 rounded animate-pulse"></div>
@@ -222,24 +226,24 @@ export default function BusinessLandingPage() {
         {/* FIX: Lade till scroll-mt-24 här */}
         <section id="how-it-works" className="py-12 scroll-mt-24">
           <div className="text-center mb-16 space-y-4">
-            <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">Redo när mötet händer.</h2>
+            <h2 className="text-3xl font-bold text-nordic-secondary sm:text-4xl">{t("businessPage.howTitle")}</h2>
           </div>
 
           <div className="grid gap-8 md:grid-cols-3">
             {[
               {
-                title: "NFC-kort",
-                desc: "Blippa kortet mot mobilen och dela direkt. Professionellt och minnesvärt.",
+                title: t("businessPage.how1Title"),
+                desc: t("businessPage.how1Desc"),
                 icon: <Smartphone size={32} className="text-emerald-400" />
               },
               {
-                title: "QR-kod",
-                desc: "Perfekt på skärm, i slutet av din presentation eller på mässa.",
+                title: t("businessPage.how2Title"),
+                desc: t("businessPage.how2Desc"),
                 icon: <QrCode size={32} className="text-slate-300" />
               },
               {
-                title: "Wallet",
-                desc: "Ha ditt visitkort redo i Apple Wallet eller Google Wallet.",
+                title: t("businessPage.how3Title"),
+                desc: t("businessPage.how3Desc"),
                 icon: <Wallet size={32} className="text-indigo-400" />
               }
             ].map((item, i) => (
@@ -275,23 +279,22 @@ export default function BusinessLandingPage() {
             <div className="space-y-8 order-1 md:order-2">
                 <div>
                     <div className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-xs font-bold text-slate-300 mb-4">
-                        HÅLLBARHET & DESIGN
+                        {t("businessPage.cardBadge")}
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-nordic-secondary mb-4">Ett kort som representerar dig.</h2>
+                    <h2 className="text-3xl md:text-4xl font-bold text-nordic-secondary mb-4">{t("businessPage.cardTitle")}</h2>
                     <p className="text-lg text-nordic-highlight leading-relaxed font-light">
-                        AVYRA Business-kortet är kopplat till din profil.
-                        När du uppdaterar din information uppdateras kortet automatiskt.
+                        {t("businessPage.cardBody")}
                     </p>
                 </div>
                 
                 <ul className="space-y-3 text-nordic-highlight">
-                    <li className="flex items-center gap-3"><Check size={16} className="text-emerald-500"/> Inga nytryck vid titelbyte</li>
-                    <li className="flex items-center gap-3"><Check size={16} className="text-emerald-500"/> Inga gamla inaktuella uppgifter</li>
-                    <li className="flex items-center gap-3"><Check size={16} className="text-emerald-500"/> Premiumkänsla i varje överlämning</li>
+                    <li className="flex items-center gap-3"><Check size={16} className="text-emerald-500"/> {t("businessPage.cardBullet1")}</li>
+                    <li className="flex items-center gap-3"><Check size={16} className="text-emerald-500"/> {t("businessPage.cardBullet2")}</li>
+                    <li className="flex items-center gap-3"><Check size={16} className="text-emerald-500"/> {t("businessPage.cardBullet3")}</li>
                 </ul>
 
                 <button className="text-nordic-secondary border-b border-white pb-0.5 hover:text-emerald-400 hover:border-emerald-400 transition-colors text-sm font-medium">
-                    Beställ business-kort →
+                    {t("businessPage.cardCta")}
                 </button>
             </div>
         </section>
@@ -303,10 +306,9 @@ export default function BusinessLandingPage() {
                 <div className="h-12 w-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400">
                     <BarChart3 size={24} />
                 </div>
-                <h2 className="text-3xl font-bold text-nordic-secondary">Följ upp dina kontakter</h2>
+                <h2 className="text-3xl font-bold text-nordic-secondary">{t("businessPage.statsTitle")}</h2>
                 <p className="text-lg text-nordic-highlight leading-relaxed">
-                    Se vad som faktiskt händer efter mötet. Få insikter om hur ditt kort används.
-                    Se visningar, klick och engagemang – utan att det blir krångligt.
+                    {t("businessPage.statsBody")}
                 </p>
              </div>
              
@@ -314,19 +316,19 @@ export default function BusinessLandingPage() {
                  {/* Mockup Stats */}
                  <div className="space-y-6">
                      <div className="flex justify-between items-center">
-                         <h4 className="text-nordic-secondary font-bold">Översikt</h4>
+                         <h4 className="text-nordic-secondary font-bold">{t("businessPage.statsOverview")}</h4>
                          <select className="bg-slate-800 text-xs text-slate-300 rounded px-2 py-1 border border-nordic-highlight/40 outline-none">
-                             <option>Senaste 30 dagar</option>
+                             <option>{t("businessPage.statsRange")}</option>
                          </select>
                      </div>
                      <div className="grid grid-cols-2 gap-4">
                          <div className="bg-nordic-primary p-4 rounded-xl border border-nordic-highlight/40">
-                             <div className="text-xs text-nordic-highlight mb-1">Visningar</div>
+                             <div className="text-xs text-nordic-highlight mb-1">{t("businessPage.statsViews")}</div>
                              <div className="text-2xl font-mono text-nordic-secondary">1,240</div>
                              <div className="text-xs text-emerald-400 mt-1 flex items-center gap-1">▲ 12%</div>
                          </div>
                          <div className="bg-nordic-primary p-4 rounded-xl border border-nordic-highlight/40">
-                             <div className="text-xs text-nordic-highlight mb-1">Sparade kontakter</div>
+                             <div className="text-xs text-nordic-highlight mb-1">{t("businessPage.statsSaved")}</div>
                              <div className="text-2xl font-mono text-nordic-secondary">86</div>
                              <div className="text-xs text-emerald-400 mt-1 flex items-center gap-1">▲ 5%</div>
                          </div>
@@ -346,12 +348,11 @@ export default function BusinessLandingPage() {
         {/* --- 7. SKILT FRÅN DET PRIVATA --- */}
         <section className="text-center max-w-2xl mx-auto py-12 space-y-6">
              <div className="inline-flex items-center gap-2 text-nordic-highlight text-sm font-medium">
-                 <Lock size={16} /> Integritet & Fokus
+                 <Lock size={16} /> {t("businessPage.privacyBadge")}
              </div>
-             <h2 className="text-3xl font-bold text-nordic-secondary">Håll isär jobb och privat.</h2>
+             <h2 className="text-3xl font-bold text-nordic-secondary">{t("businessPage.privacyTitle")}</h2>
              <p className="text-nordic-highlight">
-                AVYRA låter dig ha en professionell profil för jobbet – utan att blanda in privata länkar eller socialt innehåll.
-                Samma konto. Tydlig separation.
+                {t("businessPage.privacyBody")}
              </p>
         </section>
 
@@ -363,27 +364,27 @@ export default function BusinessLandingPage() {
           
           <div className="relative z-10 max-w-2xl mx-auto space-y-8">
             <h2 className="text-3xl md:text-5xl font-bold text-nordic-secondary leading-tight">
-              Redo för ett <br/> modernare visitkort?
+              {t("businessPage.finalTitle1")} <br/> {t("businessPage.finalTitle2")}
             </h2>
             <p className="text-nordic-highlight text-lg">
-              Skapa din business-profil idag och upplev ett enklare sätt att dela kontaktuppgifter.
+              {t("businessPage.finalBody")}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Link
                 href="/register?mode=business"
                 className="inline-flex h-14 items-center justify-center rounded-2xl bg-emerald-600 px-10 text-base font-bold text-nordic-secondary shadow-xl shadow-emerald-900/20 transition-all hover:bg-emerald-500 hover:scale-105"
               >
-                Skapa business-profil gratis
+                {t("businessPage.ctaCreate")}
               </Link>
             </div>
-            <p className="text-xs text-nordic-highlight font-medium">Tar mindre än 2 minuter.</p>
+            <p className="text-xs text-nordic-highlight font-medium">{t("businessPage.finalNote")}</p>
             
             <div className="pt-12 flex justify-center gap-6 text-sm text-nordic-highlight border-t border-nordic-highlight/40/50 w-fit mx-auto mt-8 px-8">
-               <Link href="/social" className="hover:text-nordic-secondary transition-colors">För kreatörer</Link>
+               <Link href="/social" className="hover:text-nordic-secondary transition-colors">{t("businessPage.forCreators")}</Link>
                <span className="text-slate-700">•</span>
-               <Link href="/" className="hover:text-nordic-secondary transition-colors">För privatpersoner</Link>
+               <Link href="/" className="hover:text-nordic-secondary transition-colors">{t("businessPage.forPrivate")}</Link>
                <span className="text-slate-700">•</span>
-               <Link href="/login" className="hover:text-nordic-secondary transition-colors">Logga in</Link>
+               <Link href="/login" className="hover:text-nordic-secondary transition-colors">{t("businessPage.login")}</Link>
             </div>
           </div>
         </section>

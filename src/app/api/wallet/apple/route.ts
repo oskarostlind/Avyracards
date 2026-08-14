@@ -6,6 +6,7 @@ import { buildWalletPassContent } from "@/lib/wallet/pass-content";
 import { PKPass } from "passkit-generator";
 import path from "path";
 import fs from "fs/promises";
+import { getT } from "@/i18n/server";
 
 export const dynamic = 'force-dynamic';
 
@@ -67,7 +68,7 @@ export async function GET(req: Request) {
     // väl ligger i telefonen.
     if (!user.username) {
       return new NextResponse(
-        "Du måste välja ett användarnamn innan du kan spara kortet i Wallet.",
+        getT()("wallet.needUsername"),
         { status: 400 },
       );
     }
@@ -159,7 +160,7 @@ export async function GET(req: Request) {
         key: "manage",
         label: "Hantera Profil",
         value: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`,
-        attributedValue: `<a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard">Klicka här för att redigera</a>`
+        attributedValue: `<a href="${process.env.NEXT_PUBLIC_BASE_URL}/dashboard">${getT()("wallet.editLink")}</a>`
     });
 
     const buffer = pass.getAsBuffer();
