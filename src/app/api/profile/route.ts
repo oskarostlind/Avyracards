@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { syncGoogleWalletPass } from "@/lib/wallet/google";
 import { WALLET_PASS_FIELDS } from "@/lib/wallet/pass-content";
 import { getT } from "@/i18n/server";
+import type { Translator } from "@/i18n";
 
 export const runtime = "nodejs";
 
@@ -17,17 +18,21 @@ function touchesWalletPass(data: Record<string, unknown>): boolean {
 // --- HJÄLPSCHEMAN ---
 
 // 1. Hanterar Avatar (URL, Base64 eller null)
-const avatarSchema = z.union([
-  z.string().min(1).refine(
-    (value) =>
-      value.startsWith("data:image/") ||
-      value.startsWith("http://") ||
-      value.startsWith("https://"),
-    { message: getT()("api.profile.mustBeUrl") }
-  ),
-  z.literal(""),
-  z.null()
-]).optional().transform(v => v === "" ? null : v);
+// Fabrik i stället för modulnivå-konstant: felmeddelandet är översatt, och
+// `getT()` läser språkcookien. Ett schema som byggs vid import hade anropat
+// cookies() utanför en request och kraschat bygget.
+const buildAvatarSchema = (t: Translator) =>
+  z.union([
+    z.string().min(1).refine(
+      (value) =>
+        value.startsWith("data:image/") ||
+        value.startsWith("http://") ||
+        value.startsWith("https://"),
+      { message: t("api.profile.mustBeUrl") }
+    ),
+    z.literal(""),
+    z.null()
+  ]).optional().transform(v => v === "" ? null : v);
 
 // 2. Hanterar valfria textfält (Tom sträng -> Null)
 const optionalString = (maxLength: number) => 
@@ -54,7 +59,10 @@ const optionalEmail = z.union([
 
 
 // --- HUVUDSCHEMA ---
-const updateSchema = z.object({
+const buildUpdateSchema = (t: Translator) => {
+  const avatarSchema = buildAvatarSchema(t);
+
+  return z.object({
   // Basprofil
   name: z.string().max(100).optional(),
   bio: z.string().max(1000).optional(),
@@ -93,14 +101,17 @@ const updateSchema = z.object({
   companyDescription: optionalString(1000),
   companyWebsite: optionalUrl(500),
   careerPageUrl: optionalUrl(500),
-});
+  });
+};
 
 async function updateProfile(req: Request) {
+  const t = getT();
+
   const session = await auth();
 
   if (!session?.user?.id) {
     return NextResponse.json(
-      { error: getT()("api.profile.notLoggedIn") },
+      { error: t("api.profile.notLoggedIn") },
       { status: 401 }
     );
   }
@@ -110,16 +121,16 @@ async function updateProfile(req: Request) {
     json = await req.json();
   } catch {
     return NextResponse.json(
-      { error: getT()("api.invalidJson") },
+      { error: t("api.invalidJson") },
       { status: 400 }
     );
   }
 
-  const parsed = updateSchema.safeParse(json);
+  const parsed = buildUpdateSchema(t).safeParse(json);
 
   if (!parsed.success) {
     console.log("Validation error:", parsed.error.format()); 
-    return NextResponse.json({ error: getT()("api.profile.invalidFields") }, { status: 400 });
+    return NextResponse.json({ error: t("api.profile.invalidFields") }, { status: 400 });
   }
 
   const data = parsed.data;
@@ -197,10 +208,11 @@ async function updateProfile(req: Request) {
 }
 
 export async function GET() {
+  const t = getT();
   const session = await auth();
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: getT()("api.notLoggedIn") }, { status: 401 });
+    return NextResponse.json({ error: t("api.notLoggedIn") }, { status: 401 });
   }
 
   const user = await prisma.user.findUnique({
@@ -245,7 +257,7 @@ export async function GET() {
   });
 
   if (!user) {
-    return NextResponse.json({ error: getT()("api.userNotFound") }, { status: 404 });
+    return NextResponse.json({ error: t("api.userNotFound") }, { status: 404 });
   }
 
   return NextResponse.json(user);

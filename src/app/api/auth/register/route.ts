@@ -4,33 +4,38 @@ import { hashPassword } from "@/lib/password";
 import { randomUUID } from "crypto";
 import { sendVerificationEmail } from "@/lib/email";
 import { z } from "zod";
-import { getLocale } from "@/i18n/server";
+import { getLocale, getT } from "@/i18n/server";
+import type { Translator } from "@/i18n";
 
 export const runtime = "nodejs";
 
-const RegisterSchema = z.object({
-  username: z
-    .string()
-    .min(3, getT()("api.register.usernameMin"))
-    .max(30)
-    .regex(
-      /^[a-zA-Z0-9_]+$/,
-      getT()("api.register.usernamePattern")
-    ),
-  email: z.string().email("Ogiltig e-postadress."),
-  password: z.string().min(6, getT()("api.register.passwordMin")),
-  profileMode: z.enum(["social", "business"]).optional(),
-  
-  // Tillåt dessa fält från frontend (används vid köp)
-  isPremium: z.boolean().optional(),
-  stripeSessionId: z.string().optional(),
-});
+// Schemat byggs PER REQUEST. zod bakar in felmeddelandena i schemat, och
+// `getT()` läser språkcookien — ett schema på modulnivå hade anropat cookies()
+// vid import, alltså utanför en request, vilket kraschar bygget när Next
+// samlar in sidodata.
+const buildRegisterSchema = (t: Translator) =>
+  z.object({
+    username: z
+      .string()
+      .min(3, t("api.register.usernameMin"))
+      .max(30)
+      .regex(/^[a-zA-Z0-9_]+$/, t("api.register.usernamePattern")),
+    email: z.string().email(t("auth.register.errors.emailInvalid")),
+    password: z.string().min(6, t("api.register.passwordMin")),
+    profileMode: z.enum(["social", "business"]).optional(),
+
+    // Tillåt dessa fält från frontend (används vid köp)
+    isPremium: z.boolean().optional(),
+    stripeSessionId: z.string().optional(),
+  });
 
 export async function POST(req: Request) {
+  const t = getT();
+
   try {
     const body = await req.json();
 
-    const parsed = RegisterSchema.safeParse(body);
+    const parsed = buildRegisterSchema(t).safeParse(body);
     if (!parsed.success) {
       return NextResponse.json(
         { error: parsed.error.errors[0]?.message ?? "Ogiltig input." },
@@ -79,7 +84,7 @@ export async function POST(req: Request) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: getT()("api.register.alreadyTaken") },
+        { error: t("api.register.alreadyTaken") },
         { status: 400 }
       );
     }
@@ -117,7 +122,7 @@ export async function POST(req: Request) {
 
         return NextResponse.json(
           { 
-            error: getT()("api.register.mailFailed"),
+            error: t("api.register.mailFailed"),
             details: emailError.message 
           },
           { status: 500 }
@@ -132,7 +137,7 @@ export async function POST(req: Request) {
   } catch (err) {
     console.error("[register] Kritisk krasch:", err);
     return NextResponse.json(
-      { error: getT()("api.register.failed") },
+      { error: t("api.register.failed") },
       { status: 500 }
     );
   }

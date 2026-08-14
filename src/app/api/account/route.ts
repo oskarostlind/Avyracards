@@ -7,24 +7,29 @@ import { hashPassword, verifyPassword } from "@/lib/password";
 import { generateClaimToken } from "@/lib/card-claim";
 import { expireGoogleWalletPass } from "@/lib/wallet/google";
 import { getT } from "@/i18n/server";
+import type { Translator } from "@/i18n";
 
-const accountSchema = z.object({
-  marketingConsent: z.boolean().optional(),
-  productUpdates: z.boolean().optional(),
-  hideFromSearch: z.boolean().optional(),
-  notifyOnProfileView: z.boolean().optional(),
-  notifyOnLinkClick: z.boolean().optional(),
-  notifyOnContactSave: z.boolean().optional(),
-  username: z
-    .string()
-    .min(3, "Minst 3 tecken")
-    .regex(/^[a-zA-Z0-9_]+$/, getT()("api.account.usernamePattern"))
-    .optional(),
-  currentPassword: z.string().optional(),
-  newPassword: z.string().min(6, "Minst 6 tecken").optional(),
-});
+// Byggs per request — se kommentaren i api/auth/register/route.ts.
+const buildAccountSchema = (t: Translator) =>
+  z.object({
+    marketingConsent: z.boolean().optional(),
+    productUpdates: z.boolean().optional(),
+    hideFromSearch: z.boolean().optional(),
+    notifyOnProfileView: z.boolean().optional(),
+    notifyOnLinkClick: z.boolean().optional(),
+    notifyOnContactSave: z.boolean().optional(),
+    username: z
+      .string()
+      .min(3, t("api.register.usernameMin"))
+      .regex(/^[a-zA-Z0-9_]+$/, t("api.account.usernamePattern"))
+      .optional(),
+    currentPassword: z.string().optional(),
+    newPassword: z.string().min(6, t("api.register.passwordMin")).optional(),
+  });
 
 export async function PATCH(req: Request) {
+  const t = getT();
+
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -32,7 +37,7 @@ export async function PATCH(req: Request) {
     }
 
     const body = await req.json();
-    const result = accountSchema.safeParse(body);
+    const result = buildAccountSchema(t).safeParse(body);
 
     if (!result.success) {
       return NextResponse.json(
@@ -54,7 +59,7 @@ export async function PATCH(req: Request) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: getT()("api.userNotFound") }, { status: 404 });
+      return NextResponse.json({ error: t("api.userNotFound") }, { status: 404 });
     }
 
     const updateData: any = { ...settings };
@@ -68,7 +73,7 @@ export async function PATCH(req: Request) {
       
       if (existing) {
         return NextResponse.json(
-          { error: getT()("api.account.usernameTaken") }, 
+          { error: t("api.account.usernameTaken") }, 
           { status: 409 }
         );
       }
@@ -79,14 +84,14 @@ export async function PATCH(req: Request) {
     if (newPassword) {
       if (!currentPassword) {
         return NextResponse.json(
-          { error: getT()("api.account.currentPasswordRequired") }, 
+          { error: t("api.account.currentPasswordRequired") }, 
           { status: 400 }
         );
       }
 
       if (!user.passwordHash) {
         return NextResponse.json(
-          { error: getT()("api.account.externalLogin") }, 
+          { error: t("api.account.externalLogin") }, 
           { status: 400 }
         );
       }
@@ -94,7 +99,7 @@ export async function PATCH(req: Request) {
       const isValid = await verifyPassword(currentPassword, user.passwordHash);
       if (!isValid) {
         return NextResponse.json(
-          { error: getT()("api.account.wrongCurrentPassword") }, 
+          { error: t("api.account.wrongCurrentPassword") }, 
           { status: 403 }
         );
       }
@@ -113,7 +118,7 @@ export async function PATCH(req: Request) {
   } catch (error) {
     console.error("Account update error:", error);
     return NextResponse.json(
-      { error: getT()("api.account.updateFailed") },
+      { error: t("api.account.updateFailed") },
       { status: 500 }
     );
   }

@@ -5,7 +5,7 @@ import { randomBytes } from "crypto";
 import { hash } from "bcryptjs"; 
 import { redirect } from "next/navigation";
 import { sendPasswordResetEmail } from "@/lib/email"; // <--- IMPORTERA HÄR
-import { getLocale } from "@/i18n/server";
+import { getLocale, getT } from "@/i18n/server";
 
 // 1. BEGÄR ÅTERSTÄLLNING
 export async function requestPasswordReset(formData: FormData) {

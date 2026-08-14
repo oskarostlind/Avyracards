@@ -1,8 +1,17 @@
-import Link from "next/link";
-import { getT } from "@/i18n/server";
+"use client";
 
+import Link from "next/link";
+
+import { useT } from "@/i18n/client";
+
+/**
+ * Klientkomponent med flit: `app/not-found.tsx` renderas för allt som inte
+ * matchar en route, och Next vill helst prerendera den. `getT()` läser
+ * språkcookien och hade tvingat sidan att bli dynamisk. LocaleProvider ligger
+ * i rot-layouten, så useT() fungerar här ändå.
+ */
 export default function NotFoundPage() {
-  const t = getT();
+  const t = useT();
 
   return (
     <div className="mx-auto max-w-md space-y-4 text-center">
