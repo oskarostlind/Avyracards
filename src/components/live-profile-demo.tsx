@@ -1,25 +1,27 @@
 "use client";
 
 import { ProfilePreview } from "@/components/profile-preview";
-import { defaultSettings } from "@/types/theme";
-import type { MappedProfileData } from "@/lib/profile-mapper"; 
+import { CustomThemeSettings, defaultSettings } from "@/types/theme";
+import type { MappedProfileData } from "@/lib/profile-mapper";
 
-// Vi skapar mock-data som matchar den nya strukturen (MappedProfileData)
+// Mock-data som fallback för utloggade besökare. Inloggade användare ska
+// ALLTID se sin egen profil (skickas in via `data`) — att visa ett låtsaskort
+// på någon annans profil i köpflödet var förvirrande (feedback aug 2026).
 const DEMO_DATA: MappedProfileData = {
   mode: "SOCIAL",
-  username: "oskar", // <-- LÄGG TILL DENNA
-   showSaveContact: true, // <-- LÄGG TILL DENNA
-  displayName: "Oskar Östlind",
-  image: null, // Eller en URL till en demo-bild
-  headline: "Grundare av AvyraCards | Digital Kreatör",
-  location: "Luleå, Sverige",
-  
+  username: "demo",
+  showSaveContact: true,
+  displayName: "Ditt Namn",
+  image: null,
+  headline: "Din titel | Ditt varumärke",
+  location: "Sverige",
+
   // Business-specifikt (kan vara null i demon)
-  jobTitle: null, 
+  jobTitle: null,
   companyName: null,
-  
-  actions: [], // Tom lista för demo, eller lägg till mock-actions om du vill
-  
+
+  actions: [],
+
   // Vi mockar länkarna så att de ser ut som databas-objekt
   links: [
     {
@@ -61,19 +63,27 @@ const DEMO_DATA: MappedProfileData = {
   ]
 };
 
-export function LiveProfileDemo() {
+const DEMO_SETTINGS: CustomThemeSettings = {
+  ...defaultSettings,
+  gradientFrom: "#ec4899", // Pink-500
+  gradientTo: "#8b5cf6",   // Violet-500
+  backgroundType: "gradient"
+};
+
+interface LiveProfileDemoProps {
+  /** Kundens riktiga profildata. Utelämnas → generisk demo. */
+  data?: MappedProfileData | null;
+  /** Kundens sparade temainställningar (redan mergade med defaultSettings). */
+  settings?: CustomThemeSettings | null;
+}
+
+export function LiveProfileDemo({ data, settings }: LiveProfileDemoProps) {
   return (
     <div className="w-full h-full flex items-center justify-center pointer-events-none select-none">
       <div className="transform scale-[0.85]">
-        <ProfilePreview 
-          data={DEMO_DATA} // Vi skickar hela data-objektet nu
-          customSettings={{
-            ...defaultSettings,
-            // Du kan anpassa demo-temat här om du vill
-            gradientFrom: "#ec4899", // Pink-500
-            gradientTo: "#8b5cf6",   // Violet-500
-            backgroundType: "gradient"
-          }}
+        <ProfilePreview
+          data={data || DEMO_DATA}
+          customSettings={data ? (settings || defaultSettings) : DEMO_SETTINGS}
         />
       </div>
     </div>

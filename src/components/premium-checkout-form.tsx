@@ -10,17 +10,24 @@ import { useIosNativePayments } from "@/hooks/useIosNativePayments";
 import { IosIapPremiumButton } from "@/components/checkout/ios-iap-premium-button";
 import { IosRestorePurchasesButton } from "@/components/checkout/ios-restore-purchases-button";
 import { SubscriptionTerms } from "@/components/checkout/subscription-terms";
+import type { MappedProfileData } from "@/lib/profile-mapper";
+import type { CustomThemeSettings } from "@/types/theme";
 
 interface PremiumCheckoutProps {
   productName: string;
   price: number;
   variantId: string;
+  /** Kundens riktiga profil — previewn ska visa den, inte mock-data. */
+  profileData?: MappedProfileData | null;
+  profileSettings?: CustomThemeSettings | null;
 }
 
-export function PremiumCheckoutForm({ 
-  productName, 
-  price, 
-  variantId, 
+export function PremiumCheckoutForm({
+  productName,
+  price,
+  variantId,
+  profileData,
+  profileSettings,
 }: PremiumCheckoutProps) {
   const [loading, setLoading] = useState(false);
   const isApp = useIsApp();
@@ -52,6 +59,11 @@ export function PremiumCheckoutForm({
         }),
       });
 
+      if (response.status === 401) {
+        // Ej inloggad → skicka till login med återvändo i stället för alert
+        window.location.href = "/login?callbackUrl=" + encodeURIComponent("/checkout/premium");
+        return;
+      }
       if (!response.ok) throw new Error("Kunde inte starta betalning");
       const data = await response.json();
       
@@ -85,7 +97,12 @@ export function PremiumCheckoutForm({
           </div>
 
           <div className="pl-4">
-              <LiveProfileDemo />
+              <LiveProfileDemo data={profileData} settings={profileSettings} />
+              {profileData && (
+                <p className="mt-2 text-center text-xs text-nordic-highlight">
+                  Din profil — så här ser den ut för den som blippar ditt kort.
+                </p>
+              )}
           </div>
         </div>
 

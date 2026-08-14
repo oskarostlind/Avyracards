@@ -77,7 +77,9 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
             <div className="w-12 h-12 bg-nordic-accent text-nordic-primary rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-nordic-accent/30">
               <CreditCard size={24} />
             </div>
-            <h3 className="text-xl font-bold mb-2 text-white">Pro Bundle</h3>
+            {/* Ett namn genomgående: "Startpaket" (hette tidigare Pro Bundle här,
+                Startpaket i dashboarden och Pro på ordersidan — förvirrande) */}
+            <h3 className="text-xl font-bold mb-2 text-white">Startpaket</h3>
             <p className="text-nordic-highlight text-sm">Premium + Fysiskt Kort.</p>
           </div>
 
@@ -99,7 +101,7 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
             href="/register?plan=bundle" 
             className="w-full py-4 rounded-xl bg-nordic-accent text-nordic-primary font-bold text-center hover:bg-nordic-accent/90 shadow-lg shadow-nordic-accent/20 flex items-center justify-center gap-2 group mt-auto"
           >
-            Skaffa Bundle <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
+            Skaffa Startpaketet <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
           </Link>
         </div>
 

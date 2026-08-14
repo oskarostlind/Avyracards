@@ -4,6 +4,7 @@ import { stripe } from "@/lib/stripe";
 import { NextResponse } from "next/server";
 import type { Stripe } from "stripe";
 import { z } from "zod";
+import { PREMIUM_6MO_PRICE_ORE } from "@/lib/constants";
 
 // --- VALIDATION SCHEMAS ---
 const cartItemSchema = z.object({
@@ -137,9 +138,11 @@ export async function POST(req: Request) {
                 currency: "sek",
                 product_data: {
                     name: "Avyra Premium (6 mån)",
-                    description: "Pro Bundle Upgrade",
+                    description: "Premium 6 månader",
                 },
-                unit_amount: 29900, 
+                // Delad konstant med order-view så att kassans belopp alltid
+                // matchar det pris kunden såg i nivåvalet.
+                unit_amount: PREMIUM_6MO_PRICE_ORE,
             },
             quantity: 1,
         });
