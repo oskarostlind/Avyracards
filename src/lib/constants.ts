@@ -1,8 +1,12 @@
 // Priset för 6-månaders premium i orderflödet (öre). En enda källa för både
 // klientens visning (order-view) och Stripe-raden (api/stripe/checkout) så att
-// UI och debitering aldrig kan glida isär. Ordinarie värde = 6 × 79 kr.
+// UI och debitering aldrig kan glida isär.
+//
+// Jämförpriset (för det överstrukna "ordinarie pris") räknas INTE som en egen
+// konstant här — enligt svensk prismärkningslag (2 kap. 1 § lag 2021:1110) får
+// bara ett pris som faktiskt tillämpats visas som jämförpris. Det ska alltid
+// härledas som 6 × det verkliga månadspriset (premiumMonthlyOre), se order-view.tsx.
 export const PREMIUM_6MO_PRICE_ORE = 29900;
-export const PREMIUM_6MO_COMPARE_ORE = 47400;
 
 export const VARIANT_IDS = {
   // Här väljer vi "Classic Black" (199 kr) som standardvalet för kortet

@@ -10,7 +10,7 @@ import { useIosNativePayments } from "@/hooks/useIosNativePayments";
 import { useIsApp } from "@/hooks/useIsApp";
 import { IosOrderCheckout } from "@/components/checkout/ios-order-checkout";
 import { SubscriptionTerms } from "@/components/checkout/subscription-terms";
-import { PREMIUM_6MO_PRICE_ORE, PREMIUM_6MO_COMPARE_ORE } from "@/lib/constants";
+import { PREMIUM_6MO_PRICE_ORE } from "@/lib/constants";
 import type { MappedProfileData } from "@/lib/profile-mapper";
 import type { CustomThemeSettings } from "@/types/theme";
 import { useT } from "@/i18n/client";
@@ -284,10 +284,11 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
 
   // Priser för premium-nivåerna kommer från en delad konstant (6 mån) och DB
   // (månadspriset) — inte längre hårdkodade siffror som kunde glida isär
-  // mellan klient och Stripe-rad.
+  // mellan klient och Stripe-rad. Jämförpriset för 6-mån härleds alltid som
+  // 6 × det verkliga månadspriset (krav enligt svensk prismärkningslag).
   const premiumMonthly = Math.round(premiumMonthlyOre / 100);
   const premium6moPrice = Math.round(PREMIUM_6MO_PRICE_ORE / 100);
-  const premium6moCompare = Math.round(PREMIUM_6MO_COMPARE_ORE / 100);
+  const premium6moCompare = premiumMonthly * 6;
 
   let premiumCost = 0;
   if (premiumOption === "6mo") {
