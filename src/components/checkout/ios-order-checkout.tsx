@@ -6,6 +6,7 @@ import { NativePurchases, PURCHASE_TYPE } from "@capgo/native-purchases";
 import { IosApplePayCheckout } from "@/components/checkout/ios-apple-pay-checkout";
 import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
 import { isIosDebugEnabled } from "@/lib/ios-native";
+import type { IosPremiumProductKey } from "@/lib/ios-native";
 import { useT } from "@/i18n/client";
 
 interface OrderItemPayload {
@@ -19,7 +20,8 @@ interface OrderItemPayload {
 
 interface IosOrderCheckoutProps {
   items: OrderItemPayload[];
-  premiumOption: "none" | "1mo" | "6mo";
+  /** "1moIap" = löpande månadsprenumeration, köps via StoreKit precis som "6mo". */
+  premiumOption: "none" | "1mo" | "1moIap" | "6mo";
   isPremium: boolean;
 }
 
@@ -29,13 +31,18 @@ export function IosOrderCheckout({
   isPremium,
 }: IosOrderCheckoutProps) {
   const t = useT();
-  const [iapCompleted, setIapCompleted] = useState(
-    premiumOption !== "6mo" || isPremium
-  );
+  // Både månads- och 6-månadersvalet är digitala prenumerationer och måste
+  // därför gå via IAP innan kortordern betalas (Guideline 3.1.1).
+  const needsIap = premiumOption === "6mo" || premiumOption === "1moIap";
+  const iapProductKey: IosPremiumProductKey =
+    premiumOption === "1moIap" ? "monthly" : "sixMonths";
+  const planLabel =
+    premiumOption === "1moIap" ? t("checkout.planMonthly") : t("checkout.planSixMonths");
+  const [iapCompleted, setIapCompleted] = useState(!needsIap || isPremium);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const purchaseSixMonthPremium = async () => {
+  const purchasePremium = async () => {
     setLoading(true);
     setError("");
 
@@ -43,20 +50,27 @@ export function IosOrderCheckout({
       logIosNativeRuntime({
         scope: "IAP_ORDER",
         location: "ios-order-checkout.tsx:premium",
-        message: "Starting 6mo premium IAP before Apple Pay",
+        message: "Starting premium IAP before Apple Pay",
+        data: { productKey: iapProductKey },
       });
 
       const configResponse = await fetch("/api/apple/iap/config");
       const config = (await configResponse.json()) as {
-        products: { sixMonths: string | null };
+        products: { monthly: string | null; sixMonths: string | null };
       };
 
-      if (!config.products.sixMonths) {
-        throw new Error(t("checkout.sixMonthMissing"));
+      const productId = config.products[iapProductKey];
+
+      if (!productId) {
+        throw new Error(
+          iapProductKey === "monthly"
+            ? t("checkout.monthlyMissing")
+            : t("checkout.sixMonthMissing")
+        );
       }
 
       const transaction = await NativePurchases.purchaseProduct({
-        productIdentifier: config.products.sixMonths,
+        productIdentifier: productId,
         productType: PURCHASE_TYPE.SUBS,
       });
 
@@ -77,7 +91,8 @@ export function IosOrderCheckout({
       logIosNativeRuntime({
         scope: "IAP_ORDER",
         location: "ios-order-checkout.tsx:premium",
-        message: "6mo premium IAP completed",
+        message: "Premium IAP completed",
+        data: { productKey: iapProductKey },
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -95,11 +110,11 @@ export function IosOrderCheckout({
     }
   };
 
-  if (premiumOption === "6mo" && !isPremium && !iapCompleted) {
+  if (needsIap && !isPremium && !iapCompleted) {
     return (
       <div className="space-y-3">
         <p className="text-xs text-nordic-highlight text-center">
-          6 månaders premium köps via App Store innan kortet betalas med Apple Pay.
+          {t("checkout.iapBeforeApplePay", { plan: planLabel })}
         </p>
         {error && (
           <div className="p-3 text-sm text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg">
@@ -108,18 +123,23 @@ export function IosOrderCheckout({
         )}
         <button
           type="button"
-          onClick={purchaseSixMonthPremium}
+          onClick={purchasePremium}
           disabled={loading}
           className="w-full py-4 rounded-xl bg-green-600 text-white font-bold hover:bg-green-500 disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {loading ? <Loader2 className="animate-spin" size={18} /> : "Köp 6 mån premium (App Store)"}
+          {loading ? (
+            <Loader2 className="animate-spin" size={18} />
+          ) : (
+            t("checkout.iapBuyPlan", { plan: planLabel })
+          )}
         </button>
       </div>
     );
   }
 
-  // Guideline 3.1.1: "6mo" har redan köpts via StoreKit ovan, och "1mo"
-  // (startpaketets gratismånad) får aldrig levereras via kortbetalningen i
-  // appen — ordern skickas därför alltid utan digitalt premiumtillägg.
+  // Guideline 3.1.1: prenumerationerna ("6mo"/"1moIap") har redan köpts via
+  // StoreKit ovan, och "1mo" (startpaketets gratismånad) får aldrig levereras
+  // via kortbetalningen i appen — ordern skickas därför alltid utan digitalt
+  // premiumtillägg.
   return <IosApplePayCheckout items={items} premiumOption="none" />;
 }

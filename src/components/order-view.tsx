@@ -19,7 +19,11 @@ import type { Translator } from "@/i18n";
 // --- Types ---
 type MaterialType = "plastic" | "metal";
 type DesignType = "minimal" | "qr";
-type PremiumOption = "none" | "1mo" | "6mo";
+// "1mo"    = startpaketets gratismånad, levereras med kortordern (endast webb).
+// "1moIap" = löpande månadsprenumeration köpt via Apples IAP (endast i appen).
+//            Två skilda värden eftersom de har olika pris, villkor OCH betalväg
+//            — de får aldrig kunna förväxlas i Stripe-payloaden.
+type PremiumOption = "none" | "1mo" | "1moIap" | "6mo";
 
 export interface DbVariant {
   id: string;
@@ -72,6 +76,11 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const isApp = useIsApp();
   const showStarterPack = !isApp;
   const showSixMonths = !isApp || isIosCheckout;
+  // Månadspremium finns kvar i appen — men som riktig prenumeration via
+  // StoreKit (samma väg som 6-månaders), aldrig som tillägg på kortordern.
+  // "1 mån"-platsen i nivåvalet är alltså startpaketet på webben och den
+  // löpande IAP-prenumerationen i appen, så flödet har tre val i båda fallen.
+  const showMonthlyIap = isApp && isIosCheckout;
   const [iosCheckoutItems, setIosCheckoutItems] = useState<Array<{
     variantId: string;
     quantity: number;
@@ -154,7 +163,11 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
     if (isApp && premiumOption === "1mo") {
       setPremiumOption("none");
     }
-    if (isApp && !isIosCheckout && premiumOption === "6mo") {
+    if (isApp && !isIosCheckout && (premiumOption === "6mo" || premiumOption === "1moIap")) {
+      setPremiumOption("none");
+    }
+    // Motsatt riktning: IAP-månaden kan bara betalas i appen.
+    if (!isApp && premiumOption === "1moIap") {
       setPremiumOption("none");
     }
   }, [isApp, isIosCheckout, premiumOption]);
@@ -255,7 +268,9 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
 
         // Hängslen & livrem (3.1.1): skulle Stripe-vägen någonsin nås inne i
         // appen får ordern aldrig bära med sig ett digitalt premiumtillägg.
-        const safePremiumOption = isApp ? "none" : premiumOption;
+        // "1moIap" är per definition ett StoreKit-köp och skickas aldrig med.
+        const safePremiumOption: "none" | "1mo" | "6mo" =
+          isApp || premiumOption === "1moIap" ? "none" : premiumOption;
         const response = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -293,12 +308,20 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   let premiumCost = 0;
   if (premiumOption === "6mo") {
     premiumCost = premium6moPrice;
+  } else if (premiumOption === "1moIap") {
+    premiumCost = premiumMonthly;
   }
 
   const total = selectedVariant ? (((cardPrice + customPrintCost) * quantity) + premiumCost) : premiumCost;
   const activeVariants = material === "plastic" ? standardVariants : metalVariants;
 
-  const premiumValue = premiumOption === "1mo" ? premiumMonthly : (premiumOption === "6mo" ? premium6moCompare : 0);
+  // Månadsprenumerationen säljs till ordinarie pris — inget jämförpris och
+  // därmed ingen "du sparar"-rad för den (prismärkningslagen).
+  const premiumValue = premiumOption === "1mo"
+    ? premiumMonthly
+    : premiumOption === "1moIap"
+      ? premiumMonthly
+      : (premiumOption === "6mo" ? premium6moCompare : 0);
   const totalOriginalPrice = selectedVariant ? ((compareAt || cardPrice) + customPrintCost + premiumValue) : premiumValue;
 
   const savings = Math.round(totalOriginalPrice - total);
@@ -309,9 +332,11 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const materialLabel = material === "plastic" ? t("order.standard") : t("order.metal");
   const premiumLabel = premiumOption === "1mo"
     ? t("order.starterPackRow")
-    : premiumOption === "6mo"
-      ? t("order.premium6mo")
-      : null;
+    : premiumOption === "1moIap"
+      ? t("order.premiumMonthly")
+      : premiumOption === "6mo"
+        ? t("order.premium6mo")
+        : null;
 
   const goNext = () => {
     if (step === 1) setStep(isPremium ? 3 : 2);
@@ -590,6 +615,32 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                     </div>
                     )}
 
+                    {/* Option 2b: Premium 1 mån — appens motsvarighet till
+                        startpaketets månad, men som riktig prenumeration köpt
+                        via App Store (3.1.1). Priset står i raden och de fulla
+                        villkoren strax under valet (3.1.2c). */}
+                    {showMonthlyIap && (
+                    <div
+                        onClick={() => setPremiumOption("1moIap")}
+                        className={`relative p-4 rounded-xl border cursor-pointer transition-all ${premiumOption === "1moIap" ? "border-blue-500 bg-blue-500/10" : "border-white/10 hover:border-white/20"}`}
+                    >
+                        <div className="flex items-center gap-3">
+                            <div className={`w-5 h-5 rounded-full border flex items-center justify-center ${premiumOption === "1moIap" ? "border-blue-500 bg-blue-500" : "border-gray-600"}`}>
+                                {premiumOption === "1moIap" && <Check size={12} className="text-white" />}
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-sm">{t("order.premiumMonthly")}</span>
+                                <span className="text-xs text-nordic-highlight">{t("order.premiumMonthlySub")}</span>
+                            </div>
+                            <div className="ml-auto text-right">
+                                <span className="block font-bold text-sm">
+                                  +{t("order.perMonth", { price: price(premiumMonthly) })}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    )}
+
                     {/* Option 3: Premium 6 mån — i appen endast via IAP (3.1.1) */}
                     {showSixMonths && (
                     <div
@@ -626,6 +677,12 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                 {premiumOption === "6mo" && (
                   <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
                     <SubscriptionTerms price={price(premium6moPrice)} period={t("order.period6mo")} viaAppStore />
+                  </div>
+                )}
+
+                {premiumOption === "1moIap" && (
+                  <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                    <SubscriptionTerms price={price(premiumMonthly)} viaAppStore />
                   </div>
                 )}
 
@@ -671,9 +728,27 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                     <SummaryRow
                       t={t}
                       label={premiumLabel}
-                      sub={premiumOption === "1mo" ? t("order.noAutoRenew") : t("order.autoRenew6mo")}
-                      price={premiumOption === "6mo" ? price(premium6moPrice) : price(0)}
-                      compareAt={premiumOption === "1mo" ? price(premiumMonthly) : price(premium6moCompare)}
+                      sub={
+                        premiumOption === "1mo"
+                          ? t("order.noAutoRenew")
+                          : premiumOption === "1moIap"
+                            ? t("order.autoRenewMonthly")
+                            : t("order.autoRenew6mo")
+                      }
+                      price={
+                        premiumOption === "6mo"
+                          ? price(premium6moPrice)
+                          : premiumOption === "1moIap"
+                            ? t("order.perMonth", { price: price(premiumMonthly) })
+                            : price(0)
+                      }
+                      compareAt={
+                        premiumOption === "1mo"
+                          ? price(premiumMonthly)
+                          : premiumOption === "6mo"
+                            ? price(premium6moCompare)
+                            : undefined
+                      }
                       onEdit={() => setStep(2)}
                     />
                   )}
@@ -700,6 +775,12 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                 {premiumOption === "6mo" && (
                   <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
                     <SubscriptionTerms price={price(premium6moPrice)} period={t("order.period6mo")} viaAppStore />
+                  </div>
+                )}
+
+                {premiumOption === "1moIap" && (
+                  <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                    <SubscriptionTerms price={price(premiumMonthly)} viaAppStore />
                   </div>
                 )}
 
