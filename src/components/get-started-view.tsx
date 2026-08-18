@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { Check, Sparkles, User, ArrowRight, CreditCard, Zap } from "lucide-react";
+import { useIsApp } from "@/hooks/useIsApp";
 import { useT } from "@/i18n/client";
 
 interface GetStartedViewProps {
@@ -12,6 +13,10 @@ interface GetStartedViewProps {
 export default function GetStartedView({ premiumProduct, bundleProduct }: GetStartedViewProps) {
   const t = useT();
   const price = (amount: number | string) => t("order.price", { amount: String(amount) });
+  // Guideline 3.1.1/2.3.1: startpaketet (kort + gratis premiummånad som
+  // levereras via kortordern, ej IAP) erbjuds inte i iOS-appen — marknadsför
+  // det därför inte heller där.
+  const isApp = useIsApp();
   
   // --- 1. HÄMTA PRISER FRÅN DB-OBJEKTEN ---
   
@@ -69,7 +74,8 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
           </Link>
         </div>
 
-        {/* 2. PRO BUNDLE (Mitten - Upplyft) */}
+        {/* 2. PRO BUNDLE (Mitten - Upplyft) — visas inte i appen (3.1.1) */}
+        {!isApp && (
         <div className="relative p-8 rounded-3xl border border-nordic-accent bg-gradient-to-b from-nordic-accent/10 to-nordic-primary/90 backdrop-blur-sm flex flex-col shadow-2xl shadow-nordic-accent/10 transform md:-translate-y-6 transition-all duration-300 h-full select-none hover:-translate-y-2 md:hover:-translate-y-8 active:scale-[0.98]">
           
           <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-nordic-accent text-nordic-primary text-xs font-bold px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg flex items-center gap-2 whitespace-nowrap">
@@ -107,6 +113,7 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
             {t("getStarted.bundle.cta")} <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform"/>
           </Link>
         </div>
+        )}
 
         {/* 3. PREMIUM (Höger) */}
         <div className="p-8 rounded-3xl border border-blue-500/30 bg-blue-900/5 backdrop-blur-sm flex flex-col transition-all duration-300 relative h-full select-none hover:-translate-y-2 hover:border-blue-500/50 active:scale-[0.98]">

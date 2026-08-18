@@ -7,6 +7,7 @@ import { Loader2, Layers, CreditCard, Upload, X, Check, Sparkles, ArrowLeft, Arr
 import { CardPreview3D } from "@/components/card-preview-3d";
 import { LiveProfileDemo } from "@/components/live-profile-demo";
 import { useIosNativePayments } from "@/hooks/useIosNativePayments";
+import { useIsApp } from "@/hooks/useIsApp";
 import { IosOrderCheckout } from "@/components/checkout/ios-order-checkout";
 import { SubscriptionTerms } from "@/components/checkout/subscription-terms";
 import { PREMIUM_6MO_PRICE_ORE, PREMIUM_6MO_COMPARE_ORE } from "@/lib/constants";
@@ -63,6 +64,14 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const isIosCheckout = useIosNativePayments();
+  // Guideline 3.1.1 (App Review-avslag 2026-08-17): "Startpaket — 1 mån
+  // Premium" ger en digital premiummånad som betalas som del av kortordern
+  // (Apple Pay/Stripe) — dvs. via annat än IAP. Erbjudandet får därför aldrig
+  // visas i appen, oavsett om IAP är påslaget. 6-månaders visas i appen bara
+  // när IAP-flödet är aktivt (köps då via StoreKit innan kortbetalningen).
+  const isApp = useIsApp();
+  const showStarterPack = !isApp;
+  const showSixMonths = !isApp || isIosCheckout;
   const [iosCheckoutItems, setIosCheckoutItems] = useState<Array<{
     variantId: string;
     quantity: number;
@@ -137,6 +146,18 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, isPremium, hasStandard]);
+
+  // isApp sätts asynkront (Capacitor-bridgen läses i en effect) — nollställ
+  // därför otillåtna förval när appen väl identifierats, t.ex. startpaketet
+  // som förväljs via ?bundle=pro-bundle ovan. (Guideline 3.1.1)
+  useEffect(() => {
+    if (isApp && premiumOption === "1mo") {
+      setPremiumOption("none");
+    }
+    if (isApp && !isIosCheckout && premiumOption === "6mo") {
+      setPremiumOption("none");
+    }
+  }, [isApp, isIosCheckout, premiumOption]);
 
   // --- Helpers ---
   const findSelectedVariant = () => {
@@ -232,10 +253,13 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
           return;
         }
 
+        // Hängslen & livrem (3.1.1): skulle Stripe-vägen någonsin nås inne i
+        // appen får ordern aldrig bära med sig ett digitalt premiumtillägg.
+        const safePremiumOption = isApp ? "none" : premiumOption;
         const response = await fetch("/api/stripe/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items, premiumOption })
+          body: JSON.stringify({ items, premiumOption: safePremiumOption })
         });
 
         if (response.status === 401) {
@@ -536,7 +560,8 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                         </div>
                     </div>
 
-                    {/* Option 2: Startpaket (1 mån gratis) */}
+                    {/* Option 2: Startpaket (1 mån gratis) — aldrig i appen (3.1.1) */}
+                    {showStarterPack && (
                     <div
                         onClick={() => setPremiumOption("1mo")}
                         className={`relative p-4 rounded-xl border cursor-pointer transition-all ${premiumOption === "1mo" ? "border-blue-500 bg-blue-500/10" : "border-white/10 hover:border-white/20"}`}
@@ -557,9 +582,15 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                                 <span className="text-xs text-nordic-highlight line-through">{price(premiumMonthly)}</span>
                             </div>
                         </div>
+                        {/* 3.1.2(c): prenumerationens ordinarie pris ska synas där den erbjuds */}
+                        <p className="mt-2 text-[11px] text-nordic-highlight">
+                          {t("order.starterPackPriceNote", { price: price(premiumMonthly) })}
+                        </p>
                     </div>
+                    )}
 
-                    {/* Option 3: Premium 6 mån */}
+                    {/* Option 3: Premium 6 mån — i appen endast via IAP (3.1.1) */}
+                    {showSixMonths && (
                     <div
                         onClick={() => setPremiumOption("6mo")}
                         className={`relative p-4 rounded-xl border cursor-pointer transition-all ${premiumOption === "6mo" ? "border-green-500 bg-green-500/10" : "border-white/10 hover:border-white/20"}`}
@@ -583,6 +614,7 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                             </div>
                         </div>
                     </div>
+                    )}
                 </div>
 
                 {/* Guideline 3.1.2(c): orderflödet är en egen köppunkt för den

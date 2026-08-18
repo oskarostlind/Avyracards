@@ -118,10 +118,8 @@ export function IosOrderCheckout({
     );
   }
 
-  return (
-    <IosApplePayCheckout
-      items={items}
-      premiumOption={premiumOption === "6mo" ? "none" : premiumOption}
-    />
-  );
+  // Guideline 3.1.1: "6mo" har redan köpts via StoreKit ovan, och "1mo"
+  // (startpaketets gratismånad) får aldrig levereras via kortbetalningen i
+  // appen — ordern skickas därför alltid utan digitalt premiumtillägg.
+  return <IosApplePayCheckout items={items} premiumOption="none" />;
 }

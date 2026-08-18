@@ -745,6 +745,7 @@ export const en: Messages = {
     period6mo: "6 months",
     starterPackTerms:
       "The first month of Premium is included with the card at no cost and doesn't renew automatically. When the month is up, the account returns to the free version unless you choose to upgrade.",
+    starterPackPriceNote: "Premium normally costs {price}/month. The trial month does not auto-renew.",
     summaryTitle: "Your order",
     summarySubtitle: "Check everything before you go to checkout.",
     nfcCard: "NFC card · {material}",

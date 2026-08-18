@@ -743,6 +743,7 @@ export const sv = {
     period6mo: "6 månader",
     starterPackTerms:
       "Den första månaden Premium ingår utan kostnad i kortköpet och förnyas inte automatiskt. När månaden är slut återgår kontot till gratisversionen om du inte själv väljer att uppgradera.",
+    starterPackPriceNote: "Premium kostar ordinarie {price}/mån. Provmånaden förnyas inte automatiskt.",
     summaryTitle: "Din beställning",
     summarySubtitle: "Kontrollera allt innan du går till kassan.",
     nfcCard: "NFC-kort · {material}",
