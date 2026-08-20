@@ -13,6 +13,7 @@ import {
   Users,
   Activity,
   ShieldAlert,
+  BarChart3,
 } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import type { OrderStatus } from "@prisma/client";
@@ -104,7 +105,15 @@ export default async function AdminPage() {
           {t("admin.welcomeBack", { name: session.user.username ?? "" })}
         </p>
       </div>
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
+        {/* --- STATISTIK (plattformsövergripande besöksdata) --- */}
+        <Link
+            href="/admin/statistics"
+            className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-nordic-secondary hover:bg-emerald-500 transition shadow-lg shadow-emerald-500/20"
+          >
+            <BarChart3 size={16} /> {t("admin.statistics")}
+          </Link>
+
         {/* --- NY KNAPP FÖR USERS --- */}
         <Link 
             href="/admin/users"
@@ -137,9 +146,13 @@ export default async function AdminPage() {
             <Activity size={16} /> {t("admin.systemStatus")}
           </Link>
 
-        <button className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition">
+        {/* Var tidigare en död knapp utan handler — pekar nu på ordersöket. */}
+        <Link
+            href="/admin/orders"
+            className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition"
+          >
             <Search size={16} /> {t("admin.searchOrder")}
-        </button>
+        </Link>
       </div>
     </div>
 

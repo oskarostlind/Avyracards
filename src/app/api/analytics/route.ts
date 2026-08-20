@@ -8,6 +8,7 @@ import {
   buildAnalyticsEvent,
   type AnalyticsDropReason,
 } from "@/lib/analytics/events";
+import { computeVisitorHash } from "@/lib/analytics/visitor-hash";
 
 const IP_RATE_LIMIT_WINDOW_MS = 60_000; // 1 minut
 const IP_RATE_LIMIT_MAX = 60; // max ~60 events/IP/minut
@@ -123,6 +124,8 @@ export async function POST(req: NextRequest) {
         source: decision.event.source,
         country: decision.event.country,
         city: decision.event.city,
+        // Dagligt roterande hash för unika besökare — ingen rå IP lagras.
+        visitorHash: computeVisitorHash(ip, userAgent),
       },
     });
 

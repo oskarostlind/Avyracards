@@ -246,6 +246,7 @@ export function renderCardOrderShipped(input: {
   orderId: string;
   quantity: number;
   shippingCity?: string | null;
+  trackingNumber?: string | null;
   locale?: Locale;
 }): RenderedEmail {
   const locale = input.locale ?? defaultLocale;
@@ -256,6 +257,9 @@ export function renderCardOrderShipped(input: {
     ? t("email.orderShipped.destination", { city: input.shippingCity.trim() })
     : "";
   const sentLine = t("email.orderShipped.sent", { count: input.quantity, destination });
+  const trackingLine = input.trackingNumber?.trim()
+    ? t("email.orderShipped.tracking", { number: input.trackingNumber.trim() })
+    : null;
   const steps = [
     t("email.orderShipped.step1"),
     t("email.orderShipped.step2"),
@@ -269,6 +273,7 @@ export function renderCardOrderShipped(input: {
       "",
       sentLine,
       t("email.orderShipped.orderNumber", { reference }),
+      ...(trackingLine ? [trackingLine] : []),
       "",
       t("email.orderShipped.howToTitle"),
       ...steps.map((step, i) => `${i + 1}. ${step}`),
@@ -287,6 +292,11 @@ export function renderCardOrderShipped(input: {
     <p style="color:#666666;line-height:1.6;">${escapeHtml(
       t("email.orderShipped.orderNumber", { reference })
     )}</p>
+    ${
+      trackingLine
+        ? `<p style="color:#333333;line-height:1.6;"><strong>${escapeHtml(trackingLine)}</strong></p>`
+        : ""
+    }
     <p style="color:#333333;line-height:1.6;margin-top:24px;"><strong>${escapeHtml(
       t("email.orderShipped.howToTitle")
     )}</strong></p>

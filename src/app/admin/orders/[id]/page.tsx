@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { ArrowLeft, CreditCard, User, Mail, Link as LinkIcon, Wand2, MapPin, Printer } from "lucide-react";
+import { ArrowLeft, CreditCard, User, Mail, Link as LinkIcon, Wand2, MapPin, Printer, AlertTriangle, Truck } from "lucide-react";
 import { OrderStatus } from "@prisma/client";
 import { AdminOrderActions } from "@/components/admin/order-actions";
 import { PackingSlip } from "@/components/admin/packing-slip"; 
@@ -34,7 +34,9 @@ export default async function OrderDetailPage({ params }: { params: { id: string
   const cardsGenerated = order.cards.length >= order.quantity;
 
   return (
-    <div className="min-h-screen bg-nordic-primary p-4 md:p-8 text-nordic-secondary">
+    // print:min-h-0 + print:p-0: annars behåller wrappern en hel skärmhöjd
+    // vid utskrift och skapar en tom andra sida efter följesedeln.
+    <div className="min-h-screen bg-nordic-primary p-4 md:p-8 text-nordic-secondary print:min-h-0 print:p-0 print:bg-white">
       
       <PackingSlip orderId={order.id} customerName={customerName} cards={order.cards} />
 
@@ -74,8 +76,18 @@ export default async function OrderDetailPage({ params }: { params: { id: string
           </div>
         </div>
 
+        {/* Tom order: Stripe-webhooken hittade ingen variantId i produktens
+            metadata, så varken orderrader eller kort skapades. Utan varning
+            ser det bara ut som "0/0 kort" och riskerar att skickas tomt. */}
+        {order.quantity === 0 && (
+          <div className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-300">
+            <AlertTriangle size={18} className="mt-0.5 shrink-0" />
+            <p>{t("admin.order.emptyOrderWarning")}</p>
+          </div>
+        )}
+
         <div className="grid gap-6 md:grid-cols-[2fr_1fr]">
-          
+
           {/* Vänster: KORT */}
           <div className="space-y-6">
             <div className="rounded-2xl border border-nordic-highlight/40 bg-slate-900/50 p-6">
@@ -177,6 +189,16 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                  <p className="text-sm text-nordic-highlight italic">
                     {t("admin.order.noAddress")}
                  </p>
+               )}
+
+               {order.trackingNumber && (
+                 <div className="mt-4 flex items-center gap-3 rounded-lg border border-blue-500/20 bg-blue-500/10 p-3">
+                    <Truck size={16} className="text-blue-400 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-[10px] uppercase tracking-widest text-blue-400 font-bold">{t("admin.order.tracking")}</p>
+                      <p className="font-mono text-sm text-slate-200 select-all break-all">{order.trackingNumber}</p>
+                    </div>
+                 </div>
                )}
             </div>
 

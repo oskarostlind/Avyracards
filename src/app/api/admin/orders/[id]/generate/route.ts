@@ -79,6 +79,11 @@ export async function POST(
           cardCode: cardCode,
           claimToken: claimToken,
           status: "UNCLAIMED",
+          // Normalvägen (Stripe-webhooken) skapar korten med material/färg
+          // från produktmetadatan och kopplar köparen. Den datan finns inte
+          // sparad på ordern, så här kan vi bara återställa ägarkopplingen —
+          // material/färg lämnas tomma och visas som "Ej angivet" i admin.
+          assignedUserId: order.userId,
         },
       });
       newCards.push(card);

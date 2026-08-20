@@ -14,7 +14,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t border-nordic-highlight/30 bg-nordic-primary">
+    <footer className="border-t border-nordic-highlight/30 bg-nordic-primary print:hidden">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-10 text-xs text-nordic-highlight md:flex-row md:justify-between md:text-sm">
         <div className="max-w-sm space-y-3">
           <div className="text-sm font-semibold text-nordic-secondary md:text-base">

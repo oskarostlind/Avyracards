@@ -33,12 +33,19 @@ export function AdminOrderActions({ orderId, currentStatus, cardsGenerated }: Pr
 
   const handleMarkShipped = async () => {
     if (!confirm(t("admin.orderActions.confirmShipped"))) return;
+    // Avbryter admin prompten (null) avbryts hela åtgärden; tom sträng = inget
+    // spårningsnummer, ordern markeras som skickad ändå.
+    const trackingNumber = prompt(t("admin.orderActions.trackingPrompt"), "");
+    if (trackingNumber === null) return;
     setLoading(true);
     try {
       const res = await fetch(`/api/admin/orders/${orderId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "SHIPPED" }),
+        body: JSON.stringify({
+          status: "SHIPPED",
+          trackingNumber: trackingNumber.trim(),
+        }),
       });
       if (!res.ok) throw new Error("Fel vid uppdatering");
       router.refresh();

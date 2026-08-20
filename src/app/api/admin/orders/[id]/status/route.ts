@@ -6,7 +6,18 @@ import { sendSystemNotification } from "@/lib/notifications";
 
 const statusSchema = z.object({
   status: z.enum(["PENDING", "PAID", "SHIPPED", "FAILED"]),
+  trackingNumber: z.string().trim().max(64).optional(),
 });
+
+// Tillåtna övergångar — en skickad order ska inte kunna gå baklänges till
+// PENDING av ett felklick, och ett nytt SHIPPED-mail ska aldrig kunna
+// provoceras fram genom att studsa fram och tillbaka.
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  PENDING: ["PAID", "FAILED"],
+  FAILED: ["PAID"],
+  PAID: ["SHIPPED"],
+  SHIPPED: [],
+};
 
 export async function PATCH(
   req: Request,
@@ -19,7 +30,7 @@ export async function PATCH(
     }
 
     const body = await req.json();
-    const { status } = statusSchema.parse(body);
+    const { status, trackingNumber } = statusSchema.parse(body);
 
     // Läs före skrivningen: bara en faktisk övergång till SHIPPED ska ge mail.
     // Att admin klickar "Markera som skickad" två gånger ska inte mejla kunden
@@ -29,12 +40,31 @@ export async function PATCH(
       select: { status: true },
     });
 
+    if (!before) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
+    }
+
+    if (
+      before.status !== status &&
+      !ALLOWED_TRANSITIONS[before.status]?.includes(status)
+    ) {
+      return NextResponse.json(
+        { error: `Ogiltig statusövergång: ${before.status} → ${status}` },
+        { status: 409 }
+      );
+    }
+
     const order = await prisma.order.update({
       where: { id: params.id },
-      data: { status },
+      data: {
+        status,
+        ...(trackingNumber !== undefined
+          ? { trackingNumber: trackingNumber || null }
+          : {}),
+      },
     });
 
-    if (status === "SHIPPED" && before?.status !== "SHIPPED") {
+    if (status === "SHIPPED" && before.status !== "SHIPPED") {
       await sendSystemNotification({
         type: "card_order_shipped",
         to: order.customerEmail,
@@ -42,6 +72,7 @@ export async function PATCH(
         orderId: order.id,
         quantity: order.quantity,
         shippingCity: order.shippingCity,
+        trackingNumber: order.trackingNumber,
       });
     }
 

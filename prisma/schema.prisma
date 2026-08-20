@@ -214,6 +214,9 @@ model Order {
   shippingPostalCode String?
   shippingCountry    String?
 
+  // Sätts av admin när ordern markeras som skickad; följer med i kundmailet.
+  trackingNumber String?
+
   @@index([status, createdAt])
   @@index([userId, status, createdAt])
 }
@@ -308,7 +311,13 @@ model AnalyticsEvent {
   city     String?
   device   String?
 
+  // Dagligt roterande hash av IP + user-agent (ingen rå IP lagras).
+  // Används för att räkna unika besökare. Null på rader skrivna före
+  // migrationen 20260820 — unika besökare kan bara räknas framåt.
+  visitorHash String?
+
   @@index([profileOwnerId, createdAt])
+  @@index([createdAt])
 }
 
 enum EventType {

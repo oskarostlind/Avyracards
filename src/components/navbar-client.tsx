@@ -82,7 +82,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
 
   return (
     <header
-      className={`sticky top-0 z-50 border-b border-nordic-highlight/10 bg-nordic-primary/80 backdrop-blur-md ${
+      className={`sticky top-0 z-50 border-b border-nordic-highlight/10 bg-nordic-primary/80 backdrop-blur-md print:hidden ${
         isApp ? "pt-[max(env(safe-area-inset-top),1rem)]" : ""
       }`}
     >

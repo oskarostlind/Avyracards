@@ -59,7 +59,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         >
           <SessionProviderWrapper>
             <SplashScreenManager />
-            <div className="flex min-h-screen flex-col">
+            <div className="flex min-h-screen flex-col print:min-h-0 print:block">
               <Navbar />
               <main className="flex-1">{children}</main>
               <Footer />

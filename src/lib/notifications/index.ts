@@ -42,6 +42,7 @@ export type SystemNotification =
       orderId: string;
       quantity: number;
       shippingCity?: string | null;
+      trackingNumber?: string | null;
     };
 
 export interface NotificationResult {
@@ -80,6 +81,7 @@ export function renderNotification(
         orderId: notification.orderId,
         quantity: notification.quantity,
         shippingCity: notification.shippingCity ?? null,
+        trackingNumber: notification.trackingNumber ?? null,
       });
     default:
       return null;
