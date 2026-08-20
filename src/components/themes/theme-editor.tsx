@@ -210,10 +210,12 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             )}
 
             {activeTab === "buttons" && (
-                <ButtonsTab 
-                    settings={currentSettings} 
-                    updateSetting={updateSetting} 
+                <ButtonsTab
+                    settings={currentSettings}
+                    updateSetting={updateSetting}
                     isPremium={isUserPremium}
+                    isAdmin={isUserAdmin}
+                    onShowUpgrade={() => setShowUpgradeModal(true)}
                 />
             )}
 

@@ -2,17 +2,26 @@
 
 import { type CustomThemeSettings, type ButtonStyle, type ButtonVariant } from "@/types/theme";
 import { ColorPicker, PremiumBadge } from "@/components/themes/theme-controls";
+import { canAccess, PREMIUM_BUTTON_VARIANTS } from "@/lib/feature-access";
 import { useT } from "@/i18n/client";
 
 interface ButtonsTabProps {
   settings: CustomThemeSettings;
   updateSetting: (key: keyof CustomThemeSettings, value: string | boolean) => void;
   isPremium: boolean;
+  isAdmin?: boolean;
+  onShowUpgrade: () => void;
 }
 
-export function ButtonsTab({ settings, updateSetting, isPremium }: ButtonsTabProps) {
+export function ButtonsTab({ settings, updateSetting, isPremium, isAdmin, onShowUpgrade }: ButtonsTabProps) {
   const t = useT();
-  
+
+  // Samma källa som /api/themes/save använder. Utan det här kunde ett gratiskonto
+  // välja "glass", se den i previewn och tro att den satt — servern tvättade bort
+  // den först vid spara, helt tyst. (ClickUp 86cb5duj6)
+  const accessUser = { isPremium, isAdmin };
+  const canUsePremiumVariants = canAccess("theme_button_glass", accessUser);
+
   const renderShapePreview = (style: ButtonStyle) => {
     const baseClass = "w-full h-8 bg-slate-700 transition-all group-hover:bg-purple-500/50";
     if (style === 'rounded') return <div className={`${baseClass} rounded-lg`} />;
@@ -50,20 +59,24 @@ export function ButtonsTab({ settings, updateSetting, isPremium }: ButtonsTabPro
          <label className="text-xs font-bold text-nordic-highlight uppercase">{t("themes.buttons.style")}</label>
          <div className="grid grid-cols-2 gap-2">
             {(['solid', 'outline', 'soft', 'glass', 'ghost'] as ButtonVariant[]).map((variant) => {
-                const isPremiumVariant = variant === 'glass';
+                const isPremiumVariant = PREMIUM_BUTTON_VARIANTS.includes(variant);
+                const locked = isPremiumVariant && !canUsePremiumVariants;
                 return (
-                  <button 
+                  <button
                     key={variant}
-                    onClick={() => updateSetting("buttonVariant", variant)}
+                    onClick={() => (locked ? onShowUpgrade() : updateSetting("buttonVariant", variant))}
+                    aria-disabled={locked}
                     className={`relative py-3 px-4 text-xs uppercase font-bold border rounded-lg transition-all text-left flex justify-between items-center overflow-hidden ${
-                      settings.buttonVariant === variant 
-                      ? "border-purple-500 bg-purple-500/10 text-purple-400" 
+                      settings.buttonVariant === variant
+                      ? "border-purple-500 bg-purple-500/10 text-purple-400"
+                      : locked
+                      ? "border-nordic-highlight/40 text-nordic-highlight/50 hover:border-amber-500 cursor-not-allowed"
                       : "border-nordic-highlight/40 text-nordic-highlight hover:border-slate-600"
                     }`}
                   >
                     <span>{variant}</span>
                     {/* Använder specifikt anpassad styling för ikonen inuti knappar */}
-                    {isPremiumVariant && <PremiumBadge isUnlocked={isPremium} className="absolute top-1/2 -translate-y-1/2 right-2 scale-[0.65] origin-right" />}
+                    {isPremiumVariant && <PremiumBadge isUnlocked={!locked} className="absolute top-1/2 -translate-y-1/2 right-2 scale-[0.65] origin-right" />}
                   </button>
                 )
             })}

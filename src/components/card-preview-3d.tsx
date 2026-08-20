@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useState, useMemo, CSSProperties } from "react";
-import Image from "next/image";
 import { QrCode, Wifi, RotateCw } from "lucide-react";
 import ReactCardFlip from 'react-card-flip';
 import { useT } from "@/i18n/client";
@@ -180,8 +179,10 @@ export function CardPreview3D({ material, color, design, customImage }: CardPrev
 
   const finish = useMemo(() => buildFinish(baseHex), [baseHex]);
 
-  // --- MUSHANTERING (Tilt) ---
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  // --- PEKHANTERING (Tilt) ---
+  // Pointer events, inte mouse events: på mobil ger en tap bara EN syntetisk
+  // mousemove och aldrig någon mouseleave, så glansen fastnade där man tryckte.
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!ref.current) return;
     const rect = ref.current.getBoundingClientRect();
 
@@ -190,8 +191,8 @@ export function CardPreview3D({ material, color, design, customImage }: CardPrev
 
     setRotate({ x: -yPct * 15, y: xPct * 15 });
     setGlare({
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
+      x: (xPct + 0.5) * 100,
+      y: (yPct + 0.5) * 100,
       opacity: 1,
     });
   };
@@ -199,6 +200,12 @@ export function CardPreview3D({ material, color, design, customImage }: CardPrev
   const handleReset = () => {
     setRotate({ x: 0, y: 0 });
     setGlare((prev) => ({ ...prev, opacity: 0 }));
+  };
+
+  // Musen ligger kvar över kortet efter ett klick — då ska glansen inte nollas.
+  // Finger och penna släpper däremot ytan, och ska återställa kortet.
+  const handlePointerEnd = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== "mouse") handleReset();
   };
 
   const textClass = finish.needsDarkText ? "text-[#141518]" : "text-nordic-secondary";
@@ -229,12 +236,17 @@ export function CardPreview3D({ material, color, design, customImage }: CardPrev
           {/* TILT CONTAINER */}
           <div
             ref={ref}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleReset}
+            onPointerMove={handlePointerMove}
+            onPointerLeave={handleReset}
+            onPointerUp={handlePointerEnd}
+            onPointerCancel={handlePointerEnd}
             className="w-full h-full transition-transform duration-100 ease-out cursor-grab active:cursor-grabbing"
             style={{
               transform: `rotateX(${rotate.x}deg) rotateY(${rotate.y}deg)`,
               transformStyle: "preserve-3d",
+              // Vertikal scroll måste fortsatt släppas igenom; när webbläsaren
+              // tar över gesten får vi pointercancel och nollar glansen.
+              touchAction: "pan-y",
             }}
           >
             <ReactCardFlip
@@ -394,39 +406,50 @@ function PlasticFront({
     <>
       <Glare glare={glare} isMetal={false} />
 
-      <div className={`relative z-10 w-full h-full p-[7%] flex flex-col justify-between ${textClass}`}>
-        <div className="flex justify-end items-start">
-          <div className="flex items-center gap-2 opacity-55">
-            <Wifi className="w-5 h-5 md:w-6 md:h-6 rotate-90" />
-            <span className="text-xs font-mono tracking-widest uppercase">NFC</span>
-          </div>
-        </div>
+      {/* Plastkortet trycks enligt layoutmallen (ClickUp 86c6rbwzc): enbart
+          varumärkeslockupen, centrerad på kortytan. Ingen URL och ingen
+          NFC-markering — de finns inte på det fysiska kortet. */}
+      <div className={`relative z-10 w-full h-full p-[7%] flex items-center justify-center ${textClass}`}>
+        <AvyraLockup className="w-[44%] min-w-[104px]" />
 
-        <div className="flex items-end justify-between">
-          <div>
-            {/* Riktiga varumärkeslockupen — samma bild som Wallet-passet använder.
-                Ordbilden har egen typografi, därför bild och inte CSS-text. */}
-            <Image
-              src="/avyra-logo.png"
-              alt="AvyraCards"
-              width={512}
-              height={312}
-              className={`w-[34%] min-w-[92px] h-auto ${finish.needsDarkText ? "invert" : ""}`}
-              priority={false}
-            />
-            <div className="text-[10px] md:text-xs opacity-55 mt-[4%] tracking-[0.2em] uppercase">
-              avyracards.se
-            </div>
+        {design === "qr" && (
+          <div className="absolute bottom-[7%] right-[7%] bg-white p-1.5 md:p-2 rounded-xl shadow-sm">
+            <QrCode size={32} className="text-[#141518] md:w-10 md:h-10" />
           </div>
-
-          {design === "qr" && (
-            <div className="bg-white p-1.5 md:p-2 rounded-xl shadow-sm">
-              <QrCode size={32} className="text-[#141518] md:w-10 md:h-10" />
-            </div>
-          )}
-        </div>
+        )}
       </div>
     </>
+  );
+}
+
+/**
+ * Varumärkeslockupen (A-märket över ordbilden AVYRA).
+ *
+ * Ritas som CSS-mask i stället för <img>, så att den ärver `currentColor` och
+ * därmed automatiskt blir mörk på ljusa kortkulörer utan invert-hack.
+ * SVG:n är beskuren till exakt lockupens bounding box — inga marginaler.
+ */
+const LOCKUP_ASPECT = 714 / 440.5;
+
+function AvyraLockup({ className = "" }: { className?: string }) {
+  return (
+    <span
+      role="img"
+      aria-label="Avyra"
+      className={`block ${className}`}
+      style={{
+        aspectRatio: `${LOCKUP_ASPECT}`,
+        backgroundColor: "currentColor",
+        WebkitMaskImage: "url(/avyra-logo.svg)",
+        maskImage: "url(/avyra-logo.svg)",
+        WebkitMaskSize: "contain",
+        maskSize: "contain",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
+        WebkitMaskPosition: "center",
+        maskPosition: "center",
+      }}
+    />
   );
 }
 
