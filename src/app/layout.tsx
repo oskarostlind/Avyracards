@@ -7,6 +7,7 @@ import { Footer } from "@/components/footer";
 import SessionProviderWrapper from "@/components/providers/session-provider";
 import CookieBanner from "@/components/cookie-banner";
 import { SplashScreenManager } from "@/components/splash-screen-manager";
+import { PushDeepLink } from "@/components/push-deep-link";
 import { IosNativeDebugPanel } from "@/components/debug/ios-native-debug-panel";
 import { LocaleProvider } from "@/i18n/client";
 import { getLocale } from "@/i18n/server";
@@ -59,6 +60,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         >
           <SessionProviderWrapper>
             <SplashScreenManager />
+            {/* Ligger i rot-layouten, inte i dashboarden: en notis kan tryckas
+                när appen är helt stängd, och då startar den på valfri sida. */}
+            <PushDeepLink />
             <div className="flex min-h-screen flex-col print:min-h-0 print:block">
               <Navbar />
               <main className="flex-1">{children}</main>

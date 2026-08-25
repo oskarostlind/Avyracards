@@ -25,7 +25,13 @@ import { useT } from "@/i18n/client";
 
 type DashboardShellProps = {
   // Lägg till hasOrderedCard i typen
-  user: User & { links: PrismaLink[] } & { hasSeenOnboarding: boolean; hasOrderedCard?: boolean };
+  user: User & { links: PrismaLink[] } & {
+    hasSeenOnboarding: boolean;
+    hasOrderedCard?: boolean;
+    // Nytt Apple-konto med auto-genererat username (email-prefix/relay-alias)
+    // som ännu inte har gått igenom onboardingens username-steg.
+    needsUsernameSetup?: boolean;
+  };
   prices: { standard: string; bundle: string };
 };
 
@@ -223,12 +229,14 @@ export function DashboardShell({ user, prices }: DashboardShellProps) {
         mode={viewMode}
       />
 
-      <OnboardingModal 
+      <OnboardingModal
           user={{
               name: user.name,
+              username: user.username,
               isPremium: user.isPremium,
-              hasSeenOnboarding: user.hasSeenOnboarding
-          }} 
+              hasSeenOnboarding: user.hasSeenOnboarding,
+              needsUsernameSetup: user.needsUsernameSetup ?? false
+          }}
           prices={prices}
       />
     </div>

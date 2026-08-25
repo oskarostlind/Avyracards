@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Globe, MousePointer2, ShieldCheck, Zap } from "lucide-react";
+import { BarChart3, Globe, Link2, MousePointer2, ShieldCheck, Zap } from "lucide-react";
 import { useT } from "@/i18n/client";
 
 // --- SLIDE 1: DASHBOARD ---
@@ -160,6 +160,38 @@ export function ThemesVisual() {
                </div>
            </div>
        </div>
+    </div>
+  );
+}
+
+// --- SLIDE 0: USERNAME (Nya Apple-konton väljer sitt riktiga användarnamn) ---
+export function UsernameVisual({ username }: { username: string }) {
+  const t = useT();
+  const displayName = username || "user";
+
+  return (
+    <div className="w-full h-full bg-slate-900 border-b md:border-b-0 md:border-l border-slate-800 relative overflow-hidden flex items-center justify-center p-8">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-slate-900 to-slate-900" />
+
+      <div className="relative w-full max-w-sm space-y-4">
+        <div className="rounded-2xl bg-slate-800/60 border border-slate-700 shadow-2xl px-5 py-3 flex items-center gap-3">
+          <Link2 size={16} className="text-slate-500 shrink-0" />
+          <span className="text-sm sm:text-base text-slate-400 truncate font-mono">
+            avyracards.se/u/<span className="text-white font-semibold">{displayName}</span>
+          </span>
+        </div>
+
+        <div className="rounded-2xl bg-slate-900 border border-emerald-500/20 shadow-xl p-6 flex flex-col items-center gap-3 text-center">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-500 to-emerald-500 flex items-center justify-center text-2xl font-bold text-white shrink-0">
+            {displayName.charAt(0).toUpperCase()}
+          </div>
+          <div className="h-3 w-28 bg-slate-700 rounded-full" />
+          <div className="h-2 w-40 bg-slate-800 rounded-full" />
+          <div className="text-xs text-emerald-400 font-medium mt-1">
+            {t("onboarding.visuals.thisIsYourLink")}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

@@ -1,13 +1,16 @@
 "use client";
 
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Cell
 } from "recharts";
-import { MousePointerClick, Eye, TrendingUp, Lock, Globe as GlobeIcon, QrCode, Save } from "lucide-react";
+import { MousePointerClick, Eye, TrendingUp, Lock, Globe as GlobeIcon, QrCode, Save, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Globe } from "./globe";
+import { ChartTooltip } from "./chart-tooltip";
+import { AnalyticsEventModal, type AnalyticsActivityItem } from "./analytics-event-modal";
 import { useT, useLocaleTag } from "@/i18n/client";
 import type { Translator } from "@/i18n";
 
@@ -18,12 +21,15 @@ interface AnalyticsProps {
   topLinks: any[];
   trafficSources: any[];
   topCountries: any[];
-  recentActivity: any[];
+  recentActivity: AnalyticsActivityItem[];
   currentDays: number;
 }
 
-export function AnalyticsView({ 
-  isPremium, stats, chartData, topLinks, trafficSources, topCountries, recentActivity, currentDays 
+/** Hur länge en deeplinkad rad glöder innan highlighten klingar av. */
+const HIGHLIGHT_MS = 4000;
+
+export function AnalyticsView({
+  isPremium, stats, chartData, topLinks, trafficSources, topCountries, recentActivity, currentDays
 }: AnalyticsProps) {
   const t = useT();
   const localeTag = useLocaleTag();
@@ -37,9 +43,75 @@ export function AnalyticsView({
       router.push(`/dashboard/analytics?${params.toString()}`);
   };
 
+  const formatCountry = useCallback(
+    (code: string) => getCountryName(code, localeTag),
+    [localeTag],
+  );
+
+  /* ---------------------------------------------------------------------- */
+  /* Deeplink från push-notis: /dashboard/analytics?event=<id>               */
+  /* ---------------------------------------------------------------------- */
+
+  const deepLinkedEventId = searchParams.get("event");
+  const [highlightedId, setHighlightedId] = useState<string | null>(null);
+  const rowRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  useEffect(() => {
+    if (!deepLinkedEventId || !isPremium) return;
+    if (!recentActivity.some((item) => item.id === deepLinkedEventId)) return;
+
+    setHighlightedId(deepLinkedEventId);
+
+    // rAF: raden ska finnas i DOM:en innan vi scrollar till den.
+    const frame = requestAnimationFrame(() => {
+      rowRefs.current[deepLinkedEventId]?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
+
+    const timer = setTimeout(() => setHighlightedId(null), HIGHLIGHT_MS);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+  }, [deepLinkedEventId, isPremium, recentActivity]);
+
+  /* ---------------------------------------------------------------------- */
+  /* Detaljmodal                                                             */
+  /* ---------------------------------------------------------------------- */
+
+  const [selectedEvent, setSelectedEvent] = useState<AnalyticsActivityItem | null>(null);
+
+  /* ---------------------------------------------------------------------- */
+  /* Tooltip-formatering                                                     */
+  /* ---------------------------------------------------------------------- */
+
+  const formatCount = useCallback(
+    (metric: "views" | "clicks", value: unknown) =>
+      t(metric === "clicks" ? "analytics.clicksCount" : "analytics.viewsCount", {
+        count: Number(value ?? 0),
+      }),
+    [t],
+  );
+
+  const timeSeriesFormat = useCallback(
+    (entry: { dataKey?: string | number; value?: number | string }) =>
+      formatCount(entry.dataKey === "clicks" ? "clicks" : "views", entry.value),
+    [formatCount],
+  );
+
+  const sourceFormat = useCallback(
+    (entry: { value?: number | string }) => formatCount("views", entry.value),
+    [formatCount],
+  );
+
+  const demoActivity = useMemo(() => [1, 2, 3, 4], []);
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      
+
       {/* 1. KPIer - Nu med 4 kolumner */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard title={t("analytics.profileViews")} value={stats.totalViews} icon={<Eye className="h-5 w-5 text-blue-400" />} subtitle={t("analytics.lastDays", { days: currentDays })} />
@@ -53,7 +125,7 @@ export function AnalyticsView({
       <div className="rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
         <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h3 className="text-lg font-semibold text-slate-100">{t("analytics.activityOverTime")}</h3>
-            <select 
+            <select
                 value={currentDays}
                 onChange={handleDateChange}
                 className="bg-slate-800 text-sm text-slate-200 rounded-lg px-3 py-2 border border-nordic-highlight/40 outline-none cursor-pointer hover:border-emerald-500/50 transition-colors"
@@ -72,7 +144,14 @@ export function AnalyticsView({
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
               <XAxis dataKey="date" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} allowDecimals={false} />
-              <Tooltip contentStyle={{ backgroundColor: "#0f172a", borderColor: "#1e293b", color: "#f8fafc" }} />
+              <Tooltip
+                content={<ChartTooltip format={timeSeriesFormat} />}
+                cursor={{ stroke: "#475569", strokeWidth: 1 }}
+                // Håller rutan innanför grafen även längst ut på en mobilskärm.
+                allowEscapeViewBox={{ x: false, y: false }}
+                offset={14}
+                wrapperStyle={{ zIndex: 40, outline: "none" }}
+              />
               <Line type="monotone" dataKey="views" name={t("analytics.views")} stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6 }} />
               <Line type="monotone" dataKey="clicks" name={t("analytics.clicks")} stroke="#22c55e" strokeWidth={3} dot={false} />
             </LineChart>
@@ -82,7 +161,7 @@ export function AnalyticsView({
 
       {/* 3. PREMIUM GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
+
         {/* GEOGRAFI & KARTA */}
         <div className="relative flex flex-col rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl overflow-hidden min-h-[400px]">
           <div className="flex items-center justify-between mb-4 z-10">
@@ -94,9 +173,9 @@ export function AnalyticsView({
 
               <PremiumLock isPremium={isPremium} t={t} title={t("analytics.lockGeo")}>
                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-50 md:opacity-100 mt-10">
-                    <Globe className="scale-125" /> 
+                    <Globe className="scale-125" />
                 </div>
-                
+
                 <div className="relative z-10 space-y-3 mt-4 bg-nordic-primary/30 p-4 rounded-xl backdrop-blur-sm border border-white/5 max-w-[250px]">
                   {(isPremium ? topCountries : [{code: "SE", count: 42}, {code: "US", count: 12}]).length === 0 ? (
                       <p className="text-xs text-nordic-highlight">{t("analytics.waitingForGeo")}</p>
@@ -104,7 +183,7 @@ export function AnalyticsView({
                     (isPremium ? topCountries : [{code: "SE", count: 42}, {code: "US", count: 12}]).map((c: any, i: number) => (
                       <div key={i} className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-2">
-                          <span>{getFlagEmoji(c.code)}</span> 
+                          <span>{getFlagEmoji(c.code)}</span>
                           <span className="text-slate-200">{getCountryName(c.code, localeTag)}</span>
                         </div>
                         <span className="font-bold text-nordic-highlight">{c.count}</span>
@@ -126,7 +205,13 @@ export function AnalyticsView({
                 <BarChart data={isPremium ? (trafficSources.length ? trafficSources : [{name: t("analytics.noData"), value: 0}]) : [{name: 'Instagram', value: 65}, {name: 'LinkedIn', value: 20}, {name: 'Direkt', value: 15}]} layout="vertical" margin={{ left: 10 }}>
                   <XAxis type="number" hide />
                   <YAxis dataKey="name" type="category" width={70} tick={{fill: '#94a3b8', fontSize: 12}} />
-                  <Tooltip cursor={{fill: 'transparent'}} contentStyle={{ backgroundColor: "#0f172a", borderColor: "#334155" }} />
+                  <Tooltip
+                    cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                    content={<ChartTooltip format={sourceFormat} />}
+                    allowEscapeViewBox={{ x: false, y: false }}
+                    offset={14}
+                    wrapperStyle={{ zIndex: 40, outline: "none" }}
+                  />
                   <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={32}>
                     { (isPremium ? trafficSources : [{name: 'Instagram'}, {name: 'LinkedIn'}, {name: 'Direkt'}]).map((entry: any, index: number) => (
                       <Cell key={`cell-${index}`} fill={['#3b82f6', '#ec4899', '#8b5cf6', '#64748b'][index % 4]} />
@@ -141,43 +226,32 @@ export function AnalyticsView({
 
       {/* 4. SENASTE AKTIVITET & TOPPLISTA */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
+
         {/* Live Feed */}
         <div className="relative rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
              <h3 className="mb-4 text-lg font-semibold text-slate-100">{t("analytics.liveActivity")}</h3>
              <PremiumLock isPremium={isPremium} t={t} title={t("analytics.lockLive")}>
-                <div className="space-y-4">
-                    {(isPremium ? recentActivity : [1,2,3,4]).map((item: any, i: number) => (
-                    <div key={i} className="flex items-center justify-between border-b border-nordic-highlight/40/50 pb-3 last:border-0 last:pb-0">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-full bg-slate-800/50">
-                                {/* Visar olika ikoner baserat på handlingen */}
-                                {isPremium && item.actionKey === "analytics.actions.contactSaved" 
-                                  ? <Save size={14} className="text-emerald-400"/> 
-                                  : (item.type === 'CLICK' ? <MousePointerClick size={14} className="text-sky-400"/> : <Eye size={14} className="text-blue-400"/>)
-                                }
-                            </div>
-                            <div>
-                                <p className="text-xs text-slate-300 font-medium">
-                                    {isPremium ? t(item.actionKey) : t("analytics.visitor")}
-                                </p>
-                                <p className="text-[10px] text-nordic-highlight">
-                                    {isPremium
-                                      ? `${item.city || t("analytics.unknownPlace")}, ${item.country || ""}`
-                                      : "Stockholm, Sweden"}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="text-[10px] text-slate-600 font-mono">
-                           {isPremium ? item.timeAgo : t("analytics.justNow")}
-                        </div>
-                    </div>
-                    ))}
+                <div className="space-y-2">
+                    {isPremium
+                      ? recentActivity.map((item) => (
+                          <ActivityRow
+                            key={item.id}
+                            item={item}
+                            t={t}
+                            highlighted={item.id === highlightedId}
+                            formatCountry={formatCountry}
+                            onSelect={() => setSelectedEvent(item)}
+                            registerRef={(node) => {
+                              rowRefs.current[item.id] = node;
+                            }}
+                          />
+                        ))
+                      : demoActivity.map((i) => <DemoActivityRow key={i} t={t} />)}
                     {isPremium && recentActivity.length === 0 && <p className="text-sm text-nordic-highlight">{t("analytics.noActivityYet")}</p>}
                 </div>
              </PremiumLock>
         </div>
-        
+
         {/* Topplista Länkar */}
         <div className="rounded-3xl border border-nordic-highlight/40 bg-slate-900/50 p-6 shadow-xl">
             <h3 className="mb-4 text-lg font-semibold text-slate-100">{t("analytics.mostClicked")}</h3>
@@ -191,6 +265,90 @@ export function AnalyticsView({
             </div>
         </div>
       </div>
+
+      <AnalyticsEventModal
+        event={selectedEvent}
+        onClose={() => setSelectedEvent(null)}
+        formatCountry={formatCountry}
+      />
+    </div>
+  );
+}
+
+/** En klickbar rad i Live-aktivitet. */
+function ActivityRow({
+  item,
+  t,
+  highlighted,
+  onSelect,
+  registerRef,
+  formatCountry,
+}: {
+  item: AnalyticsActivityItem;
+  t: Translator;
+  highlighted: boolean;
+  onSelect: () => void;
+  registerRef: (node: HTMLButtonElement | null) => void;
+  formatCountry: (code: string) => string;
+}) {
+  const isContactSave = item.messageKey === "analytics.activity.contactSaved";
+
+  const place = [item.city, item.country ? formatCountry(item.country) : null]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <button
+      ref={registerRef}
+      type="button"
+      onClick={onSelect}
+      aria-label={t("analytics.viewDetails")}
+      className={[
+        "flex w-full items-center justify-between gap-3 rounded-xl border px-3 py-2.5 text-left transition-all duration-700",
+        highlighted
+          ? "border-emerald-400/70 bg-emerald-400/10 shadow-[0_0_24px_rgba(52,211,153,0.35)]"
+          : "border-transparent hover:border-nordic-highlight/40 hover:bg-white/[0.03]",
+      ].join(" ")}
+    >
+      <div className="flex min-w-0 items-center gap-3">
+        <div className={`rounded-full p-2 ${highlighted ? "bg-emerald-500/20 animate-pulse" : "bg-slate-800/50"}`}>
+          {isContactSave
+            ? <Save size={14} className="text-emerald-400" />
+            : (item.type === "CLICK" ? <MousePointerClick size={14} className="text-sky-400" /> : <Eye size={14} className="text-blue-400" />)}
+        </div>
+        <div className="min-w-0">
+          <p className="truncate text-xs font-medium text-slate-300">
+            {item.hasSource
+              ? t(`${item.messageKey}Via`, { source: item.source })
+              : t(item.messageKey)}
+          </p>
+          <p className="truncate text-[10px] text-nordic-highlight">
+            {place || t("analytics.unknownPlace")}
+          </p>
+        </div>
+      </div>
+      <div className="flex shrink-0 items-center gap-1">
+        <span className="font-mono text-[10px] text-slate-600">{item.timeAgo}</span>
+        <ChevronRight size={13} className="text-slate-600" />
+      </div>
+    </button>
+  );
+}
+
+/** Suddad platshållarrad bakom premiumlåset. */
+function DemoActivityRow({ t }: { t: Translator }) {
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-xl px-3 py-2.5">
+      <div className="flex items-center gap-3">
+        <div className="rounded-full bg-slate-800/50 p-2">
+          <Eye size={14} className="text-blue-400" />
+        </div>
+        <div>
+          <p className="text-xs font-medium text-slate-300">{t("analytics.visitor")}</p>
+          <p className="text-[10px] text-nordic-highlight">Stockholm, Sweden</p>
+        </div>
+      </div>
+      <div className="font-mono text-[10px] text-slate-600">{t("analytics.justNow")}</div>
     </div>
   );
 }

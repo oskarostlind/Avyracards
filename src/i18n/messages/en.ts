@@ -274,8 +274,10 @@ export const en: Messages = {
     url: "URL",
     placeholderSocial: "e.g. Instagram",
     placeholderBusiness: "e.g. Book a meeting",
-    urlPlaceholder: "https://...",
+    urlPlaceholder: "yoursite.com",
+    urlHint: "https:// is added automatically if you leave it out.",
     invalid: "Check the link title and URL.",
+    invalidUrl: "Check the address, e.g. yoursite.com",
     saveFailed: "Couldn't save the link",
     add: "Add link",
     redirectBadge: "REDIRECT",
@@ -284,6 +286,41 @@ export const en: Messages = {
     editLink: "Edit link",
     visible: "Visible",
     hidden: "Hidden",
+
+    // --- Icon picker ---
+    icon: "Icon",
+    iconAuto: "Automatic",
+    iconAutoHint: "Picked from the address — currently {icon}",
+    iconSearch: "Search icons",
+    iconNoResults: "No icon matches your search.",
+    iconCategories: {
+      social: "Social media",
+      video: "Video",
+      music: "Music",
+      portfolio: "Portfolio & work",
+      shop: "Shop",
+      payment: "Payments & support",
+      utility: "Tools",
+      generic: "General",
+    },
+    iconNames: {
+      link: "Link",
+      website: "Website",
+      email: "Email",
+      phone: "Phone",
+      calendar: "Booking",
+      meeting: "Video meeting",
+      document: "Document",
+      location: "Location",
+      job: "Work",
+    },
+
+    // --- Per-link colour (premium) ---
+    color: "Button colour",
+    colorTheme: "Theme colour",
+    colorReset: "Use the theme colour",
+    colorPremium: "Per-link colours are part of Premium",
+    brandColor: "Use {brand}'s colour",
   },
 
   settings: {
@@ -419,10 +456,44 @@ export const en: Messages = {
     mostClicked: "Most clicked",
     clicksSuffix: "clicks",
     unlock: "Unlock",
+    viewDetails: "Show event details",
+    viewsCount: {
+      one: "{count} view",
+      other: "{count} views",
+    },
+    clicksCount: {
+      one: "{count} click",
+      other: "{count} clicks",
+    },
     actions: {
       profileView: "Profile view",
       contactSaved: "Contact saved",
       linkClick: "Link click",
+    },
+    activity: {
+      view: "Someone opened your profile",
+      viewVia: "Someone opened your profile via {source}",
+      click: "Someone clicked a link",
+      clickVia: "Someone clicked a link via {source}",
+      contactSaved: "Someone saved your contact card",
+      contactSavedVia: "Someone saved your contact card via {source}",
+    },
+    eventTypes: {
+      view: "Profile view",
+      click: "Click",
+    },
+    eventModal: {
+      title: "About this event",
+      close: "Close",
+      time: "Time",
+      type: "Type",
+      source: "Source",
+      place: "Location",
+      device: "Device",
+      link: "Link",
+      unknown: "Unknown",
+      privacyNote:
+        "We never store the visitor's IP address — only country, city and device type.",
     },
     sources: {
       nfc: "NFC card",
@@ -548,6 +619,18 @@ export const en: Messages = {
       unlockAnalytics: "Unlock analytics",
       unlockAnalyticsBody: "See who's visiting you.",
       cardholder: "Cardholder",
+      thisIsYourLink: "This is your link",
+    },
+    username: {
+      title: "Choose your username",
+      desc: "We gave you a temporary username when you signed in with Apple. Pick the one you actually want to share before you get going.",
+      label: "Username",
+      placeholder: "yourname",
+      continue: "Continue",
+      skip: "Skip for now, I'll fix it later",
+      taken: "That username is taken.",
+      invalid: "Lowercase letters, numbers and underscores only, 3-20 characters.",
+      saveFailed: "Couldn't save the username. Please try again.",
     },
   },
 
@@ -1201,7 +1284,7 @@ export const en: Messages = {
     },
     links: {
       titleAndUrlRequired: "Title and URL are required.",
-      urlProtocol: "The URL must start with http:// or https://.",
+      invalidUrl: "Invalid address. Use e.g. yoursite.com or https://yoursite.com.",
       createFailed: "Couldn't create the link.",
     },
     profile: {

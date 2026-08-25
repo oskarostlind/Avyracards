@@ -102,6 +102,52 @@ describe("getProfileData – SOCIAL", () => {
   });
 });
 
+describe("getProfileData – länkanpassning", () => {
+  it("normaliserar href så knappen alltid är klickbar", () => {
+    const data = getProfileData(
+      baseUser({ links: [link({ url: "oskarostlind.se" })] }),
+      "SOCIAL"
+    );
+
+    expect(data.links[0].href).toBe("https://oskarostlind.se");
+    expect(data.links[0].url).toBe("oskarostlind.se");
+  });
+
+  it("löser ut ikonen automatiskt när icon är null", () => {
+    const data = getProfileData(
+      baseUser({ links: [link({ url: "https://snapchat.com/add/oskar", icon: null })] }),
+      "SOCIAL"
+    );
+
+    expect(data.links[0].iconSlug).toBe("snapchat");
+  });
+
+  it("låter manuellt ikonval slå auto-detekteringen", () => {
+    const data = getProfileData(
+      baseUser({ links: [link({ url: "https://instagram.com/x", icon: "github" })] }),
+      "SOCIAL"
+    );
+
+    expect(data.links[0].icon).toBe("github");
+    expect(data.links[0].iconSlug).toBe("github");
+  });
+
+  it("släpper bara igenom giltiga hexfärger", () => {
+    const data = getProfileData(
+      baseUser({
+        links: [
+          link({ id: "a", customColor: "#FF0000" }),
+          link({ id: "b", customColor: "rgb(1,2,3)" }),
+          link({ id: "c", customColor: null }),
+        ],
+      }),
+      "SOCIAL"
+    );
+
+    expect(data.links.map((l) => l.customColor)).toEqual(["#ff0000", null, null]);
+  });
+});
+
 describe("getProfileData – BUSINESS", () => {
   it("föredrar businessAvatarUrl men faller tillbaka på avatarUrl", () => {
     const withBusiness = getProfileData(

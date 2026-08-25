@@ -156,11 +156,18 @@ enum PremiumSource {
 }
 
 model Link {
-  id       String  @id @default(cuid())
-  userId   String
-  title    String
-  url      String
-  icon     String?
+  id     String @id @default(cuid())
+  userId String
+  title  String
+  url    String
+
+  /// Manuellt vald ikon-slug ur src/lib/link-icons.ts. NULL = auto-detektera ur url.
+  icon String?
+
+  /// Premium: egen hexfärg (#rrggbb) för knappen. NULL = temats accentfärg.
+  /// Gatingen görs i sanitizeLinkCustomization (src/lib/feature-access.ts).
+  customColor String?
+
   order    Int     @default(0)
   isActive Boolean @default(true)
 

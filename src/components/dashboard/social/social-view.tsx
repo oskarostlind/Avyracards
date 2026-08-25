@@ -25,6 +25,8 @@ export function SocialView({ user }: SocialViewProps) {
     label: link.title || link.url,
     url: link.url,
     isVisible: link.isActive,
+    icon: link.icon,
+    customColor: link.customColor,
   }));
 
   return (
@@ -45,10 +47,12 @@ export function SocialView({ user }: SocialViewProps) {
         description={t("dashboard.sections.linksSocialDesc")}
         defaultOpen
       >
-        <LinksWorkspace 
-        initialLinks={initialLinks} 
-        mode="SOCIAL" 
+        <LinksWorkspace
+        initialLinks={initialLinks}
+        mode="SOCIAL"
         activeRedirectId={user.redirectLinkId} // <-- LÄGG TILL DENNA
+        isPremium={user.isPremium}
+        isAdmin={user.role === "ADMIN"}
         />
       </CollapsibleSection>
     </div>

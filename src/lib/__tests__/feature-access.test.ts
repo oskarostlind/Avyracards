@@ -3,6 +3,7 @@ import {
   canAccess,
   isTemplateLocked,
   matchesLockedTemplate,
+  sanitizeLinkCustomization,
   sanitizeThemeSettings,
   getTemplates,
 } from "@/lib/feature-access";
@@ -132,5 +133,45 @@ describe("sanitizeThemeSettings", () => {
     const res = sanitizeThemeSettings(input, "SOCIAL", FREE);
     expect(res.sanitized).toBe(false);
     expect(res.settings).toEqual(input);
+  });
+});
+
+describe("sanitizeLinkCustomization", () => {
+  it("nollar customColor för gratiskonton", () => {
+    const res = sanitizeLinkCustomization({ customColor: "#ff0000" }, FREE);
+    expect(res.customColor).toBeNull();
+    expect(res.sanitized).toBe(true);
+    expect(res.removed).toContain("link_custom_color");
+  });
+
+  it("släpper igenom och normaliserar färgen för premium", () => {
+    const res = sanitizeLinkCustomization({ customColor: "#F00" }, PREMIUM);
+    expect(res.customColor).toBe("#ff0000");
+    expect(res.sanitized).toBe(false);
+  });
+
+  it("ger admin samma rättighet som premium", () => {
+    expect(sanitizeLinkCustomization({ customColor: "#123456" }, ADMIN).customColor).toBe(
+      "#123456",
+    );
+  });
+
+  it("avvisar ogiltiga färgvärden utan att flagga premium", () => {
+    const res = sanitizeLinkCustomization({ customColor: "red" }, PREMIUM);
+    expect(res.customColor).toBeNull();
+    expect(res.sanitized).toBe(false);
+  });
+
+  it("låter ikonval vara gratis men validerar sluggen", () => {
+    expect(sanitizeLinkCustomization({ icon: "snapchat" }, FREE).icon).toBe("snapchat");
+    expect(sanitizeLinkCustomization({ icon: "myspace" }, FREE).icon).toBeNull();
+    expect(sanitizeLinkCustomization({ icon: "" }, FREE).icon).toBeNull();
+    expect(sanitizeLinkCustomization({ icon: null }, PREMIUM).sanitized).toBe(false);
+  });
+
+  it("rör inte fält som saknas i indatan", () => {
+    const res = sanitizeLinkCustomization({}, FREE);
+    expect("customColor" in res).toBe(false);
+    expect("icon" in res).toBe(false);
   });
 });

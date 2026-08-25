@@ -65,7 +65,8 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
             title: true,
             url: true,
             icon: true,
-            mode: true, 
+            customColor: true,
+            mode: true,
             isActive: true,
             order: true
         }

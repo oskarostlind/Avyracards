@@ -22,43 +22,44 @@ const DEMO_DATA: MappedProfileData = {
 
   actions: [],
 
-  // Vi mockar länkarna så att de ser ut som databas-objekt
+  // Länkarna mockas i mapperns utdataform (MappedLink) — samma form som
+  // ProfilePreview får från getProfileData, inte råa databasrader.
   links: [
     {
       id: "demo-1",
       title: "Min Portfolio",
       url: "https://avyracards.se",
+      href: "https://avyracards.se",
       icon: null,
+      iconSlug: "link",
+      customColor: null,
       mode: "SOCIAL",
       isActive: true,
-      order: 0,
-      userId: "demo",
-      createdAt: new Date(),
-      updatedAt: new Date()
+      order: 0
     },
     {
       id: "demo-2",
       title: "Instagram",
       url: "https://instagram.com",
+      href: "https://instagram.com",
       icon: null,
+      iconSlug: "instagram",
+      customColor: null,
       mode: "SOCIAL",
       isActive: true,
-      order: 1,
-      userId: "demo",
-      createdAt: new Date(),
-      updatedAt: new Date()
+      order: 1
     },
     {
       id: "demo-3",
       title: "LinkedIn",
       url: "https://linkedin.com",
+      href: "https://linkedin.com",
       icon: null,
+      iconSlug: "linkedin",
+      customColor: null,
       mode: "SOCIAL",
       isActive: true,
-      order: 2,
-      userId: "demo",
-      createdAt: new Date(),
-      updatedAt: new Date()
+      order: 2
     }
   ]
 };

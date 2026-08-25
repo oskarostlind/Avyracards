@@ -17,6 +17,8 @@ import type {
 } from "@/types/theme";
 import { SOCIAL_TEMPLATES } from "@/data/theme-templates-social";
 import { BUSINESS_TEMPLATES } from "@/data/theme-templates-business";
+import { isKnownLinkIcon } from "@/lib/link-icons";
+import { normalizeHexColor } from "@/utils/color";
 
 /** Minsta möjliga bild av användaren som gatingen behöver. */
 export interface AccessUser {
@@ -44,6 +46,10 @@ const FEATURE_DEFS = {
   theme_button_glass: "premium",
   /** Premium-ramar runt profilbilden (se PREMIUM_FRAME_STYLES). */
   theme_premium_frames: "premium",
+
+  // --- Länkar ---
+  /** Egen färg per länkknapp (Link.customColor). Ikonval är gratis. */
+  link_custom_color: "premium",
 
   // --- Statistik ---
   /** Stad/geo i analysvyn. */
@@ -189,4 +195,67 @@ export function sanitizeThemeSettings(
   }
 
   return { settings, sanitized: removed.length > 0, removed };
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Länkanpassning (färg + ikon)                                              */
+/* -------------------------------------------------------------------------- */
+
+export interface LinkCustomizationInput {
+  customColor?: unknown;
+  icon?: unknown;
+}
+
+export interface LinkCustomizationResult {
+  /**
+   * `undefined` betyder att fältet inte fanns i indatan och alltså inte ska
+   * skrivas — viktigt för PATCH, som annars hade nollat fält den inte rörde.
+   * `null` betyder "rensa värdet".
+   */
+  customColor?: string | null;
+  icon?: string | null;
+  sanitized: boolean;
+  removed: FeatureKey[];
+}
+
+/**
+ * Tvätta länkens anpassningsfält mot användarens behörighet.
+ *
+ * Samma resonemang som sanitizeThemeSettings: färgväljaren är låst i UI:t för
+ * gratiskonton, men ett direktanrop mot /api/links hade annars kunnat sätta
+ * customColor ändå. Ikonval är gratis — där validerar vi bara att sluggen
+ * finns i registret så att vi inte sparar skräp som renderas som ingenting.
+ */
+export function sanitizeLinkCustomization(
+  input: LinkCustomizationInput,
+  user?: AccessUser | null,
+): LinkCustomizationResult {
+  const result: LinkCustomizationResult = { sanitized: false, removed: [] };
+
+  if ("icon" in input) {
+    const raw = input.icon;
+    if (typeof raw === "string" && isKnownLinkIcon(raw)) {
+      result.icon = raw;
+    } else {
+      // Tomt, "auto" eller okänd slug -> automatisk detektering.
+      result.icon = null;
+    }
+  }
+
+  if ("customColor" in input) {
+    const raw = input.customColor;
+    const normalized = normalizeHexColor(raw);
+
+    if (normalized === null) {
+      result.customColor = null;
+    } else if (canAccess("link_custom_color", user)) {
+      result.customColor = normalized;
+    } else {
+      result.customColor = null;
+      result.removed.push("link_custom_color");
+    }
+  }
+
+  result.sanitized = result.removed.length > 0;
+  return result;
 }

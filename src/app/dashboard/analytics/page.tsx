@@ -128,23 +128,45 @@ export default async function AnalyticsPage({
     .slice(0, 5)
     .map(([code, count]) => ({ code, count }));
 
-  const recentActivity = events.slice(0, 5).map(e => ({
-    id: e.id,
-    type: e.type,
-    country: e.country,
-    city: e.city,
-    device: e.device,
-    timeAgo: formatDistanceToNow(new Date(e.createdAt), { addSuffix: true, locale: dateLocale }),
-    source: getReadableSource(e.source, e.referrer, t),
-    // Nyckel i stället för färdig sträng: vyn översätter den, och kan dessutom
-    // jämföra på nyckeln utan att bero på exakt formulering.
-    actionKey:
-      e.type === "VIEW"
-        ? "analytics.actions.profileView"
-        : e.source === "vcard"
-          ? "analytics.actions.contactSaved"
-          : "analytics.actions.linkClick",
-  }));
+  // Tio i stället för fem: en push-notis kan tryckas en stund efter att den kom,
+  // och då ska händelsen fortfarande finnas kvar i listan att highlighta.
+  const RECENT_ACTIVITY_LIMIT = 10;
+
+  // Källor som inte säger något om VARIFRÅN besökaren kom och därför inte ska
+  // vävas in i radtexten ("Någon öppnade din profil via Direkt" vore nonsens).
+  const genericSourceLabels = new Set([
+    t("analytics.sources.direct"),
+    t("analytics.sources.internal"),
+  ]);
+
+  const recentActivity = events.slice(0, RECENT_ACTIVITY_LIMIT).map((e) => {
+    const isVcard = e.source?.trim().toLowerCase() === "vcard";
+    const readableSource = getReadableSource(e.source, e.referrer, t);
+
+    return {
+      id: e.id,
+      type: e.type as "VIEW" | "CLICK",
+      country: e.country,
+      city: e.city,
+      device: e.device,
+      // ISO-sträng: klienten formaterar i användarens tidszon och språk.
+      createdAt: new Date(e.createdAt).toISOString(),
+      timeAgo: formatDistanceToNow(new Date(e.createdAt), { addSuffix: true, locale: dateLocale }),
+      source: readableSource,
+      // vCard-källan beskriver handlingen, inte varifrån besökaren kom.
+      hasSource: !isVcard && !genericSourceLabels.has(readableSource),
+      linkTitle: e.link?.title ?? null,
+      linkUrl: e.link?.url ?? null,
+      // Nyckel i stället för färdig sträng: vyn översätter den, och lägger på
+      // suffixet "Via" när källan är känd. `visitorHash` skickas ALDRIG ut.
+      messageKey:
+        e.type === "VIEW"
+          ? "analytics.activity.view"
+          : isVcard
+            ? "analytics.activity.contactSaved"
+            : "analytics.activity.click",
+    };
+  });
 
   return (
     <div className="min-h-screen bg-slate-950 relative overflow-hidden">

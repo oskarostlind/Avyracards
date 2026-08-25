@@ -23,7 +23,9 @@ const nextConfig = {
 
   experimental: {
     // Löser problem med Wallet-generatorn och Prisma (Från din originalkod)
-    serverComponentsExternalPackages: ['passkit-generator', '@prisma/client', 'bcryptjs'],
+    // `maxmind` läser .mmdb-filen från disk med fs — den ska köras som vanlig
+    // Node-modul, inte buntas av webpack.
+    serverComponentsExternalPackages: ['passkit-generator', '@prisma/client', 'bcryptjs', 'maxmind'],
 
     // Apple Wallet-routen läser ikon och logotyp från public/wallet vid körning
     // (fs.readFile med process.cwd()). Next kan inte spåra den sortens dynamiska
@@ -31,6 +33,13 @@ const nextConfig = {
     // funktionen att sakna dem i produktionsbundlen och passet faller på ENOENT.
     outputFileTracingIncludes: {
       '/api/wallet/apple': ['./public/wallet/**'],
+
+      // GeoLite2-databasen (~70 MB) läses vid körning med en sökväg byggd av
+      // process.cwd(), som Next inte kan spåra automatiskt. Den pekas ut BARA
+      // för analytics-routen — Vercels gräns på 250 MB uppackat per funktion
+      // klarar den lätt en gång, men inte om filen följer med varje route.
+      // Saknas filen degraderar src/lib/analytics/geo.ts tyst.
+      '/api/analytics': ['./geodata/**'],
     },
 
     serverActions: {

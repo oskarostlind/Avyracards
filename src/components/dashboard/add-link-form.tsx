@@ -3,10 +3,14 @@
 import { FormEvent, useState } from "react";
 import { z } from "zod";
 import { useT } from "@/i18n/client";
+import { normalizeLinkUrl } from "@/utils/normalize-url";
 
+// URL:en valideras inte med z.string().url() — den kräver protokoll, och
+// användare skriver "dinsida.se". Normaliseringen sköts av
+// @/utils/normalize-url, samma modul som API:t kör serverside.
 const schema = z.object({
   label: z.string().min(1).max(60),
-  url: z.string().url(),
+  url: z.string().min(1),
 });
 
 interface AddLinkFormProps {
@@ -34,13 +38,19 @@ export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
       return;
     }
 
+    const normalized = normalizeLinkUrl(parsed.data.url);
+    if (!normalized.ok) {
+      setError(t("links.invalidUrl"));
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch("/api/links", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // NYTT: Vi skickar med 'mode' här
-        body: JSON.stringify({ ...parsed.data, mode }), 
+        body: JSON.stringify({ ...parsed.data, url: normalized.url, mode }),
       });
 
       if (!response.ok) {
@@ -82,8 +92,15 @@ export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
         <label className="block text-sm font-medium text-slate-200">
           {t("links.url")}
         </label>
+        {/* type="text", inte "url": webbläsarens inbyggda url-validering kräver
+            protokoll och blockerar "dinsida.se" innan vår normalisering hinner
+            köra. */}
         <input
-          type="url"
+          type="text"
+          inputMode="url"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
           value={form.url}
           onChange={(e) =>
             setForm((prev) => ({ ...prev, url: e.target.value }))
@@ -91,6 +108,7 @@ export function AddLinkForm({ onCreated, mode }: AddLinkFormProps) {
           placeholder={t("links.urlPlaceholder")}
           className="w-full rounded-xl border border-nordic-highlight/40 bg-slate-900/60 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500"
         />
+        <p className="text-xs text-slate-500">{t("links.urlHint")}</p>
       </div>
 
       {error && <p className="text-sm text-rose-500">{error}</p>}

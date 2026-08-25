@@ -2,8 +2,10 @@
 
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { User as UserIcon, Save } from "lucide-react"; 
-import { SocialIcon } from "@/components/icons/social-icons"; 
+import { SocialIcon } from "@/components/icons/social-icons";
+import { LinkIcon } from "@/components/icons/link-icon";
 import { MappedProfileData } from "@/lib/profile-mapper";
+import { applyCustomLinkColor } from "@/lib/link-button-style";
 import { useT } from "@/i18n/client";
 
 export interface ProfilePreviewProps {
@@ -264,10 +266,15 @@ export function ProfilePreview({
             <div
               key={link.id}
               className={`pointer-events-none ${getButtonClass()}`}
-              style={getButtonStyle(false)}
+              style={applyCustomLinkColor(
+                getButtonStyle(false),
+                link.customColor,
+                settings.buttonVariant,
+                settings.textColor,
+              )}
             >
                <span className="opacity-80 absolute left-5">
-                 <SocialIcon url={link.url || link.title || ""} size={18} />
+                 <LinkIcon url={link.url} title={link.title} icon={link.icon} size={18} />
                </span>
                <span className="flex-1 text-center truncate px-6">{link.title || link.url}</span>
             </div>

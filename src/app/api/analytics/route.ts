@@ -8,6 +8,11 @@ import {
   buildAnalyticsEvent,
   type AnalyticsDropReason,
 } from "@/lib/analytics/events";
+import {
+  buildAnalyticsNotificationCopy,
+  resolveNotificationKind,
+} from "@/lib/analytics/notification-copy";
+import { lookupGeo, normalizeIp, isPrivateIp } from "@/lib/analytics/geo";
 import { computeVisitorHash } from "@/lib/analytics/visitor-hash";
 
 const IP_RATE_LIMIT_WINDOW_MS = 60_000; // 1 minut
@@ -27,6 +32,24 @@ function ignored(reason: AnalyticsDropReason) {
   return NextResponse.json({ success: true, ignored: true, reason });
 }
 
+/**
+ * Vercel skickar `x-vercel-ip-city` percent-enkodad ("Ume%C3%A5"), medan
+ * `req.geo` redan är avkodad. decodeURIComponent kastar på trasiga
+ * %-sekvenser — och gjorde det tidigare mitt i request-flödet, vilket
+ * innebar att HELA eventet försvann med 400 i stället för bara stadsnamnet.
+ * Därför avkodas headern direkt vid inläsning, med fallback till råvärdet.
+ */
+function decodeHeaderValue(value: string | null | undefined): string | null {
+  const raw = value?.trim();
+  if (!raw) return null;
+  if (!raw.includes("%")) return raw;
+  try {
+    return decodeURIComponent(raw) || null;
+  } catch {
+    return raw;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -43,15 +66,41 @@ export async function POST(req: NextRequest) {
       return ignored("own_traffic");
     }
 
-    let country = req.geo?.country || req.headers.get("x-vercel-ip-country");
-    let city = req.geo?.city || req.headers.get("x-vercel-ip-city");
+    // OBS: `req.geo` fylls bara i av Vercels edge-lager (middleware). I en
+    // Node-runtime route handler är den normalt undefined, så headern nedan är
+    // den som faktiskt bär datan i produktion. Båda läses för att koden ska
+    // fungera likadant om routen någon gång flyttas till edge.
+    const headerCountry = decodeHeaderValue(req.headers.get("x-vercel-ip-country"));
+    const headerCity = decodeHeaderValue(req.headers.get("x-vercel-ip-city"));
+
+    let country = req.geo?.country?.trim() || headerCountry;
+    let city = req.geo?.city?.trim() || headerCity;
 
     // Fallback: Cloudflare/generell header om Vercels saknas.
-    if (!country) country = req.headers.get("cf-ipcountry");
+    if (!country) country = decodeHeaderValue(req.headers.get("cf-ipcountry"));
 
-    const ip =
+    const rawIp =
       req.ip || req.headers.get("x-forwarded-for")?.split(",")[0] || undefined;
+    const ip = normalizeIp(rawIp) ?? undefined;
     const userAgent = req.headers.get("user-agent");
+
+    // Diagnostik: land men ingen stad är exakt fallet som gav "Okänd plats, SE"
+    // i statistiken. Loggas strukturerat så att vi kan mäta hur ofta den lokala
+    // GeoLite2-uppslagningen behöver rädda situationen.
+    const geoHeaderGap = Boolean(country) && !city;
+    if (geoHeaderGap) {
+      console.log(
+        JSON.stringify({
+          type: "analytics_geo_header_gap",
+          message: "Country header present but city missing",
+          country,
+          hasVercelGeo: Boolean(req.geo),
+          hasCityHeader: Boolean(req.headers.get("x-vercel-ip-city")),
+          hasIp: Boolean(ip),
+          ipIsPrivate: isPrivateIp(ip),
+        }),
+      );
+    }
 
     if (ip) {
       const cached = geoCache.get(ip);
@@ -72,39 +121,51 @@ export async function POST(req: NextRequest) {
     }
 
     // Central normalisering: bot-filter, dedup, källa och enhet.
-    // Körs före det externa geo-anropet så att vi inte betalar för trafik
-    // som ändå kastas.
+    // Körs före geo-uppslagningen så att vi inte lägger arbete på trafik som
+    // ändå kastas.
     const decision = buildAnalyticsEvent(data, { ip, userAgent, country, city });
 
     if (!decision.keep) {
       return ignored(decision.reason);
     }
 
-    // FALLBACK: saknas stad (och vi har ett giltigt IP) -> fråga externt API.
-    if (!decision.event.city && ip && ip !== "::1" && ip !== "127.0.0.1") {
-      try {
-        const geoRes = await fetch(`https://ipapi.co/${ip}/json/`, {
-          signal: AbortSignal.timeout(1500),
-        });
-        if (geoRes.ok) {
-          const geoData = await geoRes.json();
-          if (geoData.city) {
-            decision.event.city = decodeURIComponent(String(geoData.city));
-            if (!decision.event.country && geoData.country_code) {
-              decision.event.country = String(geoData.country_code);
-            }
-            geoCache.set(ip, {
-              city: decision.event.city,
-              country: decision.event.country,
-              expiresAt: Date.now() + GEO_CACHE_TTL_MS,
-            });
-          }
+    // FALLBACK: saknas stad -> slå upp lokalt i GeoLite2. Ersätter det gamla
+    // anropet till ipapi.co, vars gratiskvot (~1000/dygn per käll-IP) tog slut
+    // direkt i produktion eftersom alla lambdas delar utgående adress. Felen
+    // swallowades tyst, vilket är varför stad nästan alltid saknades.
+    if (!decision.event.city && ip) {
+      const geo = await lookupGeo(ip);
+
+      if (geo?.city) {
+        decision.event.city = geo.city;
+        // Landskoden från headern är mer tillförlitlig än databasen — skriv
+        // bara över den när den saknas.
+        if (!decision.event.country && geo.country) {
+          decision.event.country = geo.country;
         }
-      } catch {
-        // Tyst felhantering – geodata är inte kritisk.
+
+        geoCache.set(ip, {
+          city: decision.event.city,
+          country: decision.event.country,
+          expiresAt: Date.now() + GEO_CACHE_TTL_MS,
+        });
+      } else if (geoHeaderGap) {
+        console.log(
+          JSON.stringify({
+            type: "analytics_geo_unresolved",
+            message: "City still unknown after GeoLite2 lookup",
+            country: decision.event.country,
+          }),
+        );
       }
-    } else if (decision.event.city) {
-      decision.event.city = decodeURIComponent(decision.event.city);
+    } else if (decision.event.city && ip) {
+      // Headern räckte — fyll cachen så att efterföljande events från samma
+      // besökare slipper både header-avkodning och databasuppslagning.
+      geoCache.set(ip, {
+        city: decision.event.city,
+        country: decision.event.country,
+        expiresAt: Date.now() + GEO_CACHE_TTL_MS,
+      });
     }
 
     const userExists = await prisma.user.findUnique({
@@ -114,7 +175,7 @@ export async function POST(req: NextRequest) {
 
     if (!userExists) return ignored("unknown_owner");
 
-    await prisma.analyticsEvent.create({
+    const created = await prisma.analyticsEvent.create({
       data: {
         type: decision.event.type,
         profileOwnerId: decision.event.profileOwnerId,
@@ -127,6 +188,7 @@ export async function POST(req: NextRequest) {
         // Dagligt roterande hash för unika besökare — ingen rå IP lagras.
         visitorHash: computeVisitorHash(ip, userAgent),
       },
+      select: { id: true },
     });
 
     // Push-notis om profilägaren har en token och valt att få notis för denna händelsetyp
@@ -139,25 +201,32 @@ export async function POST(req: NextRequest) {
         notifyOnContactSave: true,
       },
     });
-    const isVcard = decision.event.source.toLowerCase() === "vcard";
+    const kind = resolveNotificationKind(decision.event.type, decision.event.source);
     const token = ownerRow?.pushToken?.trim();
     const shouldNotify =
       Boolean(token) &&
-      ((decision.event.type === "VIEW" && ownerRow?.notifyOnProfileView) ||
-        (decision.event.type === "CLICK" && isVcard && ownerRow?.notifyOnContactSave) ||
-        (decision.event.type === "CLICK" && !isVcard && ownerRow?.notifyOnLinkClick));
+      ((kind === "view" && ownerRow?.notifyOnProfileView) ||
+        (kind === "vcard" && ownerRow?.notifyOnContactSave) ||
+        (kind === "click" && ownerRow?.notifyOnLinkClick));
 
     if (shouldNotify && token) {
-      const [title, body] =
-        decision.event.type === "VIEW"
-          ? ["Profilvisning", "Någon har öppnat din profil."]
-          : isVcard
-            ? ["Sparade kontakt", "Någon sparade ditt visitkort."]
-            : ["Länkklick", "Någon klickade på en länk på din profil."];
-      void sendPushNotification(token, title, body);
+      const { title, body: message } = buildAnalyticsNotificationCopy(
+        decision.event.type,
+        decision.event.source,
+      );
+
+      // `url` konsumeras av src/components/push-deep-link.tsx när notisen
+      // trycks: appen navigerar till statistiken och highlightar just den
+      // här händelsen.
+      void sendPushNotification(token, title, message, {
+        url: `/dashboard/analytics?event=${created.id}`,
+        eventId: created.id,
+        source: decision.event.source,
+        type: decision.event.type,
+      });
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, eventId: created.id });
   } catch (error) {
     console.error(
       JSON.stringify({

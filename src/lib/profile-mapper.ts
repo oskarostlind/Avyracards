@@ -1,5 +1,7 @@
-import { Link as LinkModel } from "@prisma/client";
 import { ThemeMode, CustomThemeSettings, defaultSettings } from "@/types/theme";
+import { resolveLinkIconSlug } from "@/lib/link-icons";
+import { coerceUrl } from "@/utils/normalize-url";
+import { normalizeHexColor } from "@/utils/color";
 
 // --- TYPER ---
 
@@ -12,19 +14,44 @@ export interface ProfileAction {
   primary?: boolean;
 }
 
+/**
+ * Länken som den publika profilen och previewn faktiskt renderar.
+ *
+ * Skiljer sig från Prisma-modellen på tre punkter, och det är meningen:
+ *  - `href` är färdignormaliserad, så ingen komponent behöver gissa protokoll
+ *  - `iconSlug` är färdigupplöst (manuell override eller auto-detektering)
+ *  - `customColor` är validerad hex eller null — aldrig skräp från databasen
+ */
+export interface MappedLink {
+  id: string;
+  title: string;
+  url: string;
+  /** Klickbar adress med protokoll. */
+  href: string;
+  /** Sluggen användaren valt manuellt. null = automatisk. */
+  icon: string | null;
+  /** Slutgiltig ikon-slug att rendera. */
+  iconSlug: string;
+  /** Premium: egen färg för just den här knappen. */
+  customColor: string | null;
+  mode: string;
+  order: number;
+  isActive: boolean;
+}
+
 export interface MappedProfileData {
   username: string; // NYTT: Behövs för vCard URL
   displayName: string;
   image: string | null;
   headline: string | null;
   location: string | null;
-  
+
   jobTitle: string | null;
   companyName: string | null;
-  
-  actions: ProfileAction[]; 
-  links: LinkModel[];
-  
+
+  actions: ProfileAction[];
+  links: MappedLink[];
+
   mode: ThemeMode;
   showSaveContact: boolean; // NYTT: Skickar med toggle-status
 }
@@ -124,13 +151,32 @@ export function getProfileData(user: any, mode: ThemeMode): MappedProfileData {
   }
 
   const rawLinks = Array.isArray(user.links) ? user.links : [];
-  
-  const links = rawLinks.filter((l: any) => {
+
+  const links: MappedLink[] = rawLinks
+    .filter((l: any) => {
       const linkMode = l.mode || "SOCIAL";
-      const isActive = l.isActive !== false; 
-      
+      const isActive = l.isActive !== false;
+
       return linkMode === mode && isActive;
-  });
+    })
+    // Ikon och färg löses ut här, en gång, i stället för i varje komponent.
+    // Publik profil, dashboard-preview och temaredigeraren ska rita likadant.
+    .map((l: any): MappedLink => {
+      const title = l.title || "";
+      const url = l.url || "";
+      return {
+        id: l.id,
+        title,
+        url,
+        href: coerceUrl(url) || "/",
+        icon: l.icon ?? null,
+        iconSlug: resolveLinkIconSlug({ url, title, icon: l.icon ?? null }),
+        customColor: normalizeHexColor(l.customColor),
+        mode: l.mode || "SOCIAL",
+        order: typeof l.order === "number" ? l.order : 0,
+        isActive: l.isActive !== false,
+      };
+    });
 
   return {
     mode,

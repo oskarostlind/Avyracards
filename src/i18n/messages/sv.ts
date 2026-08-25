@@ -272,8 +272,10 @@ export const sv = {
     url: "URL",
     placeholderSocial: "Ex. Instagram",
     placeholderBusiness: "Ex. Boka möte",
-    urlPlaceholder: "https://...",
+    urlPlaceholder: "dinsida.se",
+    urlHint: "https:// läggs till automatiskt om du utelämnar det.",
     invalid: "Kontrollera länkens titel och URL.",
+    invalidUrl: "Kontrollera adressen, t.ex. dinsida.se",
     saveFailed: "Kunde inte spara länk",
     add: "Lägg till länk",
     redirectBadge: "REDIRECT",
@@ -282,6 +284,41 @@ export const sv = {
     editLink: "Redigera länk",
     visible: "Visas",
     hidden: "Dold",
+
+    // --- Ikonval ---
+    icon: "Ikon",
+    iconAuto: "Automatisk",
+    iconAutoHint: "Väljs från adressen – just nu {icon}",
+    iconSearch: "Sök ikon",
+    iconNoResults: "Ingen ikon matchar sökningen.",
+    iconCategories: {
+      social: "Sociala medier",
+      video: "Video",
+      music: "Musik",
+      portfolio: "Portfolio & jobb",
+      shop: "Butik",
+      payment: "Betalning & stöd",
+      utility: "Verktyg",
+      generic: "Allmänna",
+    },
+    iconNames: {
+      link: "Länk",
+      website: "Hemsida",
+      email: "E-post",
+      phone: "Telefon",
+      calendar: "Bokning",
+      meeting: "Videomöte",
+      document: "Dokument",
+      location: "Plats",
+      job: "Jobb",
+    },
+
+    // --- Färg per länk (premium) ---
+    color: "Knappfärg",
+    colorTheme: "Temats färg",
+    colorReset: "Använd temats färg",
+    colorPremium: "Egen färg per länk ingår i Premium",
+    brandColor: "Använd {brand}s färg",
   },
 
   settings: {
@@ -417,10 +454,47 @@ export const sv = {
     mostClicked: "Mest klickade",
     clicksSuffix: "klick",
     unlock: "Lås upp",
+    viewDetails: "Visa detaljer om händelsen",
+    // Används i graf-tooltipsen: "7 visningar" i stället för "value : 7".
+    viewsCount: {
+      one: "{count} visning",
+      other: "{count} visningar",
+    },
+    clicksCount: {
+      one: "{count} klick",
+      other: "{count} klick",
+    },
     actions: {
       profileView: "Profilvisning",
       contactSaved: "Sparade kontakt",
       linkClick: "Länkklick",
+    },
+    // Radtext i Live-aktivitet. "...Via"-varianten används när källan är känd
+    // och inte är direkt/intern trafik.
+    activity: {
+      view: "Någon öppnade din profil",
+      viewVia: "Någon öppnade din profil via {source}",
+      click: "Någon klickade på en länk",
+      clickVia: "Någon klickade på en länk via {source}",
+      contactSaved: "Någon sparade ditt visitkort",
+      contactSavedVia: "Någon sparade ditt visitkort via {source}",
+    },
+    eventTypes: {
+      view: "Profilvisning",
+      click: "Klick",
+    },
+    eventModal: {
+      title: "Om händelsen",
+      close: "Stäng",
+      time: "Tidpunkt",
+      type: "Typ",
+      source: "Källa",
+      place: "Plats",
+      device: "Enhet",
+      link: "Länk",
+      unknown: "Okänt",
+      privacyNote:
+        "Vi lagrar aldrig besökarens IP-adress — bara land, stad och enhetstyp.",
     },
     sources: {
       nfc: "NFC-kort",
@@ -546,6 +620,18 @@ export const sv = {
       unlockAnalytics: "Lås upp statistik",
       unlockAnalyticsBody: "Se vilka som besöker dig.",
       cardholder: "Cardholder",
+      thisIsYourLink: "Det här är din länk",
+    },
+    username: {
+      title: "Välj ditt användarnamn",
+      desc: "Vi gav dig ett tillfälligt användarnamn när du loggade in med Apple. Välj det du faktiskt vill dela ut innan du kör igång.",
+      label: "Användarnamn",
+      placeholder: "dittnamn",
+      continue: "Fortsätt",
+      skip: "Hoppa över, jag fixar det senare",
+      taken: "Det användarnamnet är upptaget.",
+      invalid: "Endast gemener, siffror och understreck, 3–20 tecken.",
+      saveFailed: "Kunde inte spara användarnamnet. Försök igen.",
     },
   },
 
@@ -1199,7 +1285,7 @@ export const sv = {
     },
     links: {
       titleAndUrlRequired: "Titel och URL krävs.",
-      urlProtocol: "URL måste börja med http:// eller https://.",
+      invalidUrl: "Ogiltig adress. Använd t.ex. dinsida.se eller https://dinsida.se.",
       createFailed: "Kunde inte skapa länken.",
     },
     profile: {

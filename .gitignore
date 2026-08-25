@@ -11,6 +11,9 @@ pnpm-debug.log*
 prisma/dev.db
 /certs
 
+# MaxMind GeoLite2 (~70 MB, laddas ner med `npm run geo:download`)
+/geodata
+
 
 # Vercel
 .vercel

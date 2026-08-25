@@ -284,6 +284,43 @@ SocialCard-Next.js
 
 ```
 
+## Geodata för statistik (MaxMind GeoLite2)
+
+Statistiken visar stad och land per besökare. Landskoden kommer från Vercels
+`x-vercel-ip-country`-header, men stad (`x-vercel-ip-city`) saknas ofta. Tidigare
+frågade vi ipapi.co som fallback — ett gratis-API med ~1000 anrop/dygn räknat per
+käll-IP. I produktion är käll-IP:t Vercels utgående adress, delad av alla
+funktioner, så kvoten tog slut nästan direkt och svaren blev 429. Felen
+swallowades tyst, vilket är varför statistiken visade "Okänd plats, SE".
+
+Nu slås staden i stället upp lokalt i MaxMinds GeoLite2-City-databas
+(`src/lib/analytics/geo.ts`).
+
+**Miljövariabler** (gratis MaxMind-konto krävs — https://www.maxmind.com/en/geolite2/signup):
+
+| Variabel | Krävs | Beskrivning |
+| --- | --- | --- |
+| `MAXMIND_ACCOUNT_ID` | Ja (ny API-endpoint) | Konto-ID från MaxMind. Utelämnas den används den äldre `geoip_download`-URL:en med enbart licensnyckel. |
+| `MAXMIND_LICENSE_KEY` | Ja | Licensnyckel från MaxMind. |
+| `MAXMIND_DB_PATH` | Nej | Alternativ sökväg till `.mmdb`-filen. Default: `geodata/GeoLite2-City.mmdb`. |
+
+**Nedladdning**
+
+```bash
+npm run geo:download        # skriver geodata/GeoLite2-City.mmdb (~70 MB)
+```
+
+`prebuild` kör samma script med `--optional`, så `npm run build` hämtar databasen
+automatiskt när nycklarna finns och hoppar över den tyst när de inte gör det.
+Databasfilen är gitignorerad och pekas in i Vercel-funktionen via
+`outputFileTracingIncludes` för **enbart** `/api/analytics` (Vercels gräns är
+250 MB uppackat per funktion).
+
+**Graceful degradation:** saknas filen eller misslyckas uppslagningen behåller
+analytics-routen bara Vercel-headerns data och loggar strukturerat
+(`analytics_geo_db_unavailable`, `analytics_geo_header_gap`,
+`analytics_geo_unresolved`). Ett event går aldrig förlorat på grund av geodata.
+
 ## Prestanda- och datatillgångsriktlinjer
 
 - **Undvik N+1-frågor**: Använd set-baserade Prisma-queries (`findMany` med `include`/`select`/`_count`) i stället för att göra databasanrop i loopar.

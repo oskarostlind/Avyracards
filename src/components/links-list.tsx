@@ -1,18 +1,23 @@
 "use client";
 
 import { HTMLAttributes, useCallback, useEffect, useMemo, useState } from "react";
-import { 
-  GripVertical, 
-  Trash2, 
-  Eye, 
-  EyeOff, 
-  Zap, 
-  Pencil, 
-  Check, 
+import {
+  GripVertical,
+  Trash2,
+  Eye,
+  EyeOff,
+  Zap,
+  Pencil,
+  Check,
   X,
   ExternalLink
 } from "lucide-react";
 import { useT } from "@/i18n/client";
+import { LinkIcon } from "@/components/icons/link-icon";
+import { LinkIconPicker } from "@/components/dashboard/link-icon-picker";
+import { LinkColorPicker } from "@/components/dashboard/link-color-picker";
+import { normalizeLinkUrl } from "@/utils/normalize-url";
+import { getReadableTextColor } from "@/utils/color";
 //import { cn } from "@/lib/utils"; // Eller din utility för klassnamn om du har en, annars ta bort cn()
 
 // Om du inte har en cn-funktion, använd denna enkla ersättare eller ta bort den:
@@ -23,6 +28,18 @@ export interface LinkItem {
   label: string;
   url: string;
   isVisible: boolean;
+  /** Manuellt vald ikon-slug. null = automatisk detektering ur URL:en. */
+  icon?: string | null;
+  /** Premium: egen färg för just den här knappen. null = temats accentfärg. */
+  customColor?: string | null;
+}
+
+/** Allt som kan ändras i redigeringsläget, i ett svep. */
+export interface LinkEditPatch {
+  label: string;
+  url: string;
+  icon: string | null;
+  customColor: string | null;
 }
 
 interface LinksListProps {
@@ -32,17 +49,22 @@ interface LinksListProps {
   onToggleVisibility: (id: string, next: boolean) => Promise<void> | void;
   onDelete: (id: string) => Promise<void> | void;
   onSetRedirect: (id: string) => Promise<void> | void;
-  onEdit: (id: string, title: string, url: string) => Promise<void> | void;
+  onEdit: (id: string, patch: LinkEditPatch) => Promise<void> | void;
+  /** Styr om färgväljaren är låst. Servern gatar oberoende av det här. */
+  canCustomizeColor: boolean;
+  onShowUpgrade: () => void;
 }
 
-export function LinksList({ 
-  links, 
+export function LinksList({
+  links,
   activeRedirectId,
-  onReorder, 
-  onToggleVisibility, 
+  onReorder,
+  onToggleVisibility,
   onDelete,
   onSetRedirect,
-  onEdit
+  onEdit,
+  canCustomizeColor,
+  onShowUpgrade,
 }: LinksListProps) {
   const [items, setItems] = useState(links);
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -90,7 +112,7 @@ export function LinksList({
   return (
     <div className="space-y-3">
       {items.map((link) => (
-        <SortableLinkCard 
+        <SortableLinkCard
           key={link.id}
           link={link}
           isRedirect={activeRedirectId === link.id}
@@ -100,6 +122,8 @@ export function LinksList({
           onDelete={onDelete}
           onSetRedirect={onSetRedirect}
           onEdit={onEdit}
+          canCustomizeColor={canCustomizeColor}
+          onShowUpgrade={onShowUpgrade}
         />
       ))}
     </div>
@@ -116,34 +140,59 @@ interface SortableLinkCardProps {
   onToggleVisibility: (id: string, next: boolean) => void;
   onDelete: (id: string) => void;
   onSetRedirect: (id: string) => void;
-  onEdit: (id: string, title: string, url: string) => Promise<void> | void;
+  onEdit: (id: string, patch: LinkEditPatch) => Promise<void> | void;
+  canCustomizeColor: boolean;
+  onShowUpgrade: () => void;
 }
 
-function SortableLinkCard({ 
-  link, 
-  isRedirect, 
-  dragProps, 
+function SortableLinkCard({
+  link,
+  isRedirect,
+  dragProps,
   isDragging,
   onToggleVisibility,
   onDelete,
   onSetRedirect,
-  onEdit
+  onEdit,
+  canCustomizeColor,
+  onShowUpgrade,
 }: SortableLinkCardProps) {
   const t = useT();
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ label: link.label, url: link.url });
+  const [editForm, setEditForm] = useState<LinkEditPatch>({
+    label: link.label,
+    url: link.url,
+    icon: link.icon ?? null,
+    customColor: link.customColor ?? null,
+  });
   const [isSaving, setIsSaving] = useState(false);
+  const [urlError, setUrlError] = useState<string | null>(null);
 
   // Synka local state om props ändras utifrån
   useEffect(() => {
     if (!isEditing) {
-      setEditForm({ label: link.label, url: link.url });
+      setEditForm({
+        label: link.label,
+        url: link.url,
+        icon: link.icon ?? null,
+        customColor: link.customColor ?? null,
+      });
+      setUrlError(null);
     }
   }, [link, isEditing]);
 
   const handleSave = async () => {
+    // Samma util som API:t kör — "dinsida.se" blir "https://dinsida.se" här,
+    // så användaren ser den färdiga adressen direkt efter sparning.
+    const normalized = normalizeLinkUrl(editForm.url);
+    if (!normalized.ok) {
+      setUrlError(t("links.invalidUrl"));
+      return;
+    }
+
+    setUrlError(null);
     setIsSaving(true);
-    await onEdit(link.id, editForm.label, editForm.url);
+    await onEdit(link.id, { ...editForm, url: normalized.url });
     setIsSaving(false);
     setIsEditing(false);
   };
@@ -167,10 +216,10 @@ function SortableLinkCard({
         {/* Content Area */}
         <div className="min-w-0 flex-1 space-y-1">
           {isEditing ? (
-            <div className="space-y-2 animate-in fade-in zoom-in-95 duration-200">
+            <div className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
               <div>
                 <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">{t("links.titleShort")}</label>
-                <input 
+                <input
                   value={editForm.label}
                   onChange={(e) => setEditForm(prev => ({...prev, label: e.target.value}))}
                   className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-white focus:ring-2 focus:ring-purple-500 outline-none"
@@ -179,21 +228,57 @@ function SortableLinkCard({
               </div>
               <div>
                 <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">{t("links.url")}</label>
-                <input 
+                <input
                   value={editForm.url}
-                  onChange={(e) => setEditForm(prev => ({...prev, url: e.target.value}))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:ring-2 focus:ring-purple-500 outline-none font-mono"
+                  onChange={(e) => {
+                    setEditForm(prev => ({...prev, url: e.target.value}));
+                    if (urlError) setUrlError(null);
+                  }}
+                  className={`w-full bg-slate-950 border rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:ring-2 outline-none font-mono ${
+                    urlError
+                      ? "border-rose-500/60 focus:ring-rose-500"
+                      : "border-slate-700 focus:ring-purple-500"
+                  }`}
+                />
+                <p className={`mt-1 text-[10px] ${urlError ? "text-rose-400" : "text-slate-500"}`}>
+                  {urlError ?? t("links.urlHint")}
+                </p>
+              </div>
+
+              {/* Ikon */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">{t("links.icon")}</label>
+                <LinkIconPicker
+                  value={editForm.icon}
+                  onChange={(icon) => setEditForm(prev => ({ ...prev, icon }))}
+                  url={editForm.url}
+                  title={editForm.label}
                 />
               </div>
+
+              {/* Färg (premium) */}
+              <div className="space-y-1.5">
+                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">{t("links.color")}</label>
+                <LinkColorPicker
+                  value={editForm.customColor}
+                  onChange={(customColor) => setEditForm(prev => ({ ...prev, customColor }))}
+                  locked={!canCustomizeColor}
+                  onShowUpgrade={onShowUpgrade}
+                  url={editForm.url}
+                  title={editForm.label}
+                  icon={editForm.icon}
+                />
+              </div>
+
               <div className="flex gap-2 pt-1">
-                <button 
-                  onClick={handleSave} 
+                <button
+                  onClick={handleSave}
                   disabled={isSaving}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold text-white transition-colors"
                 >
                   <Check size={14} /> {isSaving ? t("common.saving") : t("common.save")}
                 </button>
-                <button 
+                <button
                   onClick={() => setIsEditing(false)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 transition-colors"
                 >
@@ -205,6 +290,20 @@ function SortableLinkCard({
             // Visningsläge
             <>
               <div className="flex items-center gap-2">
+                {/* Samma ikon och färg som den publika profilen kommer visa */}
+                <span
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                  style={
+                    link.customColor
+                      ? {
+                          backgroundColor: link.customColor,
+                          color: getReadableTextColor(link.customColor),
+                        }
+                      : { backgroundColor: "rgba(148,163,184,0.12)", color: "#cbd5e1" }
+                  }
+                >
+                  <LinkIcon url={link.url} title={link.label} icon={link.icon} size={14} />
+                </span>
                 <h3 className="text-sm font-semibold text-nordic-secondary truncate">
                   {link.label}
                 </h3>
@@ -214,13 +313,13 @@ function SortableLinkCard({
                   </span>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-2 text-xs text-nordic-highlight">
                 {/* TRUNCATE: Här klipper vi av URL:en */}
-                <a 
-                  href={link.url} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="truncate max-w-[200px] sm:max-w-[300px] hover:text-emerald-400 hover:underline decoration-emerald-500/30 underline-offset-2 transition-colors"
                   title={link.url} // Hover visar hela URLen
                 >
@@ -241,8 +340,8 @@ function SortableLinkCard({
             <button
               onClick={() => onSetRedirect(link.id)}
               className={`p-2 rounded-lg transition-all ${
-                isRedirect 
-                  ? "bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20" 
+                isRedirect
+                  ? "bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20"
                   : "text-slate-500 hover:text-amber-400 hover:bg-amber-500/10"
               }`}
               title={isRedirect ? t("links.redirectOff") : t("links.redirectOn")}

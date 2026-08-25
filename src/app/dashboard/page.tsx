@@ -20,6 +20,15 @@ export default async function DashboardPage() {
 
   if (!user) redirect("/login");
 
+  // Apple-konton skapas med ett automatiskt genererat användarnamn (baserat på
+  // e-post-prefixet, som med Apples "Dölj min e-post" blir ett obegripligt
+  // relay-alias). Sådana konton saknar alltid ett lösenord (se
+  // createUserFromApple i apple-user.ts) — vanlig registrering och
+  // Apple-länkning till ett befintligt konto sätter alltid passwordHash.
+  // Derived i stället för en egen kolumn: håller schemat oförändrat.
+  const needsUsernameSetup =
+    Boolean(user.appleId) && !user.passwordHash && !user.hasSeenOnboarding;
+
   // 3. Hämta priser för widgeten (för de som INTE köpt)
   const variants = await prisma.productVariant.findMany({
     where: {
@@ -56,13 +65,14 @@ export default async function DashboardPage() {
 
         {/* Innehållet */}
         <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
-          <DashboardShell 
+          <DashboardShell
             user={{
               ...user,
               hasSeenOnboarding: user.hasSeenOnboarding,
-              hasOrderedCard: hasOrderedCard
-            }} 
-            prices={prices} 
+              hasOrderedCard: hasOrderedCard,
+              needsUsernameSetup
+            }}
+            prices={prices}
           />
         </div>
     </div>

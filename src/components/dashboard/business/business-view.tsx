@@ -22,6 +22,8 @@ export function BusinessView({ user }: BusinessViewProps) {
     label: link.title || link.url,
     url: link.url,
     isVisible: link.isActive,
+    icon: link.icon,
+    customColor: link.customColor,
   }));
 
   return (
@@ -48,10 +50,12 @@ export function BusinessView({ user }: BusinessViewProps) {
           description={t("dashboard.sections.linksBusinessDesc")}
           defaultOpen
         >
-          <LinksWorkspace 
-          initialLinks={initialLinks} 
+          <LinksWorkspace
+          initialLinks={initialLinks}
           mode="BUSINESS"
           activeRedirectId={user.redirectLinkId} // <-- LÄGG TILL DENNA
+          isPremium={user.isPremium}
+          isAdmin={user.role === "ADMIN"}
            />
         </CollapsibleSection>
       </aside>

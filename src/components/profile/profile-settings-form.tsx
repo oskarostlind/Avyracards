@@ -13,6 +13,7 @@ type ProfileLink = {
   title: string;
   url: string;
   icon?: string | null;
+  customColor?: string | null;
   mode?: string | null; // Kan finnas, annars defaultar vi
 };
 
@@ -93,6 +94,7 @@ export function ProfileSettingsForm({
         title: l.title,
         url: l.url,
         icon: l.icon || null,
+        customColor: l.customColor || null,
         mode: l.mode || "SOCIAL", // Default till SOCIAL om det saknas
         isActive: true,
         order: 0,

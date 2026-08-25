@@ -6,8 +6,10 @@ import { TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
+import { LinkIcon } from "@/components/icons/link-icon";
 import { Save } from "lucide-react";
 import { MappedProfileData } from "@/lib/profile-mapper";
+import { applyCustomLinkColor } from "@/lib/link-button-style";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 
 type UserWithLinks = User & { links: LinkModel[] };
@@ -182,12 +184,21 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
                 key={link.id}
                 linkId={link.id}
                 ownerId={user.id}
-                href={normalizeUrl(link.url)}
+                href={link.href}
                 className={`flex items-center justify-between px-5 py-4 text-sm font-medium transition-all hover:scale-[1.02] ${!useCustomTheme ? `${tokens.link} shadow-md rounded-xl` : ''}`}
-                style={linkStyle}
+                // Egen färg (premium) vinner över temats accentfärg — men bara
+                // för den här knappen, och med samma variant-beteende som temat.
+                style={applyCustomLinkColor(
+                  linkStyle,
+                  link.customColor,
+                  useCustomTheme ? settings.buttonVariant : undefined,
+                  useCustomTheme ? settings.textColor : undefined,
+                )}
               >
                 <span className="flex items-center gap-3">
-                  <span className="text-lg opacity-80"><SocialIcon url={link.url || link.title} size={20} /></span>
+                  <span className="text-lg opacity-80">
+                    <LinkIcon url={link.url} title={link.title} icon={link.icon} size={20} />
+                  </span>
                   <span className="font-semibold">{link.title || link.url}</span>
                 </span>
               </TrackedLink>
@@ -212,11 +223,6 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
   );
 }
 
-function normalizeUrl(url: string): string {
-  if (!url) return "/";
-  const trimmed = url.trim();
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  if (/^mailto:/i.test(trimmed)) return trimmed;
-  if (/^tel:/i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
-}
+// Tidigare låg en lokal normalizeUrl här. Normaliseringen görs numera en gång
+// i profile-mapper (link.href) med @/utils/normalize-url, så att publik profil,
+// preview och API:t gissar protokoll på exakt samma sätt.

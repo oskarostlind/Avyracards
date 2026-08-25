@@ -6,7 +6,9 @@ import { TrackedLink } from "@/components/analytics/trackers";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
+import { LinkIcon } from "@/components/icons/link-icon";
 import { MappedProfileData } from "@/lib/profile-mapper";
+import { applyCustomLinkColor } from "@/lib/link-button-style";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 import { Save } from "lucide-react";
 
@@ -265,12 +267,18 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
                           key={link.id}
                           linkId={link.id}
                           ownerId={user.id}
-                          href={link.url.startsWith('http') ? link.url : `https://${link.url}`}
+                          href={link.href}
                           className={`${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-800 text-slate-300 rounded-xl border border-white/10 justify-start' : ''}`}
-                          style={getButtonStyle(false)}
+                          // Egen färg (premium) slår temats accentfärg för just den knappen.
+                          style={applyCustomLinkColor(
+                            getButtonStyle(false),
+                            link.customColor,
+                            hasCustomTheme ? settings.buttonVariant : undefined,
+                            hasCustomTheme ? settings.textColor : undefined,
+                          )}
                       >
                           <div className={`absolute left-4 opacity-70 ${!hasCustomTheme ? 'relative left-0' : ''}`}>
-                             <SocialIcon url={link.url || link.title || ""} size={20} />
+                             <LinkIcon url={link.url} title={link.title} icon={link.icon} size={20} />
                           </div>
                           <span className={`flex-1 text-center ${!hasCustomTheme ? 'text-left ml-3' : ''}`}>{link.title || link.url}</span>
                       </TrackedLink>
