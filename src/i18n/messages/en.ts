@@ -1416,6 +1416,7 @@ export const en: Messages = {
     moderation: "Moderation",
     systemStatus: "System status",
     searchOrder: "Search orders",
+    allOrders: "All orders",
     statistics: "Statistics",
     toShip: "To ship",
     ordersSuffix: "orders",

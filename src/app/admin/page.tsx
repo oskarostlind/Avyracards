@@ -19,6 +19,7 @@ import { prisma } from "@/lib/prisma";
 import type { OrderStatus } from "@prisma/client";
 import { getT } from "@/i18n/server";
 import type { Translator } from "@/i18n";
+import { GiftOrderForm } from "@/components/admin/gift-order-form";
 
 export const metadata = {
   title: "Admin dashboard | AvyraCards",
@@ -80,18 +81,26 @@ export default async function AdminPage() {
     redirect("/dashboard");
   }
 
-  // 1. Hämta ordrar som måste hanteras (Betalda men ej skickade)
-  const todoOrders = await prisma.order.findMany({
-    where: { status: "PAID" },
-    orderBy: { createdAt: "asc" }, // Äldsta först (FIFO)
-    take: 50,
-  });
-
-  // 2. Hämta de senaste ordrarna (för historik)
-  const recentOrders = await prisma.order.findMany({
-    take: 10,
-    orderBy: { createdAt: "desc" },
-  });
+  // Parallellt: ordrar att hantera, historik, samt giftbara varianter till
+  // gratisorder-formuläret (samma data som /admin/orders skickar in).
+  const [todoOrders, recentOrders, giftableVariants] = await Promise.all([
+    // 1. Ordrar som måste hanteras (Betalda men ej skickade), äldsta först (FIFO)
+    prisma.order.findMany({
+      where: { status: "PAID" },
+      orderBy: { createdAt: "asc" },
+      take: 50,
+    }),
+    // 2. De senaste ordrarna (för historik)
+    prisma.order.findMany({
+      take: 10,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.productVariant.findMany({
+      where: { isActive: true, type: "PHYSICAL" },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <div className="min-h-screen bg-nordic-primary p-4 md:p-8">
@@ -146,13 +155,16 @@ export default async function AdminPage() {
             <Activity size={16} /> {t("admin.systemStatus")}
           </Link>
 
-        {/* Var tidigare en död knapp utan handler — pekar nu på ordersöket. */}
+        {/* Tydlig väg till hela orderlistan (sök/filter finns där) */}
         <Link
             href="/admin/orders"
             className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-slate-300 hover:bg-slate-700 transition"
           >
-            <Search size={16} /> {t("admin.searchOrder")}
+            <Search size={16} /> {t("admin.allOrders")}
         </Link>
+
+        {/* Gratisorder direkt från dashboarden — samma formulär som /admin/orders */}
+        <GiftOrderForm variants={giftableVariants} />
       </div>
     </div>
 

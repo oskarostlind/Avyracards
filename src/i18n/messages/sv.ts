@@ -1421,6 +1421,7 @@ export const sv = {
     moderation: "Moderation",
     systemStatus: "Systemstatus",
     searchOrder: "Sök order",
+    allOrders: "Alla ordrar",
     statistics: "Statistik",
     toShip: "Att skicka",
     ordersSuffix: "ordrar",
