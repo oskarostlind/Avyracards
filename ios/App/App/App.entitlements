@@ -4,6 +4,11 @@
 <dict>
 	<key>aps-environment</key>
 	<string>production</string>
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:avyracards.se</string>
+		<string>applinks:www.avyracards.se</string>
+	</array>
 	<key>com.apple.developer.applesignin</key>
 	<array>
 		<string>Default</string>

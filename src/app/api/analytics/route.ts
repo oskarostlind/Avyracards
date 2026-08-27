@@ -218,7 +218,13 @@ export async function POST(req: NextRequest) {
       // `url` konsumeras av src/components/push-deep-link.tsx när notisen
       // trycks: appen navigerar till statistiken och highlightar just den
       // här händelsen.
-      void sendPushNotification(token, title, message, {
+      //
+      // MÅSTE awaitas: med `void` returnerade routen svaret direkt och
+      // Vercel frös lambdan innan Firebase-anropet hann iväg — loggarna
+      // visade send_start men aldrig send_ok. sendPushNotification kastar
+      // aldrig, så await är riskfritt; kostnaden är ~200 ms på ett anrop
+      // klienten ändå inte väntar på.
+      await sendPushNotification(token, title, message, {
         url: `/dashboard/analytics?event=${created.id}`,
         eventId: created.id,
         source: decision.event.source,
