@@ -1489,10 +1489,10 @@ export const sv = {
       quantityLabel: "Antal kort (1–10)",
       emailLabel: "Mottagarens e-post",
       emailPlaceholder: "namn@exempel.se",
-      usernameLabel: "Användarnamn (valfritt)",
-      usernamePlaceholder: "t.ex. oskar",
+      usernameLabel: "Befintlig användare (valfritt)",
+      usernamePlaceholder: "användarnamn, t.ex. oskar",
       usernameHint:
-        "Anges ett användarnamn kopplas korten direkt till det kontot.",
+        "Har mottagaren redan ett konto? Ange användarnamnet så kopplas korten dit. Lämna tomt för nya mottagare — de skapar konto när kortet aktiveras.",
       submit: "Skapa gratisorder",
       failed: "Kunde inte skapa gratisordern. Kolla serverloggen.",
       badge: "Gratis/gåva",

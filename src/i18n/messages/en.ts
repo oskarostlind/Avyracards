@@ -1484,9 +1484,10 @@ export const en: Messages = {
       quantityLabel: "Number of cards (1–10)",
       emailLabel: "Recipient's email",
       emailPlaceholder: "name@example.com",
-      usernameLabel: "Username (optional)",
-      usernamePlaceholder: "e.g. oskar",
-      usernameHint: "If you enter a username, the cards are linked to that account.",
+      usernameLabel: "Existing user (optional)",
+      usernamePlaceholder: "username, e.g. oskar",
+      usernameHint:
+        "Does the recipient already have an account? Enter their username to link the cards to it. Leave empty for new recipients — they create an account when activating the card.",
       submit: "Create free order",
       failed: "Couldn't create the free order. Check the server log.",
       badge: "Free/gift",
