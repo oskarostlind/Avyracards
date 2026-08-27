@@ -181,6 +181,84 @@ describe("ordermailen", () => {
     expect(mail.html).not.toContain("<script>");
     expect(mail.html).toContain("&lt;script&gt;");
   });
+
+  it("visar loggan och den mörka headern i alla systemmail", () => {
+    const mail = renderCardOrderConfirmed(order);
+    expect(mail.html).toContain("https://avyracards.se/avyra-logo.png");
+    expect(mail.html).toContain("#0f172a");
+    // Bulletproof-knappen: bakgrunden ligger på <td>, inte bara på länken.
+    expect(mail.html).toContain('bgcolor="#7c3aed"');
+  });
+
+  it("renderar produktrader med escapat namn och absoluta bild-URL:er", () => {
+    const mail = renderCardOrderConfirmed({
+      ...order,
+      items: [
+        { name: "Svart NFC-kort", quantity: 2, imageUrl: "/media/card-black.png" },
+        { name: "Metallkort", quantity: 1, imageUrl: "https://cdn.example.com/metal.png" },
+      ],
+    });
+
+    // Rot-relativ sökväg prefixas med baseUrl, absolut URL lämnas orörd.
+    expect(mail.html).toContain("https://avyracards.se/media/card-black.png");
+    expect(mail.html).toContain("https://cdn.example.com/metal.png");
+    expect(mail.html).toContain("Svart NFC-kort");
+    expect(mail.html).toContain("&times; 2");
+    expect(mail.text).toContain("- Svart NFC-kort x 2");
+  });
+
+  it("hoppar över bilden i stället för att rendera en trasig img", () => {
+    const mail = renderCardOrderConfirmed({
+      ...order,
+      items: [
+        { name: "Utan bild", quantity: 1, imageUrl: null },
+        { name: "Relativ sökväg", quantity: 1, imageUrl: "uploads/x.png" },
+      ],
+    });
+
+    expect(mail.html).toContain("Utan bild");
+    expect(mail.html).toContain("Relativ sökväg");
+    expect(mail.html).not.toContain("<img src=\"uploads/x.png\"");
+    // Bara loggan ska vara kvar som bild.
+    expect(mail.html.match(/<img /g)?.length).toBe(1);
+  });
+
+  it("escapar produktnamn så att ett variantnamn inte kan injicera markup", () => {
+    const mail = renderCardOrderConfirmed({
+      ...order,
+      items: [{ name: '<img src=x onerror="alert(1)">', quantity: 1, imageUrl: null }],
+    });
+
+    expect(mail.html).not.toContain('onerror="');
+    expect(mail.html).toContain("&lt;img src=x onerror=&quot;alert(1)&quot;&gt;");
+  });
+
+  it("gåvo-ordrar får egen rubrik och döljer summan", () => {
+    const gift = renderCardOrderConfirmed({
+      ...order,
+      amountTotal: 0,
+      isGift: true,
+    });
+
+    expect(gift.subject).toContain("Du har fått kort");
+    expect(gift.subject).toContain("ABCDEFGH");
+    expect(gift.html).toContain("Du har fått AvyraCards-kort!");
+    expect(gift.text).toContain("kostnadsfritt");
+
+    // Ingen summarad — "0 kr" ska aldrig visas för ett gratiskort.
+    expect(gift.html).not.toContain("Summa");
+    expect(gift.text).not.toContain("0 kr");
+
+    // Leveransinfo och CTA finns kvar.
+    expect(gift.html).toContain("aktiverar du det");
+    expect(gift.html).toContain("https://avyracards.se/dashboard");
+  });
+
+  it("vanliga ordrar visar summan som en egen rad", () => {
+    const mail = renderCardOrderConfirmed(order);
+    expect(mail.html).toContain("Summa");
+    expect(mail.html).toContain("598 kr");
+  });
 });
 
 describe("sendSystemNotification", () => {

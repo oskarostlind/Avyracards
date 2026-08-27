@@ -1228,6 +1228,10 @@ export const sv = {
       heading: "Tack för din beställning",
       cta: "Till min översikt",
       received: "Vi har tagit emot din beställning på {cards}.",
+      // Gratiskort skapade från admin (admin_gift) — ingen betalning, annan ton.
+      giftSubject: "Du har fått kort från AvyraCards ({reference})",
+      giftHeading: "Du har fått AvyraCards-kort!",
+      giftReceived: "Grattis! {cards} är registrerade till dig — helt kostnadsfritt.",
       cards: { one: "{count} kort", other: "{count} kort" },
       orderNumber: "Ordernummer",
       quantity: "Antal kort",

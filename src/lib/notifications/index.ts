@@ -3,6 +3,7 @@ import {
   renderCardOrderConfirmed,
   renderCardOrderShipped,
   renderPremiumActivated,
+  type OrderEmailItem,
   type PremiumActivationSource,
   type RenderedEmail,
 } from "@/lib/notifications/templates";
@@ -34,6 +35,10 @@ export type SystemNotification =
       quantity: number;
       amountTotal: number;
       currency: string;
+      /** Beställda varianter för produktförhandsvisningen i mailet. */
+      items?: OrderEmailItem[];
+      /** Gratiskort från admin — mailet får gåvo-ton och döljer summan. */
+      isGift?: boolean;
     }
   | {
       type: "card_order_shipped";
@@ -74,6 +79,8 @@ export function renderNotification(
         quantity: notification.quantity,
         amountTotal: notification.amountTotal,
         currency: notification.currency,
+        items: notification.items ?? [],
+        isGift: notification.isGift ?? false,
       });
     case "card_order_shipped":
       return renderCardOrderShipped({

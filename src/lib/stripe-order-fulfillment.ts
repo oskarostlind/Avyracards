@@ -141,6 +141,32 @@ export async function fulfillPhysicalCardOrder(
     recipientName = before?.name ?? recipientName;
   }
 
+  // Produktförhandsvisning i bekräftelsemailet: namn + bild per beställd
+  // variant. En enda findMany, inte en fråga per rad. Misslyckas den skickas
+  // mailet ändå — bilderna är en trevlighet, inte orderns innehåll.
+  let emailItems: { name: string; quantity: number; imageUrl: string | null }[] = [];
+  try {
+    const variantIds = Array.from(new Set(input.items.map((item) => item.variantId)));
+    const variants = variantIds.length
+      ? await prisma.productVariant.findMany({
+          where: { id: { in: variantIds } },
+          select: { id: true, name: true, imageUrl: true },
+        })
+      : [];
+    const byId = new Map(variants.map((variant) => [variant.id, variant]));
+
+    emailItems = input.items
+      .map((item) => {
+        const variant = byId.get(item.variantId);
+        return variant
+          ? { name: variant.name, quantity: item.quantity, imageUrl: variant.imageUrl }
+          : null;
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+  } catch (error) {
+    console.error("[order-fulfillment] Kunde inte läsa varianter för mailet:", error);
+  }
+
   // Mail skickas sist och kan aldrig kasta — ordern är redan skapad i databasen
   // och får inte rullas tillbaka för att SMTP strular.
   await sendSystemNotification({
@@ -151,6 +177,8 @@ export async function fulfillPhysicalCardOrder(
     quantity: order.quantity,
     amountTotal: input.amountTotal,
     currency: input.currency,
+    items: emailItems,
+    isGift: input.checkoutSource === "admin_gift",
   });
 
   if (premiumWasActivated) {
