@@ -1,11 +1,13 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { 
-  getAdminUserDetails, 
-  toggleUserPremium, 
-  updateAdminNotes, 
-  impersonateUser 
+import {
+  getAdminUserDetails,
+  toggleUserPremium,
+  addAdminNote,
+  impersonateUser
 } from "@/actions/admin";
+import { prisma } from "@/lib/prisma";
+import { GiftOrderForm } from "@/components/admin/gift-order-form";
 import { 
   User as UserIcon, 
   Crown, 
@@ -26,8 +28,15 @@ export default async function AdminUserDetailPage({
   const session = await auth();
   if (session?.user?.role !== "ADMIN") redirect("/dashboard");
 
-  // Hämta djup data
-  const user = await getAdminUserDetails(params.id);
+  // Hämta djup data + giftbara varianter till gratisorder-formuläret
+  const [user, giftableVariants] = await Promise.all([
+    getAdminUserDetails(params.id),
+    prisma.productVariant.findMany({
+      where: { isActive: true, type: "PHYSICAL" },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <div className="min-h-screen bg-nordic-primary p-4 md:p-8">
@@ -104,6 +113,13 @@ export default async function AdminUserDetailPage({
           </div>
         </div>
 
+        {/* Gratisorder till just den här användaren — e-post + användarnamn förifyllda */}
+        <GiftOrderForm
+          variants={giftableVariants}
+          defaultEmail={user.email ?? ""}
+          defaultUsername={user.username ?? ""}
+        />
+
         <div className="grid md:grid-cols-2 gap-6">
           
           {/* --- INFO & STATS --- */}
@@ -135,16 +151,24 @@ export default async function AdminUserDetailPage({
           <div className="bg-slate-900 border border-nordic-highlight/40 rounded-2xl p-6 space-y-4">
              <h3 className="font-bold text-slate-200 uppercase text-xs tracking-wider border-b border-nordic-highlight/40 pb-2">{t("admin.user.internalNotes")}</h3>
              
+             {/* Befintlig logg (nyast överst, append-only — se addAdminNote) */}
+             {user.adminNotes ? (
+               <div className="max-h-48 overflow-y-auto rounded-lg border border-nordic-highlight/20 bg-nordic-primary/60 p-3 text-sm text-slate-300 whitespace-pre-wrap">
+                 {user.adminNotes}
+               </div>
+             ) : (
+               <p className="text-xs text-nordic-highlight">{t("admin.user.noNotes")}</p>
+             )}
+
              <form action={async (formData) => {
                 "use server";
-                const notes = formData.get("notes") as string;
-                await updateAdminNotes(user.id, notes);
-             }} className="flex flex-col gap-3 h-full">
-                <textarea 
-                  name="notes"
-                  defaultValue={user.adminNotes || ""}
+                const note = formData.get("note") as string;
+                await addAdminNote(user.id, note);
+             }} className="flex flex-col gap-3">
+                <textarea
+                  name="note"
                   placeholder={t("admin.user.notesPlaceholder")}
-                  className="flex-1 bg-nordic-primary border border-nordic-highlight/40 rounded-lg p-3 text-sm text-slate-300 focus:outline-none focus:border-blue-500 min-h-[100px]"
+                  className="bg-nordic-primary border border-nordic-highlight/40 rounded-lg p-3 text-sm text-slate-300 focus:outline-none focus:border-blue-500 min-h-[80px]"
                 />
                 <button type="submit" className="bg-slate-800 hover:bg-slate-700 text-nordic-secondary py-2 rounded-lg text-xs font-bold transition">
                    {t("admin.user.saveNotes")}

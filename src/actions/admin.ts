@@ -110,7 +110,28 @@ export async function getAdminUserDetails(userId: string) {
   return user;
 }
 
-// 3. Hantera Premium 
+// Anteckningarna är en append-logg i ett enda textfält (User.adminNotes) —
+// ingen egen tabell. Nya poster läggs överst med tidsstämpel. Tidigare skrev
+// både premium-togglen och spara-knappen ÖVER hela fältet, så anteckningar
+// försvann; nu appendas allt. Cap:as så fältet inte växer obegränsat.
+const ADMIN_NOTES_MAX_LENGTH = 20_000;
+
+function appendToAdminNotes(existing: string | null, entry: string): string {
+  const stamp = new Intl.DateTimeFormat("sv-SE", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Europe/Stockholm",
+  }).format(new Date());
+
+  const line = `[${stamp}] ${entry.trim()}`;
+  const combined = existing?.trim() ? `${line}\n\n${existing.trim()}` : line;
+  // Trunkera i botten (äldsta) om loggen blivit för lång.
+  return combined.length > ADMIN_NOTES_MAX_LENGTH
+    ? combined.slice(0, ADMIN_NOTES_MAX_LENGTH)
+    : combined;
+}
+
+// 3. Hantera Premium
 export async function toggleUserPremium(
   userId: string,
   shouldBePremium: boolean,
@@ -124,7 +145,7 @@ export async function toggleUserPremium(
     // mejla användaren igen.
     const before = await prisma.user.findUnique({
       where: { id: userId },
-      select: { isPremium: true, email: true, name: true },
+      select: { isPremium: true, email: true, name: true, adminNotes: true },
     });
 
     await prisma.user.update({
@@ -134,7 +155,10 @@ export async function toggleUserPremium(
         premiumSource: source,
         premiumGivenAt: new Date(),
         premiumExpiresAt: null,
-        adminNotes: `Premium gifted by admin (${adminSession.user.email}) at ${new Date().toISOString()}`,
+        adminNotes: appendToAdminNotes(
+          before?.adminNotes ?? null,
+          `Premium gavs av admin (${adminSession.user.email})`
+        ),
       },
     });
 
@@ -147,6 +171,11 @@ export async function toggleUserPremium(
       });
     }
   } else {
+    const before = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { adminNotes: true },
+    });
+
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -154,7 +183,10 @@ export async function toggleUserPremium(
         premiumSource: null,
         premiumGivenAt: null,
         premiumExpiresAt: null,
-        adminNotes: `Premium removed by admin (${adminSession.user.email}) at ${new Date().toISOString()}`,
+        adminNotes: appendToAdminNotes(
+          before?.adminNotes ?? null,
+          `Premium togs bort av admin (${adminSession.user.email})`
+        ),
       },
     });
   }
@@ -163,13 +195,21 @@ export async function toggleUserPremium(
   revalidatePath(`/admin/users/${userId}`);
 }
 
-// 4. Uppdatera Admin Notes
-export async function updateAdminNotes(userId: string, notes: string) {
+// 4. Lägg till en admin-anteckning (append — skriver aldrig över loggen)
+export async function addAdminNote(userId: string, note: string) {
   await requireAdmin();
+
+  const trimmed = note.trim();
+  if (!trimmed) return;
+
+  const before = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { adminNotes: true },
+  });
 
   await prisma.user.update({
     where: { id: userId },
-    data: { adminNotes: notes },
+    data: { adminNotes: appendToAdminNotes(before?.adminNotes ?? null, trimmed) },
   });
 
   revalidatePath(`/admin/users/${userId}`);

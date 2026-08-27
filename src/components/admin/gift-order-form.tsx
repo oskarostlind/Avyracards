@@ -8,9 +8,13 @@ import { useT } from "@/i18n/client";
 interface Props {
   /** Aktiva fysiska varianter — serialiserbara, hämtas i serverkomponenten. */
   variants: { id: string; name: string }[];
+  /** Förifyll mottagarens e-post (t.ex. från en användarsida i admin). */
+  defaultEmail?: string;
+  /** Förifyll användarnamn så korten kopplas till det kontot direkt. */
+  defaultUsername?: string;
 }
 
-export function GiftOrderForm({ variants }: Props) {
+export function GiftOrderForm({ variants, defaultEmail, defaultUsername }: Props) {
   const t = useT();
   const router = useRouter();
 
@@ -20,8 +24,8 @@ export function GiftOrderForm({ variants }: Props) {
 
   const [variantId, setVariantId] = useState(variants[0]?.id ?? "");
   const [quantity, setQuantity] = useState(1);
-  const [customerEmail, setCustomerEmail] = useState("");
-  const [username, setUsername] = useState("");
+  const [customerEmail, setCustomerEmail] = useState(defaultEmail ?? "");
+  const [username, setUsername] = useState(defaultUsername ?? "");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
