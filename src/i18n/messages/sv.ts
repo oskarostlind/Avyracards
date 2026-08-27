@@ -1479,6 +1479,23 @@ export const sv = {
       showing: "Visar {count} ordrar",
       cards: "Kort",
     },
+    giftOrder: {
+      openButton: "Ge bort kort gratis",
+      title: "Gratisorder",
+      subtitle: "Skapar en betald order på 0 kr med kort som vanligt.",
+      close: "Stäng",
+      variantLabel: "Produkt",
+      quantityLabel: "Antal kort (1–10)",
+      emailLabel: "Mottagarens e-post",
+      emailPlaceholder: "namn@exempel.se",
+      usernameLabel: "Användarnamn (valfritt)",
+      usernamePlaceholder: "t.ex. oskar",
+      usernameHint:
+        "Anges ett användarnamn kopplas korten direkt till det kontot.",
+      submit: "Skapa gratisorder",
+      failed: "Kunde inte skapa gratisordern. Kolla serverloggen.",
+      badge: "Gratis/gåva",
+    },
     users: {
       title: "Användare",
       total: "Totalt {count} användare i databasen.",

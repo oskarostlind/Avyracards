@@ -29,7 +29,9 @@ export interface PhysicalOrderFulfillmentInput {
   amountTotal: number;
   currency: string;
   customerEmail: string;
-  checkoutSource: "web" | "ios";
+  // "admin_gift" = order skapad manuellt från admin (gratis kort till t.ex.
+  // influencers). Går genom exakt samma kod som Stripe-webhooken.
+  checkoutSource: "web" | "ios" | "admin_gift";
   stripeSessionId?: string;
   stripePaymentIntentId?: string;
   premiumOption?: "none" | "1mo" | "6mo";

@@ -53,6 +53,11 @@ export default async function OrderDetailPage({ params }: { params: { id: string
                 #{order.id.slice(-6).toUpperCase()}
               </h1>
               <StatusBadge status={order.status} />
+              {order.checkoutSource === "admin_gift" && (
+                <span className="rounded-full border border-pink-500/20 bg-pink-500/10 px-3 py-1 text-xs font-bold text-pink-400">
+                  {t("admin.giftOrder.badge")}
+                </span>
+              )}
             </div>
             <p className="text-nordic-highlight text-sm">
               Skapad {new Date(order.createdAt).toLocaleString("sv-SE")}

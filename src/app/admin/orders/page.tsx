@@ -5,6 +5,7 @@ import { ArrowLeft, Package, Search } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import type { OrderStatus, Prisma } from "@prisma/client";
 import { getT } from "@/i18n/server";
+import { GiftOrderForm } from "@/components/admin/gift-order-form";
 
 export async function generateMetadata() {
   return { title: getT()("admin.ordersList.metaTitle") };
@@ -49,29 +50,40 @@ export default async function AdminOrdersPage({
       : {}),
   };
 
-  const orders = await prisma.order.findMany({
-    where,
-    orderBy: { createdAt: "desc" },
-    take: 50,
-    include: {
-      cards: { select: { status: true } },
-    },
-  });
+  const [orders, giftableVariants] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: 50,
+      include: {
+        cards: { select: { status: true } },
+      },
+    }),
+    // Bara aktiva fysiska varianter kan ges bort — prenumerationer har inga kort.
+    prisma.productVariant.findMany({
+      where: { isActive: true, type: "PHYSICAL" },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
+    }),
+  ]);
 
   return (
     <div className="min-h-screen bg-nordic-primary p-4 md:p-8">
       <div className="mx-auto max-w-6xl space-y-8">
-        <div>
-          <Link
-            href="/admin"
-            className="mb-4 inline-flex items-center gap-2 text-sm text-nordic-highlight hover:text-nordic-secondary transition-colors"
-          >
-            <ArrowLeft size={16} /> {t("admin.order.backToOverview")}
-          </Link>
-          <h1 className="flex items-center gap-3 text-2xl font-bold text-slate-100">
-            <Package size={22} className="text-purple-400" />
-            {t("admin.ordersList.title")}
-          </h1>
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+          <div>
+            <Link
+              href="/admin"
+              className="mb-4 inline-flex items-center gap-2 text-sm text-nordic-highlight hover:text-nordic-secondary transition-colors"
+            >
+              <ArrowLeft size={16} /> {t("admin.order.backToOverview")}
+            </Link>
+            <h1 className="flex items-center gap-3 text-2xl font-bold text-slate-100">
+              <Package size={22} className="text-purple-400" />
+              {t("admin.ordersList.title")}
+            </h1>
+          </div>
+          <GiftOrderForm variants={giftableVariants} />
         </div>
 
         {/* Sök + statusfilter (GET-formulär: delbar URL, ingen client-JS) */}
@@ -150,6 +162,11 @@ export default async function AdminOrdersPage({
                           >
                             #{order.id.slice(-6).toUpperCase()}
                           </Link>
+                          {order.checkoutSource === "admin_gift" && (
+                            <span className="ml-2 rounded-full border border-pink-500/20 bg-pink-500/10 px-2 py-0.5 font-sans text-[10px] font-medium text-pink-400">
+                              {t("admin.giftOrder.badge")}
+                            </span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-slate-300">{formatDate(order.createdAt)}</td>
                         <td className="px-6 py-4 text-slate-300">{order.customerEmail}</td>
