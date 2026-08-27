@@ -33,7 +33,10 @@ export default async function CardRedirectPage({ params }: Props) {
   }
 
   if (card.status === "CLAIMED" && card.user) {
-    redirect(`/u/${card.user.username}`);
+    // Källattribution: allt som går via kortet (NFC-tap OCH QR-skanning av
+    // kortets baksida/brev) räknas som "nfc" i statistiken — profilsidan
+    // plockar upp ?source= och skickar med i analytics-eventet.
+    redirect(`/u/${card.user.username}?source=nfc`);
   }
 
   if (card.status === "DISABLED" || card.status === "LOST") {

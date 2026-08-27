@@ -57,14 +57,24 @@ export async function sendPushNotification(
   try {
     const payloadData = normalizeData(data);
 
+    // OBS: `contentAvailable` togs medvetet BORT ur aps-payloaden. En synlig
+    // notis + content-available gör att FCM:s iOS-SDK kan re-leverera samma
+    // meddelande när appen växlar mellan för- och bakgrund — i praktiken fick
+    // användare 2–3 kopior av EN push, minuter isär. Deeplink-datan (`data.url`)
+    // följer ändå med notisen och läses vid tryck (push-deep-link.tsx).
+    // `apns-collapse-id` gör dessutom att en eventuell om-leverans ERSÄTTER
+    // notisen i notiscentret i stället för att staplas som en ny.
+    const collapseId = payloadData?.eventId?.slice(0, 64);
+
     await firebase.messaging().send({
       token: t,
       notification: { title, body },
       ...(payloadData ? { data: payloadData } : {}),
       android: { priority: "high" as const },
       apns: {
+        ...(collapseId ? { headers: { "apns-collapse-id": collapseId } } : {}),
         payload: {
-          aps: { sound: "default", contentAvailable: true },
+          aps: { sound: "default" },
         },
         fcmOptions: {},
       },
