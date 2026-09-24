@@ -44,6 +44,11 @@ interface CardPreview3DProps {
   color: string;
   design: "minimal" | "qr";
   customImage?: string | null;
+  /**
+   * false döljer vänd-knappen och förklaringstexten — startsidans hero visar
+   * bara själva kortet (samma geometri, material och tilt som i shopen).
+   */
+  showControls?: boolean;
 }
 
 // --- FÄRGHJÄLP -------------------------------------------------------------
@@ -162,7 +167,7 @@ function buildFinish(hex: string): Finish {
 
 // --- KOMPONENT -------------------------------------------------------------
 
-export function CardPreview3D({ material, color, design, customImage }: CardPreview3DProps) {
+export function CardPreview3D({ material, color, design, customImage, showControls = true }: CardPreview3DProps) {
   const t = useT();
   const ref = useRef<HTMLDivElement>(null);
 
@@ -283,6 +288,7 @@ export function CardPreview3D({ material, color, design, customImage }: CardPrev
         </div>
       </div>
 
+      {showControls && (<>
       <button
         onClick={() => setIsFlipped(!isFlipped)}
         className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/10 px-6 py-3 rounded-full text-sm font-medium transition-colors text-gray-300"
@@ -298,6 +304,7 @@ export function CardPreview3D({ material, color, design, customImage }: CardPrev
             ? t("cardPreview.metalNote")
             : "Illustration. Plastkortet levereras i AvyraCards standarddesign."}
       </p>
+      </>)}
     </div>
   );
 }

@@ -25,7 +25,7 @@ export function AppStoreLink({ campaign, className = "", variant = "text" }: Pro
   const base =
     variant === "button"
       ? "inline-flex h-12 items-center justify-center gap-2 rounded-2xl border border-nordic-highlight/40 bg-slate-900/60 px-5 text-sm font-semibold text-nordic-secondary transition-colors hover:bg-slate-800 active:scale-[0.98]"
-      : "inline-flex items-center gap-1.5 text-nordic-highlight transition-colors hover:text-nordic-accent";
+      : "inline-flex items-center gap-1.5 whitespace-nowrap text-nordic-highlight transition-colors hover:text-nordic-accent";
 
   return (
     <a

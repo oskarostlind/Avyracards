@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Används av kortpreviewn (shop + startsida). Klassen refererades redan
+   men fanns aldrig definierad — utan perspektiv ser 3D-tilten platt ut. */
+.perspective-1000 { perspective: 1000px; }
+
 /* Inga @apply-regler här för body.
   Vi hanterar färgerna (bg-nordic-primary etc) direkt i layout.tsx 
   för att undvika PostCSS-fel vid build.

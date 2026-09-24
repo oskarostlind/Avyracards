@@ -1,6 +1,6 @@
 ---
 skapad: 2026-09-24
-uppdaterad: 2026-09-24
+uppdaterad: 2026-09-25
 ---
 
 # Apple-design-granskning — AvyraCards webb/app
@@ -17,6 +17,14 @@ Grunden är bra: systemtypsnittslik sans (Manrope via next/font), stram hero-typ
 | `prefers-reduced-transparency: reduce` gör `backdrop-blur`-ytorna solida | `globals.css` | §12/§14 Material |
 | Publika profilens länkknappar fick `active:scale-[0.97]` + `duration-150` och animerar bara transform/färg/skugga (inte `transition-all`) | `social-profile.tsx`, `business-profile.tsx` | §1 Respons på pointer-down, §11 kompositörsvänliga egenskaper |
 | Smart App Banner på marknadssidorna (inte på profiler) | `seo-metadata.ts` | §16 Familiarity — plattformens egna mönster |
+
+## Ny startsida byggd 2026-09-25 (riktning C "Kortet i fokus")
+Oskar valde prototyp C av fyra (design-canvas "AvyraCards startsida – prototyper"). Implementerad i `src/components/landing/home-view.tsx`, verifierad renderad i molnmiljön (desktop 1440 + mobil 390, sv, inga konsolfel).
+- Hero: rubrik + **det riktiga plastkortet** via `CardPreview3D` (ny prop `showControls={false}`) — matt svart, ISO ID-1, enbart lockupen, samma tilt som i shopen. Prototypens kort (namn, NFC-ikon, chip) var FEL mot verkligheten och byttes ut.
+- Telefon-demo med Social/Business-växling (`PhoneDemo`, state i vyn, `aria-pressed`, `aria-live`), copy via nya `home.demo*`-nycklar i sv+en.
+- Problem-sektionen som redaktionell lista, kärnkonceptet som två kort, "Så funkar det" som tidslinje, FAQ som accordion med första öppen, slut-CTA i turkos.
+- Designregler: en accent (nordic-accent), `active:scale` på alla knappar, inga eviga animationer (animate-bounce/pulse borta), tryckytor ≥ 44 px, `transition-[…]` i stället för `transition-all`.
+- Bonus: `.perspective-1000` fanns aldrig i CSS:en — tillagd i globals.css, så kortets 3D-tilt får djup även i shopen.
 
 ## Hittat — prioriterat
 
