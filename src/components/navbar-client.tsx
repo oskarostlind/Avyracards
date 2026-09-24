@@ -6,7 +6,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useIsApp } from "@/hooks/useIsApp";
 import { useT } from "@/i18n/client";
-import { LanguageSwitcher } from "@/components/language-switcher";
 import { SignInButton } from "@/components/sign-in-button";
 import { SignOutButton } from "@/components/sign-out-button";
 import {
@@ -25,6 +24,8 @@ type NavbarClientProps = {
   isAdmin?: boolean;
 };
 
+// Språkväljaren ligger INTE här längre (Oskar 2026-09-25): den finns under
+// Inställningar → Konto (account-form.tsx) och i sidfoten för utloggade.
 // `labelKey` slås upp mot i18n-trädet vid render — namnen får inte vara
 // hårdkodade här eftersom listan renderas i både mobil- och desktopnaven.
 const navLinks = [
@@ -152,7 +153,6 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
 
                 <div className="mt-4 flex items-center justify-between gap-3 border-t border-nordic-highlight/20 px-2 pt-4">
                   <SignOutButton />
-                  <LanguageSwitcher variant="compact" />
                 </div>
               </nav>
             ) : (
@@ -166,9 +166,6 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                 </Link>
                 <div className="flex justify-center">
                   <SignInButton />
-                </div>
-                <div className="flex justify-center pt-2">
-                  <LanguageSwitcher variant="compact" />
                 </div>
               </nav>
             )}
@@ -249,13 +246,11 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
                 )}
 
                 <div className="flex items-center gap-3 border-l border-white/10 pl-2">
-                  <LanguageSwitcher variant="compact" />
                   <SignOutButton />
                 </div>
               </>
             ) : (
               <div className="flex items-center gap-4">
-                <LanguageSwitcher variant="compact" />
                 <SignInButton />
                 <Link
                   href="/get-started"

@@ -44,6 +44,7 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
       businessAvatarUrl: true,
       profileMode: true,
       isSuspended: true,
+      hideFromSearch: true,
       jobTitle: true,
       companyName: true,
       businessHeadline: true,
@@ -68,8 +69,10 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
 
   const image = (isBusiness ? user.businessAvatarUrl || user.avatarUrl : user.avatarUrl) || "/avyra_transparent_v2.jpg";
 
+  // "Dölj från Google" i Inställningar → Konto: ägaren har valt noindex.
+  // (Inställningen sparades tidigare men användes aldrig i renderingen.)
   const hasContent = Boolean(headline && headline.trim()) || user._count.links > 0;
-  const indexable = hasContent && !isPreview;
+  const indexable = hasContent && !isPreview && !user.hideFromSearch;
 
   const title = `${displayName} – ${t("seo.profile.titleSuffix")}`;
 
