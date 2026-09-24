@@ -168,7 +168,7 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
                       href={action.url}
                       download={action.type === 'vcard' ? `${user.username}.vcf` : undefined}
                       onClick={action.type === 'vcard' ? handleVcardClick : undefined}
-                      className={action.type === 'vcard' ? `w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform hover:scale-[1.02] mb-2 ${!useCustomTheme ? 'bg-slate-100 text-slate-900' : ''}` : "p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"}
+                      className={action.type === 'vcard' ? `w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.97] mb-2 ${!useCustomTheme ? 'bg-slate-100 text-slate-900' : ''}` : "p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"}
                       style={action.type === 'vcard' ? primaryStyle : (useCustomTheme ? { borderColor: settings.accentColor, color: settings.textColor } : {})}
                       title={action.label}
                     >
@@ -185,7 +185,7 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
                 linkId={link.id}
                 ownerId={user.id}
                 href={link.href}
-                className={`flex items-center justify-between px-5 py-4 text-sm font-medium transition-all hover:scale-[1.02] ${!useCustomTheme ? `${tokens.link} shadow-md rounded-xl` : ''}`}
+                className={`flex items-center justify-between px-5 py-4 text-sm font-medium transition-[transform,background-color,box-shadow] duration-150 hover:scale-[1.02] active:scale-[0.97] ${!useCustomTheme ? `${tokens.link} shadow-md rounded-xl` : ''}`}
                 // Egen färg (premium) vinner över temats accentfärg — men bara
                 // för den här knappen, och med samma variant-beteende som temat.
                 style={applyCustomLinkColor(

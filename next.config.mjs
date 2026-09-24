@@ -47,6 +47,21 @@ const nextConfig = {
     }
   },
 
+  // www.avyracards.se svarade tidigare 200 på allt — samma sajt på två värdar
+  // späder ut sökningen. Apex är kanoniskt (det står på korten och i wallet-
+  // passen), så www skickas dit permanent. Vercel gör inte detta av sig
+  // självt när båda domänerna är tillagda som "production".
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.avyracards.se" }],
+        destination: "https://avyracards.se/:path*",
+        permanent: true,
+      },
+    ];
+  },
+
   // Säkerställer att Node-moduler hanteras rätt (Från din originalkod)
   webpack: (config) => {
     config.externals.push({

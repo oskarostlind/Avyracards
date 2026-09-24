@@ -1,6 +1,6 @@
 ---
 skapad: 2026-08-10
-uppdaterad: 2026-08-10
+uppdaterad: 2026-09-24
 ---
 
 # AvyraCards — Hem
@@ -17,6 +17,9 @@ Projektvault för **AvyraCards** — digital visitkorts-/link-in-bio-plattform m
 - [[06 Beslutslogg]] — beslut och varför
 - [[07 Bygglogg]] — logg över autonoma byggsessioner
 - [[08 Testchecklista]] — manuellt regressionstest före submission
+- [[09 Plan – Android-port]]
+- [[10 SEO & organisk tillväxt]] — teknisk SEO-grund (byggd 2026-09-24), SERP-research, innehållsplan ⭐
+- [[11 Apple-design-granskning]] — UI-granskning mot Apples designprinciper, prioriterade fixar
 
 ## Snabbstatus (2026-08-10)
 

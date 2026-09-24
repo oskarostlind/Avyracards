@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo-metadata";
 import { getT } from "@/i18n/server";
 import { MODERATION_CONTACT_EMAIL } from "@/lib/moderation-shared";
 
@@ -9,6 +11,10 @@ import { MODERATION_CONTACT_EMAIL } from "@/lib/moderation-shared";
  * Sektion 12 har flera stycken och en kontaktlänk och renderas därför separat.
  */
 const SECTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] as const;
+
+export function generateMetadata(): Metadata {
+  return pageMetadata({ key: "terms", path: "/terms" });
+}
 
 export default function TermsPage() {
   const t = getT();

@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
+import { notifyAdmins } from "@/lib/admin-alerts";
 
 function slugifyUsername(value: string): string {
   const base = value
@@ -55,6 +56,13 @@ export async function createUserFromApple(params: {
       email: true,
       username: true,
     },
+  });
+
+  await notifyAdmins({
+    type: "new_user",
+    email: user.email,
+    username: user.username,
+    via: "apple",
   });
 
   return user;

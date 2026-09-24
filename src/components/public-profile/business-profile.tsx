@@ -55,7 +55,7 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
   const textClass = !hasCustomTheme ? (tokens.text || 'text-nordic-secondary') : '';
 
   const getButtonClass = () => {
-    let base = "flex items-center justify-center gap-2 p-4 transition-all duration-300 font-bold text-sm group relative overflow-hidden ";
+    let base = "flex items-center justify-center gap-2 p-4 transition-[transform,background-color,box-shadow,opacity] duration-150 active:scale-[0.97] font-bold text-sm group relative overflow-hidden ";
     if (settings.buttonStyle === "pill") base += "rounded-full ";
     else if (settings.buttonStyle === "rounded") base += "rounded-xl ";
     else if (settings.buttonStyle === "sharp") base += "rounded-none ";

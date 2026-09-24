@@ -6,3 +6,30 @@
   Vi hanterar färgerna (bg-nordic-primary etc) direkt i layout.tsx 
   för att undvika PostCSS-fel vid build.
 */
+
+/* --- Rörelse och material: respektera systeminställningarna -----------------
+   Se apple-design-granskningen i obsidian/. Reducerad rörelse betyder inte
+   noll återkoppling: opacitet och färg får ändras, men inget ska glida,
+   studsa eller pulsera. Reducerad transparens gör glasytorna solida. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .backdrop-blur,
+  .backdrop-blur-sm,
+  .backdrop-blur-md,
+  .backdrop-blur-lg,
+  .backdrop-blur-xl {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background-color: #020617 !important; /* nordic.primary */
+  }
+}

@@ -61,7 +61,11 @@ export default auth((req) => {
   return NextResponse.next();
 });
 
-// Matcher config: Exkludera API:er och statiska filer
+// Matcher config: Exkludera API:er och statiska filer.
+// Filer med ändelse (robots.txt, sitemap.xml, Search Console-verifieringsfilen
+// google<hash>.html, bilder) ska serveras råa utan att auth() körs på dem.
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:txt|xml|html|png|jpg|jpeg|svg|ico|webp|webmanifest|json)$).*)",
+  ],
 };

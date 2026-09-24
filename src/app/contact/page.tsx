@@ -1,5 +1,11 @@
+import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo-metadata";
 import { getT } from "@/i18n/server";
 import { MODERATION_CONTACT_EMAIL } from "@/lib/moderation-shared";
+
+export function generateMetadata(): Metadata {
+  return pageMetadata({ key: "contact", path: "/contact" });
+}
 
 export default function ContactPage() {
   const t = getT();

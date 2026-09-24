@@ -1,10 +1,10 @@
 import LoginForm from "@/components/auth/login-form";
 import { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo-metadata";
 
-export const metadata: Metadata = {
-  title: "Logga in | AvyraCards",
-  description: "Logga in på ditt AvyraCards konto",
-};
+export function generateMetadata(): Metadata {
+  return pageMetadata({ key: "login", path: "/login", index: false });
+}
 
 export default function LoginPage() {
   return (

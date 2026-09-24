@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PremiumSource } from "@prisma/client";
 import { getIapProductIds } from "@/lib/ios-native";
 import { sendSystemNotification } from "@/lib/notifications";
+import { notifyAdmins } from "@/lib/admin-alerts";
 
 interface AppStoreTransactionPayload {
   signedTransactionInfo?: string;
@@ -156,6 +157,13 @@ export async function grantPremiumFromIap(params: {
     name: user.name,
     source: "apple_iap",
     expiresAt: params.expiresAt,
+  });
+
+  await notifyAdmins({
+    type: "premium_activated",
+    email: user.email,
+    username: user.username,
+    source: "apple_iap",
   });
 }
 

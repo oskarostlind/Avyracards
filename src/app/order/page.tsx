@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo-metadata";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import OrderView, { DbVariant } from "@/components/order-view";
@@ -13,6 +15,10 @@ function mapVariant(variant: any): DbVariant {
         colorCode: variant.colorCode,
         type: variant.type || "standard",
     };
+}
+
+export function generateMetadata(): Metadata {
+  return pageMetadata({ key: "order", path: "/order", smartBanner: true });
 }
 
 export default async function OrderPage() {

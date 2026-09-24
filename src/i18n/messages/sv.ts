@@ -65,6 +65,8 @@ export const sv = {
     product: "Produkt",
     howItWorks: "Så funkar det",
     faq: "FAQ",
+    socialProduct: "Länk i bio (Social)",
+    orderCard: "Beställ NFC-kort",
     forBusiness: "För företag",
     businessProduct: "AvyraCards Business",
     contactAndQuote: "Kontakt & offert",
@@ -1621,5 +1623,65 @@ export const sv = {
     createAccount: "Skapa ditt konto och bygg din profil!",
     cardId: "Kort-ID",
     activationLink: "Aktiveringslänk:",
+  },
+  seo: {
+    // Rotlayoutens mall lägger på " | AvyraCards" (13 tecken) — håll sidtitlar
+    // under 47 tecken så att de inte kapas i sökresultaten.
+    defaultTitle: "AvyraCards – digitalt visitkort med NFC och QR",
+    defaultDescription:
+      "Skapa ett digitalt visitkort gratis. Dela profil, länkar och kontaktuppgifter med QR-kod, länk eller NFC-kort – ingen app krävs hos mottagaren.",
+    home: {
+      title: "Digitalt visitkort med NFC-kort och QR-kod",
+      description:
+        "Skapa ditt digitala visitkort gratis på under två minuter. En profil med två lägen – social och business – som du delar med QR-kod, länk eller NFC-kort.",
+    },
+    social: {
+      title: "Länk i bio – alla dina länkar på en sida",
+      description:
+        "Samla Instagram, TikTok, YouTube och alla dina länkar på en snygg sida. Gratis svenskt Linktree-alternativ med egna teman, statistik och NFC-kort.",
+    },
+    business: {
+      title: "Digitalt visitkort för företag och proffs",
+      description:
+        "Ett visitkort som aldrig tar slut: titel, företag, bokningslänk och spara-kontakt-knapp. Dela via NFC-kort, QR-kod eller Apple Wallet. Gratis att börja.",
+    },
+    getStarted: {
+      title: "Kom igång – gratis, premium eller NFC-kort",
+      description:
+        "Välj hur du vill börja: gratis digitalt visitkort, premium med alla teman och statistik, eller ett fysiskt NFC-kort i plast eller metall.",
+    },
+    order: {
+      title: "Beställ NFC-visitkort i plast eller metall",
+      description:
+        "Beställ ett fysiskt NFC-visitkort kopplat till din AvyraCards-profil. Tappa kortet mot en telefon så öppnas din profil – ingen app behövs.",
+    },
+    contact: {
+      title: "Kontakt och offert",
+      description:
+        "Kontakta AvyraCards för frågor, support eller offert på NFC-kort till hela teamet.",
+    },
+    privacy: {
+      title: "Integritetspolicy",
+      description: "Så hanterar AvyraCards dina personuppgifter, cookies och statistik.",
+    },
+    terms: {
+      title: "Användarvillkor",
+      description: "Villkor för att använda AvyraCards digitala visitkort, premium och fysiska NFC-kort.",
+    },
+    login: {
+      title: "Logga in",
+      description: "Logga in på ditt AvyraCards-konto och uppdatera ditt digitala visitkort.",
+    },
+    register: {
+      title: "Skapa konto gratis",
+      description:
+        "Skapa ditt AvyraCards-konto gratis och bygg ditt digitala visitkort på under två minuter.",
+    },
+    profile: {
+      titleSuffix: "digitalt visitkort",
+      descriptionFallback: "{name} delar sina länkar och kontaktuppgifter via AvyraCards.",
+    },
+    appStoreCta: "Ladda ner iOS-appen",
+    appStoreAria: "Ladda ner AvyraCards i App Store",
   },
 } as const;

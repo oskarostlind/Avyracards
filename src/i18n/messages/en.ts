@@ -67,6 +67,8 @@ export const en: Messages = {
     product: "Product",
     howItWorks: "How it works",
     faq: "FAQ",
+    socialProduct: "Link in bio (Social)",
+    orderCard: "Order an NFC card",
     forBusiness: "For business",
     businessProduct: "AvyraCards Business",
     contactAndQuote: "Contact & quote",
@@ -1615,5 +1617,61 @@ export const en: Messages = {
     createAccount: "Create your account and build your profile!",
     cardId: "Card ID",
     activationLink: "Activation link:",
+  },
+  seo: {
+    defaultTitle: "AvyraCards – digital business card with NFC and QR",
+    defaultDescription:
+      "Create a free digital business card. Share your profile, links and contact details with a QR code, a link or an NFC card – no app needed on the other end.",
+    home: {
+      title: "Digital business card with NFC card and QR code",
+      description:
+        "Create your digital business card for free in under two minutes. One profile with two modes – social and business – shared via QR code, link or NFC card.",
+    },
+    social: {
+      title: "Link in bio – all your links on one page",
+      description:
+        "Gather Instagram, TikTok, YouTube and all your links on one clean page. Free Linktree alternative with themes, analytics and NFC cards.",
+    },
+    business: {
+      title: "Digital business card for professionals",
+      description:
+        "A business card that never runs out: title, company, booking link and save-contact button. Share via NFC card, QR code or Apple Wallet. Free to start.",
+    },
+    getStarted: {
+      title: "Get started – free, premium or NFC card",
+      description:
+        "Pick how to begin: a free digital business card, premium with all themes and analytics, or a physical NFC card in plastic or metal.",
+    },
+    order: {
+      title: "Order an NFC business card in plastic or metal",
+      description:
+        "Order a physical NFC business card linked to your AvyraCards profile. Tap it against a phone and your profile opens – no app required.",
+    },
+    contact: {
+      title: "Contact and quotes",
+      description: "Contact AvyraCards for questions, support or a quote on NFC cards for your whole team.",
+    },
+    privacy: {
+      title: "Privacy policy",
+      description: "How AvyraCards handles your personal data, cookies and analytics.",
+    },
+    terms: {
+      title: "Terms of service",
+      description: "Terms for using AvyraCards digital business cards, premium and physical NFC cards.",
+    },
+    login: {
+      title: "Log in",
+      description: "Log in to your AvyraCards account and update your digital business card.",
+    },
+    register: {
+      title: "Create a free account",
+      description: "Create your AvyraCards account for free and build your digital business card in under two minutes.",
+    },
+    profile: {
+      titleSuffix: "digital business card",
+      descriptionFallback: "{name} shares their links and contact details via AvyraCards.",
+    },
+    appStoreCta: "Download the iOS app",
+    appStoreAria: "Download AvyraCards on the App Store",
   },
 };

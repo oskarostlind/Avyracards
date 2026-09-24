@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo-metadata";
 import { getT } from "@/i18n/server";
 import { MODERATION_CONTACT_EMAIL } from "@/lib/moderation-shared";
 
@@ -7,6 +9,10 @@ import { MODERATION_CONTACT_EMAIL } from "@/lib/moderation-shared";
  */
 const SECTIONS_BEFORE_CONTACT = [1, 2, 3, 4] as const;
 const SECTIONS_AFTER_CONTACT = [6, 7] as const;
+
+export function generateMetadata(): Metadata {
+  return pageMetadata({ key: "privacy", path: "/privacy" });
+}
 
 export default function PrivacyPage() {
   const t = getT();

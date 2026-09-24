@@ -6,6 +6,7 @@ import { sendVerificationEmail } from "@/lib/email";
 import { z } from "zod";
 import { getLocale, getT } from "@/i18n/server";
 import type { Translator } from "@/i18n";
+import { notifyAdmins } from "@/lib/admin-alerts";
 
 export const runtime = "nodejs";
 
@@ -131,6 +132,15 @@ export async function POST(req: Request) {
     } else {
        console.log(`[register] User ${user.email} auto-verified due to purchase session.`);
     }
+
+    // Pinga admin om den nya användaren. Efter mailet så att en rollbackad
+    // registrering inte ger en notis. Kastar aldrig.
+    await notifyAdmins({
+      type: "new_user",
+      email: user.email,
+      username: user.username,
+      via: "email",
+    });
 
     return NextResponse.json({ ok: true }, { status: 201 });
 

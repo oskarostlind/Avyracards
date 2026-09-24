@@ -3,6 +3,7 @@ import { stripe } from "@/lib/stripe";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { sendSystemNotification } from "@/lib/notifications";
+import { notifyAdmins } from "@/lib/admin-alerts";
 
 export async function POST(req: Request) {
   try {
@@ -56,6 +57,11 @@ export async function POST(req: Request) {
         type: "premium_activated",
         to: before.email,
         name: before.name,
+        source: "stripe",
+      });
+      await notifyAdmins({
+        type: "premium_activated",
+        email: before.email,
         source: "stripe",
       });
     }

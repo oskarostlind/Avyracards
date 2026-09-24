@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { auth } from "@/auth";
 import { claimCard } from "@/lib/card-claim";
+import { notifyAdmins } from "@/lib/admin-alerts";
 import { consumeRateLimit } from "@/lib/rate-limit";
 import { getT } from "@/i18n/server";
 
@@ -53,6 +54,11 @@ export async function POST(req: NextRequest) {
     });
 
     if (result.ok) {
+      await notifyAdmins({
+        type: "card_claimed",
+        cardCode: cardCode ?? null,
+        username: session.user.username ?? null,
+      });
       return NextResponse.json({ success: true });
     }
 

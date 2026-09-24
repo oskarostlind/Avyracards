@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 import { fulfillPhysicalCardOrder, type PhysicalOrderItemInput } from "@/lib/stripe-order-fulfillment";
 import { sendSystemNotification } from "@/lib/notifications";
+import { notifyAdmins } from "@/lib/admin-alerts";
 
 export async function POST(req: Request) {
   const body = await req.text();
@@ -54,6 +55,11 @@ export async function POST(req: Request) {
            type: "premium_activated",
            to: before.email ?? session.customer_details?.email,
            name: before.name,
+           source: "stripe",
+         });
+         await notifyAdmins({
+           type: "premium_activated",
+           email: before.email ?? session.customer_details?.email,
            source: "stripe",
          });
        }

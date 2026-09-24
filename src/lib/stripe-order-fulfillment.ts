@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { prisma } from "@/lib/prisma";
 import { sendSystemNotification } from "@/lib/notifications";
+import { notifyAdmins } from "@/lib/admin-alerts";
 
 // Kortkoden trycks på kortet och används som uppslagsnyckel i /c/<code>.
 // Math.random() är förutsägbar — använd CSPRNG så att koder i samma batch
@@ -188,6 +189,28 @@ export async function fulfillPhysicalCardOrder(
       name: recipientName,
       source: "card_order",
     });
+  }
+
+  // Admin-push ("Ny beställning!"). Gratisordrar skapar admin själv — ingen
+  // notis för dem.
+  if (input.checkoutSource !== "admin_gift") {
+    await notifyAdmins({
+      type: "new_order",
+      orderId: order.id,
+      quantity: order.quantity,
+      amountTotal: input.amountTotal,
+      currency: input.currency,
+      customerEmail: input.customerEmail,
+      city: input.shipping?.city ?? null,
+      source: input.checkoutSource,
+    });
+    if (premiumWasActivated) {
+      await notifyAdmins({
+        type: "premium_activated",
+        email: input.customerEmail,
+        source: "card_order",
+      });
+    }
   }
 
   return order.id;

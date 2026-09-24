@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useIsApp } from "@/hooks/useIsApp";
 import { useT } from "@/i18n/client";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { AppStoreLink } from "@/components/app-store-link";
 
 export function Footer() {
   const isApp = useIsApp();
@@ -40,6 +41,19 @@ export function Footer() {
                 <Link href="/#faq" className="hover:text-nordic-accent">
                   {t("footer.faq")}
                 </Link>
+              </li>
+              <li>
+                <Link href="/social" className="hover:text-nordic-accent">
+                  {t("footer.socialProduct")}
+                </Link>
+              </li>
+              <li>
+                <Link href="/order" className="hover:text-nordic-accent">
+                  {t("footer.orderCard")}
+                </Link>
+              </li>
+              <li>
+                <AppStoreLink campaign="web-footer" />
               </li>
             </ul>
           </div>

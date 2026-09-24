@@ -1,8 +1,14 @@
+import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo-metadata";
 import { prisma } from "@/lib/prisma";
 import GetStartedView from "@/components/get-started-view";
 
 // Vi sätter revalidate till 0 eller en låg siffra så att prisändringar i DB syns direkt
 export const revalidate = 0; 
+
+export function generateMetadata(): Metadata {
+  return pageMetadata({ key: "getStarted", path: "/get-started", smartBanner: true });
+}
 
 export default async function GetStartedPage() {
   

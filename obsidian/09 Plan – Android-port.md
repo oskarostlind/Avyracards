@@ -41,6 +41,25 @@ Konkret:
 
 ---
 
+## Kontostatus – Google Play (kontrollerat 2026-08-27)
+
+Konto: **Oskar Östlind**, personligt konto, konto-id `5571377260442527909`.
+
+| Steg | Status |
+|---|---|
+| Registreringsavgift 25 USD | ✅ betald 25 aug |
+| Google Payments-profil | ✅ skapad 25 aug |
+| Skatteuppgifter Sverige | ✅ godkända 25 aug |
+| Identitetsverifiering (foto-ID) | ✅ verifierad 26 aug |
+| **Åtkomst till mobil Android-enhet** | ❌ **kvar** – logga in i Play Console-mobilappen på en riktig Android-telefon |
+| **Verifiera kontakttelefonnummer** | ❌ **kvar** |
+
+→ Knappen **"Skapa app" är låst** tills båda är klara. Detta blockerar Fas 0, steg 5.
+
+**Sidonotis:** Google Cloud-provperioden har 7 dagar kvar (varning 27 aug). Play Billing-verifieringen i Fas 2 kräver ett GCP-projekt (service account + Pub/Sub för RTDN) – provperioden bör uppgraderas till betalkonto innan Fas 2, annars försvinner projektet.
+
+---
+
 ## Fas 0 – Förberedelse (ingen kodändring i src)
 
 1. Skapa branch `feat/android-port` från nuvarande läge.

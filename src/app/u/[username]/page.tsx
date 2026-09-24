@@ -8,6 +8,9 @@ import { SocialProfile } from "@/components/public-profile/social-profile";
 import { BusinessProfile } from "@/components/public-profile/business-profile";
 import { getProfileData } from "@/lib/profile-mapper"; 
 import { ThemeMode } from "@/types/theme";
+import type { Metadata } from "next";
+import { getT } from "@/i18n/server";
+import { SITE_URL } from "@/lib/seo";
 
 type PageProps = {
   params: { username: string };
@@ -16,6 +19,80 @@ type PageProps = {
 
 export const runtime = "nodejs";
 export const revalidate = 0;
+
+/**
+ * Metadata per profil: namn i titeln, rubrik/bio som beskrivning, avatar som
+ * delningsbild och canonical utan preview-parametrar.
+ *
+ * Indexeringsregel: en profil indexeras bara om ägaren faktiskt fyllt i något
+ * (bio/rubrik eller minst en aktiv länk). Tomma profiler, avstängda konton
+ * och förhandsvisningar får noindex — en ny domän ska inte spädas ut med
+ * tusentals nästan tomma sidor. Profilerna listas inte heller i sitemap.xml.
+ */
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
+  const username = params.username;
+  const canonical = `${SITE_URL}/u/${encodeURIComponent(username)}`;
+  const isPreview = searchParams.preview === "true";
+
+  const user = await prisma.user.findUnique({
+    where: { username },
+    select: {
+      username: true,
+      name: true,
+      bio: true,
+      avatarUrl: true,
+      businessAvatarUrl: true,
+      profileMode: true,
+      isSuspended: true,
+      jobTitle: true,
+      companyName: true,
+      businessHeadline: true,
+      _count: { select: { links: { where: { isActive: true } } } },
+    },
+  });
+
+  if (!user || user.isSuspended) {
+    return { title: "AvyraCards", robots: { index: false, follow: false } };
+  }
+
+  const t = getT();
+  const displayName = user.name?.trim() || user.username;
+  const isBusiness = user.profileMode === "BUSINESS";
+
+  const headline = isBusiness
+    ? [user.businessHeadline || user.jobTitle, user.companyName].filter(Boolean).join(" · ")
+    : user.bio?.trim();
+
+  const description =
+    (headline && headline.trim()) || t("seo.profile.descriptionFallback", { name: displayName });
+
+  const image = (isBusiness ? user.businessAvatarUrl || user.avatarUrl : user.avatarUrl) || "/avyra_transparent_v2.jpg";
+
+  const hasContent = Boolean(headline && headline.trim()) || user._count.links > 0;
+  const indexable = hasContent && !isPreview;
+
+  const title = `${displayName} – ${t("seo.profile.titleSuffix")}`;
+
+  return {
+    title,
+    description,
+    alternates: { canonical },
+    robots: indexable ? { index: true, follow: true } : { index: false, follow: true },
+    openGraph: {
+      type: "profile",
+      title,
+      description,
+      url: canonical,
+      images: [{ url: image, alt: displayName }],
+    },
+    twitter: {
+      card: "summary",
+      title,
+      description,
+      images: [image],
+    },
+  };
+}
 
 export default async function PublicProfilePage({ params, searchParams }: PageProps) {
   const username = params.username;
