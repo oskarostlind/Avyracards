@@ -1,6 +1,6 @@
 import type { Translator } from "@/i18n/translate";
 import type { Locale } from "@/i18n/config";
-import { APP_STORE_ID, SITE_NAME, SITE_URL, appStoreUrl } from "@/lib/seo";
+import { APP_STORE_ID, SITE_NAME, SITE_URL, SOCIAL_LINKS, appStoreUrl } from "@/lib/seo";
 
 /** Organization + WebSite — samma på alla marknadssidor. */
 export function organizationSchema() {
@@ -13,7 +13,7 @@ export function organizationSchema() {
     logo: `${SITE_URL}/avyra-logo.png`,
     email: "kontakt@avyracards.se",
     areaServed: "SE",
-    sameAs: [appStoreUrl()],
+    sameAs: [appStoreUrl(), ...SOCIAL_LINKS.flatMap((l) => (l.url ? [l.url] : []))],
   };
 }
 

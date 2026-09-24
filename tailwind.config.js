@@ -18,7 +18,12 @@ module.exports = {
           primary: "#020617",   // Din mörka bakgrund
           secondary: "#F7F8FA", // Din ljusa text
           accent: "#45D0C1",    // Turkos accent
-          highlight: "#5F6368", 
+          // 2026-09-25: lyft från #5F6368. Den gamla tonen gav ~3,4:1 mot
+          // primary — under AA (4,5:1) — och all sekundärtext såg "släckt"
+          // ut, särskilt på mobil i dagsljus. #8B94A3 ger ~6,3:1. Används
+          // även som kantfärg (border-nordic-highlight/20–40) som därmed
+          // blir något tydligare — avsiktligt.
+          highlight: "#8B94A3",
           support: "#E2E8F0",
           card: "#1e293b",      // Mörk kortfärg
         },

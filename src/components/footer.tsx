@@ -5,6 +5,8 @@ import { useIsApp } from "@/hooks/useIsApp";
 import { useT } from "@/i18n/client";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { AppStoreLink } from "@/components/app-store-link";
+import { Instagram, Linkedin } from "lucide-react";
+import { SOCIAL_LINKS } from "@/lib/seo";
 
 export function Footer() {
   const isApp = useIsApp();
@@ -24,6 +26,25 @@ export function Footer() {
           <p className="text-xs text-nordic-highlight md:text-sm">
 {t("footer.tagline")}
           </p>
+          {/* Sociala kanaler: ikon + text (ikonen ensam är för liten som tryckyta). */}
+          <ul className="flex flex-wrap gap-2 pt-1" aria-label={t("footer.follow")}>
+            {SOCIAL_LINKS.filter((l) => l.url).map((l) => {
+              const Icon = l.label === "Instagram" ? Instagram : Linkedin;
+              return (
+                <li key={l.label}>
+                  <a
+                    href={l.url as string}
+                    target="_blank"
+                    rel="noopener"
+                    className="inline-flex h-10 items-center gap-2 rounded-full border border-nordic-highlight/30 px-3.5 text-xs font-semibold text-nordic-secondary transition-colors hover:border-nordic-accent hover:text-nordic-accent"
+                  >
+                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    {l.label}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
         </div>
 
         <div className="grid flex-1 grid-cols-2 gap-6 md:grid-cols-3">

@@ -77,6 +77,7 @@ export const en: Messages = {
     terms: "Terms of service",
     privacy: "Privacy policy",
     questions: "Questions?",
+    follow: "Follow us",
   },
 
   cookies: {

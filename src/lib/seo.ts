@@ -24,6 +24,17 @@ export const APP_STORE_ID = "6760271330";
  */
 export const APP_STORE_PROVIDER_TOKEN = "";
 
+/**
+ * Officiella kanaler. Länkas från sidfoten och som `sameAs` i Organization-
+ * schemat (kopplar varumärket till kontona i Googles kunskapsgraf).
+ * Sätt en post till null för att dölja den. Handtagen är inte verifierade
+ * från kod — kontrollera att de pekar på rätt konton.
+ */
+export const SOCIAL_LINKS: { label: string; url: string | null }[] = [
+  { label: "Instagram", url: "https://www.instagram.com/avyracards/" },
+  { label: "LinkedIn", url: "https://www.linkedin.com/company/avyra-cards/" },
+];
+
 export function appStoreUrl(campaign?: string): string {
   const base = `https://apps.apple.com/se/app/avyracards/id${APP_STORE_ID}`;
   if (!campaign) return base;

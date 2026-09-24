@@ -75,6 +75,7 @@ export const sv = {
     terms: "Användarvillkor",
     privacy: "Integritetspolicy",
     questions: "Frågor?",
+    follow: "Följ oss",
   },
 
   cookies: {
