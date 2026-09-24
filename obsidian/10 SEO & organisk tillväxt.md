@@ -1,6 +1,6 @@
 ---
 skapad: 2026-09-24
-uppdaterad: 2026-09-24
+uppdaterad: 2026-09-25
 ---
 
 # SEO & organisk tillväxt — avyracards.se
@@ -55,9 +55,15 @@ Titlarna är 41–47 tecken **före** suffixet (13 tecken), så inget kapas i SE
 
 Smart App Banner (`apple-itunes-app`) visas i Safari på `/`, `/social`, `/business`, `/get-started`, `/order` — **inte** på profiler, där mottagaren inte behöver appen.
 
+### Status 2026-09-25 00:10 — LIVE och verifierat
+- Deployat till prod (Oskar pushade HEAD:main). Verifierat med curl: robots.txt 200, sitemap.xml 200 med 10 `<loc>`, www → 308 → apex, unika titlar på alla sidor, `/login` noindex, `/u/nora` = "Nora Lindqvist – digitalt visitkort | AvyraCards".
+- **Search Console uppsatt** (Claude i Oskars Chrome): property `https://avyracards.se/` (Webbadressprefix), verifierad med HTML-fil `public/google5da6c0207b98bfeb.html` — **får aldrig raderas**. Sitemap inskickad: första försöket "Hämtning misslyckades" (Google hann fetcha mitt i deployen), omskickad → **Lyckades, 10 sidor upptäckta**. Indexering begärd för `/`.
+- **Viktigt fynd i URL-granskningen:** startsidan var *inte* indexerad med orsaken "Dublett: Google har valt en annan kanonisk sida än användaren" — Google hade valt **https://www.avyracards.se/** som kanonisk. Exakt det www-redirecten och canonical-taggen nu rättar; Google crawlade om 25 sep 00:03 (efter deployen) så det bör vända inom dagar. Hänvisande sida enligt Google: App Store-listningen (apps.apple.com/za/…).
+- Efterfix (ej committad när detta skrevs): startsidans titel saknade " | AvyraCards" — Next tillämpar layoutens `title.template` bara på *underliggande* segment, och `app/page.tsx` ligger i samma segment som layouten. `pageMetadata` sätter nu `title.absolute` för `/`.
+
 ### Att göra direkt efter deploy (Oskar)
 1. **Verifiera med curl, inte webbläsaren:** `curl -s https://avyracards.se/robots.txt`, `curl -s https://avyracards.se/sitemap.xml | grep -c '<loc>'` (ska ge 10), `curl -s https://avyracards.se/ | grep -o '<title>[^<]*'`, `curl -sI https://www.avyracards.se/ | head -3` (ska ge 308).
-2. **Search Console:** property `https://avyracards.se/` (Webbadressprefix, apex — inte www). Verifiera med HTML-fil i `public/` (får aldrig raderas). Skicka in sitemap.xml. Begär indexering för `/`. Middleware-matchern undantar nu filer med ändelse (`txt|xml|html|png|…`), så `public/google<hash>.html`, robots.txt och sitemap.xml serveras råa utan att `auth()` körs.
+2. ~~Search Console~~ — KLART 2026-09-25, se status ovan. Nästa avläsning: Sidor-rapporten om ~1 vecka (antal indexerade av 10, om `/` bytt kanonisk från www till apex).
 3. **App Store Connect:** lägg till **svensk lokalisering** på listningen (namn, undertitel "Digitalt visitkort med NFC", nyckelord, beskrivning). Idag är all svensk text under EN-locale. Hämta **provider token** (Analytics → Campaigns → Generate Campaign Link) och klistra in i `APP_STORE_PROVIDER_TOKEN` i `src/lib/seo.ts` — annars syns inte `ct=`-koderna som kampanjer.
 4. **Analytics Reports API-nyckel** (Admin-roll, inte App Manager) för autonom installationsmätning — samma recept som i `nextwatch/marketing/ASC-API.md`. Claude får inte skapa nyckeln.
 5. Ta bort `public/ads.txt` (dött AdSense-id).

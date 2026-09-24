@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getI18n } from "@/i18n/server";
-import { APP_STORE_ID, SITE_URL } from "@/lib/seo";
+import { APP_STORE_ID, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 type PageKey =
   | "home"
@@ -39,17 +39,22 @@ export function pageMetadata({ key, path, smartBanner = false, index = true }: O
   const description = t(`seo.${key}.description`);
   const url = `${SITE_URL}${path}`;
 
+  // Rotlayoutens title.template gäller bara UNDERLIGGANDE segment — app/page.tsx
+  // ligger i samma segment som layouten och får därför ingen suffix. Startsidan
+  // sätter hela titeln själv så att den ser ut som resten av sajten.
+  const fullTitle = `${title} | ${SITE_NAME}`;
+
   return {
-    title,
+    title: path === "/" ? { absolute: fullTitle } : title,
     description,
     alternates: { canonical: url },
     openGraph: {
-      title,
+      title: fullTitle,
       description,
       url,
     },
     twitter: {
-      title,
+      title: fullTitle,
       description,
     },
     robots: index ? undefined : { index: false, follow: true },
