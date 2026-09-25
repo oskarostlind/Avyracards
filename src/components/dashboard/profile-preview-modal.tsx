@@ -1,73 +1,92 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useT } from "@/i18n/client";
 
 type ProfilePreviewModalProps = {
   isOpen: boolean;
   onClose: () => void;
   username: string;
-  // NYTT: Tar emot mode
   mode: "SOCIAL" | "BUSINESS";
 };
 
+/**
+ * Förhandsvisning av den publika profilen.
+ * Mobil: helskärm (tidigare en ritad telefon inuti telefonen, 85 % höjd).
+ * Desktop: telefonram. ESC, tryck utanför och stäng-knapp stänger.
+ */
 export function ProfilePreviewModal({ isOpen, onClose, username, mode }: ProfilePreviewModalProps) {
   const t = useT();
-  const [url, setUrl] = useState("");
 
   useEffect(() => {
-    if (isOpen) {
-      // FIX: Lägger till &mode=... i URL query params
-      // Detta säger till publika sidan: "Visa Business-versionen även om den inte är aktiv live"
-      setUrl(`/u/${username}?preview=true&mode=${mode}`); 
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-    return () => {
-      document.body.style.overflow = "unset";
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
     };
-  }, [isOpen, username, mode]);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
+  if (!isOpen || typeof document === "undefined") return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-nordic-primary/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="relative w-full max-w-[400px] h-[85vh] flex flex-col bg-nordic-primary rounded-[3rem] border-8 border-nordic-highlight/40 shadow-2xl overflow-hidden ring-1 ring-slate-700">
-        
-        {/* Fake Mobile Header */}
-        <div className="absolute top-0 left-0 right-0 h-7 bg-slate-900 z-10 flex justify-center items-end pb-1 border-b border-white/5">
-            <div className="w-20 h-4 bg-black rounded-full"></div>
-        </div>
+  // mode i URL:en: publika sidan visar det läget även om det inte är aktivt live.
+  const url = `/u/${username}?preview=true&mode=${mode}`;
 
-        {/* Close Button */}
-        <button 
+  return createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={t("dashboard.previewModal.iframeTitle")}
+      className="fixed inset-0 z-[65] flex flex-col bg-nordic-primary animate-in fade-in duration-200 sm:items-center sm:justify-center sm:bg-black/80 sm:p-6 sm:backdrop-blur-sm"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 bg-slate-950 px-4 sm:hidden"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
+        <p className="py-3 text-[15px] font-semibold text-nordic-secondary">
+          {t("dashboard.mode.previewTitle")} · {mode === "BUSINESS" ? t("dashboard.mode.business") : t("dashboard.mode.social")}
+        </p>
+        <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 z-50 p-2 bg-black/50 text-white rounded-full hover:bg-black/70 backdrop-blur-md transition-colors border border-white/10"
           aria-label={t("dashboard.previewModal.close")}
+          className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-slate-300 active:bg-white/10"
+        >
+          <X size={22} />
+        </button>
+      </div>
+
+      <div className="relative min-h-0 w-full flex-1 sm:h-[85vh] sm:max-w-[400px] sm:flex-none sm:overflow-hidden sm:rounded-[3rem] sm:border-8 sm:border-nordic-highlight/40 sm:shadow-2xl">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={t("dashboard.previewModal.close")}
+          className="absolute right-4 top-4 z-10 hidden h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-black/60 text-white backdrop-blur-md sm:flex"
         >
           <X size={20} />
         </button>
-
-        {/* Iframe Content */}
-        <div className="flex-1 w-full h-full bg-nordic-primary pt-7">
-            <iframe 
-                src={url} 
-                className="w-full h-full border-none"
-                title={t("dashboard.previewModal.iframeTitle")}
-                // NYTT: Sandbox-attribut för säkerhet (valfritt men bra)
-                sandbox="allow-scripts allow-same-origin allow-forms"
-            />
-        </div>
-
-        {/* Fake Home Bar */}
-        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1.5 bg-slate-700 rounded-full"></div>
+        <iframe
+          src={url}
+          className="h-full w-full border-none bg-nordic-primary"
+          title={t("dashboard.previewModal.iframeTitle")}
+          sandbox="allow-scripts allow-same-origin allow-forms"
+        />
       </div>
 
-      <div className="absolute top-6 right-6 text-nordic-secondary/50 text-sm hidden sm:block font-medium">
-         {t("dashboard.previewModal.escToClose")}
-      </div>
-    </div>
+      <p className="pointer-events-none absolute right-6 top-6 hidden text-sm font-medium text-nordic-secondary/50 sm:block">
+        {t("dashboard.previewModal.escToClose")}
+      </p>
+    </div>,
+    document.body,
   );
 }

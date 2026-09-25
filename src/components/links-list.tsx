@@ -1,27 +1,10 @@
 "use client";
 
-import { HTMLAttributes, useCallback, useEffect, useMemo, useState } from "react";
-import {
-  GripVertical,
-  Trash2,
-  Eye,
-  EyeOff,
-  Zap,
-  Pencil,
-  Check,
-  X,
-  ExternalLink
-} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ChevronRight, GripVertical, Zap } from "lucide-react";
 import { useT } from "@/i18n/client";
 import { LinkIcon } from "@/components/icons/link-icon";
-import { LinkIconPicker } from "@/components/dashboard/link-icon-picker";
-import { LinkColorPicker } from "@/components/dashboard/link-color-picker";
-import { normalizeLinkUrl } from "@/utils/normalize-url";
 import { getReadableTextColor } from "@/utils/color";
-//import { cn } from "@/lib/utils"; // Eller din utility för klassnamn om du har en, annars ta bort cn()
-
-// Om du inte har en cn-funktion, använd denna enkla ersättare eller ta bort den:
-// function cn(...classes: (string | undefined | null | false)[]) { return classes.filter(Boolean).join(" "); }
 
 export interface LinkItem {
   id: string;
@@ -45,345 +28,247 @@ export interface LinkEditPatch {
 interface LinksListProps {
   links: LinkItem[];
   activeRedirectId: string | null;
-  onReorder: (ids: string[]) => Promise<void> | void;
-  onToggleVisibility: (id: string, next: boolean) => Promise<void> | void;
-  onDelete: (id: string) => Promise<void> | void;
-  onSetRedirect: (id: string) => Promise<void> | void;
-  onEdit: (id: string, patch: LinkEditPatch) => Promise<void> | void;
-  /** Styr om färgväljaren är låst. Servern gatar oberoende av det här. */
-  canCustomizeColor: boolean;
-  onShowUpgrade: () => void;
-}
-
-export function LinksList({
-  links,
-  activeRedirectId,
-  onReorder,
-  onToggleVisibility,
-  onDelete,
-  onSetRedirect,
-  onEdit,
-  canCustomizeColor,
-  onShowUpgrade,
-}: LinksListProps) {
-  const [items, setItems] = useState(links);
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    setItems(links);
-  }, [links]);
-
-  // --- Drag & Drop Logic ---
-  const handleDrop = useCallback(
-    async (targetId: string) => {
-      if (!draggingId || draggingId === targetId) {
-        setDraggingId(null);
-        return;
-      }
-      const sourceIndex = items.findIndex((item) => item.id === draggingId);
-      const targetIndex = items.findIndex((item) => item.id === targetId);
-      if (sourceIndex === -1 || targetIndex === -1) {
-        setDraggingId(null);
-        return;
-      }
-      const updated = [...items];
-      const [moved] = updated.splice(sourceIndex, 1);
-      updated.splice(targetIndex, 0, moved);
-      setItems(updated);
-      setDraggingId(null);
-      await onReorder(updated.map((item) => item.id));
-    },
-    [draggingId, items, onReorder]
-  );
-
-  const dragPropsMap = useMemo(() => {
-    return items.reduce<Record<string, HTMLAttributes<HTMLDivElement>>>((acc, item) => {
-      acc[item.id] = {
-        draggable: true,
-        onDragStart: () => setDraggingId(item.id),
-        onDragOver: (e) => { e.preventDefault(); },
-        onDrop: async (e) => { e.preventDefault(); await handleDrop(item.id); },
-        onDragEnd: () => setDraggingId(null),
-      };
-      return acc;
-    }, {});
-  }, [items, handleDrop]);
-
-  return (
-    <div className="space-y-3">
-      {items.map((link) => (
-        <SortableLinkCard
-          key={link.id}
-          link={link}
-          isRedirect={activeRedirectId === link.id}
-          dragProps={dragPropsMap[link.id]}
-          isDragging={draggingId === link.id}
-          onToggleVisibility={onToggleVisibility}
-          onDelete={onDelete}
-          onSetRedirect={onSetRedirect}
-          onEdit={onEdit}
-          canCustomizeColor={canCustomizeColor}
-          onShowUpgrade={onShowUpgrade}
-        />
-      ))}
-    </div>
-  );
-}
-
-// --- Intern komponent för varje kort (Inkluderar Edit & UI logic) ---
-
-interface SortableLinkCardProps {
-  link: LinkItem;
-  isRedirect: boolean;
-  dragProps: HTMLAttributes<HTMLDivElement>;
-  isDragging: boolean;
+  onReorder: (ids: string[]) => void;
   onToggleVisibility: (id: string, next: boolean) => void;
-  onDelete: (id: string) => void;
-  onSetRedirect: (id: string) => void;
-  onEdit: (id: string, patch: LinkEditPatch) => Promise<void> | void;
-  canCustomizeColor: boolean;
-  onShowUpgrade: () => void;
+  onOpen: (id: string) => void;
 }
 
-function SortableLinkCard({
-  link,
-  isRedirect,
-  dragProps,
-  isDragging,
-  onToggleVisibility,
-  onDelete,
-  onSetRedirect,
-  onEdit,
-  canCustomizeColor,
-  onShowUpgrade,
-}: SortableLinkCardProps) {
+const GAP = 8;
+
+/**
+ * Länklistan. Sortering sker med Pointer Events på greppet (fungerar med
+ * touch i iOS Safari och appen — den gamla HTML5-dra-och-släppen gjorde
+ * inte det), piltangenter på greppet för tangentbord, och upp/ner-knappar
+ * i redigeringsarket som reserv.
+ */
+export function LinksList({ links, activeRedirectId, onReorder, onToggleVisibility, onOpen }: LinksListProps) {
   const t = useT();
-  const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState<LinkEditPatch>({
-    label: link.label,
-    url: link.url,
-    icon: link.icon ?? null,
-    customColor: link.customColor ?? null,
-  });
-  const [isSaving, setIsSaving] = useState(false);
-  const [urlError, setUrlError] = useState<string | null>(null);
+  const rowRefs = useRef(new Map<string, HTMLLIElement>());
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const dragRef = useRef<{
+    id: string;
+    pointerId: number;
+    fromIndex: number;
+    toIndex: number;
+    startPageY: number;
+    lastClientY: number;
+    rects: { id: string; top: number; height: number }[];
+    raf: number;
+  } | null>(null);
 
-  // Synka local state om props ändras utifrån
+  const clearTransforms = () => {
+    rowRefs.current.forEach((el) => {
+      el.style.transition = "";
+      el.style.transform = "";
+      el.style.zIndex = "";
+    });
+  };
+
+  const layout = useCallback(() => {
+    const d = dragRef.current;
+    if (!d) return;
+    const dy = d.lastClientY + window.scrollY - d.startPageY;
+    const dragged = d.rects[d.fromIndex];
+    const center = dragged.top + dragged.height / 2 + dy;
+
+    // Nytt index = antal övriga rader vars mittpunkt ligger ovanför.
+    let to = 0;
+    d.rects.forEach((r, i) => {
+      if (i === d.fromIndex) return;
+      if (r.top + r.height / 2 < center) to++;
+    });
+    d.toIndex = to;
+
+    d.rects.forEach((r, i) => {
+      const el = rowRefs.current.get(r.id);
+      if (!el) return;
+      if (i === d.fromIndex) {
+        el.style.transition = "none";
+        el.style.transform = `translate3d(0, ${dy}px, 0) scale(1.02)`;
+        el.style.zIndex = "20";
+        return;
+      }
+      let shift = 0;
+      if (d.fromIndex < to && i > d.fromIndex && i <= to) shift = -(dragged.height + GAP);
+      if (d.fromIndex > to && i < d.fromIndex && i >= to) shift = dragged.height + GAP;
+      el.style.transition = "transform 200ms cubic-bezier(0.2, 0.8, 0.2, 1)";
+      el.style.transform = shift ? `translate3d(0, ${shift}px, 0)` : "";
+    });
+  }, []);
+
+  const autoScroll = useCallback(() => {
+    const d = dragRef.current;
+    if (!d) return;
+    const edge = 90;
+    const y = d.lastClientY;
+    let speed = 0;
+    if (y < edge + 60) speed = -Math.ceil((edge + 60 - y) / 8);
+    else if (y > window.innerHeight - edge) speed = Math.ceil((y - (window.innerHeight - edge)) / 8);
+    if (speed) {
+      window.scrollBy(0, speed);
+      layout();
+    }
+    d.raf = requestAnimationFrame(autoScroll);
+  }, [layout]);
+
+  const endDrag = useCallback(
+    (commit: boolean) => {
+      const d = dragRef.current;
+      if (!d) return;
+      cancelAnimationFrame(d.raf);
+      dragRef.current = null;
+      clearTransforms();
+      setDraggingId(null);
+      if (commit && d.toIndex !== d.fromIndex) {
+        const ids = links.map((l) => l.id);
+        const [moved] = ids.splice(d.fromIndex, 1);
+        ids.splice(d.toIndex, 0, moved);
+        onReorder(ids);
+      }
+    },
+    [links, onReorder],
+  );
+
   useEffect(() => {
-    if (!isEditing) {
-      setEditForm({
-        label: link.label,
-        url: link.url,
-        icon: link.icon ?? null,
-        customColor: link.customColor ?? null,
-      });
-      setUrlError(null);
-    }
-  }, [link, isEditing]);
+    const move = (e: PointerEvent) => {
+      const d = dragRef.current;
+      if (!d || e.pointerId !== d.pointerId) return;
+      d.lastClientY = e.clientY;
+      layout();
+    };
+    const up = (e: PointerEvent) => {
+      const d = dragRef.current;
+      if (!d || e.pointerId !== d.pointerId) return;
+      endDrag(e.type === "pointerup");
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    return () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+  }, [layout, endDrag]);
 
-  const handleSave = async () => {
-    // Samma util som API:t kör — "dinsida.se" blir "https://dinsida.se" här,
-    // så användaren ser den färdiga adressen direkt efter sparning.
-    const normalized = normalizeLinkUrl(editForm.url);
-    if (!normalized.ok) {
-      setUrlError(t("links.invalidUrl"));
-      return;
-    }
+  const startDrag = (e: React.PointerEvent, id: string) => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    e.preventDefault();
+    const rects = links.map((l) => {
+      const r = rowRefs.current.get(l.id)?.getBoundingClientRect();
+      return { id: l.id, top: (r?.top ?? 0) + window.scrollY, height: r?.height ?? 0 };
+    });
+    const fromIndex = links.findIndex((l) => l.id === id);
+    dragRef.current = {
+      id,
+      pointerId: e.pointerId,
+      fromIndex,
+      toIndex: fromIndex,
+      startPageY: e.clientY + window.scrollY,
+      lastClientY: e.clientY,
+      rects,
+      raf: 0,
+    };
+    setDraggingId(id);
+    layout();
+    dragRef.current.raf = requestAnimationFrame(autoScroll);
+  };
 
-    setUrlError(null);
-    setIsSaving(true);
-    await onEdit(link.id, { ...editForm, url: normalized.url });
-    setIsSaving(false);
-    setIsEditing(false);
+  const moveByKeyboard = (id: string, delta: -1 | 1) => {
+    const from = links.findIndex((l) => l.id === id);
+    const to = from + delta;
+    if (to < 0 || to >= links.length) return;
+    const ids = links.map((l) => l.id);
+    const [moved] = ids.splice(from, 1);
+    ids.splice(to, 0, moved);
+    onReorder(ids);
   };
 
   return (
-    <div
-      {...dragProps}
-      className={`
-        group relative flex flex-col gap-3 rounded-2xl border bg-slate-900/40 p-4 transition-all
-        ${isDragging ? "opacity-50 ring-2 ring-purple-500/50" : "hover:border-nordic-highlight/60"}
-        ${isRedirect ? "border-amber-400/50 ring-1 ring-amber-400/20 bg-amber-900/10" : "border-nordic-highlight/30"}
-        ${!link.isVisible && !isDragging ? "opacity-60 grayscale" : ""}
-      `}
-    >
-      <div className="flex items-start gap-3">
-        {/* Drag Handle */}
-        <button className="mt-1 cursor-grab text-slate-500 hover:text-slate-300 active:cursor-grabbing">
-          <GripVertical size={20} />
-        </button>
+    <ul className="flex flex-col" style={{ gap: GAP }}>
+      {links.map((link) => {
+        const isRedirect = activeRedirectId === link.id;
+        const dragging = draggingId === link.id;
+        return (
+          <li
+            key={link.id}
+            ref={(el) => {
+              if (el) rowRefs.current.set(link.id, el);
+              else rowRefs.current.delete(link.id);
+            }}
+            data-link-id={link.id}
+            className={`relative flex min-h-[64px] items-center rounded-2xl border bg-slate-900/70 transition-[box-shadow,background-color,opacity] ${
+              dragging ? "shadow-2xl shadow-black/60 ring-2 ring-purple-500/60" : ""
+            } ${isRedirect ? "border-amber-400/50 bg-amber-950/20" : "border-white/10"}`}
+          >
+            <button
+              type="button"
+              aria-label={t("dashboard.links.dragHandle", { title: link.label })}
+              onPointerDown={(e) => startDrag(e, link.id)}
+              onKeyDown={(e) => {
+                if (e.key === "ArrowUp") {
+                  e.preventDefault();
+                  moveByKeyboard(link.id, -1);
+                } else if (e.key === "ArrowDown") {
+                  e.preventDefault();
+                  moveByKeyboard(link.id, 1);
+                }
+              }}
+              className="flex h-16 w-11 shrink-0 cursor-grab items-center justify-center text-slate-500 active:cursor-grabbing"
+              style={{ touchAction: "none" }}
+            >
+              <GripVertical size={20} />
+            </button>
 
-        {/* Content Area */}
-        <div className="min-w-0 flex-1 space-y-1">
-          {isEditing ? (
-            <div className="space-y-3 animate-in fade-in zoom-in-95 duration-200">
-              <div>
-                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">{t("links.titleShort")}</label>
-                <input
-                  value={editForm.label}
-                  onChange={(e) => setEditForm(prev => ({...prev, label: e.target.value}))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2 py-1.5 text-sm text-white focus:ring-2 focus:ring-purple-500 outline-none"
-                  autoFocus
-                />
-              </div>
-              <div>
-                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">{t("links.url")}</label>
-                <input
-                  value={editForm.url}
-                  onChange={(e) => {
-                    setEditForm(prev => ({...prev, url: e.target.value}));
-                    if (urlError) setUrlError(null);
-                  }}
-                  className={`w-full bg-slate-950 border rounded-lg px-2 py-1.5 text-xs text-slate-300 focus:ring-2 outline-none font-mono ${
-                    urlError
-                      ? "border-rose-500/60 focus:ring-rose-500"
-                      : "border-slate-700 focus:ring-purple-500"
+            <button
+              type="button"
+              onClick={() => onOpen(link.id)}
+              aria-label={t("dashboard.links.editNamed", { title: link.label })}
+              className={`flex min-w-0 flex-1 items-center gap-3 py-3 pr-1 text-left ${link.isVisible ? "" : "opacity-50"}`}
+            >
+              <span
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
+                style={
+                  link.customColor
+                    ? { backgroundColor: link.customColor, color: getReadableTextColor(link.customColor) }
+                    : { backgroundColor: "rgba(148,163,184,0.12)", color: "#cbd5e1" }
+                }
+              >
+                <LinkIcon url={link.url} title={link.label} icon={link.icon} size={16} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="flex items-center gap-2">
+                  <span className="truncate text-[15px] font-semibold text-nordic-secondary">{link.label}</span>
+                  {isRedirect && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-bold text-amber-300">
+                      <Zap size={11} fill="currentColor" /> {t("dashboard.links.redirectBadge")}
+                    </span>
+                  )}
+                </span>
+                <span className="block truncate text-[13px] text-nordic-highlight">{link.url.replace(/^https?:\/\//, "")}</span>
+              </span>
+              <ChevronRight size={18} className="shrink-0 text-slate-600" />
+            </button>
+
+            <button
+              type="button"
+              role="switch"
+              aria-checked={link.isVisible}
+              aria-label={t("dashboard.links.visibleNamed", { title: link.label })}
+              onClick={() => onToggleVisibility(link.id, !link.isVisible)}
+              className="flex h-16 w-[68px] shrink-0 items-center justify-center"
+            >
+              <span className={`relative h-[31px] w-[51px] rounded-full transition-colors duration-200 ${link.isVisible ? "bg-emerald-500" : "bg-slate-700"}`}>
+                <span
+                  className={`absolute left-[2px] top-[2px] h-[27px] w-[27px] rounded-full bg-white shadow transition-transform duration-200 ${
+                    link.isVisible ? "translate-x-[20px]" : ""
                   }`}
                 />
-                <p className={`mt-1 text-[10px] ${urlError ? "text-rose-400" : "text-slate-500"}`}>
-                  {urlError ?? t("links.urlHint")}
-                </p>
-              </div>
-
-              {/* Ikon */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">{t("links.icon")}</label>
-                <LinkIconPicker
-                  value={editForm.icon}
-                  onChange={(icon) => setEditForm(prev => ({ ...prev, icon }))}
-                  url={editForm.url}
-                  title={editForm.label}
-                />
-              </div>
-
-              {/* Färg (premium) */}
-              <div className="space-y-1.5">
-                <label className="text-[10px] uppercase text-slate-500 font-bold tracking-wider">{t("links.color")}</label>
-                <LinkColorPicker
-                  value={editForm.customColor}
-                  onChange={(customColor) => setEditForm(prev => ({ ...prev, customColor }))}
-                  locked={!canCustomizeColor}
-                  onShowUpgrade={onShowUpgrade}
-                  url={editForm.url}
-                  title={editForm.label}
-                  icon={editForm.icon}
-                />
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-bold text-white transition-colors"
-                >
-                  <Check size={14} /> {isSaving ? t("common.saving") : t("common.save")}
-                </button>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs font-medium text-slate-300 transition-colors"
-                >
-                  <X size={14} /> {t("common.cancel")}
-                </button>
-              </div>
-            </div>
-          ) : (
-            // Visningsläge
-            <>
-              <div className="flex items-center gap-2">
-                {/* Samma ikon och färg som den publika profilen kommer visa */}
-                <span
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
-                  style={
-                    link.customColor
-                      ? {
-                          backgroundColor: link.customColor,
-                          color: getReadableTextColor(link.customColor),
-                        }
-                      : { backgroundColor: "rgba(148,163,184,0.12)", color: "#cbd5e1" }
-                  }
-                >
-                  <LinkIcon url={link.url} title={link.label} icon={link.icon} size={14} />
-                </span>
-                <h3 className="text-sm font-semibold text-nordic-secondary truncate">
-                  {link.label}
-                </h3>
-                {isRedirect && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-400 border border-amber-500/20">
-                    <Zap size={10} fill="currentColor" /> {t("links.redirectBadge")}
-                  </span>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 text-xs text-nordic-highlight">
-                {/* TRUNCATE: Här klipper vi av URL:en */}
-                <a
-                  href={link.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="truncate max-w-[200px] sm:max-w-[300px] hover:text-emerald-400 hover:underline decoration-emerald-500/30 underline-offset-2 transition-colors"
-                  title={link.url} // Hover visar hela URLen
-                >
-                  {link.url}
-                </a>
-                <ExternalLink size={10} className="opacity-50" />
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Action Bar (Only visible when not editing) */}
-      {!isEditing && (
-        <div className="flex items-center justify-between border-t border-slate-800/50 pt-3 mt-1">
-          <div className="flex items-center gap-2">
-            {/* Redirect Toggle */}
-            <button
-              onClick={() => onSetRedirect(link.id)}
-              className={`p-2 rounded-lg transition-all ${
-                isRedirect
-                  ? "bg-amber-500 text-slate-900 shadow-lg shadow-amber-500/20"
-                  : "text-slate-500 hover:text-amber-400 hover:bg-amber-500/10"
-              }`}
-              title={isRedirect ? t("links.redirectOff") : t("links.redirectOn")}
-            >
-              <Zap size={16} fill={isRedirect ? "currentColor" : "none"} />
+              </span>
             </button>
-
-            {/* Edit Button */}
-            <button
-              onClick={() => setIsEditing(true)}
-              className="p-2 text-slate-500 hover:text-nordic-accent hover:bg-nordic-accent/10 rounded-lg transition-colors"
-              title={t("links.editLink")}
-            >
-              <Pencil size={16} />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Visibility Toggle */}
-            <button
-              onClick={() => onToggleVisibility(link.id, !link.isVisible)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                link.isVisible
-                  ? "bg-slate-800 text-slate-300 hover:bg-slate-700"
-                  : "bg-slate-800/50 text-slate-500 hover:bg-slate-800"
-              }`}
-            >
-              {link.isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
-              <span className="hidden sm:inline">{link.isVisible ? t("links.visible") : t("links.hidden")}</span>
-            </button>
-
-            {/* Delete Button */}
-            <button
-              onClick={() => onDelete(link.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-rose-400 hover:bg-rose-500/10 hover:text-rose-300 transition-colors"
-            >
-              <Trash2 size={14} />
-              <span className="hidden sm:inline">{t("common.delete")}</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

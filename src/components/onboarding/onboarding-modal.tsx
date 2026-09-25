@@ -18,6 +18,8 @@ interface OnboardingModalProps {
     // Nytt Apple-konto med auto-genererat username — visar ett extra
     // username-steg allra först i onboardingen.
     needsUsernameSetup?: boolean;
+    /** Har redan beställt kort -> sista steget visar "kortet är på väg". */
+    hasOrderedCard?: boolean;
   };
   prices: { standard: string; bundle: string };
 }

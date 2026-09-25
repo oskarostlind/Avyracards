@@ -188,7 +188,7 @@ export function AvatarUploader({
 
   return (
     <div className="space-y-3">
-      <label className="block text-xs font-medium text-slate-200">
+      <label className="block text-[13px] font-semibold text-slate-300">
         {resolvedLabel}
       </label>
 
@@ -211,7 +211,7 @@ export function AvatarUploader({
 
         {/* Uppladdningsknapp */}
         <div>
-          <label className="cursor-pointer inline-flex items-center gap-2 rounded-xl border border-nordic-highlight/40 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-nordic-secondary transition-colors">
+          <label className="cursor-pointer inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-nordic-highlight/40 bg-slate-900 px-4 text-sm font-medium text-slate-300 hover:bg-slate-800 hover:text-nordic-secondary transition-colors">
             <Upload size={14} />
             <span>{t("avatarUploader.chooseImage")}</span>
             <input
@@ -221,7 +221,7 @@ export function AvatarUploader({
               className="hidden"
             />
           </label>
-          <p className="mt-2 text-[10px] text-nordic-highlight">
+          <p className="mt-2 text-[12px] text-nordic-highlight">
             {t("avatarUploader.formatsHint")}
           </p>
           {error && (
@@ -240,9 +240,13 @@ export function AvatarUploader({
             {/* Header */}
             <div className="flex items-center justify-between border-b border-nordic-highlight/40 px-4 py-3">
               <h3 className="text-sm font-semibold text-nordic-secondary">{t("avatarUploader.adjustImage")}</h3>
+              {/* type="button": arket ligger inuti profilformuläret — utan type
+                  skickade Stäng/Avbryt/Spara även in hela formuläret. */}
               <button
+                type="button"
                 onClick={clearSelectedFile}
-                className="rounded-full p-1 text-nordic-highlight hover:bg-slate-800 hover:text-nordic-secondary"
+                aria-label={t("common.close")}
+                className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-nordic-highlight hover:bg-slate-800 hover:text-nordic-secondary"
               >
                 <X size={18} />
               </button>
@@ -272,7 +276,7 @@ export function AvatarUploader({
                   min={1}
                   max={3}
                   step={0.1}
-                  aria-labelledby="Zoom"
+                  aria-label="Zoom"
                   onChange={(e) => setZoom(Number(e.target.value))}
                   className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-slate-700 accent-purple-500"
                 />
@@ -280,16 +284,18 @@ export function AvatarUploader({
 
               <div className="flex justify-end gap-2">
                 <button
+                  type="button"
                   onClick={clearSelectedFile}
                   disabled={uploading}
-                  className="rounded-lg px-4 py-2 text-xs font-medium text-slate-300 hover:text-nordic-secondary"
+                  className="min-h-[44px] rounded-lg px-4 text-sm font-medium text-slate-300 hover:text-nordic-secondary"
                 >
                   {t("common.cancel")}
                 </button>
                 <button
+                  type="button"
                   onClick={handleSave}
                   disabled={uploading}
-                  className="flex items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-xs font-bold text-nordic-secondary hover:bg-purple-500 disabled:opacity-50"
+                  className="flex min-h-[44px] items-center gap-2 rounded-lg bg-purple-600 px-5 text-sm font-bold text-nordic-secondary hover:bg-purple-500 disabled:opacity-50"
                 >
                   {uploading && <Loader2 size={14} className="animate-spin" />}
                   {uploading ? t("common.saving") : t("avatarUploader.saveImage")}

@@ -30,7 +30,27 @@ export function PushManager() {
   // går inte att visa igen. Nu frågar vi först i appens egen ruta och triggar
   // systemdialogen enbart på användarens klick.
   const [needsOptIn, setNeedsOptIn] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  // "Inte nu" gällde tidigare bara tills sidan laddades om — kortet kom
+  // tillbaka vid varje besök. Nu vilar det i 7 dagar.
+  const [dismissed, setDismissedState] = useState(false);
+  const setDismissed = (value: boolean) => {
+    setDismissedState(value);
+    if (value) {
+      try {
+        localStorage.setItem("avyra_push_optin_snooze", String(Date.now()));
+      } catch {
+        /* privat läge o.dyl. */
+      }
+    }
+  };
+  useEffect(() => {
+    try {
+      const at = Number(localStorage.getItem("avyra_push_optin_snooze") || 0);
+      if (at && Date.now() - at < 7 * 24 * 60 * 60 * 1000) setDismissedState(true);
+    } catch {
+      /* ignoreras */
+    }
+  }, []);
   const [askNow, setAskNow] = useState(false);
 
   useEffect(() => {
@@ -229,14 +249,14 @@ export function PushManager() {
   if (!isApp || !needsOptIn || dismissed) return null;
 
   return (
-    <div className="mb-6 flex items-start gap-3 rounded-2xl border border-blue-500/20 bg-blue-500/10 p-4">
+    <div className="flex items-start gap-3 rounded-3xl border border-blue-500/20 bg-blue-500/10 p-4">
       <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-blue-500/20 text-blue-300">
         <Bell size={16} />
       </div>
       <div className="flex-1 space-y-3">
         <div>
           <p className="text-sm font-semibold text-slate-100">{t("dashboard.push.title")}</p>
-          <p className="mt-0.5 text-xs text-slate-300/80">
+          <p className="mt-0.5 text-[13px] text-slate-300/80">
             {t("dashboard.push.body")}
           </p>
         </div>
@@ -244,14 +264,14 @@ export function PushManager() {
           <button
             type="button"
             onClick={handleEnable}
-            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-blue-500"
+            className="min-h-[44px] rounded-xl bg-blue-600 px-4 text-sm font-bold text-white hover:bg-blue-500"
           >
             {t("dashboard.push.enable")}
           </button>
           <button
             type="button"
             onClick={() => setDismissed(true)}
-            className="rounded-lg px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-white/5"
+            className="min-h-[44px] rounded-xl px-4 text-sm font-medium text-slate-300 hover:bg-white/5"
           >
             {t("dashboard.push.notNow")}
           </button>
@@ -261,7 +281,7 @@ export function PushManager() {
         type="button"
         onClick={() => setDismissed(true)}
         aria-label={t("dashboard.push.dismiss")}
-        className="text-slate-400 hover:text-slate-200"
+        className="-mr-2 -mt-2 flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-slate-400 hover:text-slate-200"
       >
         <X size={16} />
       </button>

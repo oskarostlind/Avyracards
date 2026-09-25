@@ -3,18 +3,19 @@
 import type { User, Link } from "@prisma/client";
 import { BusinessProfileForm } from "@/components/dashboard/business/business-profile-form";
 import { LinksWorkspace } from "@/components/dashboard/links-workspace";
-import { CollapsibleSection } from "@/components/dashboard/accordion";
 import { PublicProfileCard } from "@/components/dashboard/public-profile-card";
 import type { LinkItem } from "@/components/links-list";
-import { useT } from "@/i18n/client";
+import type { DashboardTab } from "@/components/dashboard/dashboard-shell";
 
 type BusinessViewProps = {
   user: User & { links: Link[] };
+  tab: DashboardTab;
+  onDirtyChange: (dirty: boolean) => void;
+  onPreview: () => void;
 };
 
-export function BusinessView({ user }: BusinessViewProps) {
-  const t = useT();
-  // Filtrera ut länkar som är BUSINESS
+/** Business-läget uppdelat på flikarna (alla monterade, inaktiva dolda). */
+export function BusinessView({ user, tab, onDirtyChange, onPreview }: BusinessViewProps) {
   const businessLinks = user.links.filter((l) => l.mode === "BUSINESS");
 
   const initialLinks: LinkItem[] = businessLinks.map((link) => ({
@@ -27,38 +28,22 @@ export function BusinessView({ user }: BusinessViewProps) {
   }));
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start animate-in fade-in slide-in-from-bottom-2 duration-500">
-      
-      <div className="flex-1 space-y-4">
-        <CollapsibleSection
-          title={t("dashboard.sections.businessProfile")}
-          description={t("dashboard.sections.businessProfileDesc")}
-          defaultOpen
-        >
-          <BusinessProfileForm 
-            user={user} 
-            key={user.updatedAt?.toString() || "business-form"} 
-          />
-        </CollapsibleSection>
-      </div>
-
-      <aside className="w-full max-w-md space-y-4">
-        <PublicProfileCard username={user.username!} />
-
-        <CollapsibleSection
-          title={t("dashboard.sections.linksBusiness")}
-          description={t("dashboard.sections.linksBusinessDesc")}
-          defaultOpen
-        >
-          <LinksWorkspace
+    <>
+      <div role="tabpanel" id="panel-links" aria-labelledby="tab-links" hidden={tab !== "links"}>
+        <LinksWorkspace
           initialLinks={initialLinks}
           mode="BUSINESS"
-          activeRedirectId={user.redirectLinkId} // <-- LÄGG TILL DENNA
+          activeRedirectId={user.redirectLinkId}
           isPremium={user.isPremium}
           isAdmin={user.role === "ADMIN"}
-           />
-        </CollapsibleSection>
-      </aside>
-    </div>
+        />
+      </div>
+      <div role="tabpanel" id="panel-profile" aria-labelledby="tab-profile" hidden={tab !== "profile"}>
+        <BusinessProfileForm user={user} onDirtyChange={onDirtyChange} />
+      </div>
+      <div role="tabpanel" id="panel-share" aria-labelledby="tab-share" hidden={tab !== "share"}>
+        <PublicProfileCard username={user.username!} onPreview={onPreview} />
+      </div>
+    </>
   );
 }

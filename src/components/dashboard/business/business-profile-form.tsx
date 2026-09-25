@@ -6,14 +6,19 @@ import type { User, Link } from "@prisma/client";
 import { CollapsibleSection } from "@/components/dashboard/accordion";
 import { AvatarUploader } from "@/components/avatar-uploader";
 import { useT } from "@/i18n/client";
+import { SaveBar, TextAreaField, TextField, withHttps } from "@/components/dashboard/form-kit";
+import { useDashboardToast } from "@/components/dashboard/dashboard-toast";
 
 type BusinessProfileFormProps = {
   user: User & { links: Link[] };
+  /** Rapporterar osparade ändringar uppåt (varning vid lägesbyte). */
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
-export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
+export function BusinessProfileForm({ user, onDirtyChange }: BusinessProfileFormProps) {
   const t = useT();
   const router = useRouter();
+  const toast = useDashboardToast();
   
   // NYTT STATE
   const [businessAvatarUrl, setBusinessAvatarUrl] = useState(user.businessAvatarUrl ?? "");
@@ -38,7 +43,7 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
   const [careerPageUrl, setCareerPageUrl] = useState(user.careerPageUrl ?? "");
 
   const [isSaving, setIsSaving] = useState(false);
-  const [status, setStatus] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const hasChanges =
     businessAvatarUrl !== (user.businessAvatarUrl ?? "") || // Check change
@@ -57,6 +62,29 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
     companyDescription !== (user.companyDescription ?? "") ||
     companyWebsite !== (user.companyWebsite ?? "") ||
     careerPageUrl !== (user.careerPageUrl ?? "");
+
+  useEffect(() => {
+    onDirtyChange?.(hasChanges);
+  }, [hasChanges, onDirtyChange]);
+
+  const discard = () => {
+    setBusinessAvatarUrl(user.businessAvatarUrl ?? "");
+    setJobTitle(user.jobTitle ?? "");
+    setCompanyName(user.companyName ?? "");
+    setLocation(user.location ?? "");
+    setBusinessHeadline(user.businessHeadline ?? "");
+    setBusinessPhone(user.businessPhone ?? "");
+    setBusinessEmail(user.businessEmail ?? "");
+    setBookingUrl(user.bookingUrl ?? "");
+    setVcardUrl(user.vcardUrl ?? "");
+    setExpertiseTags(user.expertiseTags ?? "");
+    setLanguages(user.languages ?? "");
+    setBusinessRegion(user.businessRegion ?? "");
+    setCompanyLogoUrl(user.companyLogoUrl ?? "");
+    setCompanyDescription(user.companyDescription ?? "");
+    setCompanyWebsite(user.companyWebsite ?? "");
+    setCareerPageUrl(user.careerPageUrl ?? "");
+  };
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -80,27 +108,36 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
         body: JSON.stringify({ [field]: url || null }),
       });
       if (!res.ok) throw new Error("Failed to save image");
-      setStatus(t("businessForm.imageUpdated"));
+      toast({ message: t("businessForm.imageUpdated"), tone: "success" });
       router.refresh();
     } catch (error) {
       console.error(error);
-      setStatus(t("businessForm.imageFailed"));
+      toast({ message: t("businessForm.imageFailed"), tone: "error" });
     }
   };
 
   const handleSubmit: React.FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
-    if (!hasChanges) return;
+    if (!hasChanges || isSaving) return;
+
+    // "foretag.se" -> "https://foretag.se": servern kräver fullständig URL i
+    // dessa fält och svarade tidigare bara "ogiltiga fält".
+    const booking = withHttps(bookingUrl);
+    const vcard = withHttps(vcardUrl);
+    const website = withHttps(companyWebsite);
+    const career = withHttps(careerPageUrl);
+    setBookingUrl(booking);
+    setVcardUrl(vcard);
+    setCompanyWebsite(website);
+    setCareerPageUrl(career);
 
     setIsSaving(true);
-    setStatus(null);
-
     try {
       const res = await fetch("/api/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          businessAvatarUrl: businessAvatarUrl || null, // Skicka nya bilden
+          businessAvatarUrl: businessAvatarUrl || null,
           jobTitle: jobTitle || null,
           companyName: companyName || null,
           location: location || null,
@@ -108,8 +145,8 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
 
           businessPhone: businessPhone || null,
           businessEmail: businessEmail || null,
-          bookingUrl: bookingUrl || null,
-          vcardUrl: vcardUrl || null,
+          bookingUrl: booking || null,
+          vcardUrl: vcard || null,
 
           expertiseTags: expertiseTags || null,
           languages: languages || null,
@@ -117,162 +154,110 @@ export function BusinessProfileForm({ user }: BusinessProfileFormProps) {
 
           companyLogoUrl: companyLogoUrl || null,
           companyDescription: companyDescription || null,
-          companyWebsite: companyWebsite || null,
-          careerPageUrl: careerPageUrl || null,
+          companyWebsite: website || null,
+          careerPageUrl: career || null,
         }),
       });
 
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setStatus(data?.error ?? t("common.somethingWentWrong"));
+        toast({ message: data?.error ?? t("common.somethingWentWrong"), tone: "error" });
       } else {
-        setStatus(t("businessForm.updated"));
-        router.refresh(); 
+        toast({ message: t("businessForm.updated"), tone: "success" });
+        router.refresh();
       }
     } catch (error) {
       console.error(error);
-      setStatus(t("businessForm.unexpectedError"));
+      toast({ message: t("businessForm.unexpectedError"), tone: "error" });
     } finally {
       setIsSaving(false);
     }
   };
 
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      
-      <CollapsibleSection
-        title={t("businessForm.hero")}
-        description={t("businessForm.heroDesc")}
-        defaultOpen
-      >
-        <div className="space-y-4">
-            
-            {/* NYTT: UPLOADER FÖR BUSINESS AVATAR */}
-            <div className="p-4 bg-slate-900/50 rounded-2xl border border-white/5">
-                <AvatarUploader
-                    label={t("businessForm.businessAvatar")}
-                    value={businessAvatarUrl}
-                    onChange={(url) => {
-                      setBusinessAvatarUrl(url);
-                      void saveImageField("businessAvatarUrl", url);
-                    }}
-                    onUploadStart={() => setIsSaving(true)}
-                    onUploadEnd={() => setIsSaving(false)}
-                />
-                <p className="text-[10px] text-slate-400 mt-2">{t("businessForm.businessAvatarHint")}</p>
-            </div>
+  const urlProps = {
+    type: "text" as const,
+    inputMode: "url" as const,
+    autoCapitalize: "none",
+    autoCorrect: "off",
+    spellCheck: false,
+  };
 
-            <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">{t("businessForm.jobTitle")}</label>
-                <input value={jobTitle} onChange={(e) => setJobTitle(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.jobTitlePlaceholder")} />
-                </div>
-                <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">{t("businessForm.company")}</label>
-                <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.companyPlaceholder")} />
-                </div>
-                <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">{t("businessForm.location")}</label>
-                <input value={location} onChange={(e) => setLocation(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.locationPlaceholder")} />
-                </div>
-                <div className="space-y-1.5 md:col-span-2">
-                <label className="block text-xs font-medium text-slate-200">{t("businessForm.headline")}</label>
-                <input value={businessHeadline} onChange={(e) => setBusinessHeadline(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.headlinePlaceholder")} />
-                <p className="text-[10px] text-nordic-highlight">{t("businessForm.headlineHint")}</p>
-                </div>
-            </div>
+  return (
+    <form onSubmit={handleSubmit} className="space-y-3" noValidate>
+      <CollapsibleSection title={t("businessForm.hero")} description={t("businessForm.heroDesc")} defaultOpen>
+        <div>
+          <AvatarUploader
+            label={t("businessForm.businessAvatar")}
+            value={businessAvatarUrl}
+            onChange={(url) => {
+              setBusinessAvatarUrl(url);
+              void saveImageField("businessAvatarUrl", url);
+            }}
+            onUploadStart={() => setUploading(true)}
+            onUploadEnd={() => setUploading(false)}
+          />
+          <p className="mt-2 text-[13px] text-slate-500">{t("businessForm.businessAvatarHint")}</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField label={t("businessForm.jobTitle")} value={jobTitle} maxLength={120} onChange={(e) => setJobTitle(e.target.value)} placeholder={t("businessForm.jobTitlePlaceholder")} />
+          <TextField label={t("businessForm.company")} value={companyName} maxLength={160} autoComplete="organization" onChange={(e) => setCompanyName(e.target.value)} placeholder={t("businessForm.companyPlaceholder")} />
+          <TextField label={t("businessForm.location")} value={location} maxLength={160} onChange={(e) => setLocation(e.target.value)} placeholder={t("businessForm.locationPlaceholder")} />
+          <TextField
+            className="md:col-span-2"
+            label={t("businessForm.headline")}
+            value={businessHeadline}
+            maxLength={200}
+            onChange={(e) => setBusinessHeadline(e.target.value)}
+            placeholder={t("businessForm.headlinePlaceholder")}
+            hint={t("businessForm.headlineHint")}
+          />
         </div>
       </CollapsibleSection>
 
-      {/* ... Resten av sektionerna är oförändrade ... */}
       <CollapsibleSection title={t("businessForm.contactSection")} description={t("businessForm.contactSectionDesc")} defaultOpen={false}>
-        <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-200">{t("businessForm.phone")}</label>
-            <input value={businessPhone} onChange={(e) => setBusinessPhone(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("profileForm.phonePlaceholder")} />
-            </div>
-            <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-200">{t("businessForm.email")}</label>
-            <input type="email" value={businessEmail} onChange={(e) => setBusinessEmail(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("profileForm.contactEmailPlaceholder")} />
-            </div>
-            <div className="space-y-1.5 md:col-span-2">
-            <label className="block text-xs font-medium text-slate-200">{t("businessForm.bookingUrl")}</label>
-            <input value={bookingUrl} onChange={(e) => setBookingUrl(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="https://calendly.com/ditt-namn/30min" />
-            <p className="text-[10px] text-nordic-highlight">{t("businessForm.bookingUrlHint")}</p>
-            </div>
-            <div className="space-y-1.5 md:col-span-2">
-            <label className="block text-xs font-medium text-slate-200">{t("businessForm.vcardUrl")}</label>
-            <input value={vcardUrl} onChange={(e) => setVcardUrl(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.vcardUrlPlaceholder")} />
-            <p className="text-[10px] text-nordic-highlight">{t("businessForm.vcardUrlHint")}</p>
-            </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField label={t("businessForm.phone")} type="tel" inputMode="tel" autoComplete="tel" maxLength={50} value={businessPhone} onChange={(e) => setBusinessPhone(e.target.value)} placeholder={t("profileForm.phonePlaceholder")} />
+          <TextField label={t("businessForm.email")} type="email" inputMode="email" autoCapitalize="none" autoComplete="email" value={businessEmail} onChange={(e) => setBusinessEmail(e.target.value)} placeholder={t("profileForm.contactEmailPlaceholder")} />
+          <TextField className="md:col-span-2" label={t("businessForm.bookingUrl")} {...urlProps} value={bookingUrl} onChange={(e) => setBookingUrl(e.target.value)} onBlur={(e) => setBookingUrl(withHttps(e.target.value))} placeholder="calendly.com/ditt-namn/30min" hint={t("businessForm.bookingUrlHint")} />
+          <TextField className="md:col-span-2" label={t("businessForm.vcardUrl")} {...urlProps} value={vcardUrl} onChange={(e) => setVcardUrl(e.target.value)} onBlur={(e) => setVcardUrl(withHttps(e.target.value))} placeholder={t("businessForm.vcardUrlPlaceholder")} hint={t("businessForm.vcardUrlHint")} />
         </div>
       </CollapsibleSection>
 
       <CollapsibleSection title={t("businessForm.keyInfo")} description={t("businessForm.keyInfoDesc")} defaultOpen={false}>
-        <div className="space-y-3">
-            <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-200">{t("businessForm.expertise")}</label>
-            <input value={expertiseTags} onChange={(e) => setExpertiseTags(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.expertisePlaceholder")} />
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">{t("businessForm.languages")}</label>
-                <input value={languages} onChange={(e) => setLanguages(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.languagesPlaceholder")} />
-            </div>
-            <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">{t("businessForm.region")}</label>
-                <input value={businessRegion} onChange={(e) => setBusinessRegion(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.regionPlaceholder")} />
-            </div>
-            </div>
+        <TextField label={t("businessForm.expertise")} value={expertiseTags} maxLength={500} onChange={(e) => setExpertiseTags(e.target.value)} placeholder={t("businessForm.expertisePlaceholder")} />
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField label={t("businessForm.languages")} value={languages} maxLength={200} onChange={(e) => setLanguages(e.target.value)} placeholder={t("businessForm.languagesPlaceholder")} />
+          <TextField label={t("businessForm.region")} value={businessRegion} maxLength={160} onChange={(e) => setBusinessRegion(e.target.value)} placeholder={t("businessForm.regionPlaceholder")} />
         </div>
       </CollapsibleSection>
 
       <CollapsibleSection title={t("businessForm.companySection")} description={t("businessForm.companySectionDesc")} defaultOpen={false}>
-        <div className="space-y-3">
-            <div className="space-y-1.5">
-                <AvatarUploader
-                  label={t("businessForm.companyLogo")}
-                  value={companyLogoUrl}
-                  onChange={(url) => {
-                    setCompanyLogoUrl(url);
-                    void saveImageField("companyLogoUrl", url);
-                  }}
-                  onUploadStart={() => setIsSaving(true)}
-                  onUploadEnd={() => setIsSaving(false)}
-                />
-            </div>
-            <div className="space-y-1.5">
-            <label className="block text-xs font-medium text-slate-200">{t("businessForm.companyDescription")}</label>
-            <textarea value={companyDescription} onChange={(e) => setCompanyDescription(e.target.value)} rows={3} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder={t("businessForm.companyDescriptionPlaceholder")} />
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-            <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">{t("businessForm.website")}</label>
-                <input value={companyWebsite} onChange={(e) => setCompanyWebsite(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="https://företag.se" />
-            </div>
-            <div className="space-y-1.5">
-                <label className="block text-xs font-medium text-slate-200">{t("businessForm.careerPage")}</label>
-                <input value={careerPageUrl} onChange={(e) => setCareerPageUrl(e.target.value)} className="w-full rounded-2xl border border-nordic-highlight/40 bg-nordic-primary/80 px-3 py-2 text-xs text-nordic-secondary outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/40" placeholder="https://företag.se/karriar" />
-            </div>
-            </div>
+        <AvatarUploader
+          label={t("businessForm.companyLogo")}
+          value={companyLogoUrl}
+          onChange={(url) => {
+            setCompanyLogoUrl(url);
+            void saveImageField("companyLogoUrl", url);
+          }}
+          onUploadStart={() => setUploading(true)}
+          onUploadEnd={() => setUploading(false)}
+        />
+        <TextAreaField label={t("businessForm.companyDescription")} value={companyDescription} maxLength={1000} onChange={(e) => setCompanyDescription(e.target.value)} placeholder={t("businessForm.companyDescriptionPlaceholder")} />
+        <div className="grid gap-4 md:grid-cols-2">
+          <TextField label={t("businessForm.website")} {...urlProps} value={companyWebsite} onChange={(e) => setCompanyWebsite(e.target.value)} onBlur={(e) => setCompanyWebsite(withHttps(e.target.value))} placeholder="företag.se" />
+          <TextField label={t("businessForm.careerPage")} {...urlProps} value={careerPageUrl} onChange={(e) => setCareerPageUrl(e.target.value)} onBlur={(e) => setCareerPageUrl(withHttps(e.target.value))} placeholder="företag.se/karriar" />
         </div>
       </CollapsibleSection>
 
-      <div className="flex items-center gap-3 pt-1">
-        <button
-          type="submit"
-          disabled={!hasChanges || isSaving}
-          className={`inline-flex items-center justify-center rounded-2xl px-4 py-2 text-xs font-medium shadow-md transition-all disabled:cursor-not-allowed ${
-            hasChanges 
-              ? "bg-purple-500 text-nordic-secondary hover:bg-purple-400 shadow-purple-500/40" 
-              : "bg-slate-800 text-slate-500 border border-slate-700"
-          }`}
-        >
-          {isSaving ? t("common.saving") : hasChanges ? t("profileForm.saveChanges") : t("common.save")}
-        </button>
-
-        {status && <p className="text-[11px] text-nordic-highlight animate-in fade-in">{status}</p>}
-      </div>
+      <SaveBar
+        dirty={hasChanges}
+        saving={isSaving || uploading}
+        onDiscard={discard}
+        saveLabel={t("profileForm.saveChanges")}
+        savingLabel={t("common.saving")}
+        discardLabel={t("dashboard.profile.discard")}
+        hint={t("dashboard.profile.unsaved")}
+      />
     </form>
   );
 }

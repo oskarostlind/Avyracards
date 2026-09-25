@@ -57,14 +57,16 @@ export default async function DashboardPage() {
   return (
     // BAKGRUNDS-FIXEN:
     // Vi lägger en wrapper som säkerställer att sidan fyller skärmen och har snygga "glows"
-    <div className="min-h-screen bg-slate-950 relative overflow-hidden">
+    // overflow-x-clip (inte overflow-hidden): hidden gör wrappern till
+    // scroll-container och då slutar flikraden att klistra sig (position: sticky).
+    <div className="min-h-screen bg-slate-950 relative overflow-x-clip">
         
         {/* Glow Effects - Ger djup åt den svarta bakgrunden */}
         <div className="fixed top-0 left-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
         <div className="fixed bottom-0 right-0 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px] pointer-events-none" />
 
         {/* Innehållet */}
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-8">
+        <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-5 sm:py-8">
           <DashboardShell
             user={{
               ...user,

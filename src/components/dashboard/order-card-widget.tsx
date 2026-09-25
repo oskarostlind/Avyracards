@@ -34,27 +34,32 @@ export function OrderCardWidget({ isPremium, prices }: OrderCardWidgetProps) {
   if (!isVisible) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/50 p-6 shadow-2xl animate-in fade-in slide-in-from-top-4">
-      {/* ... resten av din JSX är oförändrad ... */}
+    <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/50 p-4 pr-12 shadow-2xl animate-in fade-in slide-in-from-top-4 sm:p-6 sm:pr-14">
       <button 
+        type="button"
         onClick={handleDismiss}
-        className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+        className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full text-slate-500 transition-colors hover:text-white active:bg-white/10"
         aria-label={t("dashboard.orderWidget.dismiss")}
       >
         <X size={20} />
       </button>
 
-      <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-        <div className="flex gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700 shadow-inner">
+      <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-6">
+        <div className="flex gap-3 sm:gap-4">
+          <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-gradient-to-br from-slate-800 to-slate-900 shadow-inner sm:flex">
             <CreditCard className="text-white" size={24} />
           </div>
           <div className="space-y-1">
-            <h3 className="flex items-center gap-2 text-base font-bold text-white">
+            {!isPremium && (
+              <span className="inline-block rounded-full border border-indigo-500/30 bg-indigo-500/20 px-2 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-indigo-300">
+                {t("dashboard.orderWidget.recommended")}
+              </span>
+            )}
+            <h3 className="flex items-center gap-2 text-[15px] font-bold text-white sm:text-base">
+              <CreditCard className="text-white sm:hidden" size={18} />
               {t("dashboard.orderWidget.title")}
-              {!isPremium && <span className="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30 font-extrabold uppercase tracking-wider">{t("dashboard.orderWidget.recommended")}</span>}
             </h3>
-            <p className="text-sm text-slate-400 max-w-md leading-relaxed">
+            <p className="max-w-md text-[13px] leading-relaxed text-slate-400 sm:text-sm">
               {isPremium 
                 ? t("dashboard.orderWidget.bodyPremium")
                 : t("dashboard.orderWidget.bodyFree")
@@ -64,8 +69,9 @@ export function OrderCardWidget({ isPremium, prices }: OrderCardWidgetProps) {
         </div>
 
         <button
+          type="button"
           onClick={handleBuy}
-          className="group whitespace-nowrap flex items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-lg shadow-white/5 hover:bg-slate-200 transition-all active:scale-95 w-full sm:w-auto justify-center"
+          className="group flex min-h-[48px] items-center gap-2 rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-900 shadow-lg shadow-white/5 hover:bg-slate-200 transition-all active:scale-95 w-full sm:w-auto justify-center"
         >
           {isPremium ? (
              <>{t("dashboard.orderWidget.orderCard")} <span className="font-normal text-slate-600">({prices.standard})</span></>
