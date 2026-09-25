@@ -1,8 +1,10 @@
 "use client";
 
-import { ThemeTemplate, ThemeMode } from "@/types/theme";
-import { PremiumBadge } from "@/components/themes/theme-controls";
+import type { CSSProperties } from "react";
+import { Check, Crown, Lock } from "lucide-react";
+import { type CustomThemeSettings, type ThemeTemplate, type ThemeMode } from "@/types/theme";
 import { getTemplates, isTemplateLocked } from "@/lib/feature-access";
+import { getRelativeLuminance, normalizeHexColor } from "@/utils/color";
 import { useT } from "@/i18n/client";
 
 interface TemplatesTabProps {
@@ -11,121 +13,162 @@ interface TemplatesTabProps {
   onApply: (template: ThemeTemplate) => void;
   onShowUpgrade: () => void;
   mode: ThemeMode;
+  currentSettings: CustomThemeSettings;
+  /**
+   * "strip": horisontell karusell (mobil, nedfällt ark — previewn får plats ovanför).
+   * "grid": rutnät (uppfällt ark / desktop).
+   */
+  layout?: "strip" | "grid";
+  columns?: 2 | 3;
 }
 
-export function TemplatesTab({ isPremium, isAdmin, onApply, onShowUpgrade, mode }: TemplatesTabProps) {
-  // Heter `tr` här: den lokala loop-variabeln `t` är en ThemeTemplate.
-  const tr = useT();
+// Fallback för mallar vars settings saknar färg/bild. De flesta mallar har
+// allt i settings, men några äldre id:n har bara fått sin look här.
+const LEGACY_PREVIEWS: Record<string, CSSProperties> = {
+  "biz-nyc": { backgroundImage: "url(https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300)" },
+  "biz-nordic-office": { backgroundImage: "url(https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=300)" },
+  "biz-innovator": { backgroundImage: "url(https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300)" },
+  "biz-marble": { backgroundImage: "url(https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300)" },
+  "biz-workspace": { backgroundImage: "url(https://images.unsplash.com/photo-1493934558415-9d19f0b2b4d2?q=80&w=300)" },
+  "biz-concrete": { backgroundImage: "url(https://images.unsplash.com/photo-1487958449943-2429e8be8625?q=80&w=300)" },
+};
 
+function backgroundFor(t: ThemeTemplate): CSSProperties {
+  const s = t.settings;
+  if (s.backgroundType === "image" && s.backgroundImage) {
+    return { backgroundImage: `url(${s.backgroundImage})`, backgroundSize: "cover", backgroundPosition: "center" };
+  }
+  if (s.backgroundType === "gradient") {
+    return { background: `linear-gradient(${s.gradientDir || "to bottom right"}, ${s.gradientFrom || "#000"}, ${s.gradientTo || "#000"})` };
+  }
+  if (LEGACY_PREVIEWS[t.id]) return { ...LEGACY_PREVIEWS[t.id], backgroundSize: "cover", backgroundPosition: "center" };
+  return { backgroundColor: s.backgroundColor || "#1e293b" };
+}
+
+function isLightBackground(t: ThemeTemplate): boolean {
+  const s = t.settings;
+  if (s.backgroundType !== "solid" && s.backgroundType !== undefined) return false;
+  const hex = normalizeHexColor(s.backgroundColor);
+  return hex ? getRelativeLuminance(hex) > 0.5 : false;
+}
+
+function radiusFor(style?: string): string {
+  if (style === "pill") return "9999px";
+  if (style === "sharp") return "0px";
+  if (style === "brutal") return "2px";
+  return "5px";
+}
+
+/** Sant om mallens alla fält matchar nuvarande inställningar — dvs. den är vald. */
+export function isTemplateActive(t: ThemeTemplate, current: CustomThemeSettings): boolean {
+  return (Object.keys(t.settings) as (keyof CustomThemeSettings)[]).every((key) => {
+    const a = t.settings[key];
+    const b = current[key];
+    if (typeof a === "string" && typeof b === "string") return a.toLowerCase() === b.toLowerCase();
+    return a === b;
+  });
+}
+
+export function TemplatesTab({
+  isPremium,
+  isAdmin,
+  onApply,
+  onShowUpgrade,
+  mode,
+  currentSettings,
+  layout = "grid",
+  columns = 2,
+}: TemplatesTabProps) {
+  const tr = useT();
   const templates = getTemplates(mode);
   const accessUser = { isPremium, isAdmin };
 
-  const getPreviewData = (t: ThemeTemplate) => {
-    const s = t.settings;
+  const cards = templates.map((tpl) => {
+    const locked = isTemplateLocked(tpl, accessUser);
+    const active = !locked && isTemplateActive(tpl, currentSettings);
+    const light = isLightBackground(tpl);
+    const s = tpl.settings;
+    const accent = s.accentColor || "#8b5cf6";
+    const radius = radiusFor(s.buttonStyle);
+    const outline = s.buttonVariant === "outline";
+    const glass = s.buttonVariant === "glass";
 
-    if (s.backgroundType === 'image' && s.backgroundImage) {
-        return {
-            className: "bg-cover bg-center",
-            style: { backgroundImage: `url(${s.backgroundImage})` }
-        };
-    }
+    const buttonStyle: CSSProperties = {
+      borderRadius: radius,
+      backgroundColor: outline ? "transparent" : glass ? "rgba(255,255,255,0.22)" : accent,
+      border: outline ? `1.5px solid ${accent}` : glass ? "1px solid rgba(255,255,255,0.3)" : undefined,
+    };
 
-    if (s.backgroundType === 'gradient') {
-        return {
-            className: "",
-            style: { 
-                background: `linear-gradient(${s.gradientDir || 'to bottom right'}, ${s.gradientFrom || '#000'}, ${s.gradientTo || '#000'})`
-            }
-        };
-    }
+    return (
+      <button
+        key={tpl.id}
+        type="button"
+        onClick={() => (locked ? onShowUpgrade() : onApply(tpl))}
+        aria-pressed={active}
+        aria-label={locked ? `${tpl.name} – ${tr("themes.templateLocked")}` : tpl.name}
+        className={`group relative flex shrink-0 snap-start flex-col overflow-hidden rounded-2xl text-left transition-[transform,box-shadow] duration-150 active:scale-[0.96] ${
+          layout === "strip" ? "h-[112px] w-[92px]" : "aspect-[4/5] w-full"
+        } ${active ? "ring-2 ring-purple-500 ring-offset-2 ring-offset-slate-950" : "ring-1 ring-white/10"}`}
+      >
+        <span className="absolute inset-0" style={backgroundFor(tpl)} />
 
-    switch (t.id) {
-        case 'minimal-white': return { className: 'bg-white border border-slate-200', style: {} };
-        case 'minimal-dark': return { className: 'bg-[#020617]', style: {} };
-        case 'cocoa': return { className: 'bg-[#451a03]', style: {} };
-        case 'lavender': return { className: 'bg-[#f5f3ff] border border-violet-100', style: {} };
-        case 'stone': return { className: 'bg-[#e7e5e4]', style: {} };
-        case 'tech-basic': return { className: 'bg-[#2563eb]', style: {} };
-        case 'cyberpunk': return { className: 'bg-[#050505] border-t-2 border-[#22d3ee] shadow-[0_0_15px_rgba(34,211,238,0.3)]', style: {} };
-        case 'bottega': return { className: 'bg-[#064e3b]', style: {} };
-        
-        case 'biz-trust-blue': return { className: '', style: { background: 'linear-gradient(to bottom right, #0f172a, #1e3a8a)' } };
-        case 'biz-growth': return { className: 'bg-[#064e3b]', style: {} };
-        case 'biz-modern-tech': return { className: 'bg-[#18181b]', style: {} };
-        case 'biz-authority': return { className: '', style: { background: 'linear-gradient(to bottom, #450a0a, #7f1d1d)' } };
-        case 'biz-studio': return { className: 'bg-[#e7e5e4]', style: {} };
-        case 'biz-creative-flow': return { className: '', style: { background: 'linear-gradient(to bottom right, #4a044e, #2e1065)' } };
-        case 'biz-clinic': return { className: 'bg-[#f0f9ff]', style: {} };
-        case 'biz-noir': return { className: 'bg-black border border-amber-500/30', style: {} };
+        {/* Mini-knappar: visar mallens knappform och färg, inte bara bakgrunden. */}
+        <span className="relative mt-auto flex w-full flex-col gap-1 px-2.5 pb-7">
+          <span className="block h-[9px] w-full" style={buttonStyle} />
+          <span className="block h-[9px] w-full" style={buttonStyle} />
+        </span>
 
-        case 'biz-nyc': return { className: 'bg-cover bg-center', style: { backgroundImage: 'url(https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300)' } };
-        case 'biz-nordic-office': return { className: 'bg-cover bg-center', style: { backgroundImage: 'url(https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=300)' } };
-        case 'biz-innovator': return { className: 'bg-cover bg-center', style: { backgroundImage: 'url(https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300)' } };
-        case 'biz-marble': return { className: 'bg-cover bg-center', style: { backgroundImage: 'url(https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300)' } };
-        case 'biz-workspace': return { className: 'bg-cover bg-center', style: { backgroundImage: 'url(https://images.unsplash.com/photo-1493934558415-9d19f0b2b4d2?q=80&w=300)' } };
-        case 'biz-concrete': return { className: 'bg-cover bg-center', style: { backgroundImage: 'url(https://images.unsplash.com/photo-1487958449943-2429e8be8625?q=80&w=300)' } };
+        <span
+          className={`absolute inset-x-0 bottom-0 truncate px-2.5 pb-2 pt-4 text-[12px] font-semibold ${
+            light ? "text-slate-900" : "text-white"
+          } bg-gradient-to-t ${light ? "from-white/80" : "from-black/60"} to-transparent`}
+        >
+          {tpl.name}
+        </span>
 
-        default: return { className: 'bg-slate-800', style: {} };
-    }
-  };
+        {locked && <span className="absolute inset-0 bg-slate-950/55" />}
 
-  const getTextColor = (id: string) => {
-    const lightThemes = [
-        'minimal-white', 
-        'lavender', 
-        'stone', 
-        'biz-studio', 
-        'biz-clinic',
-        'biz-paper' 
-    ];
-    return lightThemes.includes(id) ? 'text-slate-900' : 'text-white';
-  };
+        {active && (
+          <span className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-purple-500 text-white shadow-lg">
+            <Check size={14} strokeWidth={3} />
+          </span>
+        )}
+        {tpl.isPremium && (
+          <span
+            className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full shadow-lg ${
+              locked ? "bg-amber-500 text-slate-900" : "bg-emerald-500 text-white"
+            }`}
+            title={locked ? tr("themes.templateLocked") : tr("themes.includedInPlan")}
+          >
+            {locked ? <Lock size={12} /> : <Crown size={12} fill="currentColor" />}
+          </span>
+        )}
+      </button>
+    );
+  });
+
+  if (layout === "strip") {
+    return (
+      <div
+        className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-3 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        style={{ scrollPaddingInline: 16 }}
+      >
+        {cards}
+        <span aria-hidden className="w-1 shrink-0" />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-4 animate-in slide-in-from-right-4 duration-300">
-      <div className="flex items-center justify-between">
-          <h3 className="text-xs font-bold text-nordic-highlight uppercase tracking-wider">
-            {mode === "BUSINESS" ? tr("themes.upgrade.templatesTitleBusiness") : tr("themes.upgrade.templatesTitleSocial")}
-          </h3>
-          <span className="text-[10px] text-slate-500">{tr("themes.upgrade.templatesCount", { count: templates.length })}</span>
+    <div className="space-y-4">
+      <div className="flex items-baseline justify-between">
+        <h3 className="text-[13px] font-semibold text-slate-300">
+          {mode === "BUSINESS" ? tr("themes.upgrade.templatesTitleBusiness") : tr("themes.upgrade.templatesTitleSocial")}
+        </h3>
+        <span className="text-xs text-nordic-highlight">{tr("themes.upgrade.templatesCount", { count: templates.length })}</span>
       </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        {templates.map((t) => {
-          const preview = getPreviewData(t);
-          const locked = isTemplateLocked(t, accessUser);
-
-          return (
-            <button
-              key={t.id}
-              onClick={() => (locked ? onShowUpgrade() : onApply(t))}
-              aria-disabled={locked}
-              title={locked ? tr("themes.templateLocked") : t.name}
-              className={`group relative aspect-video rounded-xl border border-nordic-highlight/40 bg-slate-900 overflow-hidden transition-all text-left p-3 flex flex-col justify-end shadow-sm ${
-                locked ? "hover:border-amber-500 cursor-not-allowed" : "hover:border-purple-500"
-              }`}
-            >
-              <div
-                className={`absolute inset-0 opacity-80 transition-opacity group-hover:opacity-100 ${preview.className}`}
-                style={preview.style}
-              />
-
-              {/* Låst mall: dämpa förhandsvisningen så det syns att den inte går att välja */}
-              {locked && <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[1px] z-[5]" />}
-
-              <div className="relative z-10 flex items-center justify-between w-full">
-                  <span className={`text-xs font-bold drop-shadow-md ${locked ? "text-white/80" : getTextColor(t.id)}`}>
-                      {t.name}
-                  </span>
-              </div>
-
-              {/* Flyttad Badge så att dess absolu-position kan fästa direkt i parent-button */}
-              {t.isPremium && <PremiumBadge isUnlocked={!locked} />}
-            </button>
-          )
-        })}
-      </div>
-      <p className="text-xs text-nordic-highlight text-center mt-2">
+      <div className={`grid gap-3 ${columns === 3 ? "grid-cols-3" : "grid-cols-2"}`}>{cards}</div>
+      <p className="text-center text-xs text-nordic-highlight">
         {mode === "BUSINESS" ? tr("themes.templatesIntroBusiness") : tr("themes.templatesIntroSocial")}
       </p>
     </div>

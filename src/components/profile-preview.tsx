@@ -50,7 +50,9 @@ export function ProfilePreview({
     };
   } else if (settings.backgroundType === "gradient") {
     bgStyle = {
-      background: `linear-gradient(${settings.gradientDir || "to bottom right"}, ${settings.gradientFrom || "#000"}, ${settings.gradientTo || "#000"})`,
+      // backgroundImage (inte `background`-shorthand): shorthand + backgroundAttachment
+      // i samma style-objekt gav React-varning och fel bakgrund vid byte bild ↔ gradient.
+      backgroundImage: `linear-gradient(${settings.gradientDir || "to bottom right"}, ${settings.gradientFrom || "#000"}, ${settings.gradientTo || "#000"})`,
       backgroundAttachment: fullscreen ? "fixed" : "scroll",
     };
   } else {

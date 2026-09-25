@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Upload, Search, Lock } from "lucide-react";
 import { ImageUploader } from "./image-uploader";
 import { UnsplashPicker } from "./unsplash-picker";
+import { useT } from "@/i18n/client";
 
 interface MediaManagerProps {
   onImageSelected: (url: string) => void;
@@ -12,6 +13,7 @@ interface MediaManagerProps {
 }
 
 export function MediaManager({ onImageSelected, isPremium, onShowUpgrade }: MediaManagerProps) {
+  const t = useT();
   const [activeTab, setActiveTab] = useState<"upload" | "unsplash">("upload");
 
   return (
@@ -21,19 +23,19 @@ export function MediaManager({ onImageSelected, isPremium, onShowUpgrade }: Medi
       <div className="flex border-b border-nordic-highlight/40">
         <button
           onClick={() => setActiveTab("upload")}
-          className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-2 transition-colors ${
+          className={`flex-1 min-h-[44px] py-3 text-[13px] font-semibold flex items-center justify-center gap-2 transition-colors ${
             activeTab === "upload" 
             ? "bg-slate-800 text-white" 
             : "text-nordic-highlight hover:text-slate-300 hover:bg-slate-900"
           }`}
         >
           <Upload size={14} />
-          Ladda upp
+          {t("themes.media.upload")}
         </button>
         <div className="w-px bg-nordic-highlight/40" />
         <button
           onClick={() => setActiveTab("unsplash")}
-          className={`flex-1 py-3 text-xs font-bold flex items-center justify-center gap-2 transition-colors ${
+          className={`flex-1 min-h-[44px] py-3 text-[13px] font-semibold flex items-center justify-center gap-2 transition-colors ${
             activeTab === "unsplash" 
             ? "bg-slate-800 text-white" 
             : "text-nordic-highlight hover:text-slate-300 hover:bg-slate-900"
@@ -50,8 +52,8 @@ export function MediaManager({ onImageSelected, isPremium, onShowUpgrade }: Medi
         {/* LÅS-OVERLAY OM INTE PREMIUM (Visuellt i hörnet) */}
         {!isPremium && (
             <div className="absolute top-2 right-2 z-10">
-                 <div className="bg-amber-500 text-black px-2 py-1 rounded-full text-[10px] font-bold flex items-center gap-1 shadow-lg cursor-help" title="Premiumfunktion">
-                    <Lock size={10} /> Premium
+                 <div className="bg-amber-500 text-black px-2 py-1 rounded-full text-[11px] font-bold flex items-center gap-1 shadow-lg cursor-help" title={t("themes.media.premiumFeature")}>
+                    <Lock size={10} /> {t("themes.media.premium")}
                  </div>
             </div>
         )}

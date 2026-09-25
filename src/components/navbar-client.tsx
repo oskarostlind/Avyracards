@@ -73,6 +73,10 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
 
   const inSocial = pathname === "/" || pathname.startsWith("/social");
   const inBusiness = pathname.startsWith("/business");
+  // Inloggade verktygsvyer: Socialt/Business-växeln i navbaren leder till
+  // marknadssidorna, men krockade med temaeditorns egen Social/Business-väljare
+  // (som betyder "vilken profil redigerar du"). Dölj den där.
+  const inAppArea = pathname.startsWith("/profile") || pathname.startsWith("/dashboard");
 
   const closeMenu = () => setIsOpen(false);
 
@@ -185,7 +189,7 @@ export function NavbarClient({ isAuthenticated, isAdmin }: NavbarClientProps) {
               </Link>
             )}
 
-            {!isApp && (
+            {!isApp && !inAppArea && (
               <nav className="rounded-full border border-nordic-highlight/20 bg-white/5 p-1 text-xs">
                 <ul className="flex items-center gap-1">
                   <li>

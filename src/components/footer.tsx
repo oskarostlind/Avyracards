@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useIsApp } from "@/hooks/useIsApp";
 import { useT } from "@/i18n/client";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -11,8 +12,13 @@ import { SOCIAL_LINKS } from "@/lib/seo";
 export function Footer() {
   const isApp = useIsApp();
   const t = useT();
+  const pathname = usePathname();
 
-  if (isApp) {
+  // Helskärmsvyer (temaeditorn) fyller hela skärmen — en sidfot under dem gav
+  // dubbel scroll på mobil (sidan + editorpanelen).
+  const isFullscreenTool = pathname?.startsWith("/profile/themes");
+
+  if (isApp || isFullscreenTool) {
     return null;
   }
 

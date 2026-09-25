@@ -1,118 +1,116 @@
 "use client";
 
+import type { CSSProperties } from "react";
+import { User } from "lucide-react";
 import { type CustomThemeSettings, type Font, type FrameStyle } from "@/types/theme";
-import { PremiumBadge } from "@/components/themes/theme-controls";
+import { ChoiceTile, PremiumBadge, SectionLabel, ToggleRow } from "@/components/themes/theme-controls";
+import { canAccess, isFrameLocked } from "@/lib/feature-access";
 import { useT } from "@/i18n/client";
 
 interface ProfileTabProps {
   settings: CustomThemeSettings;
   updateSetting: (key: keyof CustomThemeSettings, value: string | boolean) => void;
   isPremium: boolean;
+  isAdmin?: boolean;
+  onShowUpgrade: () => void;
 }
 
-export function ProfileTab({ settings, updateSetting, isPremium }: ProfileTabProps) {
+// Samma typsnitt som ProfilePreview renderar (space = Space Grotesk).
+const FONTS: { id: Font; name: string; family: string }[] = [
+  { id: "inter", name: "Inter", family: "var(--font-inter), Inter, sans-serif" },
+  { id: "playfair", name: "Playfair", family: "'Playfair Display', serif" },
+  { id: "roboto", name: "Roboto", family: "Roboto, sans-serif" },
+  { id: "space", name: "Space Grotesk", family: "'Space Grotesk', sans-serif" },
+  { id: "oswald", name: "Oswald", family: "Oswald, sans-serif" },
+  { id: "lora", name: "Lora", family: "Lora, serif" },
+];
+
+const FRAMES: FrameStyle[] = ["circle", "rounded", "square", "none", "ring", "glow", "hexagon", "shadow"];
+
+function framePreviewStyle(frame: FrameStyle, accent: string): CSSProperties {
+  const base: CSSProperties = { backgroundColor: "#334155" };
+  switch (frame) {
+    case "circle":
+      return { ...base, borderRadius: "9999px" };
+    case "rounded":
+      return { ...base, borderRadius: "10px" };
+    case "square":
+      return { ...base, borderRadius: 0, border: "2px solid rgba(255,255,255,0.7)" };
+    case "none":
+      return { ...base, borderRadius: 0 };
+    case "ring":
+      return { ...base, borderRadius: "9999px", boxShadow: `0 0 0 2px #0f172a, 0 0 0 4px ${accent}` };
+    case "glow":
+      return { ...base, borderRadius: "9999px", boxShadow: `0 0 12px 2px ${accent}` };
+    case "hexagon":
+      return { ...base, clipPath: "polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%)" };
+    case "shadow":
+      return { ...base, borderRadius: "9999px", boxShadow: "0 6px 12px rgba(0,0,0,0.6)" };
+  }
+}
+
+export function ProfileTab({ settings, updateSetting, isPremium, isAdmin, onShowUpgrade }: ProfileTabProps) {
   const t = useT();
-  
-  const getFontFamily = (font: string) => {
-    switch(font) {
-        case 'inter': return 'Inter, sans-serif';
-        case 'playfair': return '"Playfair Display", serif';
-        case 'roboto': return 'Roboto, sans-serif';
-        case 'lora': return 'Lora, serif';
-        case 'space': return '"Space Mono", monospace';
-        case 'oswald': return 'Oswald, sans-serif';
-        default: return 'sans-serif';
-    }
-  };
+  const accessUser = { isPremium, isAdmin };
+  const canHideBranding = canAccess("theme_hide_branding", accessUser);
+  const accent = settings.accentColor || "#8b5cf6";
 
   return (
-     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-        
-        {/* FONTER */}
-        <div className="space-y-3">
-         <label className="text-xs font-bold text-nordic-highlight uppercase">{t("themes.profile.font")}</label>
-         <div className="grid grid-cols-2 gap-2">
-            {(["inter", "playfair", "roboto", "space", "oswald", "lora"] as Font[]).map((font) => (
-               <button 
-                 key={font}
-                 onClick={() => updateSetting("font", font)}
-                 className={`relative p-3 rounded-lg border text-center transition-all ${
-                   settings.font === font 
-                   ? "border-purple-500 bg-purple-500/10 text-nordic-secondary" 
-                   : "border-nordic-highlight/40 bg-slate-900 text-nordic-highlight hover:bg-slate-800"
-                 }`}
-               >
-                 <span className="text-sm capitalize" style={{ fontFamily: getFontFamily(font) }}>{font}</span>
-               </button>
-            ))}
-         </div>
+    <div className="space-y-6">
+      <div className="space-y-2.5">
+        <SectionLabel>{t("themes.profile.font")}</SectionLabel>
+        <div className="grid grid-cols-3 gap-2">
+          {FONTS.map((f) => (
+            <ChoiceTile key={f.id} selected={settings.font === f.id} onClick={() => updateSetting("font", f.id)} label={f.name}>
+              <span className="text-xl leading-none text-nordic-secondary" style={{ fontFamily: f.family }}>
+                Aa
+              </span>
+            </ChoiceTile>
+          ))}
         </div>
+      </div>
 
-        {/* RAMAR */}
-        <div className="space-y-3">
-         <label className="text-xs font-bold text-nordic-highlight uppercase">{t("themes.profile.frame")}</label>
-         <div className="grid grid-cols-3 gap-2">
-            {(['none', 'circle', 'rounded', 'ring', 'glow', 'hexagon', 'square', 'shadow'] as FrameStyle[]).map((frame) => {
-                return (
-                  <button 
-                    key={frame}
-                    onClick={() => updateSetting("frameStyle", frame)}
-                    className={`py-2 text-[10px] uppercase font-bold border rounded-lg transition-all ${
-                      settings.frameStyle === frame 
-                      ? "border-purple-500 bg-purple-500/10 text-purple-400" 
-                      : "border-nordic-highlight/40 text-nordic-highlight hover:border-slate-600"
-                    }`}
-                  >
-                    {frame}
-                  </button>
-                )
-            })}
-         </div>
+      <div className="space-y-2.5">
+        <SectionLabel>{t("themes.profile.frame")}</SectionLabel>
+        <div className="grid grid-cols-4 gap-2">
+          {FRAMES.map((frame) => {
+            const locked = isFrameLocked(frame, accessUser);
+            return (
+              <ChoiceTile
+                key={frame}
+                selected={settings.frameStyle === frame}
+                locked={locked}
+                onClick={() => (locked ? onShowUpgrade() : updateSetting("frameStyle", frame))}
+                label={t(`themes.frames.${frame}`)}
+              >
+                <span className="flex h-8 w-8 items-center justify-center text-slate-400" style={framePreviewStyle(frame, accent)}>
+                  <User size={16} />
+                </span>
+                {locked && <PremiumBadge isUnlocked={false} className="absolute right-1.5 top-1.5" />}
+              </ChoiceTile>
+            );
+          })}
         </div>
+      </div>
 
-        <hr className="border-nordic-highlight/40"/>
-
-        {/* TOGGLES (Branding & vCard) */}
-        <div className="space-y-3">
-            {/* Branding Toggle */}
-            <div className="flex items-center justify-between p-4 border border-amber-500/20 rounded-xl bg-amber-500/5 relative overflow-hidden">
-                <div className="space-y-1">
-                    <span className="text-xs font-bold text-nordic-secondary flex items-center gap-2">
-                        {t("themes.profile.hideBranding")}
-                        <div className="scale-75 origin-left">
-                            <PremiumBadge isUnlocked={isPremium} />
-                        </div>
-                    </span>
-                    <p className="text-[10px] text-nordic-highlight">{t("themes.profile.hideBrandingDesc")}</p>
-                </div>
-                <button 
-                    onClick={() => {
-                        if(!isPremium) return; 
-                        updateSetting("hideBranding", !settings.hideBranding);
-                    }}
-                    className={`w-10 h-5 rounded-full transition-colors relative ${settings.hideBranding ? 'bg-emerald-500' : 'bg-slate-700'}`}
-                >
-                    <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${settings.hideBranding ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
-            </div>
-
-            {/* NY: Spara Kontakt Toggle */}
-            <div className="flex items-center justify-between p-4 border border-nordic-highlight/20 rounded-xl bg-slate-900/30">
-                <div className="space-y-1">
-                    <span className="text-xs font-bold text-nordic-secondary flex items-center gap-2">
-                        {t("themes.profile.showSaveContact")}
-                    </span>
-                    <p className="text-[10px] text-nordic-highlight">{t("themes.profile.showSaveContactDesc")}</p>
-                </div>
-                <button 
-                    onClick={() => updateSetting("showSaveContact", settings.showSaveContact === false ? true : false)}
-                    className={`w-10 h-5 rounded-full transition-colors relative ${settings.showSaveContact !== false ? 'bg-purple-500' : 'bg-slate-700'}`}
-                >
-                    <div className={`absolute top-1 left-1 w-3 h-3 bg-white rounded-full transition-transform ${settings.showSaveContact !== false ? 'translate-x-5' : 'translate-x-0'}`} />
-                </button>
-            </div>
-        </div>
-
-     </div>
+      <div className="space-y-2 border-t border-white/10 pt-4">
+        <ToggleRow
+          label={t("themes.profile.hideBranding")}
+          description={t("themes.profile.hideBrandingDesc")}
+          checked={Boolean(settings.hideBranding)}
+          onChange={(v) => updateSetting("hideBranding", v)}
+          locked={!canHideBranding}
+          onLockedClick={onShowUpgrade}
+          tone="emerald"
+          badge={<PremiumBadge isUnlocked={canHideBranding} className="relative" />}
+        />
+        <ToggleRow
+          label={t("themes.profile.showSaveContact")}
+          description={t("themes.profile.showSaveContactDesc")}
+          checked={settings.showSaveContact !== false}
+          onChange={(v) => updateSetting("showSaveContact", v)}
+        />
+      </div>
+    </div>
   );
 }
