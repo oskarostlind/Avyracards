@@ -49,10 +49,16 @@ export function LinksWorkspace({
   // bort får inte bli en datalucka — se sanitizeLinkCustomization.
   const canCustomizeColor = canAccess("link_custom_color", { isPremium, isAdmin });
 
+  // Synka från servern bara när serverdatan faktiskt ändrats. Tidigare kördes
+  // detta vid varje omrendering av föräldern (listan byggs om som en ny array
+  // varje gång) — t.ex. vid flikbyte — och skrev då över en nyss gjord
+  // sortering/ändring med den gamla ordningen från sidladdningen.
+  const serverKey = `${mode}|${initialRedirectId ?? ""}|${JSON.stringify(initialLinks)}`;
   useEffect(() => {
     setLinks(initialLinks.filter((l) => !pendingDeletes.current.has(l.id)));
     setActiveRedirectId(initialRedirectId ?? null);
-  }, [initialLinks, initialRedirectId, mode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [serverKey]);
 
   const refresh = useCallback(async () => {
     const response = await fetch(`/api/links?mode=${mode}`);
@@ -175,6 +181,9 @@ export function LinksWorkspace({
           await sendReorder(next);
         } else {
           st.lastGood = null;
+          // Hämta om serverdatan så att sidans cache (och andra vyer) har
+          // den nya ordningen — annars visades den gamla vid navigering tillbaka.
+          router.refresh();
         }
       } catch (error) {
         console.error("Failed to reorder", error);
@@ -185,7 +194,7 @@ export function LinksWorkspace({
         toast({ message: t("dashboard.links.reorderFailed"), tone: "error" });
       }
     },
-    [t, toast],
+    [router, t, toast],
   );
 
   const handleReorder = useCallback(

@@ -39,6 +39,15 @@ export function animateSpring(
   const stiffness = Math.pow((2 * Math.PI) / response, 2);
   const damping = (4 * Math.PI * dampingRatio) / response;
 
+  // Dold flik/app i bakgrunden: requestAnimationFrame körs inte alls, och en
+  // animation som väntar på att bli klar (t.ex. stängning av ett ark) skulle
+  // hänga. Hoppa direkt till målet.
+  if (typeof document !== "undefined" && document.hidden) {
+    onUpdate(to);
+    onComplete?.();
+    return { cancel: () => {}, current: () => ({ value: to, velocity: 0 }) };
+  }
+
   let x = from;
   let v = velocity;
   let frame = 0;

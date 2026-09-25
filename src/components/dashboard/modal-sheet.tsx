@@ -42,6 +42,8 @@ export function ModalSheet({ open, onClose, title, children, footer, closeLabel 
   const springRef = useRef<SpringHandle | null>(null);
   const offsetRef = useRef(0);
   const closingRef = useRef(false);
+  // Ökas vid varje öppning — en gammal stängnings-timeout får inte stänga ett nyöppnat ark.
+  const openTokenRef = useRef(0);
   const isDesktop = useIsDesktop();
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -76,11 +78,17 @@ export function ModalSheet({ open, onClose, title, children, footer, closeLabel 
       if (closingRef.current) return;
       closingRef.current = true;
       const h = panelRef.current?.offsetHeight ?? 600;
-      animateTo(h + 20, velocity, () => {
+      let finished = false;
+      const token = openTokenRef.current;
+      const finish = () => {
+        if (finished || token !== openTokenRef.current) return;
+        finished = true;
         setRendered(false);
         closingRef.current = false;
         onCloseRef.current();
-      });
+      };
+      animateTo(h + 20, velocity, finish);
+      setTimeout(finish, 900);
     },
     [animateTo],
   );
@@ -88,15 +96,24 @@ export function ModalSheet({ open, onClose, title, children, footer, closeLabel 
   // Öppna / stäng styrt utifrån.
   useEffect(() => {
     if (open) {
+      openTokenRef.current += 1;
       closingRef.current = false;
       setRendered(true);
     } else if (rendered && !closingRef.current) {
       closingRef.current = true;
       const h = panelRef.current?.offsetHeight ?? 600;
-      animateTo(h + 20, 0, () => {
+      let finished = false;
+      const token = openTokenRef.current;
+      const finish = () => {
+        if (finished || token !== openTokenRef.current) return;
+        finished = true;
         setRendered(false);
         closingRef.current = false;
-      });
+      };
+      animateTo(h + 20, 0, finish);
+      // Reserv om animationen skulle strypas (t.ex. strömsparläge): arket
+      // får aldrig bli kvar osynligt och blockera sidan.
+      setTimeout(finish, 900);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
