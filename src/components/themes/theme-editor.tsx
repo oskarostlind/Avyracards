@@ -61,7 +61,10 @@ type Tab = "templates" | "background" | "buttons" | "profile";
 
 const PHONE_W = 375 + 16; // inkl. 8 px ram på varje sida
 const PHONE_H = 750 + 16;
-const MODE_BAR_H = 64; // yta för lägesväljaren ovanför telefonen
+// Mobil: lägesväljaren ligger vertikalt i sidomarginalen bredvid telefonen och
+// tar ingen höjd. Desktop: liten pill ovanför telefonen (där finns plats).
+const MODE_BAR_H_MOBILE = 12;
+const MODE_BAR_H_DESKTOP = 44;
 
 function withDefaults(s: Partial<CustomThemeSettings> | undefined): CustomThemeSettings {
   return { ...defaultSettings, ...(s || {}) };
@@ -296,9 +299,10 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
   // --- Layoutmått ---
   const saveBarH = saveBarSize.height || 76;
   const available = Math.max(containerSize.height - saveBarH, 0);
+  const MODE_BAR_H = isDesktop ? MODE_BAR_H_DESKTOP : MODE_BAR_H_MOBILE;
   const snapPoints = useMemo(() => {
     const peek = 206; // handtag + flikar + mallkarusell
-    const full = Math.max(available - MODE_BAR_H, peek + 120);
+    const full = Math.max(available - 48, peek + 120);
     const half = Math.min(Math.max(Math.round(available * 0.52), peek + 80), full - 40);
     return [peek, half, full];
   }, [available]);
@@ -311,7 +315,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
     const h = previewSize.height - MODE_BAR_H - (isDesktop ? 48 : 12) - coveredBySheet;
     if (w <= 0 || h <= 0) return 0.5;
     return Math.min(w / PHONE_W, h / PHONE_H, 1);
-  }, [previewSize.width, previewSize.height, coveredBySheet, isDesktop]);
+  }, [previewSize.width, previewSize.height, coveredBySheet, isDesktop, MODE_BAR_H]);
   const phoneCenterY = MODE_BAR_H + (previewSize.height - MODE_BAR_H - coveredBySheet) / 2;
 
   const selectTab = (tab: Tab) => {
@@ -444,19 +448,55 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
     </div>
   );
 
+  // Kompakt pill (28 px hög) — tidigare en 44 px bred rad som åt previewyta.
+  // Tryckytan är ändå ~46 px: knapparna har en osynlig ::after-yta ovan/under.
   const modeControl = (
-    <div className="w-[260px] rounded-[18px] bg-slate-950/70 p-0.5 shadow-lg backdrop-blur-xl [@media(prefers-reduced-transparency:reduce)]:bg-slate-950">
+    <div className="rounded-full bg-slate-950/70 p-0.5 shadow-lg backdrop-blur-xl [@media(prefers-reduced-transparency:reduce)]:bg-slate-950">
       <SegmentedControl
-        size="sm"
+        size="xs"
         ariaLabel={t("themes.editor.editingProfile")}
         value={mode}
         onChange={(v) => setMode(v as ThemeMode)}
         activeClassName={mode === "BUSINESS" ? "bg-blue-600 text-white shadow-sm" : "bg-purple-600 text-white shadow-sm"}
         options={[
-          { value: "SOCIAL", label: <><Share2 size={14} /> {t("themes.social")}</>, dot: socialDirty },
-          { value: "BUSINESS", label: <><Briefcase size={14} /> {t("themes.business")}</>, dot: businessDirty },
+          { value: "SOCIAL", label: <><Share2 size={12} /> {t("themes.social")}</>, dot: socialDirty },
+          { value: "BUSINESS", label: <><Briefcase size={12} /> {t("themes.business")}</>, dot: businessDirty },
         ]}
       />
+    </div>
+  );
+
+  // Mobil: två små knappar på höjden i vänstermarginalen (telefonen är smal
+  // nog att det alltid finns ~70 px fritt på sidorna). Tar ingen previewhöjd.
+  const modeControlVertical = (
+    <div
+      role="radiogroup"
+      aria-label={t("themes.editor.editingProfile")}
+      className="flex w-[60px] flex-col gap-1 rounded-2xl border border-white/10 bg-slate-950/70 p-1 shadow-lg backdrop-blur-xl [@media(prefers-reduced-transparency:reduce)]:bg-slate-950"
+    >
+      {([
+        { value: "SOCIAL" as const, icon: Share2, label: t("themes.social"), dirty: socialDirty, active: "bg-purple-600" },
+        { value: "BUSINESS" as const, icon: Briefcase, label: t("themes.business"), dirty: businessDirty, active: "bg-blue-600" },
+      ]).map(({ value, icon: Icon, label, dirty, active }) => {
+        const on = mode === value;
+        return (
+          <button
+            key={value}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            aria-label={label}
+            onClick={() => setMode(value)}
+            className={`relative flex h-12 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.95] ${
+              on ? `${active} text-white` : "text-nordic-highlight"
+            }`}
+          >
+            <Icon size={16} />
+            {label}
+            {dirty && <span aria-hidden className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-amber-400" />}
+          </button>
+        );
+      })}
     </div>
   );
 
@@ -484,7 +524,11 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             style={{ backgroundImage: "radial-gradient(#fff 1px, transparent 1px)", backgroundSize: "20px 20px" }}
           />
 
-          <div className="absolute inset-x-0 top-3 z-20 flex justify-center">{modeControl}</div>
+          {isDesktop ? (
+            <div className="absolute inset-x-0 top-1.5 z-20 flex justify-center">{modeControl}</div>
+          ) : (
+            <div className="absolute left-2 top-2 z-20">{modeControlVertical}</div>
+          )}
 
           <div
             className="absolute left-1/2 z-10 overflow-hidden rounded-[3rem] border-[8px] border-slate-700/50 bg-nordic-primary shadow-2xl ring-1 ring-white/10 transition-transform duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none"
@@ -556,7 +600,7 @@ function Toast({ toast, onDismiss }: { toast: ToastState | null; onDismiss: () =
     <div
       role="status"
       aria-live="polite"
-      className={`absolute inset-x-0 top-[64px] z-30 flex justify-center px-4 transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 ${
+      className={`absolute inset-x-0 top-3 z-30 flex justify-center px-4 transition-[opacity,transform] duration-300 ease-out motion-reduce:translate-y-0 ${
         visible ? "translate-y-0 opacity-100" : "pointer-events-none -translate-y-3 opacity-0"
       }`}
     >

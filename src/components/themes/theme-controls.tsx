@@ -123,11 +123,15 @@ export function SegmentedControl({
   onChange: (v: string) => void;
   options: SegmentOption[];
   ariaLabel?: string;
-  size?: "md" | "sm";
+  size?: "md" | "sm" | "xs";
   activeClassName?: string;
 }) {
   return (
-    <div role="radiogroup" aria-label={ariaLabel} className="flex rounded-[14px] border border-white/10 bg-slate-900/80 p-1">
+    <div
+      role="radiogroup"
+      aria-label={ariaLabel}
+      className={`flex border border-white/10 bg-slate-900/80 ${size === "xs" ? "gap-0.5 rounded-full p-0.5" : "rounded-[14px] p-1"}`}
+    >
       {options.map((opt) => {
         const active = value === opt.value;
         return (
@@ -139,7 +143,7 @@ export function SegmentedControl({
             aria-label={opt.ariaLabel}
             onClick={() => onChange(opt.value)}
             className={`relative flex flex-1 items-center justify-center gap-1.5 rounded-[10px] px-3 font-semibold transition-[background-color,color,transform] duration-150 active:scale-[0.97] ${
-              size === "sm" ? "min-h-[36px] text-[13px]" : "min-h-[40px] text-sm"
+              size === "xs" ? "min-h-[30px] rounded-full px-3 text-xs after:absolute after:-inset-y-2 after:inset-x-0 after:content-['']" : size === "sm" ? "min-h-[36px] text-[13px]" : "min-h-[40px] text-sm"
             } ${active ? activeClassName : "text-nordic-highlight hover:text-slate-200"}`}
           >
             {opt.label}

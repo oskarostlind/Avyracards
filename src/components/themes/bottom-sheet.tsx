@@ -203,7 +203,7 @@ export function BottomSheet({
       // Positiv y-hastighet = nedåt = mindre synlig höjd.
       const visibleVelocity = first === last ? 0 : -((last.y - first.y) / dt);
 
-      const projected = visibleRef.current + projectMomentum(visibleVelocity, 0.995);
+      const projected = visibleRef.current + projectMomentum(visibleVelocity, 0.998);
       const index = nearestIndex(projected);
       animateTo(snapPoints[index], visibleVelocity);
       if (index !== snapIndex) onSnapChange(index);
