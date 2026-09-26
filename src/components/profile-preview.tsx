@@ -5,7 +5,7 @@ import { User as UserIcon, Save } from "lucide-react";
 import { SocialIcon } from "@/components/icons/social-icons";
 import { LinkIcon } from "@/components/icons/link-icon";
 import { MappedProfileData } from "@/lib/profile-mapper";
-import { applyCustomLinkColor } from "@/lib/link-button-style";
+import { getLinkButtonAppearance } from "@/lib/theme/button-style";
 import { useT } from "@/i18n/client";
 import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
 import "@/styles/profile-fonts.css";
@@ -52,64 +52,15 @@ export function ProfilePreview({
   }
 
   // --- KNAPP STYLES ---
-  const getButtonClass = () => {
-    let base = "w-full py-3 px-4 font-semibold text-sm transition-all duration-300 flex items-center justify-center gap-2 relative overflow-hidden group ";
-    
-    if (settings.buttonStyle === "pill") base += "rounded-full ";
-    else if (settings.buttonStyle === "rounded") base += "rounded-xl ";
-    else if (settings.buttonStyle === "sharp") base += "rounded-none ";
-    else if (settings.buttonStyle === "brutal") base += "rounded-sm shadow-[4px_4px_0px_0px_currentColor] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ";
-    
-    if (settings.buttonShadow && settings.buttonStyle !== "brutal") base += "shadow-lg hover:shadow-xl hover:-translate-y-0.5 ";
-
-    return base;
+  // Samma källa som publika profilen (src/lib/theme/button-style.ts), så att
+  // previewn är pixel-lik det besökaren ser.
+  const getButtonClass = (isPrimary: boolean = false) => {
+    const base = "w-full py-3 px-4 font-semibold text-sm flex items-center justify-center gap-2 relative overflow-hidden group ";
+    return `${base}${getLinkButtonAppearance(settings, { isPrimary }).className} `;
   };
 
-  const getButtonStyle = (isPrimary: boolean = false): React.CSSProperties => {
-    const accent = settings.accentColor || "#fff";
-    const text = settings.textColor || "#000";
-    const style: React.CSSProperties = {};
-
-    style.color = text;
-
-    if (isPrimary) {
-        style.backgroundColor = text;
-        style.color = accent === '#ffffff' ? '#0f172a' : accent;
-    } else {
-        if (settings.buttonStyle === "brutal") {
-            style.border = `2px solid ${text}`; 
-        }
-        
-        if (settings.buttonVariant === "outline") {
-          style.border = `2px solid ${accent}`;
-          style.color = accent;
-          style.backgroundColor = "transparent";
-        }
-        else if (settings.buttonVariant === "soft") {
-          style.backgroundColor = accent;
-          style.opacity = 0.9;
-        } 
-        else if (settings.buttonVariant === "glass") {
-          style.backgroundColor = "rgba(255,255,255,0.15)";
-          style.backdropFilter = "blur(8px)";
-          style.border = "1px solid rgba(255,255,255,0.2)";
-        }
-        else if (settings.buttonVariant === "ghost") {
-          style.backgroundColor = "transparent";
-          style.border = "1px solid transparent";
-          style.color = settings.textColor;
-        }
-        else if (settings.buttonVariant === "shadow") {
-          style.backgroundColor = accent;
-          style.boxShadow = `0 10px 15px -3px ${accent}40`;
-        }
-        else {
-          style.backgroundColor = accent;
-        }
-    }
-    
-    return style;
-  };
+  const getButtonStyle = (isPrimary: boolean = false, customColor?: string | null): React.CSSProperties =>
+    getLinkButtonAppearance(settings, { isPrimary, customColor }).style;
 
   const getFrameClass = () => {
     if (settings.frameStyle === "circle") return "rounded-full";
@@ -228,7 +179,7 @@ export function ProfilePreview({
                 {/* Spara Kontakt - Fullbredd högst upp om den existerar */}
                 {primaryAction && (
                     <div 
-                        className={`w-full pointer-events-none ${getButtonClass()}`}
+                        className={`w-full pointer-events-none ${getButtonClass(true)}`}
                         style={getButtonStyle(true)}
                     >
                         <Save size={18} className="mr-1" />
@@ -260,12 +211,7 @@ export function ProfilePreview({
             <div
               key={link.id}
               className={`pointer-events-none ${getButtonClass()}`}
-              style={applyCustomLinkColor(
-                getButtonStyle(false),
-                link.customColor,
-                settings.buttonVariant,
-                settings.textColor,
-              )}
+              style={getButtonStyle(false, link.customColor)}
             >
                <span className="opacity-80 absolute left-5">
                  <LinkIcon url={link.url} title={link.title} icon={link.icon} size={18} />

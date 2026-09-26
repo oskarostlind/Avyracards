@@ -1,6 +1,22 @@
 export type ButtonStyle = "rounded" | "pill" | "sharp" | "brutal";
-export type ButtonVariant = "solid" | "outline" | "glass" | "ghost" | "soft" | "shadow";
 import type { FontId } from "@/lib/theme/fonts";
+
+/**
+ * Knappvarianter. Id:n ligger sparade i användarnas temajson — döp aldrig om
+ * dem, lägg bara till. Utseendet räknas ut i src/lib/theme/button-style.ts.
+ */
+export type ButtonVariant =
+  | "solid"
+  | "outline"
+  | "glass"
+  | "ghost"
+  | "soft"
+  | "shadow"
+  | "gradient"
+  | "neon"
+  | "pressed"
+  | "metallic"
+  | "underline";
 
 /**
  * Typsnitts-id ur katalogen i src/lib/theme/fonts.ts. De sex ursprungliga
@@ -34,6 +50,14 @@ export interface CustomThemeSettings {
   buttonStyle?: ButtonStyle;
   buttonVariant?: ButtonVariant;
   buttonShadow?: boolean;
+  /** Knappens textfärg (hex). Saknas -> variantens standard (oftast textColor). */
+  buttonTextColor?: string;
+  /** Kantfärg (hex). Saknas -> variantens standard. */
+  buttonBorderColor?: string;
+  /** Kanttjocklek i px, 0–4. Saknas -> variantens standard. */
+  buttonBorderWidth?: number;
+  /** Skuggfärg (hex) för skugga/glöd/3D-kant. Saknas -> variantens standard. */
+  buttonShadowColor?: string;
 
   // --- Profil ---
   frameStyle?: FrameStyle;

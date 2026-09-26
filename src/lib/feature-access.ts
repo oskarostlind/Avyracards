@@ -20,6 +20,7 @@ import { BUSINESS_TEMPLATES } from "@/data/theme-templates-business";
 import { isKnownLinkIcon } from "@/lib/link-icons";
 import { normalizeHexColor } from "@/utils/color";
 import { DEFAULT_FONT_ID, isKnownFontId, isPremiumFont } from "@/lib/theme/fonts";
+import { clampButtonBorderWidth, isButtonStyle, isButtonVariant } from "@/lib/theme/button-style";
 
 /** Minsta möjliga bild av användaren som gatingen behöver. */
 export interface AccessUser {
@@ -43,7 +44,13 @@ const FEATURE_DEFS = {
   theme_background_image: "premium",
   /** Dölja "Powered by AvyraCards" i sidfoten. */
   theme_hide_branding: "premium",
-  /** Knappstilen "glass". */
+  /** Premium-knappvarianter (se PREMIUM_BUTTON_VARIANTS). */
+  theme_premium_buttons: "premium",
+  /**
+   * @deprecated Gamla namnet från när bara "glass" var premium. Behålls så att
+   * äldre klienter/loggar som frågar efter nyckeln får samma svar. Använd
+   * theme_premium_buttons.
+   */
   theme_button_glass: "premium",
   /** Premium-ramar runt profilbilden (se PREMIUM_FRAME_STYLES). */
   theme_premium_frames: "premium",
@@ -88,7 +95,18 @@ export function canAccess(feature: FeatureKey, user?: AccessUser | null): boolea
  */
 export const PREMIUM_FRAME_STYLES: readonly FrameStyle[] = [];
 
-export const PREMIUM_BUTTON_VARIANTS: readonly ButtonVariant[] = ["glass"];
+/**
+ * Knappvarianter som kräver premium. Gäller både låsen i editorn och
+ * /api/themes/save (via sanitizeThemeSettings). "pressed" och "underline" är
+ * medvetet gratis — gratiskonton ska också få något nytt att välja på.
+ */
+export const PREMIUM_BUTTON_VARIANTS: readonly ButtonVariant[] = ["glass", "gradient", "neon", "metallic"];
+
+export function isButtonVariantLocked(variant: ButtonVariant | undefined, user?: AccessUser | null): boolean {
+  if (!variant) return false;
+  if (!PREMIUM_BUTTON_VARIANTS.includes(variant)) return false;
+  return !canAccess("theme_premium_buttons", user);
+}
 
 export function isFrameLocked(frame: FrameStyle | undefined, user?: AccessUser | null): boolean {
   if (!frame) return false;
@@ -160,6 +178,11 @@ export function sanitizeThemeSettings(
   const settings: Partial<CustomThemeSettings> = { ...input };
   const removed: FeatureKey[] = [];
 
+  // 0. Vitlista knappfälten. Temajson sparas som den kommer, så utan det här
+  //    kunde ett direktanrop lagra godtyckliga strängar/CSS som renderarna
+  //    sedan skickar vidare till style-attributet.
+  sanitizeButtonFields(settings);
+
   // 1. Premium-mall sparad utan behörighet -> fall tillbaka på standardmallen.
   const lockedTemplate = matchesLockedTemplate(settings, mode, user);
   if (lockedTemplate) {
@@ -187,14 +210,10 @@ export function sanitizeThemeSettings(
     removed.push("theme_hide_branding");
   }
 
-  // 4. Premium-knappstilar.
-  if (
-    settings.buttonVariant &&
-    PREMIUM_BUTTON_VARIANTS.includes(settings.buttonVariant) &&
-    !canAccess("theme_button_glass", user)
-  ) {
+  // 4. Premium-knappvarianter.
+  if (isButtonVariantLocked(settings.buttonVariant, user)) {
     settings.buttonVariant = "solid";
-    removed.push("theme_button_glass");
+    removed.push("theme_premium_buttons");
   }
 
   // 5. Premium-ramar.
@@ -224,6 +243,35 @@ export function sanitizeThemeSettings(
   }
 
   return { settings, sanitized: removed.length > 0, removed };
+}
+
+const BUTTON_COLOR_FIELDS = ["buttonTextColor", "buttonBorderColor", "buttonShadowColor"] as const;
+
+/**
+ * Okänd form/variant -> standardvärdet. Färger normaliseras till #rrggbb,
+ * ogiltiga tas bort (= variantens standard). Kanttjocklek klampas till 0–4.
+ * Fält som saknas lämnas orörda. Muterar `settings` (som redan är en kopia).
+ */
+function sanitizeButtonFields(settings: Partial<CustomThemeSettings>): void {
+  if ("buttonStyle" in settings && settings.buttonStyle !== undefined && !isButtonStyle(settings.buttonStyle)) {
+    settings.buttonStyle = "rounded";
+  }
+  if ("buttonVariant" in settings && settings.buttonVariant !== undefined && !isButtonVariant(settings.buttonVariant)) {
+    settings.buttonVariant = "solid";
+  }
+
+  for (const key of BUTTON_COLOR_FIELDS) {
+    if (!(key in settings)) continue;
+    const normalized = normalizeHexColor(settings[key]);
+    if (normalized) settings[key] = normalized;
+    else delete settings[key];
+  }
+
+  if ("buttonBorderWidth" in settings) {
+    const width = clampButtonBorderWidth(settings.buttonBorderWidth);
+    if (width === null) delete settings.buttonBorderWidth;
+    else settings.buttonBorderWidth = width;
+  }
 }
 
 /* -------------------------------------------------------------------------- */

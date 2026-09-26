@@ -9,7 +9,7 @@ import { SocialIcon } from "@/components/icons/social-icons";
 import { LinkIcon } from "@/components/icons/link-icon";
 import { Save } from "lucide-react";
 import { MappedProfileData } from "@/lib/profile-mapper";
-import { applyCustomLinkColor } from "@/lib/link-button-style";
+import { BUTTON_INTERACTION_CLASS, getClassicLinkColorStyle, getLinkButtonAppearance } from "@/lib/theme/button-style";
 import { ProfileBackgroundLayer } from "@/components/public-profile/profile-background";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
@@ -50,53 +50,18 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
     color: settings.textColor,
   } : {};
 
-  const getLinkStyle = (isPrimary: boolean = false): React.CSSProperties => {
+  // Knapparnas utseende räknas ut i src/lib/theme/button-style.ts — samma
+  // källa som editorns preview, så att det användaren ser där är det som syns här.
+  const getLinkStyle = (isPrimary: boolean = false, customColor?: string | null): React.CSSProperties => {
     if (!useCustomTheme) {
         if (isPrimary) return { backgroundColor: '#f8fafc', color: '#0f172a' };
-        return {};
+        return getClassicLinkColorStyle(customColor);
     }
-    const base: React.CSSProperties = { color: settings.textColor };
-    
-    if (settings.buttonStyle === 'pill') base.borderRadius = '9999px';
-    else if (settings.buttonStyle === 'rounded') base.borderRadius = '0.75rem';
-    else if (settings.buttonStyle === 'sharp') base.borderRadius = '0px';
-    else if (settings.buttonStyle === 'brutal') {
-        base.borderRadius = '0.25rem';
-        base.border = `2px solid ${settings.textColor}`;
-        base.boxShadow = `4px 4px 0px 0px ${settings.textColor}`;
-    }
-
-    const accent = settings.accentColor || '#fff';
-    
-    if (isPrimary) {
-        base.backgroundColor = settings.textColor;
-        base.color = accent === '#ffffff' ? '#0f172a' : accent;
-    } else {
-        if (settings.buttonVariant === 'solid') base.backgroundColor = accent;
-        else if (settings.buttonVariant === 'outline') {
-            base.border = `2px solid ${accent}`;
-            base.color = accent;
-            base.backgroundColor = 'transparent';
-        } else if (settings.buttonVariant === 'soft') {
-            base.backgroundColor = accent;
-            base.opacity = 0.9;
-        } else if (settings.buttonVariant === 'glass') {
-            base.backgroundColor = 'rgba(255,255,255,0.15)';
-            base.backdropFilter = 'blur(10px)';
-            base.border = '1px solid rgba(255,255,255,0.2)';
-        } else if (settings.buttonVariant === 'shadow') {
-            base.backgroundColor = accent;
-            base.boxShadow = `0 10px 15px -3px ${accent}40`;
-        }
-    }
-
-    if (settings.buttonShadow && settings.buttonStyle !== 'brutal') {
-        base.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
-    }
-    return base;
+    return getLinkButtonAppearance(settings, { isPrimary, customColor }).style;
   };
+  const linkButtonClass = useCustomTheme ? getLinkButtonAppearance(settings).className : BUTTON_INTERACTION_CLASS;
+  const primaryButtonClass = useCustomTheme ? getLinkButtonAppearance(settings, { isPrimary: true }).className : BUTTON_INTERACTION_CLASS;
 
-  const linkStyle = getLinkStyle();
   const primaryStyle = getLinkStyle(true);
   const frameStyle = settings.frameStyle || 'circle';
   const accentColor = settings.accentColor || '#ffffff';
@@ -168,7 +133,7 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
                       href={action.url}
                       download={action.type === 'vcard' ? `${user.username}.vcf` : undefined}
                       onClick={action.type === 'vcard' ? handleVcardClick : undefined}
-                      className={action.type === 'vcard' ? `w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm transition-transform duration-150 hover:scale-[1.02] active:scale-[0.97] mb-2 ${!useCustomTheme ? 'bg-slate-100 text-slate-900' : ''}` : "p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"}
+                      className={action.type === 'vcard' ? `w-full py-3 px-4 rounded-xl flex items-center justify-center gap-2 font-bold text-sm mb-2 ${primaryButtonClass} ${!useCustomTheme ? 'bg-slate-100 text-slate-900' : ''}` : "p-3 rounded-full bg-white/10 hover:bg-white/20 transition-all text-current border border-white/10"}
                       style={action.type === 'vcard' ? primaryStyle : (useCustomTheme ? { borderColor: settings.accentColor, color: settings.textColor } : {})}
                       title={action.label}
                     >
@@ -185,15 +150,10 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
                 linkId={link.id}
                 ownerId={user.id}
                 href={link.href}
-                className={`flex items-center justify-between px-5 py-4 text-sm font-medium transition-[transform,background-color,box-shadow] duration-150 hover:scale-[1.02] active:scale-[0.97] ${!useCustomTheme ? `${tokens.link} shadow-md rounded-xl` : ''}`}
+                className={`flex items-center justify-between px-5 py-4 text-sm font-medium ${linkButtonClass} ${!useCustomTheme ? `${tokens.link} shadow-md rounded-xl` : ''}`}
                 // Egen färg (premium) vinner över temats accentfärg — men bara
                 // för den här knappen, och med samma variant-beteende som temat.
-                style={applyCustomLinkColor(
-                  linkStyle,
-                  link.customColor,
-                  useCustomTheme ? settings.buttonVariant : undefined,
-                  useCustomTheme ? settings.textColor : undefined,
-                )}
+                style={getLinkStyle(false, link.customColor)}
               >
                 <span className="flex items-center gap-3">
                   <span className="text-lg opacity-80">
