@@ -11,6 +11,9 @@ import { MappedProfileData } from "@/lib/profile-mapper";
 import { BUTTON_INTERACTION_CLASS, getClassicLinkColorStyle, getLinkButtonAppearance } from "@/lib/theme/button-style";
 import { ProfileBackgroundLayer } from "@/components/public-profile/profile-background";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
+import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
+import { isAnimatedBackgroundLocked, isFrameLocked, isNameEffectLocked } from "@/lib/feature-access";
+import { DisplayName } from "@/components/theme-effects/display-name";
 import { Save } from "lucide-react";
 import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
 import "@/styles/profile-fonts.css";
@@ -60,26 +63,13 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
     return getLinkButtonAppearance(settings, { isPrimary, customColor }).style;
   };
 
-  const getFrameClass = () => {
-    if (!hasCustomTheme) return "rounded-2xl";
-    if (settings.frameStyle === "circle") return "rounded-full";
-    if (settings.frameStyle === "rounded") return "rounded-3xl";
-    if (settings.frameStyle === "hexagon") return "hexagon-clip"; 
-    if (settings.frameStyle === "none") return "rounded-none";
-    if (settings.frameStyle === "ring") return "rounded-full ring-4 ring-offset-4 ring-offset-transparent";
-    if (settings.frameStyle === "square") return "rounded-none";
-    if (settings.frameStyle === "shadow") return "rounded-full";
-    return "rounded-full";
-  };
-
-  const avatarStyle: React.CSSProperties = hasCustomTheme ? {
-     boxShadow: settings.frameStyle === 'glow'
-       ? `0 0 30px ${settings.accentColor}`
-       : settings.frameStyle === 'shadow'
-         ? `8px 8px 0 ${settings.accentColor}`
-         : 'none',
-     borderColor: (settings.frameStyle === 'ring' || settings.frameStyle === 'square') ? settings.accentColor : 'transparent',
-  } : {};
+  // Ram + namneffekt ritas av <AvatarFrame>/<DisplayName> (delas med editorn).
+  // Utan eget tema: rundad fyrkant som tidigare.
+  // Premium som gått ut: sparade premiumeffekter faller tillbaka vid rendering.
+  const premiumAccess = { isPremium: user.isPremium, isAdmin: user.role === "ADMIN" };
+  const savedFrame = settings.frameStyle || 'circle';
+  const frameStyle = !hasCustomTheme ? 'rounded' : isFrameLocked(savedFrame, premiumAccess) ? 'circle' : savedFrame;
+  const nameEffect = hasCustomTheme && !isNameEffectLocked(settings.nameEffect, premiumAccess) ? settings.nameEffect : "none";
 
   const cardStyle: React.CSSProperties = hasCustomTheme ? {
     backgroundColor: 'rgba(15, 23, 42, 0.6)', 
@@ -114,7 +104,7 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
 
   return (
     <main className={`min-h-screen font-sans ${bgClass} ${textClass}`} style={pageStyle}>
-      {hasCustomTheme && <ProfileBackgroundLayer settings={settings} />}
+      {hasCustomTheme && <ProfileBackgroundLayer settings={settings} animate={!isAnimatedBackgroundLocked(premiumAccess)} />}
       
       {hasCustomTheme && settings.backgroundType === "image" && (
         <div 
@@ -143,19 +133,16 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
           
           <div className="p-6 sm:p-8 border-b border-white/5">
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-                <div 
-                    className={`relative h-24 w-24 overflow-hidden border-2 border-white/10 shadow-lg bg-gray-800 flex-shrink-0 ${getFrameClass()}`}
-                    style={avatarStyle}
-                >
+                <AvatarFrame frame={frameStyle} size={96} accent={settings.accentColor}>
                   {image ? (
                     <Image src={image} alt={displayName} fill className="object-cover" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-nordic-highlight">{displayName.charAt(0).toUpperCase()}</div>
+                    <div className="flex h-full w-full items-center justify-center bg-gray-800 text-3xl font-bold text-nordic-highlight">{displayName.charAt(0).toUpperCase()}</div>
                   )}
-                </div>
+                </AvatarFrame>
                 
                 <div className="space-y-1">
-                   <h1 className="text-2xl sm:text-3xl font-bold" style={hasCustomTheme ? getHeadingFontStyle(settings.headingFont, settings.font) : undefined}>{displayName}</h1>
+                   <DisplayName name={displayName} effect={nameEffect} accent={settings.accentColor} textColor={settings.textColor} className="text-2xl sm:text-3xl font-bold" style={hasCustomTheme ? getHeadingFontStyle(settings.headingFont, settings.font) : undefined} />
                    <div className={`flex flex-wrap gap-2 text-sm font-medium ${!hasCustomTheme ? tokens.textMuted : 'opacity-80'}`}>
                       {jobTitle && <span className="flex items-center gap-1"><SocialIcon fallbackIcon="job" size={14}/> {jobTitle}</span>}
                       {companyName && <span>@ {companyName}</span>}

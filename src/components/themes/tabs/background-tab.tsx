@@ -1,8 +1,16 @@
 "use client";
 
 import { ArrowDown, ArrowRight, ArrowDownRight, ArrowUpRight } from "lucide-react";
-import { type CustomThemeSettings } from "@/types/theme";
-import { ColorPicker, SectionLabel, SegmentedControl, Slider } from "@/components/themes/theme-controls";
+import {
+  BACKGROUND_PATTERNS,
+  PATTERN_OPACITY_DEFAULT,
+  PATTERN_OPACITY_MAX,
+  PATTERN_OPACITY_MIN,
+  type BackgroundPattern,
+  type CustomThemeSettings,
+} from "@/types/theme";
+import { ChoiceTile, ColorPicker, PremiumBadge, SectionLabel, SegmentedControl, Slider, ToggleRow } from "@/components/themes/theme-controls";
+import { getPatternBackground } from "@/lib/theme-effects";
 import { MediaManager } from "@/components/themes/media-manager";
 import { useT } from "@/i18n/client";
 
@@ -11,11 +19,27 @@ interface BackgroundTabProps {
   updateSetting: (key: keyof CustomThemeSettings, value: string | number | boolean | undefined) => void;
   /** Får använda egen/Unsplash-bild (premium eller admin). */
   canUseImage: boolean;
+  /** Får använda animerad gradient (premium eller admin). Saknas -> låst. */
+  canAnimate?: boolean;
   onShowUpgrade: () => void;
 }
 
-export function BackgroundTab({ settings, updateSetting, canUseImage, onShowUpgrade }: BackgroundTabProps) {
+function PatternSwatch({ pattern }: { pattern: BackgroundPattern }) {
+  // Miniatyren visar mönstret i något starkare opacitet än standard, så att
+  // det syns i 40 px — själva profilen använder reglagets värde.
+  const bg = getPatternBackground(pattern, "#ffffff", 40);
+  return (
+    <span
+      aria-hidden
+      className="block h-8 w-12 rounded-lg border border-white/10 bg-slate-800"
+      style={bg ? { backgroundImage: bg.backgroundImage, backgroundSize: bg.backgroundSize } : undefined}
+    />
+  );
+}
+
+export function BackgroundTab({ settings, updateSetting, canUseImage, canAnimate = false, onShowUpgrade }: BackgroundTabProps) {
   const t = useT();
+  const pattern = settings.backgroundPattern ?? "none";
 
   return (
     <div className="space-y-6">
@@ -53,6 +77,15 @@ export function BackgroundTab({ settings, updateSetting, canUseImage, onShowUpgr
               ]}
             />
           </div>
+          <ToggleRow
+            label={t("themes.background.animated")}
+            description={t("themes.background.animatedDesc")}
+            checked={Boolean(settings.backgroundAnimated) && canAnimate}
+            onChange={(v) => updateSetting("backgroundAnimated", v)}
+            locked={!canAnimate}
+            onLockedClick={onShowUpgrade}
+            badge={<PremiumBadge isUnlocked={canAnimate} className="relative" />}
+          />
         </div>
       )}
 
@@ -96,6 +129,29 @@ export function BackgroundTab({ settings, updateSetting, canUseImage, onShowUpgr
           )}
         </div>
       )}
+
+      {/* Mönster är gratis: det är en liten, statisk detalj som gör gratis-
+          profiler snyggare utan att konkurrera med premiums rörelse. */}
+      <div className="space-y-2.5 border-t border-white/10 pt-4">
+        <SectionLabel>{t("themes.background.pattern")}</SectionLabel>
+        <div className="grid grid-cols-3 gap-2">
+          {BACKGROUND_PATTERNS.map((p) => (
+            <ChoiceTile key={p} selected={pattern === p} onClick={() => updateSetting("backgroundPattern", p)} label={t(`themes.patterns.${p}`)}>
+              <PatternSwatch pattern={p} />
+            </ChoiceTile>
+          ))}
+        </div>
+        {pattern !== "none" && (
+          <Slider
+            label={t("themes.background.patternOpacity")}
+            value={settings.backgroundPatternOpacity ?? PATTERN_OPACITY_DEFAULT}
+            min={PATTERN_OPACITY_MIN}
+            max={PATTERN_OPACITY_MAX}
+            unit="%"
+            onChange={(v) => updateSetting("backgroundPatternOpacity", v)}
+          />
+        )}
+      </div>
     </div>
   );
 }

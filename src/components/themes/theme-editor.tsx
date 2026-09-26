@@ -378,6 +378,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             settings={currentSettings}
             updateSetting={updateSetting}
             canUseImage={canAccess("theme_background_image", accessUser)}
+            canAnimate={canAccess("theme_animated_background", accessUser)}
             onShowUpgrade={() => setShowUpgradeModal(true)}
           />
         );

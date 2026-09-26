@@ -8,12 +8,20 @@
  * Ref: ClickUp 86c777p5w, punkt 4 "System för feature availability".
  */
 
-import type {
-  CustomThemeSettings,
-  FrameStyle,
-  ButtonVariant,
-  ThemeMode,
-  ThemeTemplate,
+import {
+  ANIMATED_FRAME_STYLES,
+  BACKGROUND_PATTERNS,
+  CLASSIC_FRAME_STYLES,
+  NAME_EFFECTS,
+  PATTERN_OPACITY_DEFAULT,
+  PATTERN_OPACITY_MAX,
+  PATTERN_OPACITY_MIN,
+  type CustomThemeSettings,
+  type FrameStyle,
+  type ButtonVariant,
+  type NameEffect,
+  type ThemeMode,
+  type ThemeTemplate,
 } from "@/types/theme";
 import { SOCIAL_TEMPLATES } from "@/data/theme-templates-social";
 import { BUSINESS_TEMPLATES } from "@/data/theme-templates-business";
@@ -56,6 +64,10 @@ const FEATURE_DEFS = {
   theme_premium_frames: "premium",
   /** Typsnitt märkta isPremium i src/lib/theme/fonts.ts (brödtext och rubrik). */
   theme_premium_fonts: "premium",
+  /** Effekt på visningsnamnet (shimmer/gradient/glöd). */
+  theme_name_effects: "premium",
+  /** Långsamt drivande gradientbakgrund. */
+  theme_animated_background: "premium",
 
   // --- Länkar ---
   /** Egen färg per länkknapp (Link.customColor). Ikonval är gratis. */
@@ -87,13 +99,25 @@ export function canAccess(feature: FeatureKey, user?: AccessUser | null): boolea
 }
 
 /**
- * Ramar som kostar premium.
- *
- * OBS: medvetet tom tills Oskar beslutat vilka ramar som ska ligga bakom
- * betalväggen. Mekaniken är på plats — lägg bara till värden här, så gäller
- * de i både UI och API utan fler kodändringar.
+ * Ramar som kostar premium: alla animerade ramar. De 8 klassiska (statiska)
+ * ramarna förblir gratis. Lägg till/ta bort värden här så gäller det i både
+ * UI och API utan fler kodändringar.
  */
-export const PREMIUM_FRAME_STYLES: readonly FrameStyle[] = [];
+export const PREMIUM_FRAME_STYLES: readonly FrameStyle[] = ANIMATED_FRAME_STYLES;
+
+/** Namneffekter som kostar premium (allt utom "none"). */
+export const PREMIUM_NAME_EFFECTS: readonly NameEffect[] = NAME_EFFECTS.filter((e) => e !== "none");
+
+const KNOWN_FRAME_STYLES: readonly string[] = [...CLASSIC_FRAME_STYLES, ...ANIMATED_FRAME_STYLES];
+
+export function isNameEffectLocked(effect: NameEffect | undefined, user?: AccessUser | null): boolean {
+  if (!effect || !PREMIUM_NAME_EFFECTS.includes(effect)) return false;
+  return !canAccess("theme_name_effects", user);
+}
+
+export function isAnimatedBackgroundLocked(user?: AccessUser | null): boolean {
+  return !canAccess("theme_animated_background", user);
+}
 
 /**
  * Knappvarianter som kräver premium. Gäller både låsen i editorn och
@@ -216,7 +240,11 @@ export function sanitizeThemeSettings(
     removed.push("theme_premium_buttons");
   }
 
-  // 5. Premium-ramar.
+  // 5. Ramar: okänt värde -> standard (ingen flagga, det är skräp, inte
+  //    premium), sedan premium-ramar -> standard.
+  if ("frameStyle" in settings && settings.frameStyle !== undefined && !KNOWN_FRAME_STYLES.includes(settings.frameStyle)) {
+    settings.frameStyle = "circle";
+  }
   if (isFrameLocked(settings.frameStyle, user)) {
     settings.frameStyle = "circle";
     removed.push("theme_premium_frames");
@@ -242,8 +270,39 @@ export function sanitizeThemeSettings(
     }
   }
 
+  // 7. Namneffekt: vitlista, sedan premium.
+  if ("nameEffect" in settings && settings.nameEffect !== undefined) {
+    if (!(NAME_EFFECTS as readonly string[]).includes(settings.nameEffect)) {
+      settings.nameEffect = "none";
+    } else if (isNameEffectLocked(settings.nameEffect, user)) {
+      settings.nameEffect = "none";
+      removed.push("theme_name_effects");
+    }
+  }
+
+  // 8. Animerad bakgrund: bara boolean, och bara för premium.
+  if ("backgroundAnimated" in settings && settings.backgroundAnimated !== undefined) {
+    if (settings.backgroundAnimated !== true) {
+      settings.backgroundAnimated = false;
+    } else if (isAnimatedBackgroundLocked(user)) {
+      settings.backgroundAnimated = false;
+      removed.push("theme_animated_background");
+    }
+  }
+
+  // 9. Bakgrundsmönster (gratis): vitlista + klampa opaciteten.
+  if ("backgroundPattern" in settings && settings.backgroundPattern !== undefined) {
+    if (!(BACKGROUND_PATTERNS as readonly string[]).includes(settings.backgroundPattern)) {
+      settings.backgroundPattern = "none";
+    }
+  }
+  if ("backgroundPatternOpacity" in settings && settings.backgroundPatternOpacity !== undefined) {
+    settings.backgroundPatternOpacity = clampPatternOpacity(settings.backgroundPatternOpacity);
+  }
+
   return { settings, sanitized: removed.length > 0, removed };
 }
+
 
 const BUTTON_COLOR_FIELDS = ["buttonTextColor", "buttonBorderColor", "buttonShadowColor"] as const;
 
@@ -272,6 +331,13 @@ function sanitizeButtonFields(settings: Partial<CustomThemeSettings>): void {
     if (width === null) delete settings.buttonBorderWidth;
     else settings.buttonBorderWidth = width;
   }
+}
+
+/** Klampar mönsteropacitet till tillåtet intervall; skräp -> standardvärdet. */
+export function clampPatternOpacity(value: unknown): number {
+  const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  if (!Number.isFinite(n)) return PATTERN_OPACITY_DEFAULT;
+  return Math.round(Math.min(PATTERN_OPACITY_MAX, Math.max(PATTERN_OPACITY_MIN, n)));
 }
 
 /* -------------------------------------------------------------------------- */
