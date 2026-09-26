@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 import type { CustomThemeSettings } from "@/types/theme";
+import { getAnimatedGradientImage, getPatternBackground } from "@/lib/theme-effects";
+import fx from "@/components/theme-effects/theme-effects.module.css";
 
 /**
  * Bakgrundslager för publika profiler (bild eller gradient).
@@ -24,13 +26,60 @@ export function getProfileBackgroundImage(
   return undefined;
 }
 
+type LayerSettings = Pick<
+  CustomThemeSettings,
+  | "backgroundType"
+  | "backgroundImage"
+  | "gradientDir"
+  | "gradientFrom"
+  | "gradientTo"
+  | "accentColor"
+  | "textColor"
+  | "backgroundAnimated"
+  | "backgroundPattern"
+  | "backgroundPatternOpacity"
+>;
+
+// Samma skäl som ovan: fast lager i skärmstorlek (100lvh), inte
+// background-attachment. Gäller även det drivande lagret och mönstret.
+const FIXED_LAYER: CSSProperties = { height: "100lvh" };
+
 export function ProfileBackgroundLayer({
   settings,
+  animate = true,
 }: {
-  settings: Pick<CustomThemeSettings, "backgroundType" | "backgroundImage" | "gradientDir" | "gradientFrom" | "gradientTo">;
+  settings: LayerSettings;
+  /** false = rita den animerade gradienten som vanlig gradient (t.ex. premium som gått ut). */
+  animate?: boolean;
 }) {
+  // Mönster (gratis) ligger över bakgrunden och bildens overlay (z-[1]),
+  // men under innehållet (z-10). Det är statiskt — ingen animation.
+  const pattern = getPatternBackground(settings.backgroundPattern, settings.textColor, settings.backgroundPatternOpacity);
+  const patternLayer = pattern ? (
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 z-[1]"
+      style={{ ...FIXED_LAYER, backgroundImage: pattern.backgroundImage, backgroundSize: pattern.backgroundSize, backgroundRepeat: "repeat" }}
+      data-profile-pattern=""
+    />
+  ) : null;
+
+  // Animerad gradient (premium): ett överdimensionerat lager som glider med
+  // transform i stället för att animera background-position — det kan
+  // compositorn köra utan omritning. Sanitering nollar flaggan för gratis.
+  if (animate && settings.backgroundType === "gradient" && settings.backgroundAnimated) {
+    return (
+      <>
+        <div aria-hidden className={`pointer-events-none fixed inset-0 z-0 ${fx.bgDriftViewport}`} style={FIXED_LAYER} data-profile-bg="">
+          <div className={fx.bgDrift} style={{ backgroundImage: getAnimatedGradientImage(settings) }} />
+        </div>
+        {patternLayer}
+      </>
+    );
+  }
+
   const backgroundImage = getProfileBackgroundImage(settings);
-  if (!backgroundImage) return null;
+  if (!backgroundImage) return patternLayer;
 
   const style: CSSProperties = {
     backgroundImage,
@@ -43,5 +92,10 @@ export function ProfileBackgroundLayer({
     height: "100lvh",
   };
 
-  return <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={style} data-profile-bg="" />;
+  return (
+    <>
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0" style={style} data-profile-bg="" />
+      {patternLayer}
+    </>
+  );
 }

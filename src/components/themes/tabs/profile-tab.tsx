@@ -1,10 +1,18 @@
 "use client";
 
-import type { CSSProperties } from "react";
 import { User } from "lucide-react";
-import { type CustomThemeSettings, type Font, type FrameStyle } from "@/types/theme";
+import {
+  ANIMATED_FRAME_STYLES,
+  CLASSIC_FRAME_STYLES,
+  NAME_EFFECTS,
+  type CustomThemeSettings,
+  type Font,
+  type FrameStyle,
+} from "@/types/theme";
 import { ChoiceTile, PremiumBadge, SectionLabel, ToggleRow } from "@/components/themes/theme-controls";
-import { canAccess, isFrameLocked } from "@/lib/feature-access";
+import { canAccess, isFrameLocked, isNameEffectLocked } from "@/lib/feature-access";
+import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
+import { DisplayName } from "@/components/theme-effects/display-name";
 import { useT } from "@/i18n/client";
 
 interface ProfileTabProps {
@@ -25,28 +33,18 @@ const FONTS: { id: Font; name: string; family: string }[] = [
   { id: "lora", name: "Lora", family: "Lora, serif" },
 ];
 
-const FRAMES: FrameStyle[] = ["circle", "rounded", "square", "none", "ring", "glow", "hexagon", "shadow"];
+// Miniatyrerna ritas med samma <AvatarFrame> som profilen — de animerade
+// ramarna rör sig alltså redan i väljaren (det är det som säljer dem).
+const THUMB_SIZE = 40;
 
-function framePreviewStyle(frame: FrameStyle, accent: string): CSSProperties {
-  const base: CSSProperties = { backgroundColor: "#334155" };
-  switch (frame) {
-    case "circle":
-      return { ...base, borderRadius: "9999px" };
-    case "rounded":
-      return { ...base, borderRadius: "10px" };
-    case "square":
-      return { ...base, borderRadius: 0, border: "2px solid rgba(255,255,255,0.7)" };
-    case "none":
-      return { ...base, borderRadius: 0 };
-    case "ring":
-      return { ...base, borderRadius: "9999px", boxShadow: `0 0 0 2px #0f172a, 0 0 0 4px ${accent}` };
-    case "glow":
-      return { ...base, borderRadius: "9999px", boxShadow: `0 0 12px 2px ${accent}` };
-    case "hexagon":
-      return { ...base, clipPath: "polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%)" };
-    case "shadow":
-      return { ...base, borderRadius: "9999px", boxShadow: "0 6px 12px rgba(0,0,0,0.6)" };
-  }
+function FrameThumb({ frame, accent }: { frame: FrameStyle; accent: string }) {
+  return (
+    <AvatarFrame frame={frame} size={THUMB_SIZE} accent={accent}>
+      <span className="flex h-full w-full items-center justify-center bg-slate-700 text-slate-400">
+        <User size={16} />
+      </span>
+    </AvatarFrame>
+  );
 }
 
 export function ProfileTab({ settings, updateSetting, isPremium, isAdmin, onShowUpgrade }: ProfileTabProps) {
@@ -54,6 +52,22 @@ export function ProfileTab({ settings, updateSetting, isPremium, isAdmin, onShow
   const accessUser = { isPremium, isAdmin };
   const canHideBranding = canAccess("theme_hide_branding", accessUser);
   const accent = settings.accentColor || "#8b5cf6";
+
+  const renderFrameTile = (frame: FrameStyle) => {
+    const locked = isFrameLocked(frame, accessUser);
+    return (
+      <ChoiceTile
+        key={frame}
+        selected={settings.frameStyle === frame}
+        locked={locked}
+        onClick={() => (locked ? onShowUpgrade() : updateSetting("frameStyle", frame))}
+        label={t(`themes.frames.${frame}`)}
+      >
+        <FrameThumb frame={frame} accent={accent} />
+        {locked && <PremiumBadge isUnlocked={false} className="absolute right-1.5 top-1.5" />}
+      </ChoiceTile>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -72,20 +86,39 @@ export function ProfileTab({ settings, updateSetting, isPremium, isAdmin, onShow
 
       <div className="space-y-2.5">
         <SectionLabel>{t("themes.profile.frame")}</SectionLabel>
+        <p className="text-xs font-medium text-slate-400">{t("themes.profile.framesClassic")}</p>
         <div className="grid grid-cols-4 gap-2">
-          {FRAMES.map((frame) => {
-            const locked = isFrameLocked(frame, accessUser);
+          {CLASSIC_FRAME_STYLES.map((frame) => renderFrameTile(frame))}
+        </div>
+        <p className="flex items-center gap-1.5 pt-1 text-xs font-medium text-amber-300">
+          {t("themes.profile.framesAnimated")}
+        </p>
+        <div className="grid grid-cols-4 gap-2">
+          {ANIMATED_FRAME_STYLES.map((frame) => renderFrameTile(frame))}
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        <SectionLabel>{t("themes.profile.nameEffect")}</SectionLabel>
+        <div className="grid grid-cols-2 gap-2">
+          {NAME_EFFECTS.map((effect) => {
+            const locked = isNameEffectLocked(effect, accessUser);
             return (
               <ChoiceTile
-                key={frame}
-                selected={settings.frameStyle === frame}
+                key={effect}
+                selected={(settings.nameEffect ?? "none") === effect}
                 locked={locked}
-                onClick={() => (locked ? onShowUpgrade() : updateSetting("frameStyle", frame))}
-                label={t(`themes.frames.${frame}`)}
+                onClick={() => (locked ? onShowUpgrade() : updateSetting("nameEffect", effect))}
+                label={t(`themes.nameEffects.${effect}`)}
               >
-                <span className="flex h-8 w-8 items-center justify-center text-slate-400" style={framePreviewStyle(frame, accent)}>
-                  <User size={16} />
-                </span>
+                <DisplayName
+                  as="span"
+                  name="Aa Bb"
+                  effect={effect}
+                  accent={accent}
+                  textColor={settings.textColor}
+                  className="text-lg font-bold leading-none text-slate-100"
+                />
                 {locked && <PremiumBadge isUnlocked={false} className="absolute right-1.5 top-1.5" />}
               </ChoiceTile>
             );

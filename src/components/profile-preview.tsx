@@ -7,6 +7,10 @@ import { LinkIcon } from "@/components/icons/link-icon";
 import { MappedProfileData } from "@/lib/profile-mapper";
 import { applyCustomLinkColor } from "@/lib/link-button-style";
 import { useT } from "@/i18n/client";
+import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
+import { DisplayName } from "@/components/theme-effects/display-name";
+import { getAnimatedGradientImage, getPatternBackground } from "@/lib/theme-effects";
+import fx from "@/components/theme-effects/theme-effects.module.css";
 
 export interface ProfilePreviewProps {
   data: MappedProfileData;
@@ -58,6 +62,9 @@ export function ProfilePreview({
   } else {
     bgStyle = { backgroundColor: settings.backgroundColor || "#0f172a" };
   }
+
+  // --- MÖNSTER (ovanpå bakgrunden) ---
+  const patternBg = getPatternBackground(settings.backgroundPattern, settings.textColor, settings.backgroundPatternOpacity);
 
   // --- KNAPP STYLES ---
   const getButtonClass = () => {
@@ -119,17 +126,6 @@ export function ProfilePreview({
     return style;
   };
 
-  const getFrameClass = () => {
-    if (settings.frameStyle === "circle") return "rounded-full";
-    if (settings.frameStyle === "rounded") return "rounded-3xl";
-    if (settings.frameStyle === "hexagon") return "hexagon-clip";
-    if (settings.frameStyle === "none") return "rounded-none";
-    if (settings.frameStyle === "ring") return "rounded-full ring-4 ring-offset-4 ring-offset-transparent";
-    if (settings.frameStyle === "square") return "rounded-none border-4";
-    if (settings.frameStyle === "shadow") return "rounded-full";
-    return "rounded-full";
-  };
-
   const cardStyle: React.CSSProperties = {
     color: settings.textColor || "#fff",
     ...(mode === "BUSINESS" ? {
@@ -176,35 +172,48 @@ export function ProfilePreview({
         />
       )}
 
+      {/* Animerad gradient (premium) + mönster. `fixed` med flit: previewn
+          renderas alltid inuti en transformerad förälder (telefonramen i
+          temaeditorn, scale-wrappers i demo/inställningar), som då blir
+          containing block — lagret täcker "skärmen" och står still när
+          innehållet scrollar, precis som på publika profilen. I fullscreen
+          blir det vanlig viewport-fixed. */}
+      {settings.backgroundType === "gradient" && settings.backgroundAnimated && (
+        <div aria-hidden className={`pointer-events-none fixed inset-0 z-0 ${fx.bgDriftViewport}`}>
+          <div className={fx.bgDrift} style={{ backgroundImage: getAnimatedGradientImage(settings) }} />
+        </div>
+      )}
+      {patternBg && (
+        <div
+          aria-hidden
+          className="pointer-events-none fixed inset-0 z-[1]"
+          style={{ backgroundImage: patternBg.backgroundImage, backgroundSize: patternBg.backgroundSize, backgroundRepeat: "repeat" }}
+        />
+      )}
+
       {/* --- CARD CONTAINER --- */}
       <div className={`relative z-10 w-full max-w-[380px] flex flex-col items-center p-8 mb-6 rounded-[2.5rem] shadow-2xl`} style={cardStyle}>
         
-        {/* Avatar */}
-        <div 
-          className={`relative mb-6 shrink-0 transition-transform hover:scale-105 duration-500 ${getFrameClass()}`}
-          style={settings.frameStyle === 'glow' ? {
-            boxShadow: `0 0 30px ${settings.accentColor}`,
-            borderRadius: '9999px'
-          } : (settings.frameStyle === 'ring' || settings.frameStyle === 'square') ? {
-            borderColor: settings.accentColor
-          } : settings.frameStyle === 'shadow' ? {
-            boxShadow: `8px 8px 0 ${settings.accentColor}`,
-            borderRadius: '9999px'
-          } : {}}
+        {/* Avatar — samma komponent som publika profilen och ram-miniatyrerna. */}
+        <AvatarFrame
+          frame={settings.frameStyle}
+          size={112}
+          accent={settings.accentColor}
+          className="mb-6 transition-transform duration-500 hover:scale-105"
         >
           {image ? (
              // eslint-disable-next-line @next/next/no-img-element
-             <img src={image} alt="Profil" className={`w-28 h-28 object-cover border-2 border-white/10 ${getFrameClass()}`} style={settings.frameStyle === 'ring' ? { borderRadius: '9999px' } : {}}/>
+             <img src={image} alt="Profil" className="h-full w-full object-cover" />
           ) : (
-             <div className={`w-28 h-28 bg-white/10 flex items-center justify-center text-nordic-secondary/50 border-2 border-white/10 ${getFrameClass()}`}>
+             <div className="flex h-full w-full items-center justify-center bg-white/10 text-nordic-secondary/50">
                <UserIcon size={40} />
              </div>
           )}
-        </div>
+        </AvatarFrame>
 
         {/* --- HEADER --- */}
         <div className="text-center space-y-2 mb-8 w-full">
-          <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+          <DisplayName name={displayName} effect={settings.nameEffect} accent={settings.accentColor} textColor={settings.textColor} className="text-2xl font-bold tracking-tight" />
           
           {mode === "BUSINESS" && (
             <div className="flex flex-col items-center gap-1 opacity-90">

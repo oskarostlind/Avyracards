@@ -12,6 +12,9 @@ import { MappedProfileData } from "@/lib/profile-mapper";
 import { applyCustomLinkColor } from "@/lib/link-button-style";
 import { ProfileBackgroundLayer } from "@/components/public-profile/profile-background";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
+import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
+import { isAnimatedBackgroundLocked, isFrameLocked, isNameEffectLocked } from "@/lib/feature-access";
+import { DisplayName } from "@/components/theme-effects/display-name";
 
 type UserWithLinks = User & { links: LinkModel[] };
 
@@ -96,24 +99,12 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
 
   const linkStyle = getLinkStyle();
   const primaryStyle = getLinkStyle(true);
-  const frameStyle = settings.frameStyle || 'circle';
-  const accentColor = settings.accentColor || '#ffffff';
-  
-  let borderRadius = '50%';
-  if (frameStyle === 'rounded') borderRadius = '20%';
-  if (frameStyle === 'none') borderRadius = '0';
-  if (frameStyle === 'hexagon') borderRadius = '0';
-  if (frameStyle === 'square') borderRadius = '0';
-
-  const avatarStyle: React.CSSProperties = useCustomTheme ? {
-    borderColor: (frameStyle === 'ring' || frameStyle === 'square') ? accentColor : 'rgba(255,255,255,0.1)',
-    borderRadius: borderRadius,
-    boxShadow: frameStyle === 'glow'
-      ? `0 0 30px ${accentColor}`
-      : frameStyle === 'shadow'
-        ? `8px 8px 0 ${accentColor}`
-        : 'none',
-  } : {};
+  // Ram + namneffekt ritas av <AvatarFrame>/<DisplayName> (delas med editorn).
+  // Premium som gått ut: sparade premiumeffekter faller tillbaka vid rendering.
+  const premiumAccess = { isPremium: user.isPremium, isAdmin: user.role === "ADMIN" };
+  const savedFrame = settings.frameStyle || 'circle';
+  const frameStyle = !useCustomTheme || isFrameLocked(savedFrame, premiumAccess) ? 'circle' : savedFrame;
+  const nameEffect = useCustomTheme && !isNameEffectLocked(settings.nameEffect, premiumAccess) ? settings.nameEffect : "none";
 
   // --- NYTT: Spårning av vCard nedladdning ---
   const handleVcardClick = () => {
@@ -134,7 +125,7 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
 
   return (
     <main className={`min-h-screen ${!useCustomTheme ? (tokens.bg || 'bg-nordic-primary') : ''} ${!useCustomTheme ? (tokens.text || 'text-nordic-secondary') : ''}`} style={pageStyle}>
-      {useCustomTheme && <ProfileBackgroundLayer settings={settings} />}
+      {useCustomTheme && <ProfileBackgroundLayer settings={settings} animate={!isAnimatedBackgroundLocked(premiumAccess)} />}
       {useCustomTheme && settings.backgroundType === "image" && (
         <div className="fixed inset-0 z-0 pointer-events-none" style={{ backgroundColor: `rgba(0,0,0, ${settings.backgroundOverlay ? settings.backgroundOverlay / 100 : 0})`, backdropFilter: `blur(${settings.backgroundBlur || 0}px)` }} />
       )}
@@ -142,15 +133,15 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
       <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col items-center px-4 py-12">
         <section className={`w-full rounded-[32px] border p-8 shadow-2xl ${!useCustomTheme ? `${tokens.card} backdrop-blur-md` : ''}`} style={cardStyle}>
           <div className="flex flex-col items-center gap-5">
-            <div className={`relative h-28 w-28 overflow-hidden border-4 shadow-xl`} style={useCustomTheme ? avatarStyle : { borderRadius: '50%', borderColor: 'rgba(255,255,255,0.1)' }}>
+            <AvatarFrame frame={frameStyle} size={112} accent={settings.accentColor}>
               {user.avatarUrl ? (
                 <Image src={user.avatarUrl} alt={displayName} fill className="object-cover" />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-gray-800 text-4xl font-bold">{displayName.charAt(0).toUpperCase()}</div>
               )}
-            </div>
+            </AvatarFrame>
             <div className="text-center space-y-2">
-              <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+              <DisplayName name={displayName} effect={nameEffect} accent={settings.accentColor} textColor={settings.textColor} className="text-2xl font-bold tracking-tight" />
               {bio && (
                 <p className={`text-sm leading-relaxed max-w-[280px] mx-auto ${!useCustomTheme ? tokens.textMuted : ''}`} style={{ opacity: 0.9, whiteSpace: 'pre-line' }}>{bio}</p>
               )}
