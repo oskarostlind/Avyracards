@@ -19,6 +19,7 @@ import { SOCIAL_TEMPLATES } from "@/data/theme-templates-social";
 import { BUSINESS_TEMPLATES } from "@/data/theme-templates-business";
 import { isKnownLinkIcon } from "@/lib/link-icons";
 import { normalizeHexColor } from "@/utils/color";
+import { DEFAULT_FONT_ID, isKnownFontId, isPremiumFont } from "@/lib/theme/fonts";
 
 /** Minsta möjliga bild av användaren som gatingen behöver. */
 export interface AccessUser {
@@ -46,6 +47,8 @@ const FEATURE_DEFS = {
   theme_button_glass: "premium",
   /** Premium-ramar runt profilbilden (se PREMIUM_FRAME_STYLES). */
   theme_premium_frames: "premium",
+  /** Typsnitt märkta isPremium i src/lib/theme/fonts.ts (brödtext och rubrik). */
+  theme_premium_fonts: "premium",
 
   // --- Länkar ---
   /** Egen färg per länkknapp (Link.customColor). Ikonval är gratis. */
@@ -91,6 +94,12 @@ export function isFrameLocked(frame: FrameStyle | undefined, user?: AccessUser |
   if (!frame) return false;
   if (!PREMIUM_FRAME_STYLES.includes(frame)) return false;
   return !canAccess("theme_premium_frames", user);
+}
+
+/** Sant om typsnittet är premium och användaren saknar tillgång. */
+export function isFontLocked(fontId: string | null | undefined, user?: AccessUser | null): boolean {
+  if (!isPremiumFont(fontId)) return false;
+  return !canAccess("theme_premium_fonts", user);
 }
 
 export function isTemplateLocked(template: ThemeTemplate, user?: AccessUser | null): boolean {
@@ -192,6 +201,26 @@ export function sanitizeThemeSettings(
   if (isFrameLocked(settings.frameStyle, user)) {
     settings.frameStyle = "circle";
     removed.push("theme_premium_frames");
+  }
+
+  // 6. Typsnitt: vitlista mot katalogen (okänt id sparas inte — det
+  // renderades ändå som Inter) och nolla premium-typsnitt utan behörighet.
+  if ("font" in settings) {
+    if (!isKnownFontId(settings.font)) {
+      settings.font = DEFAULT_FONT_ID;
+    } else if (isFontLocked(settings.font, user)) {
+      settings.font = DEFAULT_FONT_ID;
+      if (!removed.includes("theme_premium_fonts")) removed.push("theme_premium_fonts");
+    }
+  }
+  if ("headingFont" in settings) {
+    if (!isKnownFontId(settings.headingFont)) {
+      // undefined = "samma som brödtexten".
+      delete settings.headingFont;
+    } else if (isFontLocked(settings.headingFont, user)) {
+      delete settings.headingFont;
+      if (!removed.includes("theme_premium_fonts")) removed.push("theme_premium_fonts");
+    }
   }
 
   return { settings, sanitized: removed.length > 0, removed };

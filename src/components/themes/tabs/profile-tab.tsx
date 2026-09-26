@@ -2,28 +2,19 @@
 
 import type { CSSProperties } from "react";
 import { User } from "lucide-react";
-import { type CustomThemeSettings, type Font, type FrameStyle } from "@/types/theme";
+import { type CustomThemeSettings, type FrameStyle } from "@/types/theme";
 import { ChoiceTile, PremiumBadge, SectionLabel, ToggleRow } from "@/components/themes/theme-controls";
 import { canAccess, isFrameLocked } from "@/lib/feature-access";
 import { useT } from "@/i18n/client";
+import { FontPicker } from "@/components/themes/font-picker";
 
 interface ProfileTabProps {
   settings: CustomThemeSettings;
-  updateSetting: (key: keyof CustomThemeSettings, value: string | boolean) => void;
+  updateSetting: (key: keyof CustomThemeSettings, value: string | boolean | undefined) => void;
   isPremium: boolean;
   isAdmin?: boolean;
   onShowUpgrade: () => void;
 }
-
-// Samma typsnitt som ProfilePreview renderar (space = Space Grotesk).
-const FONTS: { id: Font; name: string; family: string }[] = [
-  { id: "inter", name: "Inter", family: "var(--font-inter), Inter, sans-serif" },
-  { id: "playfair", name: "Playfair", family: "'Playfair Display', serif" },
-  { id: "roboto", name: "Roboto", family: "Roboto, sans-serif" },
-  { id: "space", name: "Space Grotesk", family: "'Space Grotesk', sans-serif" },
-  { id: "oswald", name: "Oswald", family: "Oswald, sans-serif" },
-  { id: "lora", name: "Lora", family: "Lora, serif" },
-];
 
 const FRAMES: FrameStyle[] = ["circle", "rounded", "square", "none", "ring", "glow", "hexagon", "shadow"];
 
@@ -59,15 +50,13 @@ export function ProfileTab({ settings, updateSetting, isPremium, isAdmin, onShow
     <div className="space-y-6">
       <div className="space-y-2.5">
         <SectionLabel>{t("themes.profile.font")}</SectionLabel>
-        <div className="grid grid-cols-3 gap-2">
-          {FONTS.map((f) => (
-            <ChoiceTile key={f.id} selected={settings.font === f.id} onClick={() => updateSetting("font", f.id)} label={f.name}>
-              <span className="text-xl leading-none text-nordic-secondary" style={{ fontFamily: f.family }}>
-                Aa
-              </span>
-            </ChoiceTile>
-          ))}
-        </div>
+        <FontPicker
+          font={settings.font}
+          headingFont={settings.headingFont}
+          onChange={updateSetting}
+          accessUser={accessUser}
+          onShowUpgrade={onShowUpgrade}
+        />
       </div>
 
       <div className="space-y-2.5">

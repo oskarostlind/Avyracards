@@ -7,6 +7,8 @@ import { LinkIcon } from "@/components/icons/link-icon";
 import { MappedProfileData } from "@/lib/profile-mapper";
 import { applyCustomLinkColor } from "@/lib/link-button-style";
 import { useT } from "@/i18n/client";
+import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
+import "@/styles/profile-fonts.css";
 
 export interface ProfilePreviewProps {
   data: MappedProfileData;
@@ -14,15 +16,6 @@ export interface ProfilePreviewProps {
   fullscreen?: boolean;
   isPremium?: boolean;
 }
-
-const fontMap: Record<string, string> = {
-  inter: "var(--font-inter), sans-serif",
-  playfair: "'Playfair Display', serif",
-  roboto: "'Roboto', sans-serif",
-  lora: "'Lora', serif",
-  space: "'Space Grotesk', sans-serif",
-  oswald: "'Oswald', sans-serif",
-};
 
 export function ProfilePreview({
   data,
@@ -33,7 +26,6 @@ export function ProfilePreview({
   const t = useT();
 
   const settings = customSettings || defaultSettings;
-  const currentFont = settings.font && fontMap[settings.font] ? fontMap[settings.font] : fontMap['inter'];
 
   const { image, displayName, headline, location, actions, links, mode, jobTitle, companyName } = data;
   
@@ -160,7 +152,7 @@ export function ProfilePreview({
   return (
     <div 
       className={`w-full relative overflow-x-hidden flex flex-col items-center justify-center p-4 ${fullscreen ? 'min-h-screen py-16' : 'h-full overflow-y-auto py-10 hide-scrollbar'}`}
-      style={{ fontFamily: currentFont, ...bgStyle }}
+      style={{ ...getBodyFontStyle(settings.font), ...bgStyle }}
     >
       
       {settings.backgroundType === "image" && (
@@ -204,7 +196,7 @@ export function ProfilePreview({
 
         {/* --- HEADER --- */}
         <div className="text-center space-y-2 mb-8 w-full">
-          <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+          <h1 className="text-2xl font-bold tracking-tight" style={getHeadingFontStyle(settings.headingFont, settings.font)}>{displayName}</h1>
           
           {mode === "BUSINESS" && (
             <div className="flex flex-col items-center gap-1 opacity-90">

@@ -12,6 +12,8 @@ import { MappedProfileData } from "@/lib/profile-mapper";
 import { applyCustomLinkColor } from "@/lib/link-button-style";
 import { ProfileBackgroundLayer } from "@/components/public-profile/profile-background";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
+import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
+import "@/styles/profile-fonts.css";
 
 type UserWithLinks = User & { links: LinkModel[] };
 
@@ -34,7 +36,7 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
   const showBranding = !user.isPremium || !settings.hideBranding;
 
   const pageStyle: React.CSSProperties = useCustomTheme ? {
-    fontFamily: settings.font,
+    ...getBodyFontStyle(settings.font),
     color: settings.textColor,
     backgroundColor: settings.backgroundType === 'solid' ? settings.backgroundColor : '#000',
     // Bild/gradient ritas av <ProfileBackgroundLayer> (se den för varför).
@@ -150,7 +152,7 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
               )}
             </div>
             <div className="text-center space-y-2">
-              <h1 className="text-2xl font-bold tracking-tight">{displayName}</h1>
+              <h1 className="text-2xl font-bold tracking-tight" style={useCustomTheme ? getHeadingFontStyle(settings.headingFont, settings.font) : undefined}>{displayName}</h1>
               {bio && (
                 <p className={`text-sm leading-relaxed max-w-[280px] mx-auto ${!useCustomTheme ? tokens.textMuted : ''}`} style={{ opacity: 0.9, whiteSpace: 'pre-line' }}>{bio}</p>
               )}

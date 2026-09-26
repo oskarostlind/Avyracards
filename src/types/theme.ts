@@ -1,6 +1,12 @@
 export type ButtonStyle = "rounded" | "pill" | "sharp" | "brutal";
 export type ButtonVariant = "solid" | "outline" | "glass" | "ghost" | "soft" | "shadow";
-export type Font = "inter" | "playfair" | "roboto" | "lora" | "space" | "oswald";
+import type { FontId } from "@/lib/theme/fonts";
+
+/**
+ * Typsnitts-id ur katalogen i src/lib/theme/fonts.ts. De sex ursprungliga
+ * ("inter", "playfair", "roboto", "lora", "space", "oswald") finns kvar.
+ */
+export type Font = FontId;
 export type FrameStyle = "none" | "circle" | "rounded" | "hexagon" | "ring" | "glow" | "square" | "shadow";
 export type BackgroundType = "solid" | "gradient" | "image";
 
@@ -31,7 +37,10 @@ export interface CustomThemeSettings {
 
   // --- Profil ---
   frameStyle?: FrameStyle;
+  /** Brödtext (hela profilen). */
   font?: Font;
+  /** Rubriker (namnet m.m.). Saknas det används `font`. */
+  headingFont?: Font;
   hideBranding?: boolean;
 
   // --- Funktioner ---

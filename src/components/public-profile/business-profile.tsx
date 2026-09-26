@@ -12,6 +12,8 @@ import { applyCustomLinkColor } from "@/lib/link-button-style";
 import { ProfileBackgroundLayer } from "@/components/public-profile/profile-background";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 import { Save } from "lucide-react";
+import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
+import "@/styles/profile-fonts.css";
 
 interface BusinessProfileProps {
   data: MappedProfileData;
@@ -20,15 +22,6 @@ interface BusinessProfileProps {
   viewerIsLoggedIn?: boolean;
   hasBlocked?: boolean;
 }
-
-const fontMap: Record<string, string> = {
-  inter: "var(--font-inter), sans-serif",
-  playfair: "'Playfair Display', serif",
-  roboto: "'Roboto', sans-serif",
-  lora: "'Lora', serif",
-  space: "'Space Grotesk', sans-serif",
-  oswald: "'Oswald', sans-serif",
-};
 
 export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlocked = false }: BusinessProfileProps) {
   const tokens = getTheme(user.theme); 
@@ -39,10 +32,8 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
 
   const { image, displayName, headline, companyName, location, jobTitle, actions, links } = data;
 
-  const currentFont = settings.font && fontMap[settings.font] ? fontMap[settings.font] : fontMap['inter'];
-
   const pageStyle: React.CSSProperties = hasCustomTheme ? {
-    fontFamily: currentFont,
+    ...getBodyFontStyle(settings.font),
     color: settings.textColor,
     backgroundColor: settings.backgroundType === 'solid' ? settings.backgroundColor : '#000',
     // Bild/gradient ritas av <ProfileBackgroundLayer> (se den för varför).
@@ -206,7 +197,7 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
                 </div>
                 
                 <div className="space-y-1">
-                   <h1 className="text-2xl sm:text-3xl font-bold">{displayName}</h1>
+                   <h1 className="text-2xl sm:text-3xl font-bold" style={hasCustomTheme ? getHeadingFontStyle(settings.headingFont, settings.font) : undefined}>{displayName}</h1>
                    <div className={`flex flex-wrap gap-2 text-sm font-medium ${!hasCustomTheme ? tokens.textMuted : 'opacity-80'}`}>
                       {jobTitle && <span className="flex items-center gap-1"><SocialIcon fallbackIcon="job" size={14}/> {jobTitle}</span>}
                       {companyName && <span>@ {companyName}</span>}

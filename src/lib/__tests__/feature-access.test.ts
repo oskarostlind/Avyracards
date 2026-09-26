@@ -6,6 +6,7 @@ import {
   sanitizeLinkCustomization,
   sanitizeThemeSettings,
   getTemplates,
+  isFontLocked,
 } from "@/lib/feature-access";
 
 const FREE = { isPremium: false, isAdmin: false };
@@ -173,5 +174,68 @@ describe("sanitizeLinkCustomization", () => {
     const res = sanitizeLinkCustomization({}, FREE);
     expect("customColor" in res).toBe(false);
     expect("icon" in res).toBe(false);
+  });
+});
+
+describe("sanitizeThemeSettings — typsnitt", () => {
+  it("nollar premium-typsnitt för gratiskonton", () => {
+    const { settings, removed } = sanitizeThemeSettings(
+      { backgroundType: "solid", font: "fraunces", headingFont: "pacifico" },
+      "SOCIAL",
+      FREE,
+    );
+    expect(settings.font).toBe("inter");
+    expect(settings.headingFont).toBeUndefined();
+    expect("headingFont" in settings).toBe(false);
+    expect(removed).toEqual(["theme_premium_fonts"]);
+  });
+
+  it("släpper igenom premium-typsnitt för premium och admin", () => {
+    for (const user of [PREMIUM, ADMIN]) {
+      const { settings, sanitized } = sanitizeThemeSettings(
+        { backgroundType: "solid", font: "fraunces", headingFont: "pacifico" },
+        "SOCIAL",
+        user,
+      );
+      expect(settings.font).toBe("fraunces");
+      expect(settings.headingFont).toBe("pacifico");
+      expect(sanitized).toBe(false);
+    }
+  });
+
+  it("behåller gratis-typsnitt för gratiskonton", () => {
+    const { settings, sanitized } = sanitizeThemeSettings(
+      { backgroundType: "solid", font: "playfair", headingFont: "bebas-neue" },
+      "SOCIAL",
+      FREE,
+    );
+    expect(settings.font).toBe("playfair");
+    expect(settings.headingFont).toBe("bebas-neue");
+    expect(sanitized).toBe(false);
+  });
+
+  it("vitlistar id:n — okänt font blir inter, okänt headingFont tas bort", () => {
+    const { settings, sanitized } = sanitizeThemeSettings(
+      // Direktanrop mot API:t kan skicka vad som helst.
+      { backgroundType: "solid", font: "Comic Sans" as never, headingFont: "</style>" as never },
+      "SOCIAL",
+      PREMIUM,
+    );
+    expect(settings.font).toBe("inter");
+    expect("headingFont" in settings).toBe(false);
+    // Skräp-id är inte en premiumöverträdelse.
+    expect(sanitized).toBe(false);
+  });
+
+  it("rör inte font om fältet saknas i indatan", () => {
+    const { settings } = sanitizeThemeSettings({ backgroundType: "solid" }, "SOCIAL", FREE);
+    expect("font" in settings).toBe(false);
+  });
+
+  it("isFontLocked följer katalogen", () => {
+    expect(isFontLocked("fraunces", FREE)).toBe(true);
+    expect(isFontLocked("fraunces", PREMIUM)).toBe(false);
+    expect(isFontLocked("inter", FREE)).toBe(false);
+    expect(isFontLocked(undefined, FREE)).toBe(false);
   });
 });
