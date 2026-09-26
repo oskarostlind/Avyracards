@@ -112,7 +112,7 @@ describe("sanitizeThemeSettings", () => {
     expect(res.settings.hideBranding).toBe(false);
     expect(res.settings.buttonVariant).toBe("solid");
     expect(res.removed).toEqual(
-      expect.arrayContaining(["theme_hide_branding", "theme_button_glass"]),
+      expect.arrayContaining(["theme_hide_branding", "theme_premium_buttons"]),
     );
   });
 
@@ -133,6 +133,70 @@ describe("sanitizeThemeSettings", () => {
     const res = sanitizeThemeSettings(input, "SOCIAL", FREE);
     expect(res.sanitized).toBe(false);
     expect(res.settings).toEqual(input);
+  });
+});
+
+describe("sanitizeThemeSettings – knappfält", () => {
+  it("låser alla premiumvarianter för gratiskonton", () => {
+    for (const v of ["glass", "gradient", "neon", "metallic"] as const) {
+      const res = sanitizeThemeSettings({ buttonVariant: v }, "SOCIAL", FREE);
+      expect(res.settings.buttonVariant).toBe("solid");
+      expect(res.removed).toContain("theme_premium_buttons");
+    }
+  });
+
+  it("släpper igenom gratisvarianterna pressed och underline", () => {
+    for (const v of ["pressed", "underline", "soft", "shadow"] as const) {
+      const res = sanitizeThemeSettings({ buttonVariant: v }, "SOCIAL", FREE);
+      expect(res.settings.buttonVariant).toBe(v);
+      expect(res.sanitized).toBe(false);
+    }
+  });
+
+  it("premium och admin får premiumvarianterna", () => {
+    expect(sanitizeThemeSettings({ buttonVariant: "neon" }, "SOCIAL", PREMIUM).settings.buttonVariant).toBe("neon");
+    expect(sanitizeThemeSettings({ buttonVariant: "metallic" }, "SOCIAL", ADMIN).settings.buttonVariant).toBe("metallic");
+  });
+
+  it("vitlistar form och variant", () => {
+    const res = sanitizeThemeSettings(
+      { buttonVariant: "evil" as never, buttonStyle: "x" as never },
+      "SOCIAL",
+      PREMIUM,
+    );
+    expect(res.settings.buttonVariant).toBe("solid");
+    expect(res.settings.buttonStyle).toBe("rounded");
+  });
+
+  it("normaliserar och rensar färgfälten", () => {
+    const res = sanitizeThemeSettings(
+      {
+        buttonTextColor: "#FFF",
+        buttonBorderColor: "red",
+        buttonShadowColor: "url(javascript:alert(1))" as never,
+      },
+      "SOCIAL",
+      FREE,
+    );
+    expect(res.settings.buttonTextColor).toBe("#ffffff");
+    expect("buttonBorderColor" in res.settings).toBe(false);
+    expect("buttonShadowColor" in res.settings).toBe(false);
+  });
+
+  it("klampar kanttjockleken", () => {
+    expect(sanitizeThemeSettings({ buttonBorderWidth: 12 }, "SOCIAL", FREE).settings.buttonBorderWidth).toBe(4);
+    expect(sanitizeThemeSettings({ buttonBorderWidth: -1 }, "SOCIAL", FREE).settings.buttonBorderWidth).toBe(0);
+    expect(
+      sanitizeThemeSettings({ buttonBorderWidth: "3" as never }, "SOCIAL", FREE).settings.buttonBorderWidth,
+    ).toBe(3);
+    expect(
+      "buttonBorderWidth" in sanitizeThemeSettings({ buttonBorderWidth: "x" as never }, "SOCIAL", FREE).settings,
+    ).toBe(false);
+  });
+
+  it("gamla nyckeln theme_button_glass finns kvar med samma nivå", () => {
+    expect(canAccess("theme_button_glass", FREE)).toBe(false);
+    expect(canAccess("theme_button_glass", PREMIUM)).toBe(true);
   });
 });
 

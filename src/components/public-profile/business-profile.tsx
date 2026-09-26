@@ -8,7 +8,7 @@ import { getTheme } from "@/utils/theme";
 import { SocialIcon } from "@/components/icons/social-icons";
 import { LinkIcon } from "@/components/icons/link-icon";
 import { MappedProfileData } from "@/lib/profile-mapper";
-import { applyCustomLinkColor } from "@/lib/link-button-style";
+import { BUTTON_INTERACTION_CLASS, getClassicLinkColorStyle, getLinkButtonAppearance } from "@/lib/theme/button-style";
 import { ProfileBackgroundLayer } from "@/components/public-profile/profile-background";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 import { Save } from "lucide-react";
@@ -51,64 +51,22 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
   const bgClass = !hasCustomTheme ? (tokens.bg || 'bg-nordic-primary') : '';
   const textClass = !hasCustomTheme ? (tokens.text || 'text-nordic-secondary') : '';
 
-  const getButtonClass = () => {
-    let base = "flex items-center justify-center gap-2 p-4 transition-[transform,background-color,box-shadow,opacity] duration-150 active:scale-[0.97] font-bold text-sm group relative overflow-hidden ";
-    if (settings.buttonStyle === "pill") base += "rounded-full ";
-    else if (settings.buttonStyle === "rounded") base += "rounded-xl ";
-    else if (settings.buttonStyle === "sharp") base += "rounded-none ";
-    else if (settings.buttonStyle === "brutal") base += "rounded-sm shadow-[4px_4px_0px_0px_currentColor] active:translate-x-[2px] active:translate-y-[2px] active:shadow-none ";
-    if (settings.buttonShadow && settings.buttonStyle !== "brutal") base += "shadow-lg hover:shadow-xl hover:-translate-y-0.5 ";
-    return base;
+  // Knapparnas utseende räknas ut i src/lib/theme/button-style.ts — samma
+  // källa som editorns preview, så att det användaren ser där är det som syns här.
+  const getButtonClass = (isPrimary: boolean = false) => {
+    const base = "flex items-center justify-center gap-2 p-4 font-bold text-sm group relative overflow-hidden ";
+    if (!hasCustomTheme) return `${base}${BUTTON_INTERACTION_CLASS} `;
+    return `${base}${getLinkButtonAppearance(settings, { isPrimary }).className} `;
   };
 
-  const getButtonStyle = (isPrimary: boolean = false): React.CSSProperties => {
+  const getButtonStyle = (isPrimary: boolean = false, customColor?: string | null): React.CSSProperties => {
     if (!hasCustomTheme) {
         if (isPrimary) {
             return { backgroundColor: '#f8fafc', color: '#0f172a' }; 
         }
-        return {};
+        return getClassicLinkColorStyle(customColor);
     }
-    
-    const accent = settings.accentColor || "#fff";
-    const text = settings.textColor || "#000";
-    const style: React.CSSProperties = {};
-    
-    style.color = text; 
-
-    if (isPrimary) {
-        style.backgroundColor = text;
-        style.color = accent === '#ffffff' ? '#0f172a' : accent;
-    } else {
-        if (settings.buttonStyle === "brutal") style.border = `2px solid ${text}`; 
-        if (settings.buttonVariant === "outline") {
-        style.border = `2px solid ${accent}`;
-        style.color = accent;
-        style.backgroundColor = "transparent";
-        }
-        else if (settings.buttonVariant === "soft") {
-        style.backgroundColor = accent;
-        style.opacity = 0.9;
-        } 
-        else if (settings.buttonVariant === "glass") {
-        style.backgroundColor = "rgba(255,255,255,0.15)";
-        style.backdropFilter = "blur(8px)";
-        style.border = "1px solid rgba(255,255,255,0.2)";
-        }
-        else if (settings.buttonVariant === "ghost") {
-        style.backgroundColor = "transparent";
-        style.border = "1px solid transparent";
-        style.color = settings.textColor;
-        }
-        else if (settings.buttonVariant === "shadow") {
-        style.backgroundColor = accent;
-        style.boxShadow = `0 10px 15px -3px ${accent}40`;
-        }
-        else {
-        style.backgroundColor = accent;
-        }
-    }
-    
-    return style;
+    return getLinkButtonAppearance(settings, { isPrimary, customColor }).style;
   };
 
   const getFrameClass = () => {
@@ -230,7 +188,7 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
                         href={primaryAction.url}
                         download={primaryAction.type === 'vcard' ? `${user.username}.vcf` : undefined}
                         onClick={primaryAction.type === 'vcard' ? handleVcardClick : undefined}
-                        className={`w-full ${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-100 text-slate-900 rounded-xl' : ''}`}
+                        className={`w-full ${getButtonClass(true)} ${!hasCustomTheme ? 'bg-slate-100 text-slate-900 rounded-xl' : ''}`}
                         style={getButtonStyle(true)}
                     >
                         {primaryAction.type === 'vcard' ? <Save size={18} className="mr-1" /> : <SocialIcon fallbackIcon={primaryAction.iconKey as any} size={16} />}
@@ -268,12 +226,7 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
                           href={link.href}
                           className={`${getButtonClass()} ${!hasCustomTheme ? 'bg-slate-800 text-slate-300 rounded-xl border border-white/10 justify-start' : ''}`}
                           // Egen färg (premium) slår temats accentfärg för just den knappen.
-                          style={applyCustomLinkColor(
-                            getButtonStyle(false),
-                            link.customColor,
-                            hasCustomTheme ? settings.buttonVariant : undefined,
-                            hasCustomTheme ? settings.textColor : undefined,
-                          )}
+                          style={getButtonStyle(false, link.customColor)}
                       >
                           <div className={`absolute left-4 opacity-70 ${!hasCustomTheme ? 'relative left-0' : ''}`}>
                              <LinkIcon url={link.url} title={link.title} icon={link.icon} size={20} />

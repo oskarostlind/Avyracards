@@ -5,6 +5,7 @@ import { Check, Crown, Lock } from "lucide-react";
 import { type CustomThemeSettings, type ThemeTemplate, type ThemeMode } from "@/types/theme";
 import { getTemplates, isTemplateLocked } from "@/lib/feature-access";
 import { getRelativeLuminance, normalizeHexColor } from "@/utils/color";
+import { getLinkButtonAppearance } from "@/lib/theme/button-style";
 import { useT } from "@/i18n/client";
 
 interface TemplatesTabProps {
@@ -52,13 +53,6 @@ function isLightBackground(t: ThemeTemplate): boolean {
   return hex ? getRelativeLuminance(hex) > 0.5 : false;
 }
 
-function radiusFor(style?: string): string {
-  if (style === "pill") return "9999px";
-  if (style === "sharp") return "0px";
-  if (style === "brutal") return "2px";
-  return "5px";
-}
-
 /** Sant om mallens alla fält matchar nuvarande inställningar — dvs. den är vald. */
 export function isTemplateActive(t: ThemeTemplate, current: CustomThemeSettings): boolean {
   return (Object.keys(t.settings) as (keyof CustomThemeSettings)[]).every((key) => {
@@ -88,16 +82,8 @@ export function TemplatesTab({
     const active = !locked && isTemplateActive(tpl, currentSettings);
     const light = isLightBackground(tpl);
     const s = tpl.settings;
-    const accent = s.accentColor || "#8b5cf6";
-    const radius = radiusFor(s.buttonStyle);
-    const outline = s.buttonVariant === "outline";
-    const glass = s.buttonVariant === "glass";
-
-    const buttonStyle: CSSProperties = {
-      borderRadius: radius,
-      backgroundColor: outline ? "transparent" : glass ? "rgba(255,255,255,0.22)" : accent,
-      border: outline ? `1.5px solid ${accent}` : glass ? "1px solid rgba(255,255,255,0.3)" : undefined,
-    };
+    // Samma stilfunktion som den riktiga knappen, nerskalad till miniatyr.
+    const buttonStyle: CSSProperties = getLinkButtonAppearance(s, { scale: 0.45 }).style;
 
     return (
       <button
