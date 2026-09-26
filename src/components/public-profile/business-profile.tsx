@@ -9,6 +9,7 @@ import { SocialIcon } from "@/components/icons/social-icons";
 import { LinkIcon } from "@/components/icons/link-icon";
 import { MappedProfileData } from "@/lib/profile-mapper";
 import { applyCustomLinkColor } from "@/lib/link-button-style";
+import { ProfileBackgroundLayer } from "@/components/public-profile/profile-background";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 import { Save } from "lucide-react";
 
@@ -44,11 +45,7 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
     fontFamily: currentFont,
     color: settings.textColor,
     backgroundColor: settings.backgroundType === 'solid' ? settings.backgroundColor : '#000',
-    backgroundImage: settings.backgroundType === 'image' ? `url(${settings.backgroundImage})` : 
-                     settings.backgroundType === 'gradient' ? `linear-gradient(${settings.gradientDir}, ${settings.gradientFrom}, ${settings.gradientTo})` : undefined,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundAttachment: 'fixed',
+    // Bild/gradient ritas av <ProfileBackgroundLayer> (se den för varför).
   } : {};
 
   const bgClass = !hasCustomTheme ? (tokens.bg || 'bg-nordic-primary') : '';
@@ -168,6 +165,7 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
 
   return (
     <main className={`min-h-screen font-sans ${bgClass} ${textClass}`} style={pageStyle}>
+      {hasCustomTheme && <ProfileBackgroundLayer settings={settings} />}
       
       {hasCustomTheme && settings.backgroundType === "image" && (
         <div 

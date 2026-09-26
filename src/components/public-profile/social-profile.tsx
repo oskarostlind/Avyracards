@@ -10,6 +10,7 @@ import { LinkIcon } from "@/components/icons/link-icon";
 import { Save } from "lucide-react";
 import { MappedProfileData } from "@/lib/profile-mapper";
 import { applyCustomLinkColor } from "@/lib/link-button-style";
+import { ProfileBackgroundLayer } from "@/components/public-profile/profile-background";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 
 type UserWithLinks = User & { links: LinkModel[] };
@@ -36,11 +37,7 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
     fontFamily: settings.font,
     color: settings.textColor,
     backgroundColor: settings.backgroundType === 'solid' ? settings.backgroundColor : '#000',
-    backgroundImage: settings.backgroundType === 'image' ? `url(${settings.backgroundImage})` : 
-                     settings.backgroundType === 'gradient' ? `linear-gradient(${settings.gradientDir}, ${settings.gradientFrom}, ${settings.gradientTo})` : undefined,
-    backgroundSize: 'cover',
-    backgroundPosition: 'center',
-    backgroundAttachment: 'fixed',
+    // Bild/gradient ritas av <ProfileBackgroundLayer> (se den för varför).
   } : {};
 
   const cardStyle: React.CSSProperties = useCustomTheme ? {
@@ -137,6 +134,7 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
 
   return (
     <main className={`min-h-screen ${!useCustomTheme ? (tokens.bg || 'bg-nordic-primary') : ''} ${!useCustomTheme ? (tokens.text || 'text-nordic-secondary') : ''}`} style={pageStyle}>
+      {useCustomTheme && <ProfileBackgroundLayer settings={settings} />}
       {useCustomTheme && settings.backgroundType === "image" && (
         <div className="fixed inset-0 z-0 pointer-events-none" style={{ backgroundColor: `rgba(0,0,0, ${settings.backgroundOverlay ? settings.backgroundOverlay / 100 : 0})`, backdropFilter: `blur(${settings.backgroundBlur || 0}px)` }} />
       )}

@@ -3,6 +3,7 @@
 import { UploadCloud, Loader2, AlertCircle } from "lucide-react";
 import { useState, useRef } from "react";
 import { useT } from "@/i18n/client";
+import { prepareBackgroundImage, ImageTooLargeError } from "@/lib/prepare-upload-image";
 
 interface ImageUploaderProps {
   onImageSelected: (url: string) => void;
@@ -26,13 +27,9 @@ export function ImageUploader({ onImageSelected, isPremium, onPremiumClick }: Im
       return;
     }
 
-    // 2. Validering (Max 4MB för bakgrunder är rimligt)
-    if (file.size > 4 * 1024 * 1024) {
-      setError(t("themes.media.tooLarge"));
-      return;
-    }
-
-    if (!file.type.startsWith("image/")) {
+    // Vissa HEIC-filer saknar MIME-typ i webbläsaren — gå då på filändelsen.
+    const looksLikeImage = file.type.startsWith("image/") || (!file.type && /\.(jpe?g|png|webp|gif|heic|heif)$/i.test(file.name));
+    if (!looksLikeImage) {
       setError(t("themes.media.onlyImages"));
       return;
     }
@@ -40,11 +37,23 @@ export function ImageUploader({ onImageSelected, isPremium, onPremiumClick }: Im
     setIsUploading(true);
 
     try {
-      // 3. Ladda upp mot din API-route
+      // 2. Skala ner stora foton i webbläsaren i stället för att neka dem.
+      // Tidigare: hård 4 MB-gräns på originalfilen → vanliga iPhone-foton
+      // nekades och användare tog till skärmdumpar = suddiga bakgrunder.
+      let prepared;
+      try {
+        prepared = await prepareBackgroundImage(file);
+      } catch (err) {
+        setError(err instanceof ImageTooLargeError ? t("themes.media.tooLarge") : t("themes.media.uploadFailed"));
+        return;
+      }
+
+      // 3. Ladda upp mot API-routen
       // Vi använder encodeURIComponent för att hantera mellanslag/tecken i filnamnet
-      const response = await fetch(`/api/upload?filename=${encodeURIComponent(file.name)}`, {
+      const response = await fetch(`/api/upload?filename=${encodeURIComponent(prepared.filename)}`, {
         method: "POST",
-        body: file,
+        headers: { "Content-Type": prepared.blob.type || "image/jpeg" },
+        body: prepared.blob,
       });
 
       if (!response.ok) {
@@ -128,7 +137,7 @@ export function ImageUploader({ onImageSelected, isPremium, onPremiumClick }: Im
           )}
 
           <p className="text-xs text-nordic-highlight">
-            JPG, PNG, WebP. Max 4MB.
+            JPG, PNG, WebP. Stora bilder skalas ner automatiskt.
           </p>
         </>
       )}

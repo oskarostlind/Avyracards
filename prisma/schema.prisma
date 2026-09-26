@@ -44,7 +44,7 @@ model User {
   contactEmail String?
 
   // REDIRECT FUNKTIONALITET
-  redirectEnabled Boolean @default(true) // Är funktionen påslagen?
+  redirectEnabled Boolean @default(false) // Påslagen bara när användaren valt en länk (redirectLinkId)
   redirectLinkId  String? // NYTT: ID på länken vi ska skicka vidare till
 
   // Soft versioning av profilen (arkitektur-backlogg punkt 3). Räknaren ökas

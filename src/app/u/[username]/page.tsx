@@ -1,3 +1,4 @@
+import { resolveRedirectUrl } from "@/lib/profile-redirect";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -201,17 +202,9 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
   // @ts-ignore
   const profileData = getProfileData(userForDisplay, displayMode);
 
-  // Redirect logic (Använd den filtrerade listan)
-  if (user.redirectEnabled && !isPreview) {
-    let targetUrl: string | null = null;
-    if (user.redirectLinkId) {
-      const targetLink = filteredLinks.find((l: any) => l.id === user.redirectLinkId);
-      if (targetLink) targetUrl = targetLink.url;
-    } 
-    else if (filteredLinks.length > 0) {
-      targetUrl = filteredLinks[0].url;
-    }
-    
+  // Direktlänk: bara när användaren själv valt en länk (se resolveRedirectUrl).
+  if (!isPreview) {
+    const targetUrl = resolveRedirectUrl(user, filteredLinks);
     if (targetUrl) {
       const normalizeUrl = (u: string) => /^(https?:|mailto:|tel:)/i.test(u.trim()) ? u.trim() : `https://${u.trim()}`;
       redirect(normalizeUrl(targetUrl));

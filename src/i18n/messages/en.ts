@@ -791,7 +791,7 @@ export const en: Messages = {
       showSaveContactDesc: "Lets visitors download your details.",
     },
     media: {
-      tooLarge: "The image is too large (max 4MB)",
+      tooLarge: "The image is too large (max 40 MB)",
       onlyImages: "Image files only",
       uploadFailed: "Couldn't upload the image. Please try again.",
       fetchFailed: "Couldn't fetch images",

@@ -792,7 +792,7 @@ export const sv = {
       showSaveContactDesc: "Låter besökare ladda ner dina uppgifter.",
     },
     media: {
-      tooLarge: "Bilden är för stor (max 4MB)",
+      tooLarge: "Bilden är för stor (max 40 MB)",
       onlyImages: "Endast bildfiler tillåtna",
       uploadFailed: "Kunde inte ladda upp bilden. Försök igen.",
       fetchFailed: "Kunde inte hämta bilder",

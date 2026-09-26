@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { resolveRedirectUrl } from "@/lib/profile-redirect";
 import { consumeRateLimit, type RateLimitOptions } from "@/lib/rate-limit";
 
 const publicProfileRateLimitOptions: RateLimitOptions = {
@@ -39,7 +40,8 @@ export async function GET(
       profileMode: true,
       phoneNumber: true,
       contactEmail: true,
-      redirectEnabled: true, // hålls i sync av links-API:t
+      redirectEnabled: true,
+      redirectLinkId: true,
 
       links: {
         where: { isActive: true },
@@ -60,20 +62,13 @@ export async function GET(
     return NextResponse.json({ error: "Profil saknas" }, { status: 404 });
   }
 
-  // "Superhård" regel: finns det aktiva länkar? då är redirect på.
-  const hasActiveLinks = user.links.length > 0;
-  const primaryLink = hasActiveLinks ? user.links[0] : null;
+  // Samma regel som /u/[username] (se resolveRedirectUrl).
+  const targetUrl = resolveRedirectUrl(user, user.links);
 
   return NextResponse.json({
     user,
-    redirect: hasActiveLinks
-      ? {
-          enabled: true,
-          url: primaryLink?.url ?? null,
-        }
-      : {
-          enabled: false,
-          url: null,
-        },
+    redirect: targetUrl
+      ? { enabled: true, url: targetUrl }
+      : { enabled: false, url: null },
   });
 }
