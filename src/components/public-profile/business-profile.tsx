@@ -12,7 +12,7 @@ import { BUTTON_INTERACTION_CLASS, getClassicLinkColorStyle, getLinkButtonAppear
 import { ProfileBackgroundLayer } from "@/components/public-profile/profile-background";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
-import { isAnimatedBackgroundLocked, isFrameLocked, isNameEffectLocked } from "@/lib/feature-access";
+import { isAnimatedBackgroundLocked, isFrameLocked, isNameEffectLocked, validateThemeSettingsForRender } from "@/lib/feature-access";
 import { DisplayName } from "@/components/theme-effects/display-name";
 import { Save } from "lucide-react";
 import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
@@ -29,7 +29,8 @@ interface BusinessProfileProps {
 export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlocked = false }: BusinessProfileProps) {
   const tokens = getTheme(user.theme); 
   const savedSettings = (user.businessThemeSettings as unknown as Partial<CustomThemeSettings>) || {};
-  const settings: CustomThemeSettings = { ...defaultSettings, ...savedSettings };
+  // Sparade data valideras även vid rendering (äldre/otvättade värden får aldrig nå style-attributet).
+  const settings: CustomThemeSettings = { ...defaultSettings, ...validateThemeSettingsForRender(savedSettings, "BUSINESS") };
   const showBranding = !user.isPremium || !settings.hideBranding;
   const hasCustomTheme = user.businessThemeSettings && Object.keys(user.businessThemeSettings).length > 0;
 
@@ -72,8 +73,9 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
   const nameEffect = hasCustomTheme && !isNameEffectLocked(settings.nameEffect, premiumAccess) ? settings.nameEffect : "none";
 
   const cardStyle: React.CSSProperties = hasCustomTheme ? {
-    backgroundColor: 'rgba(15, 23, 42, 0.6)', 
-    backdropFilter: 'blur(20px)',
+    backgroundColor: settings.backgroundAnimated ? 'rgba(15, 23, 42, 0.78)' : 'rgba(15, 23, 42, 0.6)', 
+    // Rörlig bakgrund under ett blurrat kort tvingar ny blur varje bildruta — tunnare blur + tätare kort då.
+    backdropFilter: settings.backgroundAnimated ? 'blur(6px)' : 'blur(20px)',
     borderColor: 'rgba(255,255,255,0.1)',
     borderWidth: '1px',
     color: settings.textColor,

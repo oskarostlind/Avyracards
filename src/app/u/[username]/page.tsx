@@ -115,6 +115,9 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
       avatarUrl: true,
       businessAvatarUrl: true, // <--- Det nya fältet
       isPremium: true,
+      // Admin = vägen för gåvo-/betakonton i canAccess(); utan den nollställs
+      // deras premium-ramar/effekter på den publika profilen.
+      role: true,
       profileMode: true,
       theme: true,
       themeSettings: true,

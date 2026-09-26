@@ -7,6 +7,7 @@ import {
   sanitizeThemeSettings,
   getTemplates,
   isFontLocked,
+  validateThemeSettingsForRender,
 } from "@/lib/feature-access";
 
 const FREE = { isPremium: false, isAdmin: false };
@@ -301,5 +302,76 @@ describe("sanitizeThemeSettings — typsnitt", () => {
     expect(isFontLocked("fraunces", PREMIUM)).toBe(false);
     expect(isFontLocked("inter", FREE)).toBe(false);
     expect(isFontLocked(undefined, FREE)).toBe(false);
+  });
+});
+
+describe("stilfält (CSS-injektion)", () => {
+  const free = { isPremium: false };
+
+  it("tar bort färger som inte är hex och bryter inte giltiga", () => {
+    const { settings } = sanitizeThemeSettings(
+      {
+        textColor: "#fff; position:fixed; inset:0; background:url(https://evil.example/x)",
+        accentColor: "#8B5CF6",
+        backgroundColor: "red",
+        gradientFrom: "#abc",
+      },
+      "SOCIAL",
+      free,
+    );
+    expect(settings.textColor).toBeUndefined();
+    expect(settings.backgroundColor).toBeUndefined();
+    expect(settings.accentColor).toBe("#8b5cf6");
+    expect(settings.gradientFrom).toBe("#aabbcc");
+  });
+
+  it("vitlistar gradientriktning och bakgrundstyp", () => {
+    const { settings } = sanitizeThemeSettings(
+      { gradientDir: "to bottom), url(https://evil.example/x", backgroundType: "video" as never },
+      "SOCIAL",
+      free,
+    );
+    expect(settings.gradientDir).toBeUndefined();
+    expect(settings.backgroundType).toBe("solid");
+    expect(sanitizeThemeSettings({ gradientDir: "to top right" }, "SOCIAL", free).settings.gradientDir).toBe("to top right");
+  });
+
+  it("släpper bara igenom säkra https-bild-URL:er", () => {
+    const premium = { isPremium: true };
+    const bad = sanitizeThemeSettings(
+      { backgroundType: "image", backgroundImage: "https://x.example/a.jpg'); background:url(https://evil.example" },
+      "SOCIAL",
+      premium,
+    ).settings;
+    expect(bad.backgroundImage).toBe("");
+    expect(bad.backgroundType).toBe("solid");
+    const ok = sanitizeThemeSettings(
+      { backgroundType: "image", backgroundImage: "https://images.unsplash.com/photo-1?q=80&w=400" },
+      "SOCIAL",
+      premium,
+    ).settings;
+    expect(ok.backgroundImage).toBe("https://images.unsplash.com/photo-1?q=80&w=400");
+    expect(ok.backgroundType).toBe("image");
+  });
+
+  it("klampar blur/overlay och tvingar booleans", () => {
+    const { settings } = sanitizeThemeSettings(
+      { backgroundBlur: 9999, backgroundOverlay: "-5" as never, showSaveContact: "true" as never },
+      "SOCIAL",
+      free,
+    );
+    expect(settings.backgroundBlur).toBe(40);
+    expect(settings.backgroundOverlay).toBe(0);
+    expect(settings.showSaveContact).toBe(true);
+  });
+
+  it("validateThemeSettingsForRender tvättar men spärrar inte premium", () => {
+    const out = validateThemeSettingsForRender(
+      { textColor: "#fff;x:y", frameStyle: "aurora", font: "fraunces" },
+      "SOCIAL",
+    );
+    expect(out.textColor).toBeUndefined();
+    expect(out.frameStyle).toBe("aurora");
+    expect(out.font).toBe("fraunces");
   });
 });

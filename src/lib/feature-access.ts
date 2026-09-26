@@ -206,6 +206,7 @@ export function sanitizeThemeSettings(
   //    kunde ett direktanrop lagra godtyckliga strängar/CSS som renderarna
   //    sedan skickar vidare till style-attributet.
   sanitizeButtonFields(settings);
+  sanitizeStyleFields(settings);
 
   // 1. Premium-mall sparad utan behörighet -> fall tillbaka på standardmallen.
   const lockedTemplate = matchesLockedTemplate(settings, mode, user);
@@ -338,6 +339,95 @@ export function clampPatternOpacity(value: unknown): number {
   const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
   if (!Number.isFinite(n)) return PATTERN_OPACITY_DEFAULT;
   return Math.round(Math.min(PATTERN_OPACITY_MAX, Math.max(PATTERN_OPACITY_MIN, n)));
+}
+
+
+const THEME_COLOR_FIELDS = ["backgroundColor", "gradientFrom", "gradientTo", "accentColor", "textColor"] as const;
+
+/** Riktningar som editorn erbjuder + det mallarna använder. Allt annat är skräp. */
+const GRADIENT_DIRECTIONS = new Set([
+  "to bottom", "to top", "to right", "to left",
+  "to bottom right", "to bottom left", "to top right", "to top left",
+]);
+
+const BACKGROUND_TYPES = new Set(["solid", "gradient", "image"]);
+
+/**
+ * Bakgrundsbild-URL som är säker att lägga i `url(...)`: bara https och inga
+ * tecken som kan bryta sig ut ur CSS-värdet (citattecken, parenteser, ;, \,
+ * blanksteg, vinkelparenteser).
+ */
+const SAFE_IMAGE_URL = /^https:\/\/[^\s"'()\\;<>]+$/;
+
+function clampNumber(value: unknown, min: number, max: number): number | null {
+  const n = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : NaN;
+  if (!Number.isFinite(n)) return null;
+  return Math.min(max, Math.max(min, n));
+}
+
+/**
+ * Stilfält som renderarna lägger direkt i style-attributet på den publika
+ * profilen. Tidigare sparades de som de kom in — ett direktanrop kunde då
+ * lagra t.ex. `textColor: "#fff; position:fixed; background:url(https://…)"`,
+ * och React skriver ut det som flera deklarationer (helsidesöverlägg + anrop
+ * till främmande värd med besökarens IP). Fält som saknas lämnas orörda;
+ * ogiltiga tas bort så att standardvärdet gäller.
+ */
+function sanitizeStyleFields(settings: Partial<CustomThemeSettings>): void {
+  for (const key of THEME_COLOR_FIELDS) {
+    if (!(key in settings) || settings[key] === undefined) continue;
+    const normalized = normalizeHexColor(settings[key]);
+    if (normalized) settings[key] = normalized;
+    else delete settings[key];
+  }
+
+  if ("gradientDir" in settings && settings.gradientDir !== undefined) {
+    if (typeof settings.gradientDir !== "string" || !GRADIENT_DIRECTIONS.has(settings.gradientDir)) {
+      delete settings.gradientDir;
+    }
+  }
+
+  if ("backgroundType" in settings && settings.backgroundType !== undefined) {
+    if (!BACKGROUND_TYPES.has(settings.backgroundType as string)) settings.backgroundType = "solid";
+  }
+
+  if ("backgroundImage" in settings && settings.backgroundImage !== undefined) {
+    const url = settings.backgroundImage;
+    if (typeof url !== "string" || (url !== "" && !SAFE_IMAGE_URL.test(url))) {
+      settings.backgroundImage = "";
+      if (settings.backgroundType === "image") settings.backgroundType = "solid";
+    }
+  }
+
+  if ("backgroundBlur" in settings && settings.backgroundBlur !== undefined) {
+    const v = clampNumber(settings.backgroundBlur, 0, 40);
+    if (v === null) delete settings.backgroundBlur;
+    else settings.backgroundBlur = v;
+  }
+  if ("backgroundOverlay" in settings && settings.backgroundOverlay !== undefined) {
+    const v = clampNumber(settings.backgroundOverlay, 0, 100);
+    if (v === null) delete settings.backgroundOverlay;
+    else settings.backgroundOverlay = v;
+  }
+
+  for (const key of ["hideBranding", "showSaveContact", "buttonShadow"] as const) {
+    if (key in settings && settings[key] !== undefined && typeof settings[key] !== "boolean") {
+      settings[key] = settings[key] === "true";
+    }
+  }
+}
+
+/**
+ * Validering (utan premium-spärrar) för rendering av redan sparade teman.
+ * Sparade data från före valideringen — eller skrivna via en äldre route —
+ * ska aldrig nå style-attributet otvättade. Premium-spärrar vid rendering
+ * sköts separat av renderarna.
+ */
+export function validateThemeSettingsForRender(
+  input: Partial<CustomThemeSettings>,
+  mode: ThemeMode,
+): Partial<CustomThemeSettings> {
+  return sanitizeThemeSettings(input, mode, { isAdmin: true }).settings;
 }
 
 /* -------------------------------------------------------------------------- */
