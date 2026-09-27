@@ -16,7 +16,11 @@ export type ButtonVariant =
   | "neon"
   | "pressed"
   | "metallic"
-  | "underline";
+  | "underline"
+  | "liquid"
+  | "holo"
+  | "sticker"
+  | "pixel";
 
 /**
  * Typsnitts-id ur katalogen i src/lib/theme/fonts.ts. De sex ursprungliga

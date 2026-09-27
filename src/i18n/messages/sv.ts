@@ -752,6 +752,10 @@ export const sv = {
       pressed: "3D",
       metallic: "Metall",
       underline: "Minimal",
+      liquid: "Liquid",
+      holo: "Holo",
+      sticker: "Klistermärke",
+      pixel: "Pixel",
     },
     frames: {
       none: "Ingen",

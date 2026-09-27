@@ -37,7 +37,21 @@ const ADVANCED_KEYS = ["buttonTextColor", "buttonBorderColor", "buttonBorderWidt
  * knappen faktiskt blir med användarens färger.
  */
 function miniButtonStyle(settings: CustomThemeSettings, shape: ButtonStyle, variant: ButtonVariant): CSSProperties {
-  return getLinkButtonAppearance({ ...settings, buttonStyle: shape, buttonVariant: variant }, { scale: 0.6 }).style;
+  return miniButton(settings, shape, variant).style;
+}
+
+/**
+ * Stil + variantklasser (holo-svep, liquid-ljusbrytning, klistermärkets lutning
+ * m.m. ligger i src/styles/button-variants.css). Tryckklasserna tas bort —
+ * rutan har redan egen tryckåterkoppling.
+ */
+function miniButton(settings: CustomThemeSettings, shape: ButtonStyle, variant: ButtonVariant) {
+  const a = getLinkButtonAppearance({ ...settings, buttonStyle: shape, buttonVariant: variant }, { scale: 0.6 });
+  const className = a.className
+    .split(" ")
+    .filter((c) => c.startsWith("avy-btn-"))
+    .join(" ");
+  return { style: a.style, className };
 }
 
 /** Faktisk färg en inställning har just nu — så att väljaren visar något begripligt när fältet saknas. */
@@ -88,6 +102,7 @@ export function ButtonsTab({ settings, updateSetting, isPremium, isAdmin, onShow
           {VARIANTS.map((v) => {
             const isPremiumVariant = PREMIUM_BUTTON_VARIANTS.includes(v);
             const locked = isButtonVariantLocked(v, accessUser);
+            const mini = miniButton(settings, shape, v);
             return (
               <ChoiceTile
                 key={v}
@@ -97,8 +112,8 @@ export function ButtonsTab({ settings, updateSetting, isPremium, isAdmin, onShow
                 label={t(`themes.buttonVariants.${v}`)}
               >
                 <span
-                  className="flex h-7 w-full max-w-[84px] items-center justify-center text-[10px] font-semibold"
-                  style={miniButtonStyle(settings, shape, v)}
+                  className={`flex h-7 w-full max-w-[84px] items-center justify-center text-[10px] font-semibold ${mini.className}`}
+                  style={mini.style}
                 >
                   Aa
                 </span>

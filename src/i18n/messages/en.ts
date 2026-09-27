@@ -751,6 +751,10 @@ export const en: Messages = {
       pressed: "3D",
       metallic: "Metallic",
       underline: "Minimal",
+      liquid: "Liquid",
+      holo: "Holo",
+      sticker: "Sticker",
+      pixel: "Pixel",
     },
     frames: {
       none: "None",

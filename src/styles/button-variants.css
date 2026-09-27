@@ -1,0 +1,127 @@
+/*
+ * Knappvarianter som behöver pseudo-element eller keyframes — sådant som inte
+ * går att uttrycka i en inline-stil. Allt annat (färger, skuggor, radie)
+ * räknas ut i src/lib/theme/button-style.ts, som också sätter klasserna nedan
+ * och CSS-variablerna de läser (--avy-btn-*).
+ *
+ * Importeras från globals.css så att samma regler gäller i editorns preview,
+ * miniatyrerna och den publika profilen.
+ *
+ * Prestanda: högst EN loopande animation per knapp, och bara transform/
+ * opacity. Glöd och blur ritas en gång på ett pseudo-element och tonas in
+ * med opacity — de räknas aldrig om per bildruta.
+ */
+
+/* Gemensamt: pseudo-elementen ligger bakom innehållet men över knappytan. */
+.avy-btn-fx {
+  position: relative;
+  isolation: isolate;
+}
+.avy-btn-fx::before,
+.avy-btn-fx::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* --- Holo: iriserande folie med ett långsamt ljussvep ---------------------- */
+.avy-btn-holo {
+  overflow: hidden;
+}
+.avy-btn-holo::before {
+  /* Bredare än knappen så att bandet kan glida hela vägen över. */
+  inset: 0 auto 0 0;
+  width: 60%;
+  background: linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 45%,
+    rgba(255, 255, 255, 0.85) 50%,
+    rgba(255, 255, 255, 0.55) 55%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  mix-blend-mode: soft-light;
+  transform: translateX(-120%);
+  will-change: transform;
+  /* ~0,15 Hz: svepet tar 1,8 s, sedan vila. Knapparna i en lista kaskaderar. */
+  animation: avy-holo-sweep 6.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation-delay: calc(var(--avy-btn-i, 0) * 120ms);
+}
+.avy-btn-holo:nth-child(2) { --avy-btn-i: 1; }
+.avy-btn-holo:nth-child(3) { --avy-btn-i: 2; }
+.avy-btn-holo:nth-child(4) { --avy-btn-i: 3; }
+.avy-btn-holo:nth-child(5) { --avy-btn-i: 4; }
+.avy-btn-holo:nth-child(n + 6) { --avy-btn-i: 5; }
+
+@keyframes avy-holo-sweep {
+  0% { transform: translateX(-120%); }
+  28% { transform: translateX(190%); }
+  100% { transform: translateX(190%); }
+}
+
+/* --- Liquid: linsens ljusbrytning (statisk) -------------------------------- */
+.avy-btn-liquid {
+  overflow: hidden;
+}
+.avy-btn-liquid::before {
+  /* Ljus som bryts i överkanten + en svag kaustik i nederkant. */
+  background:
+    radial-gradient(120% 90% at 20% -10%, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0) 55%),
+    radial-gradient(90% 70% at 85% 120%, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 60%);
+}
+.avy-btn-liquid::after {
+  /* Tunn prismatisk kant — iOS-glasets färgfransar. */
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.1) 35%,
+    rgba(255, 255, 255, 0.05) 65%,
+    rgba(255, 255, 255, 0.55)
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+/* --- Klistermärke: lätt snett, varannan åt andra hållet --------------------
+   `rotate` (egen egenskap) i stället för transform, så att tryckets
+   active:scale/translate från Tailwind läggs ovanpå i stället för att ta bort
+   lutningen. */
+.avy-btn-sticker { rotate: -1.2deg; }
+.avy-btn-sticker:nth-child(even) { rotate: 1.2deg; }
+
+/* --- Neon: kort glödpuls vid tryck (ingen loop) ---------------------------- */
+.avy-btn-neon::after {
+  /* Glöden ritas en gång; bara opacity/transform animeras. */
+  box-shadow:
+    0 0 18px 4px var(--avy-btn-glow, #8b5cf6),
+    inset 0 0 14px var(--avy-btn-glow, #8b5cf6);
+  opacity: 0;
+}
+.avy-btn-neon:active::after {
+  animation: avy-neon-pulse 420ms ease-out;
+}
+@keyframes avy-neon-pulse {
+  0% { opacity: 0; transform: scale(1); }
+  30% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: 0; transform: scale(1.06); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Statiskt holo: bandet står stilla mitt på knappen i stället för att glida. */
+  .avy-btn-holo::before {
+    animation: none !important;
+    transform: translateX(60%);
+    opacity: 0.6;
+  }
+  /* Neon: tryck ger en stilla glöd (opacitet), ingen skalning. */
+  .avy-btn-neon:active::after {
+    animation: none !important;
+    opacity: 0.8;
+  }
+}

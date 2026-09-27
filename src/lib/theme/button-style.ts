@@ -41,6 +41,10 @@ export const BUTTON_VARIANTS: readonly ButtonVariant[] = [
   "glass",
   "neon",
   "metallic",
+  "liquid",
+  "holo",
+  "sticker",
+  "pixel",
 ];
 
 export const BUTTON_BORDER_WIDTH_MIN = 0;
@@ -136,17 +140,52 @@ export function pickReadableText(backgrounds: string[]): string {
   return worst(LIGHT_TEXT) >= worst(DARK_TEXT) ? LIGHT_TEXT : DARK_TEXT;
 }
 
-/** Sidans bakgrundsfärger, om de går att veta (inte för bilder). */
-function pageBackgrounds(settings: Partial<CustomThemeSettings>): string[] | null {
-  if (settings.backgroundType === "image") return null;
+/** Profilkortets färg (samma i social-profile, business-profile och profile-preview). */
+const PROFILE_CARD_RGB = "#0f172a";
+
+/**
+ * Färgerna som faktiskt ligger BAKOM knapparna. Länkarna står inte på sidans
+ * bakgrund utan på profilkortet — slate-900 med 60 % täckning (78 % med
+ * rörlig bakgrund) ovanpå sidan. En "ljus" sida (#f5f5f4) blir alltså grå
+ * (#6a6f78) under knapparna, och det är mot DEN ytan texten ska vara läsbar.
+ *
+ * Bildbakgrund: okänd, så vi returnerar ytterlighetsfallen (svart resp. vit
+ * bild under kortet) — texten väljs så att den klarar båda.
+ */
+export function getButtonBackdropColors(settings: Partial<CustomThemeSettings>): string[] {
+  const cover = settings.backgroundAnimated ? 0.78 : 0.6;
+  const under = (bg: string) => mix(bg, PROFILE_CARD_RGB, cover);
+  if (settings.backgroundType === "image") return [under("#000000"), under("#ffffff")];
   if (settings.backgroundType === "gradient") {
     const list = [settings.gradientFrom, settings.gradientTo]
       .map((c) => normalizeHexColor(c))
       .filter((c): c is string => Boolean(c));
-    return list.length ? list : null;
+    if (list.length) return list.map(under);
   }
   const solid = normalizeHexColor(settings.backgroundColor);
-  return solid ? [solid] : null;
+  return [under(solid ?? "#0f172a")];
+}
+
+/** Är ytan bakom knapparna ljus? (Sällsynt — kortet mörkar ner — men ljusa accenter/bilder finns.) */
+function isLightSurface(bgs: string[]): boolean {
+  return bgs.reduce((sum, bg) => sum + getRelativeLuminance(bg), 0) / bgs.length > 0.3;
+}
+
+/**
+ * Skjut en färg mot svart eller vitt (det håll som hjälper) tills den har
+ * minst `min` i kontrast mot ALLA bakgrunderna. Behåller kulören så långt det
+ * går — neon ska fortfarande se ut som accentfärgen, bara mörkare på ljus sida.
+ */
+export function ensureContrast(color: string, backgrounds: string[], min = 4.5): string {
+  const worst = (c: string) => Math.min(...backgrounds.map((bg) => contrastRatio(c, bg)));
+  if (!backgrounds.length || worst(color) >= min) return color;
+  const avgBg = backgrounds.reduce((sum, bg) => sum + getRelativeLuminance(bg), 0) / backgrounds.length;
+  const target = avgBg > 0.18 ? "#000000" : "#ffffff";
+  for (let t = 0.1; t < 1; t += 0.1) {
+    const candidate = mix(color, target, t);
+    if (worst(candidate) >= min) return candidate;
+  }
+  return pickReadableText(backgrounds);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -183,9 +222,22 @@ export const BUTTON_INTERACTION_CLASS =
 const GLASS_REDUCED_TRANSPARENCY_CLASS =
   "[@media(prefers-reduced-transparency:reduce)]:![backdrop-filter:none] [@media(prefers-reduced-transparency:reduce)]:![-webkit-backdrop-filter:none] [@media(prefers-reduced-transparency:reduce)]:![background-color:var(--avy-btn-solid)]";
 
-/** 3D-knappen trycks ner: kanten krymper och knappen flyttas lika mycket. */
+/**
+ * 3D-knappen trycks ner: hela "sidan" försvinner och knappen flyttas exakt
+ * lika mycket — ser ut som att den sjunker in, utan layoutförskjutning.
+ * Reducerad rörelse: ingen förflyttning, sidan krymper bara (färgbyte).
+ */
 const PRESSED_CLASS =
-  "active:translate-y-[3px] active:![box-shadow:0_1px_0_var(--avy-btn-edge)] motion-reduce:active:translate-y-0";
+  "active:translate-y-[5px] active:![box-shadow:0_0_0_var(--avy-btn-edge)] motion-reduce:active:translate-y-0";
+
+/** Skugga: svävar en aning, landar vid tryck. */
+const FLOAT_CLASS = "-translate-y-[2px] active:translate-y-0 motion-reduce:translate-y-0";
+
+/** Pixel: trycket flyttar knappen in mot sin pixelskugga. */
+const PIXEL_CLASS = "active:translate-x-[2px] active:translate-y-[2px] motion-reduce:active:translate-x-0 motion-reduce:active:translate-y-0";
+
+/** Varianter med pseudo-element — reglerna ligger i src/styles/button-variants.css. */
+const FX_CLASS = "avy-btn-fx";
 
 type CssVars = CSSProperties & Record<`--${string}`, string>;
 
@@ -201,6 +253,10 @@ export function getDefaultButtonBorderWidth(variant?: ButtonVariant, shape?: But
       return 1;
     case "neon":
       return 2;
+    case "sticker":
+      return 3;
+    case "holo":
+      return 1;
     default:
       return shape === "brutal" ? 2 : 0;
   }
@@ -258,10 +314,16 @@ export function getLinkButtonAppearance(
   const decor: string[] = []; // inset-högdagrar som alltid ligger kvar
   let ownShadow: string | null = null;
 
+  const bgs = getButtonBackdropColors(settings);
+  const lightPage = isLightSurface(bgs);
+  /** Text som står direkt på ytan bakom knappen (genomskinliga varianter). */
+  const onBackdrop = (color: string, min = 4.5) => ensureContrast(color, bgs, min);
+
   switch (variant) {
     case "outline":
       style.backgroundColor = "transparent";
-      textColor = accent;
+      // Accentfärgen som text rakt på sidan — mörkas/ljusas bara om den annars blir oläslig.
+      textColor = onBackdrop(accent);
       border = { width: 2, color: accent, side: "all" };
       break;
 
@@ -270,9 +332,9 @@ export function getLinkButtonAppearance(
       // med opacity 0.9 och gick inte att skilja från "solid".
       style.backgroundColor = hexToRgba(accent, 0.16);
       border = { width: 1, color: hexToRgba(accent, 0.28), side: "all" };
-      const bgs = pageBackgrounds(settings);
-      const accentReadable = bgs !== null && Math.min(...bgs.map((bg) => contrastRatio(accent, bg))) >= 3;
-      textColor = accentReadable ? accent : pageTextRaw;
+      // Ytan = kortet tonat med 16 % accent. Accentfärgad text om den går att
+      // läsa, annars accenten mörkad/ljusad tills den gör det.
+      textColor = ensureContrast(accent, bgs.map((bg) => mix(bg, accent, 0.16)));
       break;
     }
 
@@ -284,48 +346,81 @@ export function getLinkButtonAppearance(
       border = { width: 1, color: custom ? hexToRgba(custom, 0.45) : "rgba(255,255,255,0.25)", side: "all" };
       decor.push("inset 0 1px 0 rgba(255,255,255,0.25)");
       style["--avy-btn-solid"] = custom ?? (getRelativeLuminance(pageText) > 0.5 ? "#1e293b" : "#f1f5f9");
+      textColor = onBackdrop(pageText);
       classes.push(GLASS_REDUCED_TRANSPARENCY_CLASS);
       break;
     }
 
     case "ghost":
       style.backgroundColor = "transparent";
-      textColor = custom ?? pageTextRaw;
+      textColor = onBackdrop(custom ?? pageText);
       // Miniatyr: utan kontur syns knappen inte alls i rutan.
       if (mini) border = { width: 1, color: hexToRgba(pageText, 0.35), side: "all" };
       if (mini) style.borderStyle = "dashed";
       break;
 
-    case "shadow":
+    case "shadow": {
+      // Svävande: ingen kant, stor mjuk skugga i knappens egen färg och ett
+      // litet lyft. Skuggan är det som skiljer den från "Fylld" — därför är
+      // den generös (syns även i miniatyren).
+      const glow = shadowColor ?? accent;
       style.backgroundColor = accent;
       textColor = custom ? getReadableTextColor(accent) : pageTextRaw;
-      ownShadow = `0 ${px(10)} ${px(24)} ${px(-6)} ${hexToRgba(shadowColor ?? accent, 0.55)}`;
-      break;
-
-    case "gradient": {
-      const second = shiftHue(accent, 40) ?? mix(accent, "#000000", 0.35);
-      style.backgroundColor = accent;
-      style.backgroundImage = `linear-gradient(135deg, ${accent} 0%, ${second} 100%)`;
-      textColor = pickReadableText([accent, second]);
+      ownShadow = [
+        `0 ${px(18)} ${px(34)} ${px(-10)} ${hexToRgba(glow, 0.75)}`,
+        `0 ${px(6)} ${px(14)} ${px(-6)} ${hexToRgba(glow, 0.5)}`,
+      ].join(", ");
+      if (!mini) classes.push(FLOAT_CLASS);
       break;
     }
 
-    case "neon":
-      style.backgroundColor = hexToRgba(accent, 0.08);
-      border = { width: 2, color: accent, side: "all" };
-      textColor = mix(accent, "#ffffff", 0.35);
-      style.textShadow = `0 0 ${px(8)} ${hexToRgba(accent, 0.8)}`;
-      ownShadow = [
-        `0 0 ${px(14)} ${hexToRgba(shadowColor ?? accent, 0.6)}`,
-        `inset 0 0 ${px(10)} ${hexToRgba(shadowColor ?? accent, 0.35)}`,
+    case "gradient": {
+      // Två tydligt olika färger i ~115°, plus en blank topp och en ljus
+      // högdagerlinje — ska aldrig kunna tas för en fylld knapp.
+      // Texten väljs ur accenten; ändstoppen justeras sedan så att de också
+      // bär texten (en vriden kulör kan annars bli för ljus/mörk).
+      textColor = pickReadableText([accent]);
+      const from = ensureContrast(shiftHue(accent, -25) ?? mix(accent, "#ffffff", 0.25), [textColor], 3.2);
+      const to = ensureContrast(shiftHue(accent, 55) ?? mix(accent, "#000000", 0.45), [textColor], 3.2);
+      style.backgroundColor = accent;
+      style.backgroundImage = [
+        "linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 48%)",
+        `linear-gradient(115deg, ${from} 0%, ${accent} 45%, ${to} 100%)`,
       ].join(", ");
+      decor.push(`inset 0 ${line(1)}px 0 rgba(255,255,255,0.55)`);
       break;
+    }
+
+    case "neon": {
+      // Transparent yta — texten står i praktiken rakt på sidan. På ljus sida
+      // blir ljus neontext oläslig (~2,3:1), så där tar vi en mörkare ton av
+      // accenten och släpper textglöden.
+      const glow = shadowColor ?? accent;
+      style.backgroundColor = hexToRgba(accent, lightPage ? 0.06 : 0.08);
+      border = { width: 2, color: accent, side: "all" };
+      if (lightPage) {
+        textColor = onBackdrop(mix(accent, "#000000", 0.25));
+      } else {
+        textColor = onBackdrop(mix(accent, "#ffffff", 0.35));
+        style.textShadow = `0 0 ${px(8)} ${hexToRgba(accent, 0.8)}`;
+      }
+      ownShadow = [
+        `0 0 ${px(14)} ${hexToRgba(glow, lightPage ? 0.45 : 0.6)}`,
+        `inset 0 0 ${px(10)} ${hexToRgba(glow, 0.35)}`,
+      ].join(", ");
+      style["--avy-btn-glow"] = hexToRgba(glow, 0.85);
+      classes.push(FX_CLASS, "avy-btn-neon");
+      break;
+    }
 
     case "pressed": {
-      const edge = shadowColor ?? mix(accent, "#000000", 0.35);
+      // Fysisk knapp: en tydligt mörkare "sida" (5px) under ytan och en ljus
+      // överkant. Trycks ner vid :active (PRESSED_CLASS).
+      const edge = shadowColor ?? mix(accent, "#000000", 0.42);
       style.backgroundColor = accent;
       textColor = pickReadableText([accent]);
-      ownShadow = `0 ${px(4)} 0 ${edge}`;
+      ownShadow = `0 ${px(5)} 0 ${edge}`;
+      decor.push(`inset 0 ${line(1)}px 0 rgba(255,255,255,0.3)`);
       style["--avy-btn-edge"] = edge;
       if (!mini) classes.push(PRESSED_CLASS);
       break;
@@ -333,19 +428,109 @@ export function getLinkButtonAppearance(
 
     case "metallic": {
       // Borstad metall: ljus topp, hård mittlinje, bakgrundsrillor.
-      const light = mix(accent, "#ffffff", 0.55);
-      const dark = mix(accent, "#000000", 0.22);
-      const mid = mix(accent, "#ffffff", 0.12);
+      // Samma princip som gradient: text ur accenten, stoppen får bära den.
+      textColor = pickReadableText([accent]);
+      const light = ensureContrast(mix(accent, "#ffffff", 0.55), [textColor], 3.2);
+      const dark = ensureContrast(mix(accent, "#000000", 0.22), [textColor], 3.2);
+      const mid = ensureContrast(mix(accent, "#ffffff", 0.12), [textColor], 3.2);
       style.backgroundColor = accent;
       style.backgroundImage = [
         `repeating-linear-gradient(90deg, rgba(255,255,255,0.06) 0 1px, rgba(0,0,0,0.04) 1px 3px)`,
         `linear-gradient(180deg, ${light} 0%, ${accent} 48%, ${dark} 52%, ${mid} 100%)`,
       ].join(", ");
-      textColor = pickReadableText([light, accent, dark]);
       border = { width: 1, color: mix(accent, "#000000", 0.3), side: "all" };
       decor.push("inset 0 1px 0 rgba(255,255,255,0.7)", "inset 0 -1px 0 rgba(0,0,0,0.2)");
       style.textShadow =
         textColor === LIGHT_TEXT ? "0 1px 0 rgba(0,0,0,0.35)" : "0 1px 0 rgba(255,255,255,0.45)";
+      break;
+    }
+
+    case "liquid": {
+      // Liquid glass (iOS 26): tonat, mättat glas med ljus som bryts i
+      // överkanten och en prismatisk kant (pseudo-element i
+      // button-variants.css). Ingen vanlig kant — ljuset ÄR kanten.
+      const tintTop = mix(accent, "#ffffff", 0.55);
+      style.backgroundColor = hexToRgba(accent, 0.14);
+      style.backgroundImage = `linear-gradient(180deg, ${hexToRgba(tintTop, 0.34)} 0%, ${hexToRgba(accent, 0.16)} 55%, ${hexToRgba(accent, 0.28)} 100%)`;
+      style.backdropFilter = "blur(14px) saturate(180%)";
+      style.WebkitBackdropFilter = "blur(14px) saturate(180%)";
+      decor.push(
+        `inset 0 ${line(1.5)}px ${px(1)} rgba(255,255,255,0.75)`,
+        `inset 0 ${px(-6)} ${px(12)} ${px(-6)} rgba(255,255,255,0.35)`,
+      );
+      ownShadow = `0 ${px(10)} ${px(24)} ${px(-12)} rgba(0,0,0,${lightPage ? 0.28 : 0.5})`;
+      // Ungefärlig yta = kortet sett genom accenttonat glas med ljus topp.
+      // Kortet har själv backdrop-filter, så i WebKit/Chromium ser glaset
+      // ofta bara kortets egen (mörka) färg — den räknas in som ytterlighet.
+      textColor = pickReadableText(
+        [...bgs, PROFILE_CARD_RGB].flatMap((bg) => [mix(bg, accent, 0.2), mix(bg, tintTop, 0.34)]),
+      );
+      style.textShadow = textColor === LIGHT_TEXT ? "0 1px 2px rgba(0,0,0,0.35)" : "0 1px 0 rgba(255,255,255,0.4)";
+      style["--avy-btn-solid"] = lightPage ? mix(accent, "#ffffff", 0.8) : mix(accent, "#0f172a", 0.7);
+      classes.push(FX_CLASS, "avy-btn-liquid", GLASS_REDUCED_TRANSPARENCY_CLASS);
+      break;
+    }
+
+    case "holo": {
+      // Holografisk folie: pastellregnbåge som utgår från accentens kulör,
+      // fina foliestreck, och ett långsamt ljussvep (::before, bara transform).
+      const hues = [0, 70, 150, 220, 300].map((d) => shiftHue(accent, d));
+      const stops = hues.every(Boolean)
+        ? (hues as string[]).map((h) => mix(h, "#ffffff", 0.45))
+        : ["#ffb3e6", "#b3d4ff", "#b8ffd9", "#fff6b3", "#e0b3ff"];
+      style.backgroundColor = stops[0];
+      style.backgroundImage = [
+        "repeating-linear-gradient(60deg, rgba(255,255,255,0.18) 0 2px, rgba(255,255,255,0) 2px 7px)",
+        `linear-gradient(115deg, ${stops.map((c, i) => `${c} ${i * 25}%`).join(", ")})`,
+      ].join(", ");
+      textColor = pickReadableText(stops);
+      border = { width: 1, color: "rgba(255,255,255,0.7)", side: "all" };
+      decor.push(`inset 0 ${line(1)}px 0 rgba(255,255,255,0.8)`);
+      ownShadow = `0 ${px(6)} ${px(16)} ${px(-6)} ${hexToRgba(stops[3], 0.7)}`;
+      classes.push(FX_CLASS, "avy-btn-holo");
+      break;
+    }
+
+    case "sticker": {
+      // Klistermärke: tjock vit kant, lätt snett (varannan knapp åt andra
+      // hållet, se CSS) och en hård förskjuten skugga.
+      style.backgroundColor = accent;
+      textColor = pickReadableText([accent]);
+      border = { width: 3, color: "#ffffff", side: "all" };
+      const drop = shadowColor
+        ? hexToRgba(shadowColor, 0.85)
+        : lightPage
+          ? "rgba(15,23,42,0.35)"
+          : "rgba(0,0,0,0.6)";
+      ownShadow = `${px(3)} ${px(4)} 0 ${drop}`;
+      classes.push("avy-btn-sticker");
+      break;
+    }
+
+    case "pixel": {
+      // 8-bit: rak ruta med trappstegshörn ritade av box-shadow (en ram på
+      // varje sida lämnar hörnen tomma), inre fasning och pixelskugga.
+      // Typsnittet rörs inte — bara spärrning och versaler.
+      const u = Math.max(2, Math.round(4 * scale));
+      const frame = lightPage ? "#0f172a" : mix(pageText, accent, 0.15);
+      const drop = shadowColor ?? (lightPage ? hexToRgba("#0f172a", 0.35) : mix(accent, "#000000", 0.6));
+      style.backgroundColor = accent;
+      style.borderRadius = "0px";
+      style.letterSpacing = "0.12em";
+      style.textTransform = "uppercase";
+      textColor = pickReadableText([accent]);
+      decor.push(
+        `inset ${-u}px ${-u}px 0 0 ${mix(accent, "#000000", 0.3)}`,
+        `inset ${u}px ${u}px 0 0 ${mix(accent, "#ffffff", 0.3)}`,
+      );
+      ownShadow = [
+        `0 ${-u}px 0 0 ${frame}`,
+        `0 ${u}px 0 0 ${frame}`,
+        `${-u}px 0 0 0 ${frame}`,
+        `${u}px 0 0 0 ${frame}`,
+        `${u * 2}px ${u * 2}px 0 0 ${drop}`,
+      ].join(", ");
+      if (!mini) classes.push(PIXEL_CLASS);
       break;
     }
 
@@ -354,18 +539,25 @@ export function getLinkButtonAppearance(
       // en rundad underkant ser ut som ett fel, inte som ett val.
       style.backgroundColor = "transparent";
       style.borderRadius = "0px";
-      textColor = pageTextRaw;
+      textColor = onBackdrop(pageText);
       border = { width: 2, color: accent, side: "bottom" };
       ownShadow = "";
       break;
 
     case "solid":
     default:
+      // Referenspunkten: platt, lugn, ingen skugga eller kant.
       style.backgroundColor = accent;
       // Befintliga teman: sidans textfärg, precis som förut. Med per-länk-färg
       // väljer vi läsbar text (Snapchat-gult ska få svart text).
       textColor = custom ? getReadableTextColor(accent) : pageTextRaw;
       break;
+  }
+
+  // Fylld yta med sidans textfärg: byt bara om den blir i praktiken oläslig
+  // (under 3:1) — annars behåller befintliga teman exakt sin look.
+  if ((variant === "solid" || variant === "shadow") && contrastRatio(textColor, accent) < 3) {
+    textColor = pickReadableText([accent]);
   }
 
   style.color = buttonText ?? textColor;

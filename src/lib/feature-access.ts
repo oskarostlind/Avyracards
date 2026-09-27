@@ -124,7 +124,16 @@ export function isAnimatedBackgroundLocked(user?: AccessUser | null): boolean {
  * /api/themes/save (via sanitizeThemeSettings). "pressed" och "underline" är
  * medvetet gratis — gratiskonton ska också få något nytt att välja på.
  */
-export const PREMIUM_BUTTON_VARIANTS: readonly ButtonVariant[] = ["glass", "gradient", "neon", "metallic"];
+export const PREMIUM_BUTTON_VARIANTS: readonly ButtonVariant[] = [
+  "glass",
+  "gradient",
+  "neon",
+  "metallic",
+  "liquid",
+  "holo",
+  "sticker",
+  "pixel",
+];
 
 export function isButtonVariantLocked(variant: ButtonVariant | undefined, user?: AccessUser | null): boolean {
   if (!variant) return false;

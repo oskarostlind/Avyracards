@@ -1,3 +1,6 @@
+/* Knappvarianternas pseudo-element och keyframes (se filen). @import måste stå först. */
+@import "../styles/button-variants.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
