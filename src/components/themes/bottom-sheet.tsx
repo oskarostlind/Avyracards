@@ -33,6 +33,8 @@ interface BottomSheetProps {
   handleLabel: string;
   /** Avstånd från containerns botten (t.ex. höjden på spara-raden). */
   bottomOffset?: number;
+  /** Scroll i innehållsytan (temaeditorn låter den styra previewns zoom). */
+  onContentScroll?: (e: React.UIEvent<HTMLDivElement>) => void;
 }
 
 const DRAG_THRESHOLD = 8;
@@ -54,6 +56,7 @@ export function BottomSheet({
   children,
   handleLabel,
   bottomOffset = 0,
+  onContentScroll,
 }: BottomSheetProps) {
   const sheetRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -292,6 +295,7 @@ export function BottomSheet({
           height: Math.max(settledVisible - headerHeight, 0),
           touchAction: atPeek ? "pan-x" : "pan-y",
         }}
+        onScroll={onContentScroll}
         {...(atPeek ? dragHandlers : {})}
       >
         {children}

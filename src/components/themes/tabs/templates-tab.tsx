@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { Check, Crown, Lock } from "lucide-react";
+import { Check, Crown } from "lucide-react";
 import { type CustomThemeSettings, type ThemeTemplate, type ThemeMode } from "@/types/theme";
 import { getTemplates, isTemplateLocked } from "@/lib/feature-access";
 import { getLinkButtonAppearance } from "@/lib/theme/button-style";
@@ -11,12 +11,14 @@ import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
 import { useT } from "@/i18n/client";
 // Namnet i miniatyren visas i mallens rubriktypsnitt.
 import "@/styles/profile-fonts.css";
+import type { PremiumTeaser } from "@/components/themes/premium-gate";
 
 interface TemplatesTabProps {
   isPremium: boolean;
   isAdmin?: boolean;
   onApply: (template: ThemeTemplate) => void;
-  onShowUpgrade: () => void;
+  /** Öppnar uppgraderingsrutan med det som trycktes på (usePremiumGate i editorn). */
+  onShowUpgrade: (teaser?: PremiumTeaser) => void;
   mode: ThemeMode;
   currentSettings: CustomThemeSettings;
   /**
@@ -82,7 +84,7 @@ export function TemplatesTab({
       <button
         key={tpl.id}
         type="button"
-        onClick={() => (locked ? onShowUpgrade() : onApply(tpl))}
+        onClick={() => (locked ? onShowUpgrade({ kind: "template", template: tpl }) : onApply(tpl))}
         aria-pressed={active}
         aria-label={locked ? `${tpl.name} – ${tr("themes.templateLocked")}` : tpl.name}
         className={`group relative flex shrink-0 snap-start flex-col overflow-hidden rounded-2xl text-left transition-[transform,box-shadow] duration-150 active:scale-[0.96] motion-reduce:active:scale-100 motion-reduce:active:opacity-80 ${

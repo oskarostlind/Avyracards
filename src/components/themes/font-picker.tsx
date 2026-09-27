@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Search } from "lucide-react";
 import { useT } from "@/i18n/client";
-import { isFontLocked, type AccessUser } from "@/lib/feature-access";
+import { isFontLocked } from "@/lib/feature-access";
+import { usePremiumGate } from "@/components/themes/premium-gate";
 import { FONTS, FONT_CATEGORIES, getFont, getFontStack, type FontCategory, type FontDef } from "@/lib/theme/fonts";
 import type { Font } from "@/types/theme";
 import { PremiumBadge, SegmentedControl } from "@/components/themes/theme-controls";
@@ -34,12 +35,12 @@ interface FontPickerProps {
   font?: Font;
   headingFont?: Font;
   onChange: (key: "font" | "headingFont", value: Font | undefined) => void;
-  accessUser: AccessUser;
-  onShowUpgrade: () => void;
 }
 
-export function FontPicker({ font, headingFont, onChange, accessUser, onShowUpgrade }: FontPickerProps) {
+export function FontPicker({ font, headingFont, onChange }: FontPickerProps) {
   const t = useT();
+  // Behörighet + uppgraderingsrutan kommer från temaeditorns gemensamma grind.
+  const { accessUser, requestPremium } = usePremiumGate();
   const [target, setTarget] = useState<Target>("heading");
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [query, setQuery] = useState("");
@@ -73,7 +74,7 @@ export function FontPicker({ font, headingFont, onChange, accessUser, onShowUpgr
 
   const select = (f: FontDef) => {
     if (isFontLocked(f.id, accessUser)) {
-      onShowUpgrade();
+      requestPremium({ kind: "font", fontId: f.id, target });
       return;
     }
     onChange(target === "heading" ? "headingFont" : "font", f.id as Font);
@@ -170,7 +171,8 @@ export function FontPicker({ font, headingFont, onChange, accessUser, onShowUpgr
               subtitle={t(`themes.fonts.categories.${f.category}`)}
               fontId={f.id}
               root={listRef}
-              badge={locked ? <PremiumBadge isUnlocked={false} className="relative" /> : undefined}
+              // Krona på alla premiumtypsnitt (även upplåsta), inte bara låsta.
+              premium={f.isPremium ? <PremiumBadge isUnlocked={!locked} className="relative" /> : undefined}
             />
           );
         })}
@@ -195,7 +197,7 @@ function PickerRow({
   subtitle,
   fontId,
   root,
-  badge,
+  premium,
 }: {
   selected: boolean;
   locked?: boolean;
@@ -204,7 +206,8 @@ function PickerRow({
   subtitle: string;
   fontId: string;
   root: React.RefObject<HTMLElement>;
-  badge?: React.ReactNode;
+  /** Premiumkrona — visas bredvid namnet så att den inte krockar med bocken. */
+  premium?: React.ReactNode;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
   const [inView, setInView] = useState(false);
@@ -246,11 +249,14 @@ function PickerRow({
       }`}
     >
       <span className="min-w-0 flex-1">
-        <span
-          className={`block truncate text-[17px] leading-tight ${locked ? "text-slate-300/70" : "text-nordic-secondary"}`}
-          style={{ fontFamily: family }}
-        >
-          {title}
+        <span className="flex min-w-0 items-center gap-2">
+          <span
+            className={`truncate text-[17px] leading-tight ${locked ? "text-slate-300/80" : "text-nordic-secondary"}`}
+            style={{ fontFamily: family }}
+          >
+            {title}
+          </span>
+          {premium}
         </span>
         <span className="mt-0.5 block truncate text-xs text-nordic-highlight">{subtitle}</span>
       </span>
@@ -262,7 +268,7 @@ function PickerRow({
         {SAMPLE}
       </span>
       <span className="flex w-6 shrink-0 items-center justify-center">
-        {badge ?? (selected ? <Check size={18} className="text-purple-300" aria-hidden /> : null)}
+        {selected ? <Check size={18} className="text-purple-300" aria-hidden /> : null}
       </span>
     </button>
   );

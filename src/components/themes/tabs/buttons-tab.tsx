@@ -16,13 +16,15 @@ import {
 } from "@/lib/theme/button-style";
 import { normalizeHexColor } from "@/utils/color";
 import { useT } from "@/i18n/client";
+import type { PremiumTeaser } from "@/components/themes/premium-gate";
 
 interface ButtonsTabProps {
   settings: CustomThemeSettings;
   updateSetting: (key: keyof CustomThemeSettings, value: string | number | boolean | undefined) => void;
   isPremium: boolean;
   isAdmin?: boolean;
-  onShowUpgrade: () => void;
+  /** Öppnar uppgraderingsrutan med det som trycktes på (usePremiumGate i editorn). */
+  onShowUpgrade: (teaser?: PremiumTeaser) => void;
 }
 
 const SHAPES = BUTTON_STYLES;
@@ -108,7 +110,7 @@ export function ButtonsTab({ settings, updateSetting, isPremium, isAdmin, onShow
                 key={v}
                 selected={variant === v}
                 locked={locked}
-                onClick={() => (locked ? onShowUpgrade() : updateSetting("buttonVariant", v))}
+                onClick={() => (locked ? onShowUpgrade({ kind: "buttonVariant", variant: v }) : updateSetting("buttonVariant", v))}
                 label={t(`themes.buttonVariants.${v}`)}
               >
                 <span
