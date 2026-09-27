@@ -13,19 +13,28 @@ import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
 import { DisplayName } from "@/components/theme-effects/display-name";
 import { getAnimatedGradientImage, getPatternBackground } from "@/lib/theme-effects";
 import fx from "@/components/theme-effects/theme-effects.module.css";
+import { canAccess } from "@/lib/feature-access";
 
 export interface ProfilePreviewProps {
   data: MappedProfileData;
   customSettings?: CustomThemeSettings;
   fullscreen?: boolean;
   isPremium?: boolean;
+  /** Admin har premium-behörighet utan isPremium (samma regel som canAccess). */
+  isAdmin?: boolean;
 }
 
+/*
+ * Temaeditorns auto-zoom letar upp delarna via data-preview-target
+ * ("avatar" | "name" | "bio" | "buttons" | "branding"), se usePreviewZoom i
+ * theme-editor.tsx. Attributen påverkar inte utseendet.
+ */
 export function ProfilePreview({
   data,
   customSettings,
   fullscreen = false,
   isPremium = false,
+  isAdmin = false,
 }: ProfilePreviewProps) {
   const t = useT();
 
@@ -33,7 +42,8 @@ export function ProfilePreview({
 
   const { image, displayName, headline, location, actions, links, mode, jobTitle, companyName } = data;
   
-  const showBranding = !isPremium || !settings.hideBranding;
+  // Samma behörighetsregel som resten av editorn (admin räknas som premium).
+  const showBranding = !canAccess("theme_hide_branding", { isPremium, isAdmin }) || !settings.hideBranding;
 
   // --- BAKGRUND ---
   let bgStyle: React.CSSProperties = {};
@@ -69,19 +79,16 @@ export function ProfilePreview({
   const getButtonStyle = (isPrimary: boolean = false, customColor?: string | null): React.CSSProperties =>
     getLinkButtonAppearance(settings, { isPrimary, customColor }).style;
 
+  // Rörlig bakgrund: tunnare blur + tätare kort, som på publika profilen. En
+  // stor backdrop-blur över ett lager som rör sig räknas om varje bildruta —
+  // på iPhone tappar WebKit då bildrutor i hela previewn.
+  const animatedBg = settings.backgroundType === "gradient" && settings.backgroundAnimated;
   const cardStyle: React.CSSProperties = {
     color: settings.textColor || "#fff",
-    ...(mode === "BUSINESS" ? {
-        backgroundColor: 'rgba(15, 23, 42, 0.6)',
-        backdropFilter: 'blur(20px)',
-        borderColor: 'rgba(255,255,255,0.1)',
-        borderWidth: '1px',
-    } : {
-        backgroundColor: 'rgba(15, 23, 42, 0.6)',
-        backdropFilter: 'blur(16px)',
-        borderWidth: '1px',
-        borderColor: 'rgba(255,255,255,0.1)',
-    })
+    backgroundColor: animatedBg ? 'rgba(15, 23, 42, 0.78)' : 'rgba(15, 23, 42, 0.6)',
+    backdropFilter: animatedBg ? 'blur(6px)' : mode === "BUSINESS" ? 'blur(20px)' : 'blur(16px)',
+    borderColor: 'rgba(255,255,255,0.1)',
+    borderWidth: '1px',
   };
 
   // --- REALTIDS-FILTRERING ---
@@ -97,7 +104,8 @@ export function ProfilePreview({
   const secondaryActions = liveActions.filter(a => a.type !== 'vcard');
 
   return (
-    <div 
+    <div
+      data-preview-root=""
       className={`w-full relative overflow-x-hidden flex flex-col items-center justify-center p-4 ${fullscreen ? 'min-h-screen py-16' : 'h-full overflow-y-auto py-10 hide-scrollbar'}`}
       style={{ ...getBodyFontStyle(settings.font), ...bgStyle }}
     >
@@ -138,11 +146,11 @@ export function ProfilePreview({
       <div className={`relative z-10 w-full max-w-[380px] flex flex-col items-center p-8 mb-6 rounded-[2.5rem] shadow-2xl`} style={cardStyle}>
         
         {/* Avatar — samma komponent som publika profilen och ram-miniatyrerna. */}
+        <div data-preview-target="avatar" className="mb-6">
         <AvatarFrame
           frame={settings.frameStyle}
           size={112}
           accent={settings.accentColor}
-          className="mb-6 transition-transform duration-500 hover:scale-105"
         >
           {image ? (
              // eslint-disable-next-line @next/next/no-img-element
@@ -153,13 +161,16 @@ export function ProfilePreview({
              </div>
           )}
         </AvatarFrame>
+        </div>
 
         {/* --- HEADER --- */}
         <div className="text-center space-y-2 mb-8 w-full">
-          <DisplayName name={displayName} effect={settings.nameEffect} accent={settings.accentColor} textColor={settings.textColor} className="text-2xl font-bold tracking-tight" style={getHeadingFontStyle(settings.headingFont, settings.font)} />
-          
+          <div data-preview-target="name">
+            <DisplayName name={displayName} effect={settings.nameEffect} accent={settings.accentColor} textColor={settings.textColor} className="text-2xl font-bold tracking-tight" style={getHeadingFontStyle(settings.headingFont, settings.font)} />
+          </div>
+
           {mode === "BUSINESS" && (
-            <div className="flex flex-col items-center gap-1 opacity-90">
+            <div data-preview-target="bio" className="flex flex-col items-center gap-1 opacity-90">
                {(jobTitle || companyName) && (
                    <div className="flex flex-wrap justify-center gap-1 text-sm font-medium">
                        {jobTitle && <span>{jobTitle}</span>}
@@ -176,12 +187,13 @@ export function ProfilePreview({
           )}
 
           {headline && (
-            <div className={`text-sm leading-relaxed whitespace-pre-line font-medium break-words mt-2 ${mode === "BUSINESS" ? "italic opacity-80 border-l-4 border-white/20 pl-3 bg-white/5 py-1 rounded-r-lg" : "opacity-80"}`}>
+            <div data-preview-target="bio" className={`text-sm leading-relaxed whitespace-pre-line font-medium break-words mt-2 ${mode === "BUSINESS" ? "italic opacity-80 border-l-4 border-white/20 pl-3 bg-white/5 py-1 rounded-r-lg" : "opacity-80"}`}>
               {headline}
             </div>
           )}
         </div>
 
+        <div data-preview-target="buttons" className="w-full">
         {/* --- DYNAMISKA ACTIONS --- */}
         {liveActions.length > 0 && (
              <div className="w-full mb-6 space-y-3">
@@ -235,12 +247,13 @@ export function ProfilePreview({
              </div>
           )}
         </div>
+        </div>
 
       </div>
 
       {/* --- VILLKORLIG BRANDING --- */}
       {showBranding && (
-          <div className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity pb-4">
+          <div data-preview-target="branding" className="relative z-10 mt-auto opacity-70 hover:opacity-100 transition-opacity pb-4">
              <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-nordic-secondary drop-shadow-md">
                <span>{t("publicProfile.poweredBy")}</span>
              </div>

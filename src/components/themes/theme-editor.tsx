@@ -11,6 +11,8 @@ import {
   Briefcase,
   Share2,
   Check,
+  ZoomIn,
+  ZoomOut,
   type LucideIcon,
 } from "lucide-react";
 
@@ -20,7 +22,9 @@ import { getProfileData } from "@/lib/profile-mapper";
 import { canAccess } from "@/lib/feature-access";
 import { useRouter } from "next/navigation";
 import { UpgradeModal } from "@/components/themes/upgrade-modal";
+import { PremiumGateProvider, type PremiumTeaser } from "@/components/themes/premium-gate";
 import { useT } from "@/i18n/client";
+import { animateSpring, prefersReducedMotion, type SpringHandle } from "@/lib/spring";
 
 import { BottomSheet } from "./bottom-sheet";
 import { SegmentedControl } from "./theme-controls";
@@ -58,6 +62,44 @@ interface ThemeEditorProps {
 }
 
 type Tab = "templates" | "background" | "buttons" | "profile";
+
+/*
+ * Auto-zoom i previewn: det man redigerar zoomas in mjukt. Målen är
+ * data-preview-target-attributen i profile-preview.tsx. "all" = utzoomat.
+ */
+type ZoomTarget = "avatar" | "name" | "bio" | "buttons";
+type Focus = readonly ZoomTarget[] | "all";
+
+const TAB_FOCUS: Record<Tab, Focus> = {
+  templates: "all",
+  background: "all",
+  buttons: ["buttons"],
+  // Profilfliken börjar med typsnittsväljaren -> namn + bio.
+  profile: ["name", "bio"],
+};
+
+/** Senast ändrade inställning -> vad som ska synas. */
+function focusForKey(key: keyof CustomThemeSettings): Focus | null {
+  if (key.startsWith("button") || key === "accentColor" || key === "textColor" || key === "showSaveContact") return ["buttons"];
+  if (key === "frameStyle" || key === "nameEffect") return ["avatar", "name"];
+  if (key === "font" || key === "headingFont") return ["name", "bio"];
+  if (key.startsWith("background") || key.startsWith("gradient") || key === "hideBranding") return "all";
+  return null;
+}
+
+/** Sektion i arket (data-editor-section) -> vad som ska synas. */
+const SECTION_FOCUS: Record<string, Focus> = {
+  font: ["name", "bio"],
+  frame: ["avatar", "name"],
+  nameEffect: ["avatar", "name"],
+  branding: "all",
+};
+
+// Lagom inzoomat: målet ska kännas i fokus, men sammanhanget ska synas runt om.
+const MAX_ZOOM = 1.7;
+const ZOOM_PAD = 28;
+// animateSpring slutar när |x - mål| < 0,5 — skalan animeras därför i tusendelar.
+const Z_UNIT = 1000;
 
 const PHONE_W = 375 + 16; // inkl. 8 px ram på varje sida
 const PHONE_H = 750 + 16;
@@ -137,6 +179,173 @@ function useHeaderBottom(): number {
   return bottom;
 }
 
+/* -------------------------------------------------------------------------- */
+/*  Auto-zoom ("kamera") över telefonen                                       */
+/* -------------------------------------------------------------------------- */
+
+interface Camera {
+  /** Telefonens mittpunkt i preview-ytan (px). */
+  x: number;
+  y: number;
+  /** Skala (1 = telefonens naturliga storlek). */
+  s: number;
+}
+
+/**
+ * Flyttar och skalar telefonen så att målet (data-preview-target) hamnar mitt
+ * i den synliga delen av previewn, ovanför arket.
+ *
+ * - Fjäder (dampingRatio 1, response 0,4) per axel. En ny målpunkt startar från
+ *   där telefonen faktiskt är och med nuvarande hastighet — zoomen kan byta mål
+ *   mitt i utan hopp.
+ * - Målets läge mäts med getBoundingClientRect och räknas om till telefonens
+ *   egna koordinater (division med aktuell skala), så mätningen stämmer även
+ *   mitt i en animation.
+ * - Ligger målet utanför telefonens skärm (många länkar) scrollas previewn
+ *   först dit, och kameran siktar på där målet hamnar efter scrollen.
+ * - Reducerad rörelse: direkt byte.
+ *
+ * Transformen skrivs direkt till DOM:en (inte via React-state) — 60 bilder/s
+ * utan omrenderingar.
+ */
+function usePreviewCamera({
+  phoneRef,
+  base,
+  focus,
+  view,
+  remeasureKey,
+}: {
+  phoneRef: React.RefObject<HTMLDivElement>;
+  /** Utzoomat läge: telefonen centrerad och inpassad. */
+  base: Camera;
+  focus: Focus;
+  /** Synlig yta ovanför arket där målet ska hamna (mitt + storlek, px i preview-ytan). */
+  view: { cx: number; cy: number; width: number; height: number };
+  /** Ändras när innehållet kan ha flyttats (inställningar, läge). */
+  remeasureKey: unknown;
+}) {
+  const cam = useRef<Camera>(base);
+  const springs = useRef<{ x?: SpringHandle; y?: SpringHandle; s?: SpringHandle }>({});
+  const placed = useRef(false);
+
+  const apply = useCallback(() => {
+    const el = phoneRef.current;
+    if (!el) return;
+    const { x, y, s } = cam.current;
+    el.style.transform = `translate3d(${x - PHONE_W / 2}px, ${y - PHONE_H / 2}px, 0) scale(${s})`;
+  }, [phoneRef]);
+
+  const moveTo = useCallback(
+    (target: Camera) => {
+      const cur = cam.current;
+      const same =
+        Math.abs(cur.x - target.x) < 0.5 && Math.abs(cur.y - target.y) < 0.5 && Math.abs(cur.s - target.s) < 0.0005;
+      const running = springs.current.x || springs.current.y || springs.current.s;
+      if (same && !running) return;
+
+      const prev = springs.current;
+      if (!placed.current || prefersReducedMotion()) {
+        prev.x?.cancel();
+        prev.y?.cancel();
+        prev.s?.cancel();
+        springs.current = {};
+        cam.current = { ...target };
+        placed.current = true;
+        apply();
+        return;
+      }
+
+      // Fortsätt från nuvarande läge OCH hastighet (avbrytbar, inget glapp).
+      const vx = prev.x?.current().velocity ?? 0;
+      const vy = prev.y?.current().velocity ?? 0;
+      const vs = prev.s?.current().velocity ?? 0;
+      prev.x?.cancel();
+      prev.y?.cancel();
+      prev.s?.cancel();
+
+      const opts = { dampingRatio: 1, response: 0.4 };
+      const next: typeof springs.current = {};
+      const done = (k: "x" | "y" | "s") => () => {
+        if (springs.current[k] === next[k]) delete springs.current[k];
+      };
+      next.x = animateSpring(cur.x, target.x, (v) => ((cam.current.x = v), apply()), { ...opts, velocity: vx }, done("x"));
+      next.y = animateSpring(cur.y, target.y, (v) => ((cam.current.y = v), apply()), { ...opts, velocity: vy }, done("y"));
+      next.s = animateSpring(
+        cur.s * Z_UNIT,
+        target.s * Z_UNIT,
+        (v) => ((cam.current.s = v / Z_UNIT), apply()),
+        { ...opts, velocity: vs },
+        done("s"),
+      );
+      springs.current = next;
+    },
+    [apply],
+  );
+
+  useEffect(
+    () => () => {
+      springs.current.x?.cancel();
+      springs.current.y?.cancel();
+      springs.current.s?.cancel();
+    },
+    [],
+  );
+
+  const focusKey = focus === "all" ? "all" : focus.join(",");
+
+  useLayoutEffect(() => {
+    const phone = phoneRef.current;
+    if (!phone || base.s <= 0) return;
+
+    const compute = (): Camera => {
+      // För liten synlig yta (arket helt uppdraget): ingen zoom.
+      if (focus === "all" || view.height < 140 || view.width < 140) return base;
+      const root = phone.querySelector<HTMLElement>("[data-preview-root]");
+      const targets = focus
+        .map((f) => phone.querySelector<HTMLElement>(`[data-preview-target="${f}"]`))
+        .filter((el): el is HTMLElement => Boolean(el));
+      if (!root || targets.length === 0) return base;
+
+      const phoneRect = phone.getBoundingClientRect();
+      const sNow = phoneRect.width / PHONE_W || cam.current.s;
+      const rootRect = root.getBoundingClientRect();
+      const rootTop = (rootRect.top - phoneRect.top) / sNow;
+      const rootLeft = (rootRect.left - phoneRect.left) / sNow;
+
+      // Målets ruta i innehållets koordinater (oberoende av scroll).
+      let top = Infinity;
+      let bottom = -Infinity;
+      let left = Infinity;
+      let right = -Infinity;
+      for (const el of targets) {
+        const r = el.getBoundingClientRect();
+        top = Math.min(top, (r.top - rootRect.top) / sNow + root.scrollTop);
+        bottom = Math.max(bottom, (r.bottom - rootRect.top) / sNow + root.scrollTop);
+        left = Math.min(left, (r.left - rootRect.left) / sNow);
+        right = Math.max(right, (r.right - rootRect.left) / sNow);
+      }
+
+      // Scrolla previewn så att målet ligger på telefonens skärm.
+      const maxScroll = Math.max(root.scrollHeight - root.clientHeight, 0);
+      const wanted = Math.min(Math.max((top + bottom) / 2 - root.clientHeight / 2, 0), maxScroll);
+      const fits = top >= root.scrollTop && bottom <= root.scrollTop + root.clientHeight;
+      const scrollTo = fits ? root.scrollTop : wanted;
+      if (scrollTo !== root.scrollTop) root.scrollTo({ top: scrollTo, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+
+      const w = right - left + ZOOM_PAD * 2;
+      const h = bottom - top + ZOOM_PAD * 2;
+      const s = Math.max(base.s, Math.min(MAX_ZOOM, view.width / w, view.height / h));
+      // Målets mitt relativt telefonens mitt (lokala px).
+      const px = rootLeft + (left + right) / 2 - PHONE_W / 2;
+      const py = rootTop + (top + bottom) / 2 - scrollTo - PHONE_H / 2;
+      return { x: view.cx - s * px, y: view.cy - s * py, s };
+    };
+
+    moveTo(compute());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusKey, base.x, base.y, base.s, view.cx, view.cy, view.width, view.height, remeasureKey, moveTo]);
+}
+
 interface ToastState {
   id: number;
   message: string;
@@ -158,7 +367,12 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
 
   const [activeTab, setActiveTab] = useState<Tab>("templates");
   const [isSaving, setIsSaving] = useState(false);
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  // Öppen uppgraderingsruta = det som trycktes på (null = stängd).
+  const [upgradeTeaser, setUpgradeTeaser] = useState<PremiumTeaser | null>(null);
+  const requestPremium = useCallback((teaser?: PremiumTeaser) => setUpgradeTeaser(teaser ?? { kind: "generic" }), []);
+  const closeUpgrade = useCallback(() => setUpgradeTeaser(null), []);
+  const [focusHint, setFocusHint] = useState<Focus | null>(null);
+  const [zoomedOut, setZoomedOut] = useState(false);
   const [sheetSnap, setSheetSnap] = useState(0);
   const [toast, setToast] = useState<ToastState | null>(null);
 
@@ -170,7 +384,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
 
   const isUserPremium = userData.isPremium || false;
   const isUserAdmin = userData.isAdmin || false;
-  const accessUser = { isPremium: isUserPremium, isAdmin: isUserAdmin };
+  const accessUser = useMemo(() => ({ isPremium: isUserPremium, isAdmin: isUserAdmin }), [isUserPremium, isUserAdmin]);
 
   const currentSettings = mode === "BUSINESS" ? businessSettings : socialSettings;
   const socialDirty = !sameSettings(socialSettings, savedSocial);
@@ -229,6 +443,12 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
 
   const updateSetting = (key: keyof CustomThemeSettings, value: string | number | boolean | undefined) => {
     setForMode(mode, (prev) => ({ ...prev, [key]: value }));
+    // Zooma till det som ändrades (knappfärg -> knapparna osv.).
+    const f = focusForKey(key);
+    if (f) {
+      setFocusHint(f);
+      setZoomedOut(false);
+    }
   };
 
   const applyTemplate = (newSettings: Partial<CustomThemeSettings>) => {
@@ -271,7 +491,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
         });
 
         if (res.status === 403) {
-          setShowUpgradeModal(true);
+          requestPremium({ kind: "generic" });
           return;
         }
         if (!res.ok) throw new Error(`save failed: ${res.status}`);
@@ -285,7 +505,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
         if (json.sanitized) sanitized = true;
       }
 
-      if (sanitized) setShowUpgradeModal(true);
+      if (sanitized) requestPremium({ kind: "generic" });
       showToast({ message: t("themes.editor.saved"), tone: "success" });
       router.refresh();
     } catch (error) {
@@ -318,8 +538,88 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
   }, [previewSize.width, previewSize.height, coveredBySheet, isDesktop, MODE_BAR_H]);
   const phoneCenterY = MODE_BAR_H + (previewSize.height - MODE_BAR_H - coveredBySheet) / 2;
 
+  // --- Auto-zoom ---
+  // Synlig yta = mellan lägesväljaren och arkets faktiska läge (även helt uppdraget).
+  const sheetCover = isDesktop ? 0 : saveBarH + snapPoints[sheetSnap];
+  const viewTop = isDesktop ? MODE_BAR_H : 8;
+  const viewH = Math.max(previewSize.height - sheetCover - viewTop - 8, 0);
+  const view = useMemo(
+    () => ({ cx: previewSize.width / 2, cy: viewTop + viewH / 2, width: Math.max(previewSize.width - 24, 0), height: viewH }),
+    [previewSize.width, viewTop, viewH],
+  );
+  const baseCamera = useMemo<Camera>(() => ({ x: previewSize.width / 2, y: phoneCenterY, s: scale }), [previewSize.width, phoneCenterY, scale]);
+  const autoFocus: Focus = focusHint ?? TAB_FOCUS[activeTab];
+  const focus: Focus = zoomedOut ? "all" : autoFocus;
+  const canZoom = autoFocus !== "all" && viewH >= 140;
+  const phoneRef = useRef<HTMLDivElement>(null);
+  usePreviewCamera({
+    phoneRef,
+    base: baseCamera,
+    focus: canZoom ? focus : "all",
+    view,
+    remeasureKey: `${mode}|${sheetSnap}|${JSON.stringify(currentSettings)}`,
+  });
+
+  // Sektionen man scrollar i arket styr zoomen (Profil: typsnitt -> namn+bio,
+  // ram/namneffekt -> bild+namn, logga -> hela).
+  const onSheetScroll = useCallback(
+    (e: React.UIEvent<HTMLElement>) => {
+      const scroller = e.target as HTMLElement;
+      if (!scroller.querySelectorAll) return;
+      const sections = scroller.querySelectorAll<HTMLElement>("[data-editor-section]");
+      if (sections.length === 0) return;
+      const top = scroller.getBoundingClientRect().top + 56;
+      let current: string | null = null;
+      for (const el of Array.from(sections)) {
+        if (el.getBoundingClientRect().bottom > top) {
+          current = el.dataset.editorSection ?? null;
+          break;
+        }
+      }
+      const f = current ? SECTION_FOCUS[current] : undefined;
+      if (f) setFocusHint((prev) => (prev === f ? prev : f));
+    },
+    [],
+  );
+
+  // Nyp (två fingrar) och dubbeltryck på previewn växlar in/utzoomat.
+  const gesture = useRef<{ dist: number; lastTap: number; lastX: number; lastY: number }>({ dist: 0, lastTap: 0, lastX: 0, lastY: 0 });
+  const onPreviewTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const [a, b] = [e.touches[0], e.touches[1]];
+      gesture.current.dist = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY);
+    }
+  };
+  const onPreviewTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length !== 2 || !gesture.current.dist || !canZoom) return;
+    const [a, b] = [e.touches[0], e.touches[1]];
+    const ratio = Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY) / gesture.current.dist;
+    if (ratio < 0.8) {
+      setZoomedOut(true);
+      gesture.current.dist = 0;
+    } else if (ratio > 1.25) {
+      setZoomedOut(false);
+      gesture.current.dist = 0;
+    }
+  };
+  const onPreviewPointerUp = (e: React.PointerEvent) => {
+    if (!canZoom) return;
+    const g = gesture.current;
+    const now = e.timeStamp;
+    if (now - g.lastTap < 320 && Math.hypot(e.clientX - g.lastX, e.clientY - g.lastY) < 24) {
+      setZoomedOut((z) => !z);
+      g.lastTap = 0;
+      return;
+    }
+    g.lastTap = now;
+    g.lastX = e.clientX;
+    g.lastY = e.clientY;
+  };
+
   const selectTab = (tab: Tab) => {
     setActiveTab(tab);
+    setFocusHint(null);
+    setZoomedOut(false);
     if (!isDesktop && sheetSnap === 0 && tab !== "templates") setSheetSnap(1);
   };
 
@@ -365,7 +665,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             isPremium={isUserPremium}
             isAdmin={isUserAdmin}
             onApply={(tpl) => applyTemplate(tpl.settings)}
-            onShowUpgrade={() => setShowUpgradeModal(true)}
+            onShowUpgrade={requestPremium}
             mode={mode}
             currentSettings={currentSettings}
             layout={!isDesktop && sheetSnap === 0 ? "strip" : "grid"}
@@ -379,7 +679,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             updateSetting={updateSetting}
             canUseImage={canAccess("theme_background_image", accessUser)}
             canAnimate={canAccess("theme_animated_background", accessUser)}
-            onShowUpgrade={() => setShowUpgradeModal(true)}
+            onShowUpgrade={requestPremium}
           />
         );
       case "buttons":
@@ -389,18 +689,12 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             updateSetting={updateSetting}
             isPremium={isUserPremium}
             isAdmin={isUserAdmin}
-            onShowUpgrade={() => setShowUpgradeModal(true)}
+            onShowUpgrade={requestPremium}
           />
         );
       case "profile":
         return (
-          <ProfileTab
-            settings={currentSettings}
-            updateSetting={updateSetting}
-            isPremium={isUserPremium}
-            isAdmin={isUserAdmin}
-            onShowUpgrade={() => setShowUpgradeModal(true)}
-          />
+          <ProfileTab settings={currentSettings} updateSetting={updateSetting} displayName={mappedProfileData.displayName} />
         );
     }
   })();
@@ -502,8 +796,18 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
   );
 
   return (
-    <>
-      <UpgradeModal isOpen={showUpgradeModal} onClose={() => setShowUpgradeModal(false)} />
+    <PremiumGateProvider accessUser={accessUser} onRequest={requestPremium}>
+      <UpgradeModal
+        isOpen={upgradeTeaser !== null}
+        onClose={closeUpgrade}
+        teaser={upgradeTeaser}
+        preview={{
+          settings: currentSettings,
+          displayName: mappedProfileData.displayName,
+          image: mappedProfileData.image,
+          linkTitles: mappedProfileData.links.map((l) => l.title || l.url),
+        }}
+      />
 
       <div
         ref={containerRef}
@@ -531,17 +835,36 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             <div className="absolute left-2 top-2 z-20">{modeControlVertical}</div>
           )}
 
+          {/* Telefonen. Transformen (placering + auto-zoom) skrivs av usePreviewCamera. */}
           <div
-            className="absolute left-1/2 z-10 overflow-hidden rounded-[3rem] border-[8px] border-slate-700/50 bg-nordic-primary shadow-2xl ring-1 ring-white/10 transition-transform duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none"
+            ref={phoneRef}
+            data-preview-phone=""
+            onTouchStart={onPreviewTouchStart}
+            onTouchMove={onPreviewTouchMove}
+            onPointerUp={onPreviewPointerUp}
+            className="absolute left-0 top-0 z-10 overflow-hidden rounded-[3rem] border-[8px] border-slate-700/50 bg-nordic-primary shadow-2xl ring-1 ring-white/10"
             style={{
               width: PHONE_W,
               height: PHONE_H,
-              top: phoneCenterY,
-              transform: `translate(-50%, -50%) scale(${scale})`,
+              transform: `translate3d(${baseCamera.x - PHONE_W / 2}px, ${baseCamera.y - PHONE_H / 2}px, 0) scale(${scale})`,
             }}
           >
-            <ProfilePreview data={mappedProfileData} customSettings={currentSettings} isPremium={isUserPremium} />
+            <ProfilePreview data={mappedProfileData} customSettings={currentSettings} isPremium={isUserPremium} isAdmin={isUserAdmin} />
           </div>
+
+          {/* Visa hela / zooma in — syns bara när det finns något att zooma till. */}
+          {canZoom && (
+            <button
+              type="button"
+              onClick={() => setZoomedOut((z) => !z)}
+              aria-pressed={zoomedOut}
+              className="absolute right-2 z-20 flex h-11 items-center gap-1.5 rounded-full border border-white/10 bg-slate-950/70 px-3.5 text-xs font-semibold text-slate-100 shadow-lg backdrop-blur-xl transition-transform duration-100 active:scale-95 [@media(prefers-reduced-transparency:reduce)]:bg-slate-950"
+              style={{ top: 8 }}
+            >
+              {zoomedOut ? <ZoomIn size={16} aria-hidden /> : <ZoomOut size={16} aria-hidden />}
+              {zoomedOut ? t("themes.editor.zoomIn") : t("themes.editor.zoomOut")}
+            </button>
+          )}
 
           <Toast toast={toast} onDismiss={() => setToast(null)} />
         </div>
@@ -550,7 +873,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
         {isDesktop && (
           <aside className="flex w-[400px] shrink-0 flex-col border-l border-white/10 bg-nordic-primary">
             <div className="pt-4">{tabBar}</div>
-            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-2">{tabContent}</div>
+            <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-6 pt-2" onScroll={onSheetScroll}>{tabContent}</div>
             <div className="border-t border-white/10 p-4">{saveBar}</div>
           </aside>
         )}
@@ -565,6 +888,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
               header={tabBar}
               handleLabel={sheetSnap === 0 ? t("themes.editor.expandSheet") : t("themes.editor.collapseSheet")}
               bottomOffset={saveBarH}
+              onContentScroll={onSheetScroll}
             >
               {activeTab === "templates" && sheetSnap === 0 ? (
                 tabContent
@@ -583,7 +907,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
           </>
         )}
       </div>
-    </>
+    </PremiumGateProvider>
   );
 }
 

@@ -9,7 +9,8 @@ import {
   type BackgroundPattern,
   type CustomThemeSettings,
 } from "@/types/theme";
-import { ChoiceTile, ColorPicker, PremiumBadge, SectionLabel, SegmentedControl, Slider, ToggleRow } from "@/components/themes/theme-controls";
+import { ChoiceTile, ColorPicker, InlineCrown, PremiumBadge, SectionLabel, SegmentedControl, Slider, ToggleRow } from "@/components/themes/theme-controls";
+import type { PremiumTeaser } from "@/components/themes/premium-gate";
 import { getPatternBackground } from "@/lib/theme-effects";
 import { MediaManager } from "@/components/themes/media-manager";
 import { useT } from "@/i18n/client";
@@ -21,7 +22,8 @@ interface BackgroundTabProps {
   canUseImage: boolean;
   /** Får använda animerad gradient (premium eller admin). Saknas -> låst. */
   canAnimate?: boolean;
-  onShowUpgrade: () => void;
+  /** Öppnar uppgraderingsrutan med det som trycktes på (usePremiumGate i editorn). */
+  onShowUpgrade: (teaser?: PremiumTeaser) => void;
 }
 
 function PatternSwatch({ pattern }: { pattern: BackgroundPattern }) {
@@ -46,11 +48,13 @@ export function BackgroundTab({ settings, updateSetting, canUseImage, canAnimate
       <SegmentedControl
         ariaLabel={t("themes.tabBackground")}
         value={settings.backgroundType}
-        onChange={(v) => updateSetting("backgroundType", v)}
+        // Bild är premium: för gratiskonton öppnar segmentet uppgraderingsrutan
+        // direkt i stället för att visa en låst uppladdare.
+        onChange={(v) => (v === "image" && !canUseImage ? onShowUpgrade({ kind: "backgroundImage" }) : updateSetting("backgroundType", v))}
         options={[
           { value: "solid", label: t("themes.background.typeColor") },
           { value: "gradient", label: t("themes.background.typeGradient") },
-          { value: "image", label: t("themes.background.typeImage") },
+          { value: "image", label: <>{t("themes.background.typeImage")} <InlineCrown className={canUseImage ? "opacity-70" : ""} /></> },
         ]}
       />
 
@@ -83,7 +87,7 @@ export function BackgroundTab({ settings, updateSetting, canUseImage, canAnimate
             checked={Boolean(settings.backgroundAnimated) && canAnimate}
             onChange={(v) => updateSetting("backgroundAnimated", v)}
             locked={!canAnimate}
-            onLockedClick={onShowUpgrade}
+            onLockedClick={() => onShowUpgrade({ kind: "animatedBackground" })}
             badge={<PremiumBadge isUnlocked={canAnimate} className="relative" />}
           />
         </div>
@@ -96,7 +100,7 @@ export function BackgroundTab({ settings, updateSetting, canUseImage, canAnimate
             <MediaManager
               onImageSelected={(url) => updateSetting("backgroundImage", url)}
               isPremium={canUseImage}
-              onShowUpgrade={onShowUpgrade}
+              onShowUpgrade={() => onShowUpgrade({ kind: "backgroundImage" })}
             />
           </div>
 

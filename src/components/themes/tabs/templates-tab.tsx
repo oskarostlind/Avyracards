@@ -1,18 +1,20 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { Check, Crown, Lock } from "lucide-react";
+import { Check, Crown } from "lucide-react";
 import { type CustomThemeSettings, type ThemeTemplate, type ThemeMode } from "@/types/theme";
 import { getTemplates, isTemplateLocked } from "@/lib/feature-access";
 import { getRelativeLuminance, normalizeHexColor } from "@/utils/color";
 import { getLinkButtonAppearance } from "@/lib/theme/button-style";
 import { useT } from "@/i18n/client";
+import type { PremiumTeaser } from "@/components/themes/premium-gate";
 
 interface TemplatesTabProps {
   isPremium: boolean;
   isAdmin?: boolean;
   onApply: (template: ThemeTemplate) => void;
-  onShowUpgrade: () => void;
+  /** Öppnar uppgraderingsrutan med det som trycktes på (usePremiumGate i editorn). */
+  onShowUpgrade: (teaser?: PremiumTeaser) => void;
   mode: ThemeMode;
   currentSettings: CustomThemeSettings;
   /**
@@ -89,7 +91,7 @@ export function TemplatesTab({
       <button
         key={tpl.id}
         type="button"
-        onClick={() => (locked ? onShowUpgrade() : onApply(tpl))}
+        onClick={() => (locked ? onShowUpgrade({ kind: "template", template: tpl }) : onApply(tpl))}
         aria-pressed={active}
         aria-label={locked ? `${tpl.name} – ${tr("themes.templateLocked")}` : tpl.name}
         className={`group relative flex shrink-0 snap-start flex-col overflow-hidden rounded-2xl text-left transition-[transform,box-shadow] duration-150 active:scale-[0.96] ${
@@ -122,11 +124,11 @@ export function TemplatesTab({
         {tpl.isPremium && (
           <span
             className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full shadow-lg ${
-              locked ? "bg-amber-500 text-slate-900" : "bg-emerald-500 text-white"
+              locked ? "bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 text-amber-950" : "bg-slate-950/60 text-amber-300 ring-1 ring-inset ring-amber-300/50"
             }`}
             title={locked ? tr("themes.templateLocked") : tr("themes.includedInPlan")}
           >
-            {locked ? <Lock size={12} /> : <Crown size={12} fill="currentColor" />}
+            <Crown size={12} strokeWidth={2.5} fill="currentColor" />
           </span>
         )}
       </button>

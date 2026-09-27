@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { Lock, Crown } from "lucide-react";
+import { Crown } from "lucide-react";
 import { useT } from "@/i18n/client";
 import { normalizeHexColor } from "@/utils/color";
 
@@ -270,19 +270,30 @@ export function ChoiceTile({
 }
 
 // --- PREMIUM BADGE ---
+// Kronan sitter på ALLT som är premium — även när det är upplåst — så att
+// man alltid ser vad som ingår i premium. Låst: fylld guldkrona (säljer).
+// Upplåst: dämpad krona med guldkant (visar att det ingår i paketet).
 export function PremiumBadge({ isUnlocked, className = "absolute top-2 right-2" }: { isUnlocked: boolean; className?: string }) {
   const t = useT();
+  const label = isUnlocked ? t("themes.includedInPlan") : t("common.premium");
 
   return (
-    <div
-        className={`${className} p-1 rounded-full shadow-lg flex items-center justify-center z-10 ${
-            isUnlocked
-            ? "bg-emerald-500 text-white"
-            : "bg-amber-500 text-slate-900"
-        }`}
-        title={isUnlocked ? t("themes.includedInPlan") : t("common.premium")}
+    <span
+      role="img"
+      aria-label={label}
+      title={label}
+      className={`${className} z-10 flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+        isUnlocked
+          ? "bg-amber-300/15 text-amber-300 ring-1 ring-inset ring-amber-300/40"
+          : "bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 text-amber-950 shadow-[0_2px_8px_rgba(245,158,11,0.45)]"
+      }`}
     >
-        {isUnlocked ? <Crown size={10} fill="currentColor" /> : <Lock size={10} />}
-    </div>
+      <Crown size={11} strokeWidth={2.5} fill="currentColor" aria-hidden />
+    </span>
   );
+}
+
+/** Liten krona att sätta i en etikett/ett segment (t.ex. "Bild 👑"). */
+export function InlineCrown({ className = "" }: { className?: string }) {
+  return <Crown size={12} strokeWidth={2.5} fill="currentColor" aria-hidden className={`shrink-0 text-amber-300 ${className}`} />;
 }
