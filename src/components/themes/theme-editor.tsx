@@ -79,6 +79,8 @@ const TAB_FOCUS: Record<Tab, Focus> = {
   buttons: ["buttons"],
   // Profilfliken börjar med typsnittsväljaren -> namn + bio.
   profile: ["name", "bio"],
+  // Samlarobjekten är ramar + Founder-badgen under namnet.
+  limited: ["avatar", "name"],
 };
 
 /** Senast ändrade inställning -> vad som ska synas. */
@@ -709,7 +711,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             drops={(userData.drops as DropStatus[] | undefined) ?? []}
             canAnimate={canAccess("theme_premium_frames", accessUser)}
             avatarUrl={mappedProfileData.image}
-            onShowUpgrade={() => setShowUpgradeModal(true)}
+            onShowUpgrade={() => requestPremium({ kind: "frame", frame: "founders" })}
           />
         );
     }
