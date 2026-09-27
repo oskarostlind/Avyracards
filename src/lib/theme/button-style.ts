@@ -152,6 +152,11 @@ const PROFILE_CARD_RGB = "#0f172a";
  * Bildbakgrund: okänd, så vi returnerar ytterlighetsfallen (svart resp. vit
  * bild under kortet) — texten väljs så att den klarar båda.
  */
+/** Varianter där texten i praktiken står på ytan bakom knappen. */
+const TRANSLUCENT_VARIANTS: ReadonlySet<string> = new Set([
+  "outline", "ghost", "underline", "neon", "glass", "liquid", "soft",
+]);
+
 export function getButtonBackdropColors(settings: Partial<CustomThemeSettings>): string[] {
   const cover = settings.backgroundAnimated ? 0.78 : 0.6;
   const under = (bg: string) => mix(bg, PROFILE_CARD_RGB, cover);
@@ -560,7 +565,13 @@ export function getLinkButtonAppearance(
     textColor = pickReadableText([accent]);
   }
 
-  style.color = buttonText ?? textColor;
+  // En vald knapptextfärg gäller — utom när knappen är genomskinlig och färgen
+  // i praktiken försvinner mot ytan bakom (t.ex. en mall med mörk text för
+  // fyllda knappar + byte till neon). Då vinner den läsbara färgen.
+  const translucent = TRANSLUCENT_VARIANTS.has(variant);
+  const unreadable =
+    buttonText !== null && translucent && Math.min(...bgs.map((bg) => contrastRatio(buttonText, bg))) < 3;
+  style.color = buttonText && !unreadable ? buttonText : textColor;
 
   // --- Kant -----------------------------------------------------------------
   // Egen bredd/färg (Avancerat) vinner över variantens standard. Brutal utan

@@ -302,3 +302,26 @@ describe("hjälpare", () => {
     expect(pickReadableText(["#000000"])).toBe("#ffffff");
   });
 });
+
+describe("vald knapptextfärg på genomskinliga varianter", () => {
+  it("ignorerar en mörk knapptext som blir oläslig på neon över mörk bakgrund", async () => {
+    const { getLinkButtonAppearance } = await import("@/lib/theme/button-style");
+    const { getRelativeLuminance } = await import("@/utils/color");
+    const contrastRatio = (a: string, b: string) => {
+      const [x, y] = [getRelativeLuminance(a), getRelativeLuminance(b)].sort((m, n) => n - m);
+      return (x + 0.05) / (y + 0.05);
+    };
+    const settings = {
+      buttonVariant: "neon" as const, accentColor: "#f7a8c8", buttonTextColor: "#3b0a22",
+      backgroundType: "gradient" as const, gradientFrom: "#3b0a22", gradientTo: "#14040c", textColor: "#ffeef5",
+    };
+    const { style } = getLinkButtonAppearance(settings as never);
+    expect(String(style.color)).not.toBe("#3b0a22");
+    expect(contrastRatio(String(style.color), "#1a1020")).toBeGreaterThan(4);
+  });
+  it("behåller vald knapptext på fyllda varianter", async () => {
+    const { getLinkButtonAppearance } = await import("@/lib/theme/button-style");
+    const { style } = getLinkButtonAppearance({ buttonVariant: "solid", accentColor: "#f7a8c8", buttonTextColor: "#3b0a22" } as never);
+    expect(style.color).toBe("#3b0a22");
+  });
+});
