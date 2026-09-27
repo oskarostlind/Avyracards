@@ -12,7 +12,8 @@ import { BUTTON_INTERACTION_CLASS, getClassicLinkColorStyle, getLinkButtonAppear
 import { ProfileBackgroundLayer } from "@/components/public-profile/profile-background";
 import { ProfileSafetyActions } from "@/components/public-profile/profile-safety-actions";
 import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
-import { isAnimatedBackgroundLocked, isFrameLocked, isNameEffectLocked, validateThemeSettingsForRender } from "@/lib/feature-access";
+import { canAnimateCollectibleFrame, isAnimatedBackgroundLocked, isFrameLocked, isNameEffectLocked, validateThemeSettingsForRender } from "@/lib/feature-access";
+import { FounderBadge } from "@/components/collectibles/founder-badge";
 import { DisplayName } from "@/components/theme-effects/display-name";
 import { Save } from "lucide-react";
 import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
@@ -67,7 +68,12 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
   // Ram + namneffekt ritas av <AvatarFrame>/<DisplayName> (delas med editorn).
   // Utan eget tema: rundad fyrkant som tidigare.
   // Premium som gått ut: sparade premiumeffekter faller tillbaka vid rendering.
-  const premiumAccess = { isPremium: user.isPremium, isAdmin: user.role === "ADMIN" };
+  const premiumAccess = {
+    isPremium: user.isPremium,
+    isAdmin: user.role === "ADMIN",
+    // Samlarramar (Founders) kräver ägande; ägda objekt kommer via mappern.
+    collectibles: (data.collectibles ?? []).map((c) => c.dropId),
+  };
   const savedFrame = settings.frameStyle || 'circle';
   const frameStyle = !hasCustomTheme ? 'rounded' : isFrameLocked(savedFrame, premiumAccess) ? 'circle' : savedFrame;
   const nameEffect = hasCustomTheme && !isNameEffectLocked(settings.nameEffect, premiumAccess) ? settings.nameEffect : "none";
@@ -135,7 +141,7 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
           
           <div className="p-6 sm:p-8 border-b border-white/5">
             <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-                <AvatarFrame frame={frameStyle} size={96} accent={settings.accentColor}>
+                <AvatarFrame frame={frameStyle} size={96} accent={settings.accentColor} animate={canAnimateCollectibleFrame(premiumAccess)}>
                   {image ? (
                     <Image src={image} alt={displayName} fill className="object-cover" />
                   ) : (
@@ -145,6 +151,8 @@ export function BusinessProfile({ data, user, viewerIsLoggedIn = false, hasBlock
                 
                 <div className="space-y-1">
                    <DisplayName name={displayName} effect={nameEffect} accent={settings.accentColor} textColor={settings.textColor} className="text-2xl sm:text-3xl font-bold" style={hasCustomTheme ? getHeadingFontStyle(settings.headingFont, settings.font) : undefined} />
+                   {/* Limited edition: ägaren visar alltid sitt löpnummer. */}
+                   <FounderBadge collectibles={data.collectibles} className="pb-1" />
                    <div className={`flex flex-wrap gap-2 text-sm font-medium ${!hasCustomTheme ? tokens.textMuted : 'opacity-80'}`}>
                       {jobTitle && <span className="flex items-center gap-1"><SocialIcon fallbackIcon="job" size={14}/> {jobTitle}</span>}
                       {companyName && <span>@ {companyName}</span>}

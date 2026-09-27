@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { isPremium: true, role: true },
+      select: { isPremium: true, role: true, collectibles: { select: { dropId: true } } },
     });
 
     // All premium-logik bor i src/lib/feature-access.ts — både UI och API
@@ -26,7 +26,12 @@ export async function POST(req: Request) {
     const { settings: safeSettings, sanitized, removed } = sanitizeThemeSettings(
       incoming,
       targetMode,
-      { isPremium: user?.isPremium, isAdmin: user?.role === "ADMIN" },
+      {
+        isPremium: user?.isPremium,
+        isAdmin: user?.role === "ADMIN",
+        // Samlarramar (Founders) får bara sparas av den som äger droppet.
+        collectibles: user?.collectibles.map((c) => c.dropId) ?? [],
+      },
     );
 
     const updateData =

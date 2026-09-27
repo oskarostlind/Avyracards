@@ -258,6 +258,107 @@
 }
 
 /* ------------------------------------------------------------------ */
+/*  Founders — samlarram (limited edition, 100 ex)                    */
+/* ------------------------------------------------------------------ */
+
+/* Obsidian: nästan svart sten med graphite-skiftningar — medvetet inte guld.
+   Guldet sitter bara i två graverade hårlinjer, bezel-skårorna och sigillet,
+   så ramen läses som "mörk och sällsynt" och inte som Guld-ramen. */
+.foundersStone {
+  background: conic-gradient(
+    from 200deg,
+    #07070a,
+    #1c1a17 14%,
+    #0a0a0d 28%,
+    #26221c 46%,
+    #08080b 62%,
+    #1a1814 80%,
+    #07070a
+  );
+}
+
+/* Graverade skåror som på en klockbezel: 60 streck, svagt guld. */
+.foundersTicks {
+  background: repeating-conic-gradient(from 0deg, rgba(214, 178, 94, 0.55) 0 0.9deg, transparent 0.9deg 6deg);
+  opacity: 0.6;
+}
+
+.foundersHairline {
+  background: linear-gradient(160deg, #f6e3a1, #a47a2c 40%, #5c4212 60%, #e9cd7e);
+}
+
+/* Ljuset som färdas runt: en smal ljus båge (guld -> vitt) på stenen. */
+.foundersLight {
+  background: conic-gradient(
+    from 0deg,
+    transparent 0 70%,
+    rgba(214, 178, 94, 0.25) 82%,
+    rgba(255, 236, 179, 0.95) 96%,
+    #fff 98.5%,
+    transparent 100%
+  );
+}
+
+.foundersHalo {
+  inset: calc(var(--af-t) * -1.6);
+  background: radial-gradient(closest-side, transparent 64%, rgba(180, 140, 60, 0.28) 80%, transparent 100%);
+}
+
+/* Ljuset: 12 s per varv — långt från 0,2 Hz och lugnt nog att kännas dyrt.
+   Statiskt läge (ingen animation) visar reflexen snett uppe till vänster. */
+.foundersOrbit {
+  transform: rotate(-50deg);
+}
+
+.foundersOrbitAnimated {
+  animation: af-founders-orbit 12s linear infinite;
+}
+
+@keyframes af-founders-orbit {
+  from {
+    transform: rotate(-50deg);
+  }
+  to {
+    transform: rotate(310deg);
+  }
+}
+
+/* Sigillet: litet präglat mynt nere vid ramen med ett graverat F. */
+.foundersSeal {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--af-seal) * -0.18);
+  z-index: 3;
+  width: var(--af-seal);
+  height: var(--af-seal);
+  transform: translateX(-50%);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 30%, #2d2a24, #0b0b0e 70%);
+  box-shadow:
+    inset 0 0 0 max(1px, calc(var(--af-seal) * 0.07)) #c9a352,
+    inset 0 0 0 max(1.5px, calc(var(--af-seal) * 0.12)) rgba(0, 0, 0, 0.6),
+    0 calc(var(--af-seal) * 0.08) calc(var(--af-seal) * 0.3) rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.foundersSealGlyph {
+  font-family: "Playfair Display Variable", "Playfair Display", Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  font-size: calc(var(--af-seal) * 0.56);
+  line-height: 1;
+  transform: translateY(-3%);
+  background: linear-gradient(170deg, #fff4cf 10%, #d6b25e 45%, #8a6420 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  user-select: none;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Namneffekter                                                       */
 /* ------------------------------------------------------------------ */
 
@@ -387,6 +488,7 @@
   .aura,
   .sweep,
   .neonWrap,
+  .foundersOrbitAnimated,
   .nameGlowCopy,
   .bgDrift {
     animation: none !important;

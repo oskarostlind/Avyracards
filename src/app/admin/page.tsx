@@ -13,8 +13,7 @@ import {
   Users,
   Activity,
   ShieldAlert,
-  BarChart3,
-} from "lucide-react";
+  BarChart3, Gem } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import type { OrderStatus } from "@prisma/client";
 import { getT } from "@/i18n/server";
@@ -145,6 +144,14 @@ export default async function AdminPage() {
             className="flex items-center gap-2 rounded-lg bg-red-600/90 px-4 py-2 text-sm font-medium text-nordic-secondary hover:bg-red-500 transition shadow-lg shadow-red-500/20"
           >
             <ShieldAlert size={16} /> {t("admin.moderation")}
+          </Link>
+
+        {/* --- SAMLAROBJEKT (limited edition-drops, Founders) --- */}
+        <Link
+            href="/admin/collectibles"
+            className="flex items-center gap-2 rounded-lg bg-amber-500/90 px-4 py-2 text-sm font-medium text-slate-900 hover:bg-amber-400 transition shadow-lg shadow-amber-500/20"
+          >
+            <Gem size={16} /> {t("collectibles.admin.title")}
           </Link>
 
         {/* --- SYSTEMSTATUS (konfigurationskontroll) --- */}

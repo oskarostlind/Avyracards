@@ -27,7 +27,7 @@ export type ButtonVariant =
  * ("inter", "playfair", "roboto", "lora", "space", "oswald") finns kvar.
  */
 export type Font = FontId;
-export type FrameStyle = ClassicFrameStyle | AnimatedFrameStyle;
+export type FrameStyle = ClassicFrameStyle | AnimatedFrameStyle | CollectibleFrameStyle;
 export type BackgroundType = "solid" | "gradient" | "image";
 
 /* --- Ramar, namneffekter och bakgrundsmönster ------------------------------
@@ -40,6 +40,13 @@ export const CLASSIC_FRAME_STYLES = ["circle", "rounded", "square", "none", "rin
 export const ANIMATED_FRAME_STYLES = ["aurora", "pulse", "holo", "orbit", "ember", "frost", "gold", "neon"] as const;
 export type ClassicFrameStyle = (typeof CLASSIC_FRAME_STYLES)[number];
 export type AnimatedFrameStyle = (typeof ANIMATED_FRAME_STYLES)[number];
+/**
+ * Samlarramar (limited edition). Ligger medvetet utanför de vanliga listorna:
+ * de väljs i editorns Limited-flik och får bara sparas av den som äger
+ * motsvarande drop (se COLLECTIBLE_FRAME_DROP i src/lib/collectibles-shared.ts).
+ */
+export const COLLECTIBLE_FRAME_STYLES = ["founders"] as const;
+export type CollectibleFrameStyle = (typeof COLLECTIBLE_FRAME_STYLES)[number];
 
 /** Effekt på visningsnamnet. Allt utom "none" är premium. */
 export const NAME_EFFECTS = ["none", "shimmer", "gradient", "glow"] as const;

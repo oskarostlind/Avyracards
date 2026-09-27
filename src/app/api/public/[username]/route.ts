@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { resolveRedirectUrl } from "@/lib/profile-redirect";
+import { mapCollectibles } from "@/lib/profile-mapper";
 import { consumeRateLimit, type RateLimitOptions } from "@/lib/rate-limit";
 
 const publicProfileRateLimitOptions: RateLimitOptions = {
@@ -43,6 +44,13 @@ export async function GET(
       redirectEnabled: true,
       redirectLinkId: true,
 
+      // Limited edition (Founders-badge + upplåst samlarram). Samma fråga,
+      // ingen N+1.
+      collectibles: {
+        orderBy: { grantedAt: "asc" },
+        select: { dropId: true, serial: true, drop: { select: { maxSupply: true } } },
+      },
+
       links: {
         where: { isActive: true },
         orderBy: { order: "asc" },
@@ -65,8 +73,14 @@ export async function GET(
   // Samma regel som /u/[username] (se resolveRedirectUrl).
   const targetUrl = resolveRedirectUrl(user, user.links);
 
+  const { collectibles, ...rest } = user;
+
   return NextResponse.json({
-    user,
+    user: {
+      ...rest,
+      // Platt form: [{ dropId, serial, maxSupply }].
+      collectibles: mapCollectibles(collectibles),
+    },
     redirect: targetUrl
       ? { enabled: true, url: targetUrl }
       : { enabled: false, url: null },

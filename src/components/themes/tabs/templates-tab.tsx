@@ -1,7 +1,7 @@
 "use client";
 
 import type { CSSProperties } from "react";
-import { Check, Crown } from "lucide-react";
+import { Check, Crown, Lock } from "lucide-react";
 import { type CustomThemeSettings, type ThemeTemplate, type ThemeMode } from "@/types/theme";
 import { getTemplates, isTemplateLocked } from "@/lib/feature-access";
 import { getLinkButtonAppearance } from "@/lib/theme/button-style";

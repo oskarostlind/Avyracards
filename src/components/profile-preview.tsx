@@ -11,6 +11,7 @@ import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
 import "@/styles/profile-fonts.css";
 import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
 import { DisplayName } from "@/components/theme-effects/display-name";
+import { FounderBadge } from "@/components/collectibles/founder-badge";
 import { getAnimatedGradientImage, getPatternBackground } from "@/lib/theme-effects";
 import fx from "@/components/theme-effects/theme-effects.module.css";
 import { canAccess } from "@/lib/feature-access";
@@ -151,6 +152,7 @@ export function ProfilePreview({
           frame={settings.frameStyle}
           size={112}
           accent={settings.accentColor}
+          animate={canAccess("theme_premium_frames", { isPremium, isAdmin })}
         >
           {image ? (
              // eslint-disable-next-line @next/next/no-img-element
@@ -167,6 +169,8 @@ export function ProfilePreview({
         <div className="text-center space-y-2 mb-8 w-full">
           <div data-preview-target="name">
             <DisplayName name={displayName} effect={settings.nameEffect} accent={settings.accentColor} textColor={settings.textColor} className="text-2xl font-bold tracking-tight" style={getHeadingFontStyle(settings.headingFont, settings.font)} />
+            {/* Limited edition: samma Founder-badge som publika profilen. */}
+            <FounderBadge collectibles={data.collectibles} interactive={false} className="justify-center" />
           </div>
 
           {mode === "BUSINESS" && (

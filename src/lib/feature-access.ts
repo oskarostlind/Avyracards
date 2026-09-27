@@ -12,6 +12,7 @@ import {
   ANIMATED_FRAME_STYLES,
   BACKGROUND_PATTERNS,
   CLASSIC_FRAME_STYLES,
+  COLLECTIBLE_FRAME_STYLES,
   NAME_EFFECTS,
   PATTERN_OPACITY_DEFAULT,
   PATTERN_OPACITY_MAX,
@@ -29,11 +30,21 @@ import { isKnownLinkIcon } from "@/lib/link-icons";
 import { normalizeHexColor } from "@/utils/color";
 import { DEFAULT_FONT_ID, isKnownFontId, isPremiumFont } from "@/lib/theme/fonts";
 import { clampButtonBorderWidth, isButtonStyle, isButtonVariant } from "@/lib/theme/button-style";
+import { COLLECTIBLE_FRAME_DROP, requiredDropForFrame } from "@/lib/collectibles-shared";
+
+const ALL_COLLECTIBLE_DROPS: readonly string[] = Object.values(COLLECTIBLE_FRAME_DROP);
 
 /** Minsta möjliga bild av användaren som gatingen behöver. */
 export interface AccessUser {
   isPremium?: boolean | null;
   isAdmin?: boolean | null;
+  /**
+   * Drop-id:n (t.ex. "founders") som användaren äger. Samlarobjekt låses upp
+   * av ägande — inte av premium eller admin. Saknas fältet räknas det som
+   * "äger inget", så en route som glömmer hämta det nollar samlarramen hellre
+   * än läcker den.
+   */
+  collectibles?: readonly string[] | null;
 }
 
 /**
@@ -68,6 +79,13 @@ const FEATURE_DEFS = {
   theme_name_effects: "premium",
   /** Långsamt drivande gradientbakgrund. */
   theme_animated_background: "premium",
+
+  /**
+   * Samlarramar (limited edition). Nivån "free" betyder bara att premium inte
+   * krävs för den statiska versionen — själva låset är ägandet, se
+   * isCollectibleFrameLocked. Nyckeln finns för `removed`-rapporteringen.
+   */
+  collectible_frames: "free",
 
   // --- Länkar ---
   /** Egen färg per länkknapp (Link.customColor). Ikonval är gratis. */
@@ -108,7 +126,31 @@ export const PREMIUM_FRAME_STYLES: readonly FrameStyle[] = ANIMATED_FRAME_STYLES
 /** Namneffekter som kostar premium (allt utom "none"). */
 export const PREMIUM_NAME_EFFECTS: readonly NameEffect[] = NAME_EFFECTS.filter((e) => e !== "none");
 
-const KNOWN_FRAME_STYLES: readonly string[] = [...CLASSIC_FRAME_STYLES, ...ANIMATED_FRAME_STYLES];
+const KNOWN_FRAME_STYLES: readonly string[] = [...CLASSIC_FRAME_STYLES, ...ANIMATED_FRAME_STYLES, ...COLLECTIBLE_FRAME_STYLES];
+
+/** Sant om användaren äger droppet. Ägande kan inte ersättas av premium/admin. */
+export function ownsDrop(dropId: string, user?: AccessUser | null): boolean {
+  return Boolean(user?.collectibles?.includes(dropId));
+}
+
+/**
+ * Samlarram (t.ex. "founders") som användaren inte äger. Gäller även admin —
+ * ett löpnummer ska betyda något.
+ */
+export function isCollectibleFrameLocked(frame: FrameStyle | undefined, user?: AccessUser | null): boolean {
+  const dropId = requiredDropForFrame(frame);
+  if (!dropId) return false;
+  return !ownsDrop(dropId, user);
+}
+
+/**
+ * Om en ägd samlarram får visas animerad. Den statiska versionen ingår i
+ * ägandet; rörelsen kräver aktivt premium (samma nyckel som övriga animerade
+ * ramar). Framtida köpkälla ändrar bara ägandet, inte den här regeln.
+ */
+export function canAnimateCollectibleFrame(user?: AccessUser | null): boolean {
+  return canAccess("theme_premium_frames", user);
+}
 
 export function isNameEffectLocked(effect: NameEffect | undefined, user?: AccessUser | null): boolean {
   if (!effect || !PREMIUM_NAME_EFFECTS.includes(effect)) return false;
@@ -143,6 +185,7 @@ export function isButtonVariantLocked(variant: ButtonVariant | undefined, user?:
 
 export function isFrameLocked(frame: FrameStyle | undefined, user?: AccessUser | null): boolean {
   if (!frame) return false;
+  if (requiredDropForFrame(frame)) return isCollectibleFrameLocked(frame, user);
   if (!PREMIUM_FRAME_STYLES.includes(frame)) return false;
   return !canAccess("theme_premium_frames", user);
 }
@@ -255,7 +298,12 @@ export function sanitizeThemeSettings(
   if ("frameStyle" in settings && settings.frameStyle !== undefined && !KNOWN_FRAME_STYLES.includes(settings.frameStyle)) {
     settings.frameStyle = "circle";
   }
-  if (isFrameLocked(settings.frameStyle, user)) {
+  if (isCollectibleFrameLocked(settings.frameStyle, user)) {
+    // Samlarram utan ägande -> standard. Egen nyckel så att UI:t kan säga
+    // "du äger inte det här" i stället för "uppgradera".
+    settings.frameStyle = "circle";
+    removed.push("collectible_frames");
+  } else if (isFrameLocked(settings.frameStyle, user)) {
     settings.frameStyle = "circle";
     removed.push("theme_premium_frames");
   }
@@ -436,7 +484,9 @@ export function validateThemeSettingsForRender(
   input: Partial<CustomThemeSettings>,
   mode: ThemeMode,
 ): Partial<CustomThemeSettings> {
-  return sanitizeThemeSettings(input, mode, { isAdmin: true }).settings;
+  // Alla samlarobjekt "ägs" här: det här är bara vitlistning. Ägandet
+  // kontrolleras av renderarna (isFrameLocked med användarens collectibles).
+  return sanitizeThemeSettings(input, mode, { isAdmin: true, collectibles: ALL_COLLECTIBLE_DROPS }).settings;
 }
 
 /* -------------------------------------------------------------------------- */

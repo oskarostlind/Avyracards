@@ -6,6 +6,7 @@ import { sendVerificationEmail } from "@/lib/email";
 import { z } from "zod";
 import { getLocale, getT } from "@/i18n/server";
 import type { Translator } from "@/i18n";
+import { grantSignupCollectibles } from "@/lib/collectibles";
 import { notifyAdmins } from "@/lib/admin-alerts";
 
 export const runtime = "nodejs";
@@ -132,6 +133,11 @@ export async function POST(req: Request) {
     } else {
        console.log(`[register] User ${user.email} auto-verified due to purchase session.`);
     }
+
+    // Limited edition: Founders-löpnummer till de första kontona. Efter
+    // mailsteget — annars skulle en rollbackad registrering bränna ett nummer
+    // (de återanvänds aldrig). Kastar aldrig.
+    await grantSignupCollectibles(user.id);
 
     // Pinga admin om den nya användaren. Efter mailet så att en rollbackad
     // registrering inte ger en notis. Kastar aldrig.

@@ -15,7 +15,8 @@ import { ProfileSafetyActions } from "@/components/public-profile/profile-safety
 import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
 import "@/styles/profile-fonts.css";
 import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
-import { isAnimatedBackgroundLocked, isFrameLocked, isNameEffectLocked, validateThemeSettingsForRender } from "@/lib/feature-access";
+import { canAnimateCollectibleFrame, isAnimatedBackgroundLocked, isFrameLocked, isNameEffectLocked, validateThemeSettingsForRender } from "@/lib/feature-access";
+import { FounderBadge } from "@/components/collectibles/founder-badge";
 import { DisplayName } from "@/components/theme-effects/display-name";
 
 type UserWithLinks = User & { links: LinkModel[] };
@@ -70,7 +71,12 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
   const primaryStyle = getLinkStyle(true);
   // Ram + namneffekt ritas av <AvatarFrame>/<DisplayName> (delas med editorn).
   // Premium som gått ut: sparade premiumeffekter faller tillbaka vid rendering.
-  const premiumAccess = { isPremium: user.isPremium, isAdmin: user.role === "ADMIN" };
+  const premiumAccess = {
+    isPremium: user.isPremium,
+    isAdmin: user.role === "ADMIN",
+    // Samlarramar (Founders) kräver ägande; ägda objekt kommer via mappern.
+    collectibles: (data.collectibles ?? []).map((c) => c.dropId),
+  };
   const savedFrame = settings.frameStyle || 'circle';
   const frameStyle = !useCustomTheme || isFrameLocked(savedFrame, premiumAccess) ? 'circle' : savedFrame;
   const nameEffect = useCustomTheme && !isNameEffectLocked(settings.nameEffect, premiumAccess) ? settings.nameEffect : "none";
@@ -102,7 +108,7 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
       <div className="relative z-10 mx-auto flex min-h-screen max-w-md flex-col items-center px-4 py-12">
         <section className={`w-full rounded-[32px] border p-8 shadow-2xl ${!useCustomTheme ? `${tokens.card} backdrop-blur-md` : ''}`} style={cardStyle}>
           <div className="flex flex-col items-center gap-5">
-            <AvatarFrame frame={frameStyle} size={112} accent={settings.accentColor}>
+            <AvatarFrame frame={frameStyle} size={112} accent={settings.accentColor} animate={canAnimateCollectibleFrame(premiumAccess)}>
               {user.avatarUrl ? (
                 <Image src={user.avatarUrl} alt={displayName} fill className="object-cover" />
               ) : (
@@ -111,6 +117,8 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
             </AvatarFrame>
             <div className="text-center space-y-2">
               <DisplayName name={displayName} effect={nameEffect} accent={settings.accentColor} textColor={settings.textColor} className="text-2xl font-bold tracking-tight" style={useCustomTheme ? getHeadingFontStyle(settings.headingFont, settings.font) : undefined} />
+              {/* Limited edition: ägaren visar alltid sitt löpnummer. */}
+              <FounderBadge collectibles={data.collectibles} className="justify-center" />
               {bio && (
                 <p className={`text-sm leading-relaxed max-w-[280px] mx-auto ${!useCustomTheme ? tokens.textMuted : ''}`} style={{ opacity: 0.9, whiteSpace: 'pre-line' }}>{bio}</p>
               )}

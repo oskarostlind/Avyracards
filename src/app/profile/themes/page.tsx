@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ThemeEditor } from "@/components/themes/theme-editor";
 import { CustomThemeSettings, defaultSettings } from "@/types/theme";
+import { FOUNDERS_DROP_ID, getDropStatus } from "@/lib/collectibles";
+import { mapCollectibles } from "@/lib/profile-mapper";
 
 export default async function ThemesPage() {
   const session = await auth();
@@ -38,6 +40,12 @@ export default async function ThemesPage() {
       contactEmail: true,
       phoneNumber: true,
 
+      // Limited edition: ägda objekt (Limited-fliken + Founder-badge i previewn).
+      collectibles: {
+        orderBy: { grantedAt: "asc" },
+        select: { dropId: true, serial: true, drop: { select: { maxSupply: true } } },
+      },
+
       links: {
         where: { isActive: true },
         orderBy: { order: "asc" },
@@ -55,6 +63,9 @@ export default async function ThemesPage() {
   });
 
   if (!user) redirect("/login");
+
+  // Founders-upplagan — "X kvar"/"Slut" på det låsta kortet.
+  const foundersStatus = await getDropStatus(FOUNDERS_DROP_ID);
 
   const savedSocial = (user.themeSettings as unknown as Partial<CustomThemeSettings>) || {};
   const safeSocialSettings: CustomThemeSettings = { ...defaultSettings, ...savedSocial };
@@ -94,7 +105,9 @@ export default async function ThemesPage() {
       isActive: true
     })),
     isPremium: user.isPremium,
-    isAdmin: user.role === "ADMIN"
+    isAdmin: user.role === "ADMIN",
+    collectibles: mapCollectibles(user.collectibles),
+    drops: foundersStatus ? [foundersStatus] : [],
   };
 
   return (

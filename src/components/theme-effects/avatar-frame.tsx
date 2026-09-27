@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import type { AnimatedFrameStyle, FrameStyle } from "@/types/theme";
 import { isAnimatedFrame, mixHex, safeAccent } from "@/lib/theme-effects";
+import { isCollectibleFrame } from "@/lib/collectibles-shared";
 import fx from "./theme-effects.module.css";
 
 /**
@@ -24,6 +25,12 @@ export interface AvatarFrameProps {
   children: ReactNode;
   className?: string;
   style?: CSSProperties;
+  /**
+   * Samlarramar (founders): false = statisk version. Används för ägare utan
+   * aktivt premium — själva ramen ingår i ägandet, rörelsen i premium.
+   * Påverkar inte övriga ramar.
+   */
+  animate?: boolean;
 }
 
 const HEXAGON = "polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%)";
@@ -34,10 +41,18 @@ function px(n: number) {
   return `${Math.round(n * 100) / 100}px`;
 }
 
-export function AvatarFrame({ frame = "circle", size, accent, children, className = "", style }: AvatarFrameProps) {
+export function AvatarFrame({ frame = "circle", size, accent, children, className = "", style, animate = true }: AvatarFrameProps) {
   const a = safeAccent(accent);
   const k = size / 112;
   const outer: CSSProperties = { width: size, height: size, ...style };
+
+  if (isCollectibleFrame(frame)) {
+    return (
+      <FoundersFrame size={size} animate={animate} className={className} style={outer}>
+        {children}
+      </FoundersFrame>
+    );
+  }
 
   if (isAnimatedFrame(frame)) {
     return (
@@ -243,6 +258,73 @@ function AnimatedFrame({
         {children}
         {overImage}
       </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Founders (limited edition, 100 ex). Obsidianring med graverade guldskåror,
+ * två tunna guldlinjer, ett ljus som långsamt färdas runt och ett präglat
+ * F-sigill nere vid ramen. Tänkt att kännas som ett sällsynt spelskinn — mörkt
+ * och tungt, inte blankt som Guld-ramen.
+ *
+ * `animate={false}` (ägare utan premium) och prefers-reduced-motion ger samma
+ * statiska läge: ljusreflexen står still snett uppe till vänster.
+ */
+function FoundersFrame({
+  size,
+  animate,
+  className,
+  style,
+  children,
+}: {
+  size: number;
+  animate: boolean;
+  className: string;
+  style: CSSProperties;
+  children: ReactNode;
+}) {
+  const t = Math.max(3, size * 0.075); // stenringens tjocklek
+  const hair = Math.max(0.75, size * 0.009);
+  const gap = Math.max(1, size * 0.022);
+  const seal = Math.max(10, size * 0.24);
+  // Små miniatyrer (editorns rutnät) klarar inte skåror och sigill snyggt.
+  const detailed = size >= 56;
+
+  const vars: Vars = {
+    ...style,
+    "--af-t": px(t),
+    "--af-rw": px(t),
+    "--af-seal": px(seal),
+  };
+
+  return (
+    <div className={`${fx.frame} ${className}`} style={vars} data-frame="founders" data-animated={animate ? "true" : "false"}>
+      <span aria-hidden>
+        <span className={`${fx.layer} ${fx.foundersHalo}`} />
+        <span className={`${fx.layer} ${fx.foundersStone} ${fx.ringMask}`} />
+        {detailed && (
+          <span className={`${fx.layer} ${fx.foundersTicks} ${fx.ringMask}`} style={{ "--af-rw": px(t * 0.42), inset: px(t * 0.29) } as Vars} />
+        )}
+        <span className={`${fx.layer} ${fx.foundersOrbit} ${animate ? fx.foundersOrbitAnimated : ""}`}>
+          <span className={`${fx.layer} ${fx.foundersLight} ${fx.ringMask}`} />
+        </span>
+        <span className={`${fx.layer} ${fx.foundersHairline} ${fx.ringMask}`} style={{ "--af-rw": px(hair) } as Vars} />
+        <span
+          className={`${fx.layer} ${fx.foundersHairline} ${fx.ringMask}`}
+          style={{ "--af-rw": px(hair), inset: px(t - hair) } as Vars}
+        />
+      </span>
+      <div className={fx.clip} style={{ inset: px(t + gap), borderRadius: "9999px" }}>
+        {children}
+      </div>
+      {detailed && (
+        <span aria-hidden className={fx.foundersSeal}>
+          <span className={fx.foundersSealGlyph}>F</span>
+        </span>
+      )}
     </div>
   );
 }

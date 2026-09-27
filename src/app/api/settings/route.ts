@@ -43,9 +43,14 @@ export async function PATCH(request: Request) {
   if (data.themeSettings || data.businessThemeSettings) {
     const me = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { isPremium: true, role: true },
+      select: { isPremium: true, role: true, collectibles: { select: { dropId: true } } },
     });
-    const access = { isPremium: me?.isPremium, isAdmin: me?.role === "ADMIN" };
+    const access = {
+      isPremium: me?.isPremium,
+      isAdmin: me?.role === "ADMIN",
+      // Samlarramar (Founders) får bara sparas av den som äger droppet.
+      collectibles: me?.collectibles.map((c) => c.dropId) ?? [],
+    };
     if (data.themeSettings) {
       data.themeSettings = sanitizeThemeSettings(data.themeSettings, "SOCIAL", access).settings;
     }
