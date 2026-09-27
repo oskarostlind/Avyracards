@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { User, Link as PrismaLink } from "@prisma/client";
 import NextLink from "next/link";
+import { FounderBadge } from "@/components/collectibles/founder-badge";
+import { mapCollectibles } from "@/lib/profile-mapper";
 import {
   LayoutGrid,
   Briefcase,
@@ -229,7 +231,11 @@ function DashboardShellInner({ user, prices }: DashboardShellProps) {
       {/* Rubrik + läge */}
       <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-nordic-secondary sm:text-3xl">{t("dashboard.header.title")}</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-2xl font-bold tracking-tight text-nordic-secondary sm:text-3xl">{t("dashboard.header.title")}</h1>
+            {/* Limited edition: ägarens Founder-löpnummer. */}
+            <FounderBadge collectibles={mapCollectibles((user as { collectibles?: unknown }).collectibles)} size="sm" />
+          </div>
           <p className="mt-0.5 hidden text-sm text-nordic-highlight sm:block">
             {viewMode === "SOCIAL" ? t("dashboard.header.subtitleSocial") : t("dashboard.header.subtitleBusiness")}
           </p>

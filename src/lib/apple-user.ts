@@ -2,6 +2,7 @@ import { randomBytes } from "crypto";
 import { prisma } from "@/lib/prisma";
 import { verifyPassword } from "@/lib/password";
 import { notifyAdmins } from "@/lib/admin-alerts";
+import { grantSignupCollectibles } from "@/lib/collectibles";
 
 function slugifyUsername(value: string): string {
   const base = value
@@ -57,6 +58,9 @@ export async function createUserFromApple(params: {
       username: true,
     },
   });
+
+  // Limited edition (Founders). Kastar aldrig — får inte fälla inloggningen.
+  await grantSignupCollectibles(user.id);
 
   await notifyAdmins({
     type: "new_user",

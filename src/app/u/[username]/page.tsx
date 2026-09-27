@@ -125,7 +125,13 @@ export default async function PublicProfilePage({ params, searchParams }: PagePr
       redirectEnabled: true,
       redirectLinkId: true,
       isSuspended: true,
-      
+      // Limited edition (Founders-badge + upplåst samlarram). Samma fråga,
+      // ingen N+1.
+      collectibles: {
+        orderBy: { grantedAt: "asc" },
+        select: { dropId: true, serial: true, drop: { select: { maxSupply: true } } },
+      },
+
       // Business-fält
       jobTitle: true,
       companyName: true,

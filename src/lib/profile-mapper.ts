@@ -2,6 +2,7 @@ import { ThemeMode, CustomThemeSettings, defaultSettings } from "@/types/theme";
 import { resolveLinkIconSlug } from "@/lib/link-icons";
 import { coerceUrl } from "@/utils/normalize-url";
 import { normalizeHexColor } from "@/utils/color";
+import type { ProfileCollectible } from "@/lib/collectibles-shared";
 
 // --- TYPER ---
 
@@ -54,6 +55,23 @@ export interface MappedProfileData {
 
   mode: ThemeMode;
   showSaveContact: boolean; // NYTT: Skickar med toggle-status
+
+  /** Ägda samlarobjekt (Founders m.fl.) — badge + upplåsta samlarramar. */
+  collectibles?: ProfileCollectible[];
+}
+
+/**
+ * Tål både Prisma-formen ({ dropId, serial, drop: { maxSupply } }) och den
+ * redan platta formen ({ dropId, serial, maxSupply }).
+ */
+export function mapCollectibles(raw: unknown): ProfileCollectible[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((c: any): ProfileCollectible[] => {
+    const serial = Number(c?.serial);
+    const maxSupply = Number(c?.maxSupply ?? c?.drop?.maxSupply);
+    if (typeof c?.dropId !== "string" || !Number.isFinite(serial) || !Number.isFinite(maxSupply)) return [];
+    return [{ dropId: c.dropId, serial, maxSupply }];
+  });
 }
 
 // --- MAPPER FUNKTION ---
@@ -189,6 +207,7 @@ export function getProfileData(user: any, mode: ThemeMode): MappedProfileData {
     companyName: user.companyName || null,
     actions,
     links,
-    showSaveContact
+    showSaveContact,
+    collectibles: mapCollectibles(user.collectibles),
   };
 }

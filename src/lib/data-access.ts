@@ -6,6 +6,11 @@ export async function getDashboardUserWithRecentOrders(userId: string) {
       where: { id: userId },
       include: {
         links: { orderBy: { order: "asc" } },
+        // Limited edition: Founder-badge i dashboardens rubrik.
+        collectibles: {
+          orderBy: { grantedAt: "asc" },
+          select: { dropId: true, serial: true, drop: { select: { maxSupply: true } } },
+        },
         orders: {
           where: { status: "PAID" },
           include: {

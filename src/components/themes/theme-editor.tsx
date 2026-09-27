@@ -28,6 +28,9 @@ import { TemplatesTab } from "./tabs/templates-tab";
 import { BackgroundTab } from "./tabs/background-tab";
 import { ButtonsTab } from "./tabs/buttons-tab";
 import { ProfileTab } from "./tabs/profile-tab";
+import { LimitedTab } from "./tabs/limited-tab";
+import { Gem } from "lucide-react";
+import type { DropStatus, ProfileCollectible } from "@/lib/collectibles-shared";
 
 /*
  * Temaeditorn (/profile/themes).
@@ -57,7 +60,7 @@ interface ThemeEditorProps {
   userData: UserThemeData;
 }
 
-type Tab = "templates" | "background" | "buttons" | "profile";
+type Tab = "templates" | "background" | "buttons" | "profile" | "limited";
 
 const PHONE_W = 375 + 16; // inkl. 8 px ram på varje sida
 const PHONE_H = 750 + 16;
@@ -332,6 +335,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
     { id: "background", icon: ImageIcon, label: t("themes.tabBackground") },
     { id: "buttons", icon: BoxSelect, label: t("themes.tabButtons") },
     { id: "profile", icon: User, label: t("themes.tabProfile") },
+    { id: "limited", icon: Gem, label: t("collectibles.limited.tab") },
   ];
 
   const tabBar = (
@@ -399,6 +403,18 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             updateSetting={updateSetting}
             isPremium={isUserPremium}
             isAdmin={isUserAdmin}
+            onShowUpgrade={() => setShowUpgradeModal(true)}
+          />
+        );
+      case "limited":
+        return (
+          <LimitedTab
+            settings={currentSettings}
+            updateSetting={updateSetting}
+            collectibles={(userData.collectibles as ProfileCollectible[] | undefined) ?? []}
+            drops={(userData.drops as DropStatus[] | undefined) ?? []}
+            canAnimate={canAccess("theme_premium_frames", accessUser)}
+            avatarUrl={mappedProfileData.image}
             onShowUpgrade={() => setShowUpgradeModal(true)}
           />
         );
