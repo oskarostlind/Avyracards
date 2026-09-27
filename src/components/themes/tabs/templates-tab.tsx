@@ -4,9 +4,13 @@ import type { CSSProperties } from "react";
 import { Check, Crown, Lock } from "lucide-react";
 import { type CustomThemeSettings, type ThemeTemplate, type ThemeMode } from "@/types/theme";
 import { getTemplates, isTemplateLocked } from "@/lib/feature-access";
-import { getRelativeLuminance, normalizeHexColor } from "@/utils/color";
 import { getLinkButtonAppearance } from "@/lib/theme/button-style";
+import { getHeadingFontStyle } from "@/lib/theme/fonts";
+import { getPatternBackground } from "@/lib/theme-effects";
+import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
 import { useT } from "@/i18n/client";
+// Namnet i miniatyren visas i mallens rubriktypsnitt.
+import "@/styles/profile-fonts.css";
 
 interface TemplatesTabProps {
   isPremium: boolean;
@@ -23,17 +27,6 @@ interface TemplatesTabProps {
   columns?: 2 | 3;
 }
 
-// Fallback för mallar vars settings saknar färg/bild. De flesta mallar har
-// allt i settings, men några äldre id:n har bara fått sin look här.
-const LEGACY_PREVIEWS: Record<string, CSSProperties> = {
-  "biz-nyc": { backgroundImage: "url(https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=300)" },
-  "biz-nordic-office": { backgroundImage: "url(https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=300)" },
-  "biz-innovator": { backgroundImage: "url(https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=300)" },
-  "biz-marble": { backgroundImage: "url(https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=300)" },
-  "biz-workspace": { backgroundImage: "url(https://images.unsplash.com/photo-1493934558415-9d19f0b2b4d2?q=80&w=300)" },
-  "biz-concrete": { backgroundImage: "url(https://images.unsplash.com/photo-1487958449943-2429e8be8625?q=80&w=300)" },
-};
-
 function backgroundFor(t: ThemeTemplate): CSSProperties {
   const s = t.settings;
   if (s.backgroundType === "image" && s.backgroundImage) {
@@ -42,15 +35,14 @@ function backgroundFor(t: ThemeTemplate): CSSProperties {
   if (s.backgroundType === "gradient") {
     return { background: `linear-gradient(${s.gradientDir || "to bottom right"}, ${s.gradientFrom || "#000"}, ${s.gradientTo || "#000"})` };
   }
-  if (LEGACY_PREVIEWS[t.id]) return { ...LEGACY_PREVIEWS[t.id], backgroundSize: "cover", backgroundPosition: "center" };
   return { backgroundColor: s.backgroundColor || "#1e293b" };
 }
 
-function isLightBackground(t: ThemeTemplate): boolean {
+/** Mönsterlagret (prickar, rutnät …) i samma färg/opacitet som på profilen. */
+function patternFor(t: ThemeTemplate): CSSProperties | null {
   const s = t.settings;
-  if (s.backgroundType !== "solid" && s.backgroundType !== undefined) return false;
-  const hex = normalizeHexColor(s.backgroundColor);
-  return hex ? getRelativeLuminance(hex) > 0.5 : false;
+  const p = getPatternBackground(s.backgroundPattern, s.textColor, s.backgroundPatternOpacity);
+  return p ? { backgroundImage: p.backgroundImage, backgroundSize: p.backgroundSize, backgroundRepeat: "repeat" } : null;
 }
 
 /** Sant om mallens alla fält matchar nuvarande inställningar — dvs. den är vald. */
@@ -80,10 +72,11 @@ export function TemplatesTab({
   const cards = templates.map((tpl) => {
     const locked = isTemplateLocked(tpl, accessUser);
     const active = !locked && isTemplateActive(tpl, currentSettings);
-    const light = isLightBackground(tpl);
     const s = tpl.settings;
+    const strip = layout === "strip";
     // Samma stilfunktion som den riktiga knappen, nerskalad till miniatyr.
-    const buttonStyle: CSSProperties = getLinkButtonAppearance(s, { scale: 0.45 }).style;
+    const buttonStyle: CSSProperties = getLinkButtonAppearance(s, { scale: strip ? 0.35 : 0.45 }).style;
+    const pattern = patternFor(tpl);
 
     return (
       <button
@@ -92,41 +85,55 @@ export function TemplatesTab({
         onClick={() => (locked ? onShowUpgrade() : onApply(tpl))}
         aria-pressed={active}
         aria-label={locked ? `${tpl.name} – ${tr("themes.templateLocked")}` : tpl.name}
-        className={`group relative flex shrink-0 snap-start flex-col overflow-hidden rounded-2xl text-left transition-[transform,box-shadow] duration-150 active:scale-[0.96] ${
-          layout === "strip" ? "h-[112px] w-[92px]" : "aspect-[4/5] w-full"
-        } ${active ? "ring-2 ring-purple-500 ring-offset-2 ring-offset-slate-950" : "ring-1 ring-white/10"}`}
+        className={`group relative flex shrink-0 snap-start flex-col overflow-hidden rounded-2xl text-left transition-[transform,box-shadow] duration-150 active:scale-[0.96] motion-reduce:active:scale-100 motion-reduce:active:opacity-80 ${
+          strip ? "h-[112px] w-[92px]" : "aspect-[4/5] w-full"
+        } ${active ? "ring-2 ring-purple-500 ring-offset-2 ring-offset-slate-950" : tpl.isPremium ? "ring-1 ring-amber-300/35" : "ring-1 ring-white/10"}`}
       >
+        {/* Bakgrund + mönster + bildens overlay — som på profilen. */}
         <span className="absolute inset-0" style={backgroundFor(tpl)} />
+        {s.backgroundType === "image" && (
+          <span className="absolute inset-0" style={{ backgroundColor: `rgba(0,0,0,${(s.backgroundOverlay ?? 20) / 100})` }} />
+        )}
+        {pattern && <span className="absolute inset-0" style={pattern} />}
 
-        {/* Mini-knappar: visar mallens knappform och färg, inte bara bakgrunden. */}
-        <span className="relative mt-auto flex w-full flex-col gap-1 px-2.5 pb-7">
-          <span className="block h-[9px] w-full" style={buttonStyle} />
-          <span className="block h-[9px] w-full" style={buttonStyle} />
-        </span>
-
+        {/* Minikortet: samma mörka glaskort som den riktiga profilen, med
+            ram, namn i mallens rubriktypsnitt och två knappar i mallens stil. */}
         <span
-          className={`absolute inset-x-0 bottom-0 truncate px-2.5 pb-2 pt-4 text-[12px] font-semibold ${
-            light ? "text-slate-900" : "text-white"
-          } bg-gradient-to-t ${light ? "from-white/80" : "from-black/60"} to-transparent`}
+          className={`relative mx-auto flex w-[82%] flex-col items-center border border-white/10 ${
+            strip ? "mt-2.5 gap-1 rounded-[10px] px-1.5 pb-2 pt-2" : "mt-[10%] gap-1.5 rounded-[14px] px-2 pb-2.5 pt-2.5"
+          }`}
+          style={{ backgroundColor: "rgba(15, 23, 42, 0.6)", color: s.textColor }}
         >
-          {tpl.name}
+          <AvatarFrame frame={s.frameStyle} size={strip ? 20 : 30} accent={s.accentColor}>
+            <span className="block h-full w-full bg-slate-700" />
+          </AvatarFrame>
+          <span
+            className={`block w-full truncate text-center ${strip ? "text-[9px]" : "text-[12px]"} font-bold`}
+            style={getHeadingFontStyle(s.headingFont, s.font)}
+          >
+            {tpl.name}
+          </span>
+          <span className={`flex w-full flex-col ${strip ? "mt-0.5 gap-[5px]" : "mt-1 gap-1.5"}`}>
+            <span className={`block w-full ${strip ? "h-[7px]" : "h-[10px]"}`} style={buttonStyle} />
+            <span className={`block w-full ${strip ? "h-[7px]" : "h-[10px]"}`} style={buttonStyle} />
+          </span>
         </span>
 
-        {locked && <span className="absolute inset-0 bg-slate-950/55" />}
+        {locked && <span className="absolute inset-0 bg-slate-950/45" />}
 
         {active && (
           <span className="absolute left-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-purple-500 text-white shadow-lg">
             <Check size={14} strokeWidth={3} />
           </span>
         )}
+        {/* Premium: alltid en tydlig guldkrona; låst får ett hänglås bredvid. */}
         {tpl.isPremium && (
           <span
-            className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full shadow-lg ${
-              locked ? "bg-amber-500 text-slate-900" : "bg-emerald-500 text-white"
-            }`}
+            className="absolute right-1.5 top-1.5 flex h-6 items-center gap-0.5 rounded-full bg-gradient-to-b from-amber-200 to-amber-500 px-1.5 text-amber-950 shadow-lg shadow-black/40 ring-1 ring-amber-100/60"
             title={locked ? tr("themes.templateLocked") : tr("themes.includedInPlan")}
           >
-            {locked ? <Lock size={12} /> : <Crown size={12} fill="currentColor" />}
+            <Crown size={12} fill="currentColor" strokeWidth={2.2} />
+            {locked && <Lock size={10} strokeWidth={2.6} />}
           </span>
         )}
       </button>
