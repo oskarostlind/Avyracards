@@ -293,9 +293,13 @@ export function BusinessView() {
                     <li className="flex items-center gap-3"><Check size={16} className="text-emerald-500"/> {t("businessPage.cardBullet3")}</li>
                 </ul>
 
-                <button className="text-nordic-secondary border-b border-white pb-0.5 hover:text-emerald-400 hover:border-emerald-400 transition-colors text-sm font-medium">
+                {/* Var tidigare en <button> utan onClick/href — CTA:n gick ingenstans. */}
+                <Link
+                    href="/order"
+                    className="inline-block text-nordic-secondary border-b border-white pb-0.5 hover:text-emerald-400 hover:border-emerald-400 transition-colors text-sm font-medium"
+                >
                     {t("businessPage.cardCta")}
-                </button>
+                </Link>
             </div>
         </section>
 
