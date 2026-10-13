@@ -10,6 +10,15 @@ import { Loader2, AlertCircle } from "lucide-react";
 import { signIn } from "next-auth/react";
 import { useT } from "@/i18n/client";
 import type { Translator } from "@/i18n";
+import { AppleWebSignInButton } from "@/components/auth/apple-web-sign-in-button";
+
+// Samma "sticky intent" som e-postregistreringen: vald plan styr vart man
+// hamnar efter att kontot skapats.
+function destinationForPlan(plan: string): string {
+  if (plan === "bundle") return "/order?bundle=pro-bundle";
+  if (plan === "premium") return "/checkout/premium";
+  return "/dashboard";
+}
 
 interface RegisterFormProps {
   selectedPlan?: string; 
@@ -91,18 +100,8 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
       }
 
       // 3. Styr vart användaren hamnar ("Sticky Intent")
-      if (activePlan === "premium" || activePlan === "bundle") {
-          // Om de ville ha Bundle -> Skicka till Order
-          // Om de ville ha Premium -> Skicka till Checkout
-          if (activePlan === "bundle") {
-             router.push("/order?bundle=pro-bundle");
-          } else {
-             router.push("/checkout/premium"); // Eller var du har din rena premium-checkout
-          }
-      } else {
-          // Gratis -> Dashboard
-          router.push("/dashboard");
-      }
+      // Bundle -> Order, Premium -> Checkout, Gratis -> Dashboard
+      router.push(destinationForPlan(activePlan));
       
       router.refresh(); // Uppdatera sessionen i klienten
 
@@ -141,6 +140,15 @@ export default function RegisterForm({ selectedPlan = "free" }: RegisterFormProp
           <span>{globalError}</span>
         </div>
       )}
+
+      {/* Webben: Apple JS i popup-läge. Döljer sig själv i iOS-appen och när
+          NEXT_PUBLIC_APPLE_SERVICES_ID saknas. Nya Apple-konton väljer
+          användarnamn i onboardingen på dashboarden. */}
+      <AppleWebSignInButton
+        callbackUrl={destinationForPlan(activePlan)}
+        variant="continue"
+        withDivider
+      />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-3">

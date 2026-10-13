@@ -1,9 +1,12 @@
+import { createHash } from "crypto";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import {
   createAppleLoginToken,
+  encodeAppleRefreshToken,
   exchangeAppleAuthorizationCode,
+  resolveAppleClientIdFromAudience,
   verifyAppleIdentityToken,
 } from "@/lib/apple-auth";
 import {
@@ -11,7 +14,7 @@ import {
   findUserByAppleSub,
   linkAppleWithCredentials,
 } from "@/lib/apple-user";
-import { isAppleSignInConfigured } from "@/lib/ios-native";
+import { getAppleClientId, isAppleSignInConfigured } from "@/lib/ios-native";
 import { logIosNativeServer } from "@/lib/ios-native-server-debug";
 
 const appleAuthSchema = z.object({
@@ -24,7 +27,18 @@ const appleAuthSchema = z.object({
   familyName: z.string().optional().nullable(),
   linkEmail: z.string().email().optional(),
   linkPassword: z.string().min(1).optional(),
+  // Webbflödet (Sign in with Apple JS): klienten skickar sha256(rawNonce) till
+  // Apple och rawNonce hit. Bara den som startade inloggningen känner till
+  // rawNonce, så en stulen identity token går inte att spela upp igen.
+  rawNonce: z.string().min(16).max(256).optional().nullable(),
+  // Måste vara exakt samma redirect URI som webbklienten gav Apple, annars
+  // vägrar Apple växla authorizationCode mot refresh token.
+  redirectUri: z.string().url().optional().nullable(),
 });
+
+function sha256Hex(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
+}
 
 export async function POST(req: Request) {
   try {
@@ -53,10 +67,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Ogiltig förfrågan" }, { status: 400 });
     }
 
-    const claims = await verifyAppleIdentityToken(parsed.data.identityToken);
+    const rawNonce = parsed.data.rawNonce ?? null;
+    const claims = await verifyAppleIdentityToken(parsed.data.identityToken, {
+      nonce: rawNonce ? sha256Hex(rawNonce) : null,
+    });
+
+    // Vilken klient token utfärdades till: bundle ID (iOS-appen) eller
+    // Services ID (webben). Webbtokens kräver nonce — native-flödet har ingen.
+    const appleClientId = resolveAppleClientIdFromAudience(claims.aud);
+    const isWebClient = appleClientId !== getAppleClientId();
+    if (isWebClient && !rawNonce) {
+      return NextResponse.json({ error: "Nonce saknas" }, { status: 400 });
+    }
     logIosNativeServer("APPLE_SIGN_IN", "api/auth/apple:verify", "Token verified", {
       hasEmail: Boolean(claims.email),
       subPrefix: claims.sub?.slice(0, 8),
+      client: isWebClient ? "web" : "native",
     });
     const appleId = claims.sub;
     const tokenEmail =
@@ -77,8 +103,16 @@ export async function POST(req: Request) {
     }
 
     // Sparas så snart Apple skickar med koden. Kastar aldrig.
-    const appleRefreshToken = parsed.data.authorizationCode
-      ? await exchangeAppleAuthorizationCode(parsed.data.authorizationCode)
+    // Lagras med client_id-prefix för webbklienten så att revoke vid
+    // kontoradering använder rätt client_id (se encodeAppleRefreshToken).
+    const rawRefreshToken = parsed.data.authorizationCode
+      ? await exchangeAppleAuthorizationCode(parsed.data.authorizationCode, {
+          clientId: appleClientId,
+          redirectUri: isWebClient ? parsed.data.redirectUri : null,
+        })
+      : null;
+    const appleRefreshToken = rawRefreshToken
+      ? encodeAppleRefreshToken(appleClientId, rawRefreshToken)
       : null;
 
     const existingAppleUser = await findUserByAppleSub(appleId);

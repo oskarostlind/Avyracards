@@ -141,6 +141,7 @@ export const en: Messages = {
     },
     apple: {
       continue: "Continue with Apple",
+      signIn: "Sign in with Apple",
       sessionFailed: "Couldn't create a session",
       signInFailed: "Apple sign-in failed",
       signInFailedRetry: "Couldn't sign in with Apple. Please try again.",

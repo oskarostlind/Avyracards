@@ -139,6 +139,7 @@ export const sv = {
     },
     apple: {
       continue: "Fortsätt med Apple",
+      signIn: "Logga in med Apple",
       sessionFailed: "Kunde inte skapa session",
       signInFailed: "Apple-inloggning misslyckades",
       signInFailedRetry: "Kunde inte logga in med Apple. Försök igen.",

@@ -8,6 +8,11 @@ import { useT } from "@/i18n/client";
 
 interface LinkAppleAccountFormProps {
   identityToken: string;
+  /**
+   * Webbflödet: samma rawNonce som första anropet. Servern kräver den för
+   * tokens utfärdade till Services ID:t. Native-flödet skickar ingen.
+   */
+  rawNonce?: string;
   suggestedEmail?: string;
   message?: string;
   onSuccess: (loginToken: string) => Promise<void>;
@@ -21,6 +26,7 @@ interface LinkResponse {
 
 export function LinkAppleAccountForm({
   identityToken,
+  rawNonce,
   suggestedEmail,
   message,
   onSuccess,
@@ -54,6 +60,7 @@ export function LinkAppleAccountForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           identityToken,
+          rawNonce,
           linkEmail: email,
           linkPassword: password,
         }),

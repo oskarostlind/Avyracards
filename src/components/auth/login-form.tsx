@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AppleSignInButton } from "@/components/auth/apple-sign-in-button";
+import { AppleWebSignInButton } from "@/components/auth/apple-web-sign-in-button";
 import { useIsApp } from "@/hooks/useIsApp";
 import { isIosNativePaymentsEnabled } from "@/lib/ios-native";
 import { useT } from "@/i18n/client";
@@ -114,6 +115,12 @@ export default function LoginForm() {
             <div className="h-px flex-1 bg-nordic-highlight/20" />
           </div>
         </div>
+      )}
+
+      {/* Webben: Apple JS i popup-läge. Komponenten döljer sig själv i
+          iOS-appen och när NEXT_PUBLIC_APPLE_SERVICES_ID saknas. */}
+      {!showAppleButton && (
+        <AppleWebSignInButton callbackUrl={callbackUrl} variant="signIn" withDivider />
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">

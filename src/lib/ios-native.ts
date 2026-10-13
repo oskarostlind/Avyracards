@@ -20,6 +20,28 @@ export function getAppleClientId(): string {
   return process.env.APPLE_CLIENT_ID ?? "se.avyracards.app";
 }
 
+/**
+ * Services ID för Sign in with Apple på webben (t.ex. "se.avyracards.web").
+ * Apple sätter `aud` i identity token till den klient som startade
+ * inloggningen: bundle ID i iOS-appen, Services ID i webbläsaren. Servern
+ * läser APPLE_SERVICES_ID i första hand men faller tillbaka på den publika
+ * varianten, så att det räcker att sätta en env-var i Vercel.
+ */
+export function getAppleWebServicesId(): string | null {
+  const value =
+    process.env.APPLE_SERVICES_ID ?? process.env.NEXT_PUBLIC_APPLE_SERVICES_ID;
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+/** Alla `aud`-värden vi godtar i Apples identity token (native + webb). */
+export function getAppleAllowedAudiences(): string[] {
+  const ids = [getAppleClientId(), getAppleWebServicesId()].filter(
+    (id): id is string => Boolean(id)
+  );
+  return Array.from(new Set(ids));
+}
+
 export function getIapProductIds(): IosIapProductConfig {
   return {
     monthly: process.env.APPLE_IAP_PREMIUM_MONTHLY ?? null,
