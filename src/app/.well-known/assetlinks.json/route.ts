@@ -24,6 +24,8 @@ const PACKAGE_NAME = "se.avyracards.app";
 const FINGERPRINTS = [
   // Uppladdningsnyckel (avyracards-upload.jks, alias "upload")
   "D6:F7:A8:E8:08:29:59:5E:C3:AB:72:18:72:47:86:83:18:83:51:DD:EB:3C:F6:76:91:B4:E5:0F:2C:A0:D0:20",
+  // Google Plays app-signeringsnyckel (Play Console → Appintegritet → App-signering)
+  "9F:B0:89:39:27:54:BF:F6:0C:09:84:F8:EC:18:FC:CC:7D:B7:7C:92:95:C1:D6:EB:F2:E0:39:9F:FE:B2:7B:84",
 ];
 
 function fingerprints(): string[] {
