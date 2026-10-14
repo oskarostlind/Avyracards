@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import Link from "next/link";
 import { ArrowRight, Check, Crown, ImagePlus, X } from "lucide-react";
 import { useIsApp } from "@/hooks/useIsApp";
+import { useIsAndroidApp } from "@/hooks/useNativePlatform";
 import { useT } from "@/i18n/client";
 import { defaultSettings, type CustomThemeSettings } from "@/types/theme";
 import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
@@ -58,6 +59,9 @@ export function UpgradeModal({ isOpen, onClose, teaser, preview }: UpgradeModalP
   // App Store där Apple hanterar återbetalningar — att utlova en egen ångerrätt
   // där är ett vilseledande köpvillkor (3.1.2(c)/2.3.1).
   const isApp = useIsApp();
+  // Android-appen säljer inte Premium (Google Plays betalpolicy) — där visas
+  // funktionerna men ingen köpknapp och ingen hänvisning till webben.
+  const isAndroidApp = useIsAndroidApp();
 
   // Behåll innehållet monterat under utgångsanimationen.
   const [mounted, setMounted] = useState(isOpen);
@@ -173,6 +177,11 @@ export function UpgradeModal({ isOpen, onClose, teaser, preview }: UpgradeModalP
             ))}
           </ul>
 
+          {isAndroidApp ? (
+            <p className="mt-6 rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-center text-sm leading-snug text-amber-100/90">
+              {t("premiumCheckout.androidUnavailable")}
+            </p>
+          ) : (
           <Link
             href="/checkout/premium"
             className="group mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-br from-amber-200 via-amber-400 to-amber-500 text-[16px] font-bold text-amber-950 shadow-[0_10px_30px_rgba(245,158,11,0.35)] transition-transform duration-100 active:scale-[0.98]"
@@ -181,6 +190,7 @@ export function UpgradeModal({ isOpen, onClose, teaser, preview }: UpgradeModalP
             <span>{t("themes.upgrade.cta")}</span>
             <ArrowRight size={18} aria-hidden />
           </Link>
+          )}
 
           <button
             type="button"
@@ -190,9 +200,11 @@ export function UpgradeModal({ isOpen, onClose, teaser, preview }: UpgradeModalP
             {t("themes.upgrade.notNow")}
           </button>
 
+          {!isAndroidApp && (
           <p className="mt-1 text-center text-xs leading-snug text-slate-500">
             {isApp ? t("themes.upgrade.finePrintIos") : t("themes.upgrade.finePrintWeb")}
           </p>
+          )}
         </div>
       </div>
     </div>

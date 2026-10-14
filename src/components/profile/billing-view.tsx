@@ -6,7 +6,7 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { sv, enGB } from "date-fns/locale";
 import { NativePurchases } from "@capgo/native-purchases";
-import { useIsApp } from "@/hooks/useIsApp";
+import { useNativePlatform } from "@/hooks/useNativePlatform";
 import { IosRestorePurchasesButton } from "@/components/checkout/ios-restore-purchases-button";
 import { useT, useLocale, useLocaleTag } from "@/i18n/client";
 
@@ -35,7 +35,12 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
   // extern betalportal för ett digitalt abonnemang. Köp gjorda via IAP hanteras
   // dessutom av App Store, inte av Stripe — knappen hade lett fel även rent
   // funktionellt. På webben är Stripe-portalen oförändrad.
-  const isApp = useIsApp();
+  // App Store-knapparna gäller bara iOS-appen. I Android-appen säljs inte
+  // Premium (Google Plays betalpolicy) — där visas bara status, inga köp- eller
+  // betallänkar.
+  const platform = useNativePlatform();
+  const isApp = platform === "ios";
+  const isAndroidApp = platform === "android";
 
   const handleManageInAppStore = async () => {
     try {
@@ -110,7 +115,17 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
           )}
         </div>
 
-        {isPremium && isApp ? (
+        {isAndroidApp ? (
+          isPremium ? (
+            <p className="max-w-[16rem] text-xs leading-relaxed text-nordic-highlight sm:text-right">
+              {t("settings.billing.manageWhereBought")}
+            </p>
+          ) : (
+            <p className="max-w-[16rem] text-xs leading-relaxed text-nordic-highlight sm:text-right">
+              {t("settings.billing.androidUnavailable")}
+            </p>
+          )
+        ) : isPremium && isApp ? (
           <button
             onClick={handleManageInAppStore}
             className="whitespace-nowrap rounded-xl border border-nordic-highlight/40 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 flex items-center gap-2"

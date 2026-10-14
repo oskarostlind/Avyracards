@@ -1,9 +1,13 @@
 "use client";
 
-import { useIsApp } from "@/hooks/useIsApp";
+import { useIsIosApp } from "@/hooks/useNativePlatform";
 import { isIosNativePaymentsEnabled } from "@/lib/ios-native";
 
+/**
+ * StoreKit-köp finns bara i iOS-appen. Tidigare räckte `useIsApp()`, men den
+ * är true även i Android-appen — där finns varken StoreKit eller pluginen.
+ */
 export function useIosNativePayments(): boolean {
-  const isApp = useIsApp();
-  return isApp && isIosNativePaymentsEnabled();
+  const isIosApp = useIsIosApp();
+  return isIosApp && isIosNativePaymentsEnabled();
 }

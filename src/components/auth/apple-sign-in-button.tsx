@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { SignInWithApple } from "@capacitor-community/apple-sign-in";
-import { useIsApp } from "@/hooks/useIsApp";
+import { useIsIosApp } from "@/hooks/useNativePlatform";
 import { isIosDebugEnabled, isIosNativePaymentsEnabled } from "@/lib/ios-native";
 import { LinkAppleAccountForm } from "@/components/auth/link-apple-account-form";
 import { logIosNativeRuntime } from "@/lib/ios-native-runtime-debug";
@@ -26,7 +26,9 @@ interface AppleAuthResponse {
 export function AppleSignInButton({ callbackUrl = "/dashboard" }: AppleSignInButtonProps) {
   const t = useT();
   const router = useRouter();
-  const isApp = useIsApp();
+  // Native Sign in with Apple finns bara i iOS-appen (pluginen byggs inte in
+  // i Android-appen).
+  const isApp = useIsIosApp();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [linkState, setLinkState] = useState<{

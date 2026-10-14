@@ -448,6 +448,8 @@ export const sv = {
       freeBody: "Uppgradera för att låsa upp statistik och teman.",
       endsOn: "Avslutas {date}",
       manageInAppStore: "Hantera i App Store",
+      manageWhereBought: "Prenumerationen hanteras där du köpte den.",
+      androidUnavailable: "Premium kan inte köpas i Android-appen ännu.",
       manageInStripe: "Hantera via Stripe",
       upgradeNow: "Uppgradera nu",
       portalFailed: "Kunde inte öppna portalen.",
@@ -1080,6 +1082,8 @@ export const sv = {
     dueToday: "Att betala idag",
     iapNotice: "Premium köps via App Store i iOS-appen.",
     iapButton: "Köp {product} via App Store",
+    androidUnavailable:
+      "Premium kan inte köpas i Android-appen ännu. Har du redan Premium på ditt konto gäller det även här.",
     iapUnavailable:
       "Premium kan just nu inte köpas i appen. Har du redan köpt Premium kan du återställa köpet nedan.",
     stripeNotice: "Du omdirigeras till Stripe för att slutföra betalningen säkert.",

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "4844059186",
+    "project_id": "avyracards",
+    "storage_bucket": "avyracards.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:4844059186:android:d9daab3da07604cc7cda2b",
+        "android_client_info": {
+          "package_name": "se.avyracards.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCiM7--LqVb2jKDzoZqzzP8IV4EKlYPl5w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

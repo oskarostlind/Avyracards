@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AvyraCards</string>
+    <string name="title_activity_main">AvyraCards</string>
+    <string name="package_name">se.avyracards.app</string>
+    <string name="custom_url_scheme">se.avyracards.app</string>
+</resources>

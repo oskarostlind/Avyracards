@@ -450,6 +450,8 @@ export const en: Messages = {
       freeBody: "Upgrade to unlock analytics and themes.",
       endsOn: "Ends {date}",
       manageInAppStore: "Manage in the App Store",
+      manageWhereBought: "Your subscription is managed where you bought it.",
+      androidUnavailable: "Premium can’t be purchased in the Android app yet.",
       manageInStripe: "Manage via Stripe",
       upgradeNow: "Upgrade now",
       portalFailed: "Couldn't open the portal.",
@@ -1079,6 +1081,8 @@ export const en: Messages = {
     dueToday: "Due today",
     iapNotice: "Premium is bought through the App Store in the iOS app.",
     iapButton: "Buy {product} via the App Store",
+    androidUnavailable:
+      "Premium can’t be purchased in the Android app yet. If your account already has Premium, it works here too.",
     iapUnavailable:
       "Premium can't be bought in the app right now. If you've already bought Premium you can restore the purchase below.",
     stripeNotice: "You'll be redirected to Stripe to complete the payment securely.",

@@ -9,6 +9,7 @@ import CookieBanner from "@/components/cookie-banner";
 import { SplashScreenManager } from "@/components/splash-screen-manager";
 import { PushDeepLink } from "@/components/push-deep-link";
 import { UniversalLinkHandler } from "@/components/universal-link-handler";
+import { AndroidShell } from "@/components/android-shell";
 import { IosNativeDebugPanel } from "@/components/debug/ios-native-debug-panel";
 import { LocaleProvider } from "@/i18n/client";
 import { getI18n } from "@/i18n/server";
@@ -95,6 +96,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             {/* Universal links (avyracards.se/c/*, /u/*) — navigerar WebView:n
                 till länkens mål när iOS öppnar appen i stället för Safari. */}
             <UniversalLinkHandler />
+            <AndroidShell />
             <div className="flex min-h-screen flex-col print:min-h-0 print:block">
               <Navbar />
               <main className="flex-1">{children}</main>

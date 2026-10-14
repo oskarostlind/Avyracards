@@ -7,6 +7,7 @@ import { LiveProfileDemo } from "@/components/live-profile-demo";
 import { formatPrice } from "@/lib/products";
 import { useIsApp } from "@/hooks/useIsApp";
 import { useIosNativePayments } from "@/hooks/useIosNativePayments";
+import { useIsAndroidApp } from "@/hooks/useNativePlatform";
 import { IosIapPremiumButton } from "@/components/checkout/ios-iap-premium-button";
 import { IosRestorePurchasesButton } from "@/components/checkout/ios-restore-purchases-button";
 import { SubscriptionTerms } from "@/components/checkout/subscription-terms";
@@ -41,7 +42,11 @@ export function PremiumCheckoutForm({
   // till "true" i miljön — en felkonfigurerad env-variabel hade alltså räckt
   // för ett garanterat avslag. Stripe-grenen renderas nu bara på webben.
   const showStripeCheckout = !isApp;
-  const iapUnavailableInApp = isApp && !isIosCheckout;
+  // Android-appen: Google Play kräver Play Billing för digitalt innehåll och
+  // förbjuder hänvisning till andra betalsätt. Tills Play Billing är byggt
+  // säljs Premium inte där alls — ingen Stripe, ingen länk till webben.
+  const isAndroidApp = useIsAndroidApp();
+  const iapUnavailableInApp = isApp && !isIosCheckout && !isAndroidApp;
 
   const formattedPrice = formatPrice(price);
 
@@ -151,6 +156,12 @@ export function PremiumCheckoutForm({
                      <IosRestorePurchasesButton />
                      <SubscriptionTerms price={formattedPrice} viaAppStore />
                    </>
+                 )}
+
+                 {isAndroidApp && (
+                   <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-200/90 leading-relaxed">
+                     {t("premiumCheckout.androidUnavailable")}
+                   </div>
                  )}
 
                  {iapUnavailableInApp && (

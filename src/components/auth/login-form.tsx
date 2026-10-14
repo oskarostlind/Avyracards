@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AppleSignInButton } from "@/components/auth/apple-sign-in-button";
 import { AppleWebSignInButton } from "@/components/auth/apple-web-sign-in-button";
-import { useIsApp } from "@/hooks/useIsApp";
+import { useIsIosApp } from "@/hooks/useNativePlatform";
 import { isIosNativePaymentsEnabled } from "@/lib/ios-native";
 import { useT } from "@/i18n/client";
 
@@ -14,14 +14,17 @@ export default function LoginForm() {
   const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isApp = useIsApp();
+  // Bara iOS-appen har native Sign in with Apple. I Android-appen visas
+  // e-post/lösenord (webbens Apple-popup fungerar inte i en Android-WebView och
+  // döljer sig själv i appar).
+  const isIosApp = useIsIosApp();
   // Guideline 4.8 kräver att Sign in with Apple ERBJUDS när tredjepartsinloggning
   // finns — inte att den egna inloggningen göms. Tidigare dolde appen
   // e-post/lösenord helt, vilket gjorde det omöjligt för App Review att logga in
   // med demokontot i review notes: de hade bara kunnat skapa ett nytt tomt konto
   // via sitt eget Apple-ID. Apple-knappen ligger kvar överst, men formuläret
   // finns alltid kvar under den.
-  const showAppleButton = isApp && isIosNativePaymentsEnabled();
+  const showAppleButton = isIosApp && isIosNativePaymentsEnabled();
   
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const registered = searchParams.get("registered");
