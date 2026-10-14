@@ -1523,6 +1523,20 @@ export const en: Messages = {
   },
 
   legal: {
+    deleteAccount: {
+      title: "Delete your account",
+      intro: "You can delete your AvyraCards account and all associated data at any time.",
+      inAppTitle: "Delete it yourself (takes a minute)",
+      step1: "Sign in at avyracards.se or in the app",
+      step2: "Go to Settings → Account & privacy",
+      step3: "Tap “Delete my account” and confirm",
+      emailTitle: "Or ask us to delete it",
+      emailBefore: "Email",
+      emailAfter: "from the email address registered on the account and we will delete it within 30 days.",
+      whatTitle: "What gets deleted",
+      whatBody:
+        "Your account, profile, links, themes, profile picture and analytics are deleted immediately and permanently. Records of purchased physical cards (order and shipping address) are kept for bookkeeping but unlinked from the account. If you have an active Premium subscription, cancel it where you bought it before deleting your account.",
+    },
     prevailingNotice:
       "This is a translation of the Swedish original. In the event of any conflict, the Swedish version prevails.",
     terms: {

@@ -128,6 +128,7 @@ export function PremiumCheckoutForm({
                  </div>
              </div>
 
+             {!isAndroidApp && (
              <div className="bg-nordic-primary/40 p-4 rounded-xl border border-gray-800 mb-6 space-y-3">
                  <div className="flex justify-between items-center">
                     <span className="font-medium text-sm">{productName}</span>
@@ -139,6 +140,7 @@ export function PremiumCheckoutForm({
                     <span>{formattedPrice}</span>
                  </div>
              </div>
+             )}
 
              <form onSubmit={handleCheckout} className="space-y-4">
                  {isIosCheckout && (

@@ -15,6 +15,10 @@ import { NextResponse } from "next/server";
  * Publika värden, inga hemligheter. Påverkar inte iOS.
  */
 
+// Läs ANDROID_CERT_SHA256 vid anrop, inte vid bygget (annars förrenderas
+// routen statiskt och en ny env-variabel kräver ny deploy).
+export const dynamic = "force-dynamic";
+
 const PACKAGE_NAME = "se.avyracards.app";
 
 const FINGERPRINTS = [

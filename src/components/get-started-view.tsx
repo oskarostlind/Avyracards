@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Check, Sparkles, User, ArrowRight, CreditCard, Zap } from "lucide-react";
 import { useIsApp } from "@/hooks/useIsApp";
+import { useIsAndroidApp } from "@/hooks/useNativePlatform";
 import { useT } from "@/i18n/client";
 
 interface GetStartedViewProps {
@@ -17,6 +18,9 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
   // levereras via kortordern, ej IAP) erbjuds inte i iOS-appen — marknadsför
   // det därför inte heller där.
   const isApp = useIsApp();
+  // Premium säljs inte i Android-appen (Google Plays betalpolicy) — visa inte
+  // ett pris med en knapp som inte leder till något köp.
+  const isAndroidApp = useIsAndroidApp();
   
   // --- 1. HÄMTA PRISER FRÅN DB-OBJEKTEN ---
   
@@ -115,7 +119,8 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
         </div>
         )}
 
-        {/* 3. PREMIUM (Höger) */}
+        {/* 3. PREMIUM (Höger) — inte i Android-appen */}
+        {!isAndroidApp && (
         <div className="p-5 md:p-8 rounded-3xl border border-blue-500/30 bg-blue-900/5 flex flex-col transition-[transform,border-color] duration-200 relative h-full md:hover:-translate-y-2 hover:border-blue-500/50">
           <div className="mb-4 md:mb-6">
             <div className="w-10 h-10 md:w-12 md:h-12 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center mb-3 md:mb-4">
@@ -139,6 +144,7 @@ export default function GetStartedView({ premiumProduct, bundleProduct }: GetSta
             {t("getStarted.premium.cta")}
           </Link>
         </div>
+        )}
 
       </div>
 

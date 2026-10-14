@@ -12,6 +12,7 @@ import { Globe } from "./globe";
 import { ChartTooltip } from "./chart-tooltip";
 import { AnalyticsEventModal, type AnalyticsActivityItem } from "./analytics-event-modal";
 import { useT, useLocaleTag } from "@/i18n/client";
+import { useIsAndroidApp } from "@/hooks/useNativePlatform";
 import type { Translator } from "@/i18n";
 
 interface AnalyticsProps {
@@ -354,6 +355,8 @@ function DemoActivityRow({ t }: { t: Translator }) {
 }
 
 function PremiumLock({ isPremium, title, t, children }: { isPremium: boolean; title: string; t: Translator; children: React.ReactNode }) {
+  // Android-appen säljer inte Premium — låset visas men utan köplänk.
+  const isAndroidApp = useIsAndroidApp();
   if (isPremium) return <>{children}</>;
   return (
     <div className="relative group cursor-default h-full">
@@ -365,9 +368,11 @@ function PremiumLock({ isPremium, title, t, children }: { isPremium: boolean; ti
           <Lock className="h-4 w-4 text-emerald-400" />
         </div>
         <h4 className="text-slate-200 font-bold text-sm mb-1">{title}</h4>
+        {!isAndroidApp && (
         <Link href="/checkout/premium" className="rounded-full bg-emerald-600 px-4 py-1.5 text-[10px] font-bold text-nordic-secondary hover:bg-emerald-500 shadow-lg shadow-emerald-500/20">
           {t("analytics.unlock")}
         </Link>
+        )}
       </div>
     </div>
   );

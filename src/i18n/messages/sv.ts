@@ -1525,6 +1525,20 @@ export const sv = {
   },
 
   legal: {
+    deleteAccount: {
+      title: "Radera ditt konto",
+      intro: "Du kan när som helst radera ditt AvyraCards-konto och all data som hör till det.",
+      inAppTitle: "Radera själv (tar en minut)",
+      step1: "Logga in på avyracards.se eller i appen",
+      step2: "Gå till Inställningar → Konto & integritet",
+      step3: "Tryck på ”Radera mitt konto” och bekräfta",
+      emailTitle: "Eller be oss radera det",
+      emailBefore: "Mejla",
+      emailAfter: "från e-postadressen som kontot är registrerat på, så raderar vi kontot inom 30 dagar.",
+      whatTitle: "Vad som raderas",
+      whatBody:
+        "Konto, profil, länkar, teman, profilbild och statistik raderas direkt och permanent. Uppgifter om köpta fysiska kort (order och leveransadress) sparas för bokföringen men kopplas bort från kontot. Har du en aktiv Premium-prenumeration — säg upp den där du köpte den innan du raderar kontot.",
+    },
     /**
      * Den svenska versionen är original. Den engelska är en översättning för
      * läsbarhet — vid tolkningstvist gäller den svenska texten (se
