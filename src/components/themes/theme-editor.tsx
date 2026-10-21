@@ -88,7 +88,7 @@ function focusForKey(key: keyof CustomThemeSettings): Focus | null {
   if (key.startsWith("button") || key === "accentColor" || key === "textColor" || key === "showSaveContact") return ["buttons"];
   if (key === "frameStyle" || key === "nameEffect") return ["avatar", "name"];
   if (key === "font" || key === "headingFont") return ["name", "bio"];
-  if (key.startsWith("background") || key.startsWith("gradient") || key === "hideBranding") return "all";
+  if (key.startsWith("background") || key.startsWith("gradient") || key.startsWith("card") || key === "hideBranding") return "all";
   return null;
 }
 
@@ -686,6 +686,7 @@ export function ThemeEditor({ initialSettings, initialBusinessSettings, userData
             canUseImage={canAccess("theme_background_image", accessUser)}
             canAnimate={canAccess("theme_animated_background", accessUser)}
             onShowUpgrade={requestPremium}
+            mode={mode}
           />
         );
       case "buttons":

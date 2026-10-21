@@ -8,12 +8,14 @@ import {
   PATTERN_OPACITY_MIN,
   type BackgroundPattern,
   type CustomThemeSettings,
+  type ThemeMode,
 } from "@/types/theme";
 import { ChoiceTile, ColorPicker, InlineCrown, PremiumBadge, SectionLabel, SegmentedControl, Slider, ToggleRow } from "@/components/themes/theme-controls";
 import type { PremiumTeaser } from "@/components/themes/premium-gate";
 import { getPatternBackground } from "@/lib/theme-effects";
 import { MediaManager } from "@/components/themes/media-manager";
 import { useT } from "@/i18n/client";
+import { CARD_BLUR_MAX, CARD_BLUR_MIN, CARD_OPACITY_MAX, CARD_OPACITY_MIN, resolveCardSurface } from "@/lib/theme/card-surface";
 
 interface BackgroundTabProps {
   settings: CustomThemeSettings;
@@ -24,6 +26,8 @@ interface BackgroundTabProps {
   canAnimate?: boolean;
   /** Öppnar uppgraderingsrutan med det som trycktes på (usePremiumGate i editorn). */
   onShowUpgrade: (teaser?: PremiumTeaser) => void;
+  /** Profilläge — styr standardvärdet för kortets oskärpa. */
+  mode?: ThemeMode;
 }
 
 function PatternSwatch({ pattern }: { pattern: BackgroundPattern }) {
@@ -39,9 +43,12 @@ function PatternSwatch({ pattern }: { pattern: BackgroundPattern }) {
   );
 }
 
-export function BackgroundTab({ settings, updateSetting, canUseImage, canAnimate = false, onShowUpgrade }: BackgroundTabProps) {
+export function BackgroundTab({ settings, updateSetting, canUseImage, canAnimate = false, onShowUpgrade, mode = "SOCIAL" }: BackgroundTabProps) {
   const t = useT();
   const pattern = settings.backgroundPattern ?? "none";
+  const animated = settings.backgroundType === "gradient" && Boolean(settings.backgroundAnimated) && canAnimate;
+  const card = resolveCardSurface(settings, { mode, animated });
+  const cardCustomized = settings.cardOpacity !== undefined || settings.cardBlur !== undefined;
 
   return (
     <div className="space-y-6">
@@ -154,6 +161,41 @@ export function BackgroundTab({ settings, updateSetting, canUseImage, canAnimate
             unit="%"
             onChange={(v) => updateSetting("backgroundPatternOpacity", v)}
           />
+        )}
+      </div>
+
+      {/* Profilkortet: hur mycket panelen bakom innehållet täcker bakgrunden.
+          Lägre täckning = bakgrundsbild/logga syns igenom. Gratis. */}
+      <div className="space-y-3 border-t border-white/10 pt-4">
+        <SectionLabel>{t("themes.background.card")}</SectionLabel>
+        <p className="-mt-1 text-xs text-slate-400">{t("themes.background.cardHint")}</p>
+        <Slider
+          label={t("themes.background.cardOpacity")}
+          value={card.opacity}
+          min={CARD_OPACITY_MIN}
+          max={CARD_OPACITY_MAX}
+          unit="%"
+          onChange={(v) => updateSetting("cardOpacity", v)}
+        />
+        <Slider
+          label={t("themes.background.cardBlur")}
+          value={card.blur}
+          min={CARD_BLUR_MIN}
+          max={animated ? 6 : CARD_BLUR_MAX}
+          unit="px"
+          onChange={(v) => updateSetting("cardBlur", v)}
+        />
+        {cardCustomized && (
+          <button
+            type="button"
+            onClick={() => {
+              updateSetting("cardOpacity", undefined);
+              updateSetting("cardBlur", undefined);
+            }}
+            className="min-h-[44px] text-sm font-medium text-purple-300 hover:text-purple-200"
+          >
+            {t("themes.background.cardReset")}
+          </button>
         )}
       </div>
     </div>

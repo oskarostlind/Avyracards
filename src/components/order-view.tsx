@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Loader2, Layers, CreditCard, Upload, X, Check, Sparkles, ArrowLeft, ArrowRight, Pencil } from "lucide-react";
 import { CardPreview3D } from "@/components/card-preview-3d";
+import { PrintImageCropper, type PrintCropState } from "@/components/print-image-cropper";
+import { getCroppedImg } from "@/lib/crop-image";
 import { LiveProfileDemo } from "@/components/live-profile-demo";
 import { useIosNativePayments } from "@/hooks/useIosNativePayments";
 import { useIsApp } from "@/hooks/useIsApp";
@@ -105,6 +107,15 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
   const [colorCode, setColorCode] = useState<string>(hasStandard ? defaultStandardColor : defaultMetalColor);
   const [customImage, setCustomImage] = useState<string | null>(null);
   const [customFile, setCustomFile] = useState<File | null>(null);
+  // Egen tryckbild: originalet sparas så att kunden kan justera placeringen
+  // igen. customImage/customFile är den beskurna versionen (= det som trycks).
+  const [printSource, setPrintSource] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [printCrop, setPrintCrop] = useState<PrintCropState | null>(null);
+  // Nyss vald fil som ännu inte bekräftats i beskäraren. Avbryt -> den
+  // tidigare bekräftade bilden (printSource) ligger kvar orörd.
+  const [pendingSource, setPendingSource] = useState<{ url: string; name: string; type: string } | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+  const [cropBusy, setCropBusy] = useState(false);
 
   const [premiumOption, setPremiumOption] = useState<PremiumOption>("none");
 
@@ -200,23 +211,70 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) {
+      // Samma fil två gånger i rad ska också trigga onChange.
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (!file) return;
+      if (pendingSource) URL.revokeObjectURL(pendingSource.url);
+      setPendingSource({ url: URL.createObjectURL(file), name: file.name, type: file.type });
+      setCropOpen(true);
+  };
+
+  const confirmCrop = async (area: { x: number; y: number; width: number; height: number }, state: PrintCropState) => {
+      const source = pendingSource ?? printSource;
+      if (!source) return;
+      setCropBusy(true);
+      try {
+          // PNG/WebP/GIF/SVG kan ha genomskinlighet (loggor) — behåll den.
+          const keepAlpha = /png|webp|gif|svg/i.test(source.type);
+          const mimeType = keepAlpha ? "image/png" : "image/jpeg";
+          // 82 mm i 2400 px ≈ 740 dpi: gott om marginal för tryck.
+          const blob = await getCroppedImg(source.url, area, 0, { maxSize: 2400, mimeType, quality: 0.92 });
+          const base = source.name.replace(/\.[^.]+$/, "") || "print";
+          const file = new File([blob], `${base}-crop.${keepAlpha ? "png" : "jpg"}`, { type: mimeType });
+          if (customImage) URL.revokeObjectURL(customImage);
           setCustomFile(file);
-          const url = URL.createObjectURL(file);
-          setCustomImage(url);
+          setCustomImage(URL.createObjectURL(blob));
+          if (pendingSource) {
+              if (printSource) URL.revokeObjectURL(printSource.url);
+              setPrintSource(pendingSource);
+              setPendingSource(null);
+          }
+          setPrintCrop(state);
+          setCropOpen(false);
+      } catch (err) {
+          console.error("Print crop failed:", err);
+          alert(t("order.cropFailed"));
+      } finally {
+          setCropBusy(false);
+      }
+  };
+
+  const cancelCrop = () => {
+      setCropOpen(false);
+      if (pendingSource) {
+          URL.revokeObjectURL(pendingSource.url);
+          setPendingSource(null);
       }
   };
 
   const clearImage = () => {
+      if (customImage) URL.revokeObjectURL(customImage);
+      if (printSource) URL.revokeObjectURL(printSource.url);
+      if (pendingSource) URL.revokeObjectURL(pendingSource.url);
+      setPendingSource(null);
       setCustomImage(null);
       setCustomFile(null);
+      setPrintSource(null);
+      setPrintCrop(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const selectMaterial = (m: MaterialType) => {
     setMaterial(m);
     if (m === "plastic") {
-      setCustomImage(null);
+      // Rensa hela tryckbilden (även filen) — annars följde en gammal fil med
+      // om man bytte tillbaka till metall utan att se någon förhandsvisning.
+      clearImage();
       setColorCode(defaultStandardColor);
     } else {
       setColorCode(defaultMetalColor);
@@ -540,12 +598,25 @@ function OrderViewContent({ standardVariants, metalVariants, bundleVariant, isPr
                           <div className="relative rounded-xl overflow-hidden border border-white/20 group h-24 w-full">
                               <Image src={customImage} alt={t("order.uploadAlt")} fill className="object-cover opacity-50" unoptimized />
                               <div className="absolute inset-0 flex items-center justify-center gap-4 z-10">
+                                   {printSource && (
+                                     <button type="button" onClick={() => setCropOpen(true)} className="flex items-center gap-1 bg-blue-500 text-nordic-secondary px-3 py-1.5 rounded-lg text-xs font-bold"><Pencil size={12} />{t("order.adjustImage")}</button>
+                                   )}
                                    <button onClick={() => fileInputRef.current?.click()} className="bg-nordic-secondary text-nordic-primary px-3 py-1.5 rounded-lg text-xs font-bold">{t("order.replaceImage")}</button>
                                    <button onClick={clearImage} aria-label={t("order.removeImage")} className="bg-red-500/20 text-red-400 p-1.5 rounded-lg"><X size={16} /></button>
                               </div>
                           </div>
                       )}
                       <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileUpload}/>
+                      {cropOpen && (pendingSource ?? printSource) && (
+                        <PrintImageCropper
+                          key={(pendingSource ?? printSource)!.url}
+                          imageSrc={(pendingSource ?? printSource)!.url}
+                          initial={pendingSource ? null : printCrop}
+                          busy={cropBusy}
+                          onCancel={cancelCrop}
+                          onConfirm={confirmCrop}
+                        />
+                      )}
                    </div>
                 )}
 

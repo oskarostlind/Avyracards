@@ -84,6 +84,12 @@ export interface CustomThemeSettings {
   backgroundPattern?: BackgroundPattern;
   backgroundPatternOpacity?: number;
 
+  // --- Profilkortet (panelen bakom innehållet) ---
+  /** Täckning i procent, 0–100. Saknas -> standard (60, 78 vid animerad bakgrund). */
+  cardOpacity?: number;
+  /** Oskärpa bakom kortet i px, 0–30. Saknas -> standard (16 social / 20 business). */
+  cardBlur?: number;
+
   // --- UI Element (Knappar) ---
   accentColor?: string;
   textColor?: string;

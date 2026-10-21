@@ -467,6 +467,18 @@ function sanitizeStyleFields(settings: Partial<CustomThemeSettings>): void {
     else settings.backgroundOverlay = v;
   }
 
+  // Profilkortets täckning/oskärpa (gratis). Ogiltigt -> bort = standard.
+  if ("cardOpacity" in settings && settings.cardOpacity !== undefined) {
+    const v = clampNumber(settings.cardOpacity, 0, 100);
+    if (v === null) delete settings.cardOpacity;
+    else settings.cardOpacity = Math.round(v);
+  }
+  if ("cardBlur" in settings && settings.cardBlur !== undefined) {
+    const v = clampNumber(settings.cardBlur, 0, 30);
+    if (v === null) delete settings.cardBlur;
+    else settings.cardBlur = Math.round(v);
+  }
+
   for (const key of ["hideBranding", "showSaveContact", "buttonShadow"] as const) {
     if (key in settings && settings[key] !== undefined && typeof settings[key] !== "boolean") {
       settings[key] = settings[key] === "true";

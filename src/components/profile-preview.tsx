@@ -15,6 +15,7 @@ import { FounderBadge } from "@/components/collectibles/founder-badge";
 import { getAnimatedGradientImage, getPatternBackground } from "@/lib/theme-effects";
 import fx from "@/components/theme-effects/theme-effects.module.css";
 import { canAccess } from "@/lib/feature-access";
+import { getCardSurfaceStyle } from "@/lib/theme/card-surface";
 
 export interface ProfilePreviewProps {
   data: MappedProfileData;
@@ -86,8 +87,7 @@ export function ProfilePreview({
   const animatedBg = settings.backgroundType === "gradient" && settings.backgroundAnimated;
   const cardStyle: React.CSSProperties = {
     color: settings.textColor || "#fff",
-    backgroundColor: animatedBg ? 'rgba(15, 23, 42, 0.78)' : 'rgba(15, 23, 42, 0.6)',
-    backdropFilter: animatedBg ? 'blur(6px)' : mode === "BUSINESS" ? 'blur(20px)' : 'blur(16px)',
+    ...getCardSurfaceStyle(settings, { mode: mode === "BUSINESS" ? "BUSINESS" : "SOCIAL", animated: Boolean(animatedBg) }),
     borderColor: 'rgba(255,255,255,0.1)',
     borderWidth: '1px',
   };

@@ -11,12 +11,25 @@ export const createImage = (url: string): Promise<HTMLImageElement> =>
 
 const MAX_OUTPUT_SIZE = 1024;
 
+export interface CropOutputOptions {
+  /** Längsta sidan i px (standard 1024 — profilbilder). */
+  maxSize?: number;
+  /** "image/jpeg" (standard) eller "image/png" (behåller genomskinlighet). */
+  mimeType?: "image/jpeg" | "image/png";
+  /** JPEG-kvalitet 0–1 (standard 0.85). */
+  quality?: number;
+}
+
 export async function getCroppedImg(
   imageSrc: string,
   pixelCrop: { x: number; y: number; width: number; height: number },
-  rotation = 0
+  rotation = 0,
+  options: CropOutputOptions = {}
 ): Promise<Blob> {
   const image = await createImage(imageSrc);
+  const maxSize = options.maxSize ?? MAX_OUTPUT_SIZE;
+  const mimeType = options.mimeType ?? "image/jpeg";
+  const quality = options.quality ?? 0.85;
 
   return new Promise((resolve, reject) => {
     const canvas = document.createElement("canvas");
@@ -27,7 +40,7 @@ export async function getCroppedImg(
     }
 
     if (rotation === 0) {
-      const scale = Math.min(1, MAX_OUTPUT_SIZE / Math.max(pixelCrop.width, pixelCrop.height));
+      const scale = Math.min(1, maxSize / Math.max(pixelCrop.width, pixelCrop.height));
       canvas.width = Math.round(pixelCrop.width * scale);
       canvas.height = Math.round(pixelCrop.height * scale);
 
@@ -49,7 +62,7 @@ export async function getCroppedImg(
           return;
         }
         resolve(blob);
-      }, "image/jpeg", 0.85);
+      }, mimeType, quality);
       return;
     }
 
@@ -95,7 +108,7 @@ export async function getCroppedImg(
         return;
       }
       resolve(blob);
-    }, "image/jpeg", 0.85);
+    }, mimeType, quality);
   });
 }
 

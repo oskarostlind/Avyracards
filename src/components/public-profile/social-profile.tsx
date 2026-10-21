@@ -15,6 +15,7 @@ import { ProfileSafetyActions } from "@/components/public-profile/profile-safety
 import { getBodyFontStyle, getHeadingFontStyle } from "@/lib/theme/fonts";
 import "@/styles/profile-fonts.css";
 import { AvatarFrame } from "@/components/theme-effects/avatar-frame";
+import { getCardSurfaceStyle } from "@/lib/theme/card-surface";
 import { canAnimateCollectibleFrame, isAnimatedBackgroundLocked, isFrameLocked, isNameEffectLocked, validateThemeSettingsForRender } from "@/lib/feature-access";
 import { FounderBadge } from "@/components/collectibles/founder-badge";
 import { DisplayName } from "@/components/theme-effects/display-name";
@@ -48,9 +49,9 @@ export function SocialProfile({ user, data, viewerIsLoggedIn = false, hasBlocked
   } : {};
 
   const cardStyle: React.CSSProperties = useCustomTheme ? {
-    backgroundColor: settings.backgroundAnimated ? 'rgba(15, 23, 42, 0.78)' : 'rgba(15, 23, 42, 0.6)',
-    // Rörlig bakgrund under ett blurrat kort tvingar ny blur varje bildruta — tunnare blur + tätare kort då.
-    backdropFilter: settings.backgroundAnimated ? 'blur(6px)' : 'blur(16px)',
+    // Täckning/oskärpa styrs av temat (cardOpacity/cardBlur) — se card-surface.ts.
+    // Rörlig bakgrund: tunnare blur + tätare kort som standard.
+    ...getCardSurfaceStyle(settings, { mode: 'SOCIAL', animated: Boolean(settings.backgroundAnimated) }),
     borderColor: 'rgba(255,255,255,0.1)',
     borderWidth: '1px',
     color: settings.textColor,
