@@ -2,6 +2,7 @@ import "./globals.css";
 import type { ReactNode } from "react";
 import type { Metadata, Viewport } from "next";
 import { Manrope } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
 import SessionProviderWrapper from "@/components/providers/session-provider";
@@ -107,6 +108,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <IosNativeDebugPanel />
           </SessionProviderWrapper>
         </LocaleProvider>
+        <Analytics />
       </body>
     </html>
   );
