@@ -36,7 +36,7 @@ export type AdminAlert =
       type: "premium_activated";
       email?: string | null;
       username?: string | null;
-      source: "stripe" | "apple_iap" | "card_order" | "admin";
+      source: "stripe" | "apple_iap" | "google_play" | "card_order" | "admin";
     }
   | {
       type: "card_claimed";
@@ -91,7 +91,9 @@ export function renderAdminAlert(alert: AdminAlert): RenderedAdminAlert {
       const via =
         alert.source === "apple_iap"
           ? "via App Store"
-          : alert.source === "stripe"
+          : alert.source === "google_play"
+            ? "via Google Play"
+            : alert.source === "stripe"
             ? "via Stripe"
             : alert.source === "card_order"
               ? "via kortbeställning"

@@ -8,10 +8,14 @@ import { sv, enGB } from "date-fns/locale";
 import { NativePurchases } from "@capgo/native-purchases";
 import { useNativePlatform } from "@/hooks/useNativePlatform";
 import { IosRestorePurchasesButton } from "@/components/checkout/ios-restore-purchases-button";
+import { AndroidRestorePurchasesButton } from "@/components/checkout/android-restore-purchases-button";
+import { useGooglePlayBilling } from "@/hooks/useGooglePlayBilling";
 import { useT, useLocale, useLocaleTag } from "@/i18n/client";
 
 interface BillingProps {
   isPremium: boolean;
+  /** Var premium kommer ifrån ("GOOGLE_PLAY", "APPLE_IAP", "PAID" …). */
+  premiumSource?: string | null;
   subscription?: {
     status: string;
     currentPeriodEnd: number;
@@ -25,7 +29,7 @@ interface BillingProps {
   } | null;
 }
 
-export function BillingView({ isPremium, subscription }: BillingProps) {
+export function BillingView({ isPremium, premiumSource, subscription }: BillingProps) {
   const t = useT();
   const locale = useLocale();
   const localeTag = useLocaleTag();
@@ -35,12 +39,24 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
   // extern betalportal för ett digitalt abonnemang. Köp gjorda via IAP hanteras
   // dessutom av App Store, inte av Stripe — knappen hade lett fel även rent
   // funktionellt. På webben är Stripe-portalen oförändrad.
-  // App Store-knapparna gäller bara iOS-appen. I Android-appen säljs inte
-  // Premium (Google Plays betalpolicy) — där visas bara status, inga köp- eller
-  // betallänkar.
+  // App Store-knapparna gäller bara iOS-appen. I Android-appen säljs Premium
+  // bara via Google Play Billing (Google Plays betalpolicy) — inga Stripe-
+  // eller webblänkar. Är Play Billing inte konfigurerat visas bara status.
   const platform = useNativePlatform();
   const isApp = platform === "ios";
   const isAndroidApp = platform === "android";
+  const playBilling = useGooglePlayBilling();
+  const playEnabled = isAndroidApp && Boolean(playBilling?.enabled);
+  const boughtInGooglePlay = premiumSource === "GOOGLE_PLAY";
+
+  const handleManageInGooglePlay = async () => {
+    try {
+      await NativePurchases.manageSubscriptions();
+    } catch {
+      window.location.href =
+        playBilling?.manageUrl ?? "https://play.google.com/store/account/subscriptions";
+    }
+  };
 
   const handleManageInAppStore = async () => {
     try {
@@ -116,10 +132,30 @@ export function BillingView({ isPremium, subscription }: BillingProps) {
         </div>
 
         {isAndroidApp ? (
-          isPremium ? (
+          isPremium && boughtInGooglePlay ? (
+            <button
+              onClick={handleManageInGooglePlay}
+              className="whitespace-nowrap rounded-xl border border-nordic-highlight/40 bg-slate-800 px-4 py-2 text-sm font-medium text-slate-200 hover:bg-slate-700 flex items-center gap-2"
+            >
+              {t("settings.billing.manageInGooglePlay")}
+            </button>
+          ) : isPremium ? (
             <p className="max-w-[16rem] text-xs leading-relaxed text-nordic-highlight sm:text-right">
               {t("settings.billing.manageWhereBought")}
             </p>
+          ) : playEnabled && playBilling ? (
+            <div className="flex flex-col gap-2 items-stretch">
+              <Link
+                href="/checkout/premium"
+                className="whitespace-nowrap rounded-xl bg-purple-600 px-4 py-2 text-sm font-bold text-nordic-secondary hover:bg-purple-500 shadow-lg shadow-purple-500/20 text-center"
+              >
+                {t("settings.billing.upgradeNow")}
+              </Link>
+              <AndroidRestorePurchasesButton
+                config={playBilling}
+                className="whitespace-nowrap rounded-xl border border-nordic-highlight/40 px-4 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800 flex items-center justify-center gap-2"
+              />
+            </div>
           ) : (
             <p className="max-w-[16rem] text-xs leading-relaxed text-nordic-highlight sm:text-right">
               {t("settings.billing.androidUnavailable")}

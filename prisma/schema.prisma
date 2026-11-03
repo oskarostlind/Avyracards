@@ -135,6 +135,7 @@ model User {
   // RELATIONER
   orders               Order[]
   appleIapTransactions AppleIapTransaction[]
+  googlePlayPurchases  GooglePlayPurchase[]
 
   // Samlarobjekt (limited edition-drops, t.ex. Founders).
   collectibles UserCollectible[]
@@ -156,6 +157,7 @@ enum PremiumSource {
   GIFT // Manuellt given av admin
   TRIAL // Tidsbegränsad test
   APPLE_IAP
+  GOOGLE_PLAY // Google Play Billing (Android-appen)
 }
 
 model Link {
@@ -239,6 +241,27 @@ model AppleIapTransaction {
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   environment   String?
   purchasedAt   DateTime
+  expiresAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([userId])
+}
+
+// Google Play Billing-prenumerationer från Android-appen. En rad per
+// purchaseToken (Play skapar en ny token vid upp-/nedgradering och
+// återköp). Status och utgång hämtas alltid från Google Play Developer API —
+// raden är bara en spegel för ägarskap och lat förnyelsesynk.
+model GooglePlayPurchase {
+  id            String    @id @default(cuid())
+  purchaseToken String    @unique
+  productId     String
+  basePlanId    String?
+  orderId       String?
+  state         String
+  testPurchase  Boolean   @default(false)
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   expiresAt     DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

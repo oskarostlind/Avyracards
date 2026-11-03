@@ -10,6 +10,9 @@ import { useIosNativePayments } from "@/hooks/useIosNativePayments";
 import { useIsAndroidApp } from "@/hooks/useNativePlatform";
 import { IosIapPremiumButton } from "@/components/checkout/ios-iap-premium-button";
 import { IosRestorePurchasesButton } from "@/components/checkout/ios-restore-purchases-button";
+import { AndroidPlayPremiumButton } from "@/components/checkout/android-play-premium-button";
+import { AndroidRestorePurchasesButton } from "@/components/checkout/android-restore-purchases-button";
+import { useGooglePlayBilling, useGooglePlayPrice } from "@/hooks/useGooglePlayBilling";
 import { SubscriptionTerms } from "@/components/checkout/subscription-terms";
 import type { MappedProfileData } from "@/lib/profile-mapper";
 import type { CustomThemeSettings } from "@/types/theme";
@@ -43,12 +46,16 @@ export function PremiumCheckoutForm({
   // för ett garanterat avslag. Stripe-grenen renderas nu bara på webben.
   const showStripeCheckout = !isApp;
   // Android-appen: Google Play kräver Play Billing för digitalt innehåll och
-  // förbjuder hänvisning till andra betalsätt. Tills Play Billing är byggt
-  // säljs Premium inte där alls — ingen Stripe, ingen länk till webben.
+  // förbjuder hänvisning till andra betalsätt — ingen Stripe, ingen länk till
+  // webben. Premium säljs via Play Billing när det är konfigurerat
+  // (/api/google/play/config), annars visas att det inte går att köpa ännu.
   const isAndroidApp = useIsAndroidApp();
+  const playBilling = useGooglePlayBilling();
+  const playEnabled = isAndroidApp && Boolean(playBilling?.enabled);
+  const playPrice = useGooglePlayPrice(playEnabled ? playBilling : null);
   const iapUnavailableInApp = isApp && !isIosCheckout && !isAndroidApp;
 
-  const formattedPrice = formatPrice(price);
+  const formattedPrice = playEnabled && playPrice ? playPrice : formatPrice(price);
 
   const handleCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,7 +135,7 @@ export function PremiumCheckoutForm({
                  </div>
              </div>
 
-             {!isAndroidApp && (
+             {(!isAndroidApp || playEnabled) && (
              <div className="bg-nordic-primary/40 p-4 rounded-xl border border-gray-800 mb-6 space-y-3">
                  <div className="flex justify-between items-center">
                     <span className="font-medium text-sm">{productName}</span>
@@ -160,7 +167,24 @@ export function PremiumCheckoutForm({
                    </>
                  )}
 
-                 {isAndroidApp && (
+                 {isAndroidApp && playEnabled && playBilling && (
+                   <>
+                     <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 flex gap-3 items-start">
+                       <div className="mt-0.5 min-w-[16px]"><Check size={16} className="text-blue-400"/></div>
+                       <p className="text-sm text-blue-200/80 leading-relaxed">
+                         {t("premiumCheckout.playNotice")}
+                       </p>
+                     </div>
+                     <AndroidPlayPremiumButton
+                       config={playBilling}
+                       label={t("premiumCheckout.playButton", { product: productName })}
+                     />
+                     <AndroidRestorePurchasesButton config={playBilling} />
+                     <SubscriptionTerms price={formattedPrice} viaGooglePlay />
+                   </>
+                 )}
+
+                 {isAndroidApp && playBilling && !playEnabled && (
                    <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-4 text-sm text-amber-200/90 leading-relaxed">
                      {t("premiumCheckout.androidUnavailable")}
                    </div>

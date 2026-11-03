@@ -450,6 +450,7 @@ export const en: Messages = {
       freeBody: "Upgrade to unlock analytics and themes.",
       endsOn: "Ends {date}",
       manageInAppStore: "Manage in the App Store",
+      manageInGooglePlay: "Manage in Google Play",
       manageWhereBought: "Your subscription is managed where you bought it.",
       androidUnavailable: "Premium can’t be purchased in the Android app yet.",
       manageInStripe: "Manage via Stripe",
@@ -980,16 +981,22 @@ export const en: Messages = {
     restoreLabel: "Restore purchases",
     restored: "Your purchase has been restored.",
     nothingToRestore: "We found no previous purchases linked to your Apple ID.",
+    nothingToRestoreGoogle: "We found no Premium subscription on the Google account on this device.",
+    playOtherAccount: "This subscription is already linked to another AvyraCards account.",
+    playSubscriptionInactive: "The subscription in Google Play is no longer active.",
     restoreFailed: "Couldn't restore purchases. Please try again.",
     terms: {
       periodMonth: "month",
       body: "{price} per {period}. The subscription renews automatically at the same price every {period} until you cancel. The amount is charged {source} at each renewal.",
       sourceAppStore: "to your Apple ID",
+      sourceGooglePlay: "to your Google account",
       sourceCard: "to your payment card",
       cancelAppStore:
         "You can cancel at any time under Settings → your name → Subscriptions on your device, at least 24 hours before the next renewal.",
       cancelWeb:
         "You can cancel at any time under Account → Billing. The cancellation takes effect from the next billing period.",
+      cancelGooglePlay:
+        "You can cancel at any time in the Google Play app under Profile → Payments & subscriptions → Subscriptions. The cancellation takes effect from the next billing period.",
       eula: "Terms of service (EULA)",
       privacy: "Privacy policy",
     },
@@ -1091,6 +1098,8 @@ export const en: Messages = {
     dueToday: "Due today",
     iapNotice: "Premium is bought through the App Store in the iOS app.",
     iapButton: "Buy {product} via the App Store",
+    playNotice: "Premium is bought through Google Play in the Android app.",
+    playButton: "Buy {product} via Google Play",
     androidUnavailable:
       "Premium can’t be purchased in the Android app yet. If your account already has Premium, it works here too.",
     iapUnavailable:
@@ -1450,6 +1459,7 @@ export const en: Messages = {
       expiry: "Premium is valid until {date}.",
       sourceStripe: "Your premium payment went through and the account has been upgraded.",
       sourceApple: "Your App Store purchase is confirmed and the account has been upgraded.",
+      sourceGooglePlay: "Your Google Play purchase is confirmed and the account has been upgraded.",
       sourceCardOrder: "Premium was included with your card order and is now active on your account.",
       sourceGift: "Premium has been activated on your account.",
       openThemes: "Open your themes: {url}",

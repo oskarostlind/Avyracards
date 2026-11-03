@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { syncGooglePlayPremiumIfDue } from "@/lib/google-play";
 
 // Komponenter
 import { SettingsTabs } from "@/components/profile/settings-tabs";
@@ -22,6 +23,10 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
     redirect("/login");
   }
 
+  // Google Play-prenumeranter: förnya/avsluta premium om perioden passerat.
+  // No-op för alla andra (och när Play Billing inte är konfigurerat).
+  await syncGooglePlayPremiumIfDue(session.user.id);
+
   // 1. Hämta användaren
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -30,6 +35,7 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
       username: true,
       passwordHash: true, 
       isPremium: true,
+      premiumSource: true,
       stripeCustomerId: true,
       marketingConsent: true,
       productUpdates: true,
@@ -132,7 +138,8 @@ export default async function ProfileSettingsPage({ searchParams }: PageProps) {
 
           {view === "billing" && (
             <BillingView 
-              isPremium={user.isPremium} 
+              isPremium={user.isPremium}
+              premiumSource={user.premiumSource}
               subscription={subscriptionData}
             />
           )}
