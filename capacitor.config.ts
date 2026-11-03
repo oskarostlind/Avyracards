@@ -13,9 +13,10 @@ const config: CapacitorConfig = {
     },
   },
   // Endast Android. iOS läser aldrig `android`-nyckeln, så iOS-bygget påverkas
-  // inte. Plugins som bara gäller Apple (Sign in with Apple, StoreKit-köp,
-  // Apple Pay via Stripe-pluginen) byggs inte in i Android-appen — där finns
-  // ingen kodväg som anropar dem (se src/lib/native-platform.ts).
+  // inte. Plugins som bara gäller Apple (Sign in with Apple, Apple Pay via
+  // Stripe-pluginen) byggs inte in i Android-appen — där finns ingen kodväg
+  // som anropar dem (se src/lib/native-platform.ts). @capgo/native-purchases
+  // ingår: på Android är det Google Play Billing för Premium.
   android: {
     // Svart bakom WebView:n så att det inte blinkar vitt vid start.
     backgroundColor: '#000000',
@@ -26,6 +27,7 @@ const config: CapacitorConfig = {
       '@capacitor/share',
       '@capacitor/splash-screen',
       '@capacitor-community/fcm',
+      '@capgo/native-purchases',
     ],
   },
 };

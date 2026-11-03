@@ -10,6 +10,8 @@ interface Props {
   period?: string;
   /** true när köpet går via App Store (IAP) i stället för Stripe. */
   viaAppStore?: boolean;
+  /** true när köpet går via Google Play Billing (Android-appen). */
+  viaGooglePlay?: boolean;
 }
 
 /**
@@ -19,7 +21,7 @@ interface Props {
  * Att bara visa "49 kr/mån" räcker inte; det är den vanligaste
  * prenumerationsrelaterade avslagsorsaken.
  */
-export function SubscriptionTerms({ price, period, viaAppStore }: Props) {
+export function SubscriptionTerms({ price, period, viaAppStore, viaGooglePlay }: Props) {
   const t = useT();
   const resolvedPeriod = period ?? t("checkout.terms.periodMonth");
 
@@ -29,13 +31,19 @@ export function SubscriptionTerms({ price, period, viaAppStore }: Props) {
         {t("checkout.terms.body", {
           price,
           period: resolvedPeriod,
-          source: viaAppStore
-            ? t("checkout.terms.sourceAppStore")
-            : t("checkout.terms.sourceCard"),
+          source: viaGooglePlay
+            ? t("checkout.terms.sourceGooglePlay")
+            : viaAppStore
+              ? t("checkout.terms.sourceAppStore")
+              : t("checkout.terms.sourceCard"),
         })}
       </p>
       <p>
-        {viaAppStore ? t("checkout.terms.cancelAppStore") : t("checkout.terms.cancelWeb")}
+        {viaGooglePlay
+          ? t("checkout.terms.cancelGooglePlay")
+          : viaAppStore
+            ? t("checkout.terms.cancelAppStore")
+            : t("checkout.terms.cancelWeb")}
       </p>
       <p className="flex flex-wrap gap-x-3 gap-y-1 pt-1">
         <Link href="/terms" className="underline hover:text-slate-200">

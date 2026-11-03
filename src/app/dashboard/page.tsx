@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { VARIANT_IDS } from "@/lib/constants";
 import { getDashboardUserWithRecentOrders } from "@/lib/data-access";
+import { syncGooglePlayPremiumIfDue } from "@/lib/google-play";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,10 @@ export default async function DashboardPage() {
   if (!session?.user?.id) {
     redirect("/login");
   }
+
+  // Google Play-prenumeranter: förnya/avsluta premium om perioden passerat.
+  // No-op för alla andra (och när Play Billing inte är konfigurerat).
+  await syncGooglePlayPremiumIfDue(session.user.id);
 
   const { user, hasOrderedCard } = await getDashboardUserWithRecentOrders(
     session.user.id,

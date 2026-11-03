@@ -33,6 +33,7 @@ export interface RenderedEmail {
 export type PremiumActivationSource =
   | "stripe"
   | "apple_iap"
+  | "google_play"
   | "card_order"
   | "gift";
 
@@ -173,6 +174,7 @@ function layout(options: {
 const PREMIUM_SOURCE_KEY: Record<PremiumActivationSource, string> = {
   stripe: "email.premium.sourceStripe",
   apple_iap: "email.premium.sourceApple",
+  google_play: "email.premium.sourceGooglePlay",
   card_order: "email.premium.sourceCardOrder",
   gift: "email.premium.sourceGift",
 };

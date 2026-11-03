@@ -448,6 +448,7 @@ export const sv = {
       freeBody: "Uppgradera för att låsa upp statistik och teman.",
       endsOn: "Avslutas {date}",
       manageInAppStore: "Hantera i App Store",
+      manageInGooglePlay: "Hantera i Google Play",
       manageWhereBought: "Prenumerationen hanteras där du köpte den.",
       androidUnavailable: "Premium kan inte köpas i Android-appen ännu.",
       manageInStripe: "Hantera via Stripe",
@@ -981,16 +982,22 @@ export const sv = {
     restoreLabel: "Återställ köp",
     restored: "Ditt köp är återställt.",
     nothingToRestore: "Vi hittade inga tidigare köp kopplade till ditt Apple-ID.",
+    nothingToRestoreGoogle: "Vi hittade ingen Premium-prenumeration på Google-kontot på den här enheten.",
+    playOtherAccount: "Prenumerationen är redan kopplad till ett annat AvyraCards-konto.",
+    playSubscriptionInactive: "Prenumerationen i Google Play är inte längre aktiv.",
     restoreFailed: "Kunde inte återställa köp. Försök igen.",
     terms: {
       periodMonth: "månad",
       body: "{price} per {period}. Prenumerationen förnyas automatiskt med samma belopp varje {period} tills du säger upp den. Beloppet dras {source} vid varje förnyelse.",
       sourceAppStore: "från ditt Apple-ID",
+      sourceGooglePlay: "från ditt Google-konto",
       sourceCard: "från ditt betalkort",
       cancelAppStore:
         "Du kan säga upp när som helst i Inställningar → ditt namn → Prenumerationer på din enhet, senast 24 timmar före nästa förnyelse.",
       cancelWeb:
         "Du kan säga upp när som helst under Konto → Fakturering. Uppsägningen gäller från och med nästa faktureringsperiod.",
+      cancelGooglePlay:
+        "Du kan säga upp när som helst i Google Play-appen under Profil → Betalningar och prenumerationer → Prenumerationer. Uppsägningen gäller från och med nästa faktureringsperiod.",
       eula: "Användarvillkor (EULA)",
       privacy: "Integritetspolicy",
     },
@@ -1092,6 +1099,8 @@ export const sv = {
     dueToday: "Att betala idag",
     iapNotice: "Premium köps via App Store i iOS-appen.",
     iapButton: "Köp {product} via App Store",
+    playNotice: "Premium köps via Google Play i Android-appen.",
+    playButton: "Köp {product} via Google Play",
     androidUnavailable:
       "Premium kan inte köpas i Android-appen ännu. Har du redan Premium på ditt konto gäller det även här.",
     iapUnavailable:
@@ -1451,6 +1460,7 @@ export const sv = {
       expiry: "Premium gäller till och med {date}.",
       sourceStripe: "Din premiumbetalning är genomförd och kontot är uppgraderat.",
       sourceApple: "Ditt köp via App Store är bekräftat och kontot är uppgraderat.",
+      sourceGooglePlay: "Ditt köp via Google Play är bekräftat och kontot är uppgraderat.",
       sourceCardOrder: "Premium ingick i din kortbeställning och är nu aktiverat på ditt konto.",
       sourceGift: "Du har fått premium aktiverat på ditt konto.",
       openThemes: "Öppna dina teman: {url}",
